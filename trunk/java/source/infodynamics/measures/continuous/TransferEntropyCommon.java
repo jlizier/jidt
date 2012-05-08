@@ -1,0 +1,289 @@
+package infodynamics.measures.continuous;
+
+import infodynamics.utils.MatrixUtils;
+
+import java.util.Vector;
+
+
+/**
+ * <p>Base class for implementations of the transfer entropy,
+ * e.g. kernel estimation, Kraskov style extensions.
+ * It implements some common code to be used across transfer entropy calculators
+ * </p>
+ * 
+ * 
+ * @author Joseph Lizier, joseph.lizier at gmail.com
+ *
+ * @see For transfer entropy: Schreiber, PRL 85 (2) pp.461-464, 2000; http://dx.doi.org/10.1103/PhysRevLett.85.461
+ * @see For local transfer entropy: Lizier et al, PRE 77, 026110, 2008; http://dx.doi.org/10.1103/PhysRevE.77.026110
+ */
+public abstract class TransferEntropyCommon implements
+		TransferEntropyCalculator {
+
+	/**
+	 * Length of past history to consider
+	 */
+	protected int k;
+	protected int totalObservations = 0;
+	protected boolean debug = false;
+	protected double lastAverage;
+
+	/**
+	 * Storage for source observations for addObservsations
+	 */
+	protected Vector<double[]> vectorOfSourceObservations;
+	/**
+	 * Storage for destination observations for addObservsations
+	 */
+	protected Vector<double[]> vectorOfDestinationObservations;
+	
+	protected boolean addedMoreThanOneObservationSet;
+
+	/**
+	 * Initialise the calculator, and call initialise() to complete
+	 * 
+	 * @param k Length of past history to consider
+	 */
+	public void initialise(int k) throws Exception {
+		this.k = k;
+		addedMoreThanOneObservationSet = false;
+		initialise();
+	}
+
+	/**
+	 * Set the observations to compute the probabilities from 
+	 * 
+	 * @param source
+	 * @param destination
+	 */
+	public void setObservations(double[] source, double[] destination) throws Exception {
+		startAddObservations();
+		addObservations(source, destination);
+		finaliseAddObservations();
+	}
+
+	/**
+	 * Elect to add in the observations from several disjoint time series.
+	 *
+	 */
+	public void startAddObservations() {
+		vectorOfSourceObservations = new Vector<double[]>();
+		vectorOfDestinationObservations = new Vector<double[]>();
+	}
+	
+	/**
+	 * Add some more observations.
+	 * Note that the arrays source and destination must not be over-written by the user
+	 *  until after finaliseAddObservations() has been called.
+	 * 
+	 * @param source
+	 * @param destination
+	 */
+	public void addObservations(double[] source, double[] destination) throws Exception {
+		if (vectorOfSourceObservations == null) {
+			// startAddObservations was not called first
+			throw new RuntimeException("User did not call startAddObservations before addObservations");
+		}
+		if (source.length != destination.length) {
+			throw new Exception(String.format("Source and destination lengths (%d and %d) must match!",
+					source.length, destination.length));
+		}
+		if (source.length <= k) {
+			// we won't be taking any observations here
+			return;
+		}
+		vectorOfSourceObservations.add(source);
+		vectorOfDestinationObservations.add(destination);
+	}
+
+	/**
+	 * Add some more observations.
+	 * 
+	 * @param source
+	 * @param destination
+	 * @param startTime first time index to take observations on
+	 * @param numTimeSteps number of time steps to use
+	 */
+	public void addObservations(double[] source, double[] destination,
+			int startTime, int numTimeSteps) throws Exception {
+		if (vectorOfSourceObservations == null) {
+			// startAddObservations was not called first
+			throw new RuntimeException("User did not call startAddObservations before addObservations");
+		}
+		if (numTimeSteps <= k) {
+			// We won't be taking any observations here
+			return;
+		}
+		double[] sourceToAdd = new double[numTimeSteps];
+		System.arraycopy(source, startTime, sourceToAdd, 0, numTimeSteps);
+		vectorOfSourceObservations.add(sourceToAdd);
+		double[] destToAdd = new double[numTimeSteps];
+		System.arraycopy(destination, startTime, destToAdd, 0, numTimeSteps);
+		vectorOfDestinationObservations.add(destToAdd);
+	}
+
+	/**
+	 * Sets the observations to compute the PDFs from.
+	 * Cannot be called in conjunction with start/add/finaliseAddObservations.
+	 * destValid is a time series (with time indices the same as destination)
+	 *  indicating whether the destination at that point is valid.
+	 * sourceValid is the same for the source
+	 * 
+	 * @param source observations for the source variable
+	 * @param destination observations for the destination variable
+	 * @param sourceValid
+	 * @param destValid
+	 */
+	public void setObservations(double[] source, double[] destination,
+			boolean[] sourceValid, boolean[] destValid) throws Exception {
+		
+		Vector<int[]> startAndEndTimePairs = computeStartAndEndTimePairs(sourceValid, destValid);
+		
+		// We've found the set of start and end times for this pair
+		startAddObservations();
+		for (int[] timePair : startAndEndTimePairs) {
+			int startTime = timePair[0];
+			int endTime = timePair[1];
+			addObservations(source, destination, startTime, endTime - startTime + 1);
+		}
+		finaliseAddObservations();
+	}
+
+	/**
+	 * Compute a vector of start and end pairs of time points, between which we have
+	 *  valid series of both source and destinations.
+	 * 
+	 * Made public so it can be used if one wants to compute the number of
+	 *  observations prior to setting the observations.
+	 * 
+	 * @param sourceValid
+	 * @param destValid
+	 * @return
+	 */
+	public Vector<int[]> computeStartAndEndTimePairs(boolean[] sourceValid, boolean[] destValid) {
+		// Scan along the data avoiding invalid values
+		int startTime = 0;
+		int endTime = 0;
+		boolean lookingForStart = true;
+		Vector<int[]> startAndEndTimePairs = new Vector<int[]>();
+		for (int t = 0; t < destValid.length; t++) {
+			if (lookingForStart) {
+				// Precondition: startTime holds a candidate start time
+				if (destValid[t]) {
+					// This point is OK at the destination
+					if (t - startTime < k) {
+						// We're still checking the past history only, so
+						continue;
+					} else {
+						// We've got the full past history ok, so check the source also
+						if (sourceValid[t - 1]) {
+							// source is good to go also
+							// set a candidate endTime
+							endTime = t;
+							lookingForStart = false;
+							if (t == destValid.length - 1) {
+								// we need to terminate now
+								int[] timePair = new int[2];
+								timePair[0] = startTime;
+								timePair[1] = endTime;
+								startAndEndTimePairs.add(timePair);
+								// System.out.printf("t_s=%d, t_e=%d\n", startTime, endTime);
+							}
+						} else {
+							// source was not good to go, so try moving along one time point
+							startTime++;
+						}
+					}
+				} else {
+					// We need to keep looking.
+					// Move the potential start time to the next point
+					startTime = t + 1;
+				}
+			} else {
+				// Precondition: startTime holds the start time for this set, 
+				//  endTime holds a candidate end time
+				// Check if we can include the current time step
+				boolean terminateSequence = false;
+				if (destValid[t] && sourceValid[t - 1]) {
+					// We can extend
+					endTime = t;
+				} else {
+					terminateSequence = true;
+				}
+				if (t == destValid.length - 1) {
+					// we need to terminate the sequence anyway
+					terminateSequence = true;
+				}
+				if (terminateSequence) {
+					// This section is done
+					int[] timePair = new int[2];
+					timePair[0] = startTime;
+					timePair[1] = endTime;
+					startAndEndTimePairs.add(timePair);
+					// System.out.printf("t_s=%d, t_e=%d\n", startTime, endTime);
+					lookingForStart = true;
+					startTime = t + 1;
+				}
+			}
+		}
+		return startAndEndTimePairs;
+	}
+	
+	/**
+	 * Generate a vector for each time step, containing the past k states of the destination.
+	 * Does not include a vector for the first k time steps.
+	 * 
+	 * @param destination
+	 * @return array of vectors for each time step
+	 */
+	protected double[][] makeJointVectorForPast(double[] destination) {
+		try {
+			// We want one less delay vector here - we don't need the last k point,
+			//  because there is no next state for these.
+			return MatrixUtils.makeDelayEmbeddingVector(destination, k, k-1, destination.length - k);
+		} catch (Exception e) {
+			// The parameters for the above call should be fine, so we don't expect to
+			//  throw an Exception here - embed in a RuntimeException if it occurs 
+			throw new RuntimeException(e);
+		}
+	}
+	
+	/**
+	 * Generate a vector for each time step, containing the past k states of
+	 *  the destination, and the current state.
+	 * Does not include a vector for the first k time steps.
+	 * 
+	 * @param destination
+	 * @return
+	 */
+	protected double[][] makeJointVectorForNextPast(double[] destination) {
+		// We want all delay vectors here
+		return MatrixUtils.makeDelayEmbeddingVector(destination, k+1);
+	}
+	
+	public void setProperty(String propertyName, String propertyValue) throws Exception {
+		boolean propertySet = true;
+		if (propertyName.equalsIgnoreCase(K_PROP_NAME)) {
+			k = Integer.parseInt(propertyValue);
+		} else {
+			// No property was set
+			propertySet = false;
+		}
+		if (debug && propertySet) {
+			System.out.println(this.getClass().getSimpleName() + ": Set property " + propertyName +
+					" to " + propertyValue);
+		}
+	}
+
+	public double getLastAverage() {
+		return lastAverage;
+	}
+
+	public int getNumObservations() {
+		return totalObservations;
+	}
+	
+	public void setDebug(boolean debug) {
+		this.debug = debug;
+	}
+}

@@ -1,0 +1,432 @@
+package infodynamics.measures.continuous.kraskov;
+
+import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariateWithDiscrete;
+import infodynamics.utils.EuclideanUtils;
+import infodynamics.utils.MathsUtils;
+import infodynamics.utils.MatrixUtils;
+import infodynamics.utils.MeasurementDistribution;
+import infodynamics.utils.RandomGenerator;
+
+/**
+ * <p>Compute the Mutual Information between a vector of continuous variables and discrete
+ *  variable using the Kraskov estimation method.</p>
+ * <p>Uses Kraskov method type 2, since type 1 only looks at points with
+ * distances strictly less than the kth variable, which won't work for one marginal
+ * being discrete.</p>
+ * <p>I have noticed that there are quite large bias negative values here
+ * where small K is used (e.g. for binary data splitting continuous into
+ * two distinct groups, 1400 observations, K=4 has bias ~ -.35)</p>
+ * 
+ * @see "Estimating mutual information", Kraskov, A., Stogbauer, H., Grassberger, P., Physical Review E 69, (2004) 066138
+ * @see http://dx.doi.org/10.1103/PhysRevE.69.066138
+ * 
+ * @author Joseph Lizier
+ */
+public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements MutualInfoCalculatorMultiVariateWithDiscrete {
+
+	// Multiplier used in hueristic for determining whether to use a linear search
+	//  for min kth element or a binary search.
+	protected static final double CUTOFF_MULTIPLIER = 1.5;
+	
+	/**
+	 * we compute distances to the kth neighbour
+	 */
+	protected int k;
+	protected double[][] continuousData;
+	protected int[] discreteData;
+	protected int[] counts;
+	protected int base;
+	protected boolean debug;
+	protected double mi;
+	protected boolean miComputed;
+	
+	// Storage for the norms from each observation to each other one
+	protected double[][] xNorms;
+	// Keep the norms each time (making reordering very quick)
+	//  (Should only be set to false for testing)
+	public static boolean tryKeepAllPairsNorms = true;
+	public static int MAX_DATA_SIZE_FOR_KEEP_ALL_PAIRS_NORM = 2000;
+	
+	public final static String PROP_K = "k";
+	public final static String PROP_NORM_TYPE = "NORM_TYPE";	
+	public static final String PROP_NORMALISE = "NORMALISE";
+	private boolean normalise = true;
+
+	public MutualInfoCalculatorMultiVariateWithDiscreteKraskov() {
+		super();
+		k = 1; // by default
+	}
+
+	/**
+	 * Initialise the calculator.
+	 * 
+	 * @param dimensions number of joint continuous variables
+	 * @param base number of discrete states
+	 */
+	public void initialise(int dimensions, int base) {
+		mi = 0.0;
+		miComputed = false;
+		xNorms = null;
+		continuousData = null;
+		discreteData = null;
+		// No need to keep the dimenions here
+		this.base = base;
+	}
+
+	/**
+	 * 
+	 * @param propertyName name of the property to set
+	 * @param propertyValue value to set on that property
+	 */
+	public void setProperty(String propertyName, String propertyValue) {
+		if (propertyName.equalsIgnoreCase(PROP_K)) {
+			k = Integer.parseInt(propertyValue);
+		} else if (propertyName.equalsIgnoreCase(PROP_NORM_TYPE)) {
+			EuclideanUtils.setNormToUse(propertyValue);
+		} else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
+			normalise = Boolean.parseBoolean(propertyValue);
+		}
+	}
+
+	public void addObservations(double[][] source, double[][] destination) throws Exception {
+		throw new RuntimeException("Not implemented yet");
+	}
+
+	public void addObservations(double[][] source, double[][] destination, int startTime, int numTimeSteps) throws Exception {
+		throw new RuntimeException("Not implemented yet");
+	}
+
+	public void setObservations(double[][] source, double[][] destination, boolean[] sourceValid, boolean[] destValid) throws Exception {
+		throw new RuntimeException("Not implemented yet");
+	}
+
+	public void setObservations(double[][] source, double[][] destination, boolean[][] sourceValid, boolean[][] destValid) throws Exception {
+		throw new RuntimeException("Not implemented yet");
+	}
+
+	public void startAddObservations() {
+		throw new RuntimeException("Not implemented yet");
+	}
+
+	public void finaliseAddObservations() {
+		throw new RuntimeException("Not implemented yet");
+	}
+
+	public void setObservations(double[][] continuousObservations,
+			int[] discreteObservations) throws Exception {
+		if (continuousObservations.length != discreteObservations.length) {
+			throw new Exception("Time steps for observations2 " +
+					discreteObservations.length + " does not match the length " +
+					"of observations1 " + continuousObservations.length);
+		}
+		if (continuousObservations[0].length == 0) {
+			throw new Exception("Computing MI with a null set of data");
+		}
+		continuousData = continuousObservations;
+		discreteData = discreteObservations;
+		if (normalise) {
+			// Take a copy since we're going to normalise it
+			continuousData = MatrixUtils.normaliseIntoNewArray(continuousObservations);
+		}
+		// count the discrete states:
+		counts = new int[base];
+		for (int t = 0; t < discreteData.length; t++) {
+			counts[discreteData[t]]++;
+		}
+		for (int b = 0; b < counts.length; b++) {
+			if (counts[b] < k) {
+				throw new RuntimeException("This implementation assumes there are at least k items in each discrete bin");
+			}
+		}
+	}
+
+	/**
+	 * Compute the norms for each marginal time series
+	 *
+	 */
+	protected void computeNorms() {
+		int N = continuousData.length; // number of observations
+		
+		xNorms = new double[N][N];
+		for (int t = 0; t < N; t++) {
+			// Compute the norms from t to all other time points
+			for (int t2 = 0; t2 < N; t2++) {
+				if (t2 == t) {
+					xNorms[t][t2] = Double.POSITIVE_INFINITY;
+					continue;
+				}
+				// Compute norm in the continuous space
+				xNorms[t][t2] = EuclideanUtils.norm(continuousData[t], continuousData[t2]);
+			}
+		}
+	}
+	
+	/**
+	 * Compute what the average MI would look like were the second time series reordered
+	 *  as per the array of time indices in reordering.
+	 * The user should ensure that all values 0..N-1 are represented exactly once in the
+	 *  array reordering and that no other values are included here. 
+	 * 
+	 * @param reordering
+	 * @return
+	 * @throws Exception
+	 */
+	public double computeAverageLocalOfObservations(int[] reordering) throws Exception {
+		int N = continuousData.length; // number of observations
+		if (!tryKeepAllPairsNorms || (N > MAX_DATA_SIZE_FOR_KEEP_ALL_PAIRS_NORM)) {
+			// Generate a new re-ordered set of discrete data
+			int[] originalDiscreteData = discreteData;
+			discreteData = MatrixUtils.extractSelectedTimePoints(discreteData, reordering);
+			// Compute the MI
+			double newMI = computeAverageLocalOfObservationsWhileComputingDistances();
+			// restore data2
+			discreteData = originalDiscreteData;
+			return newMI;
+		}
+		
+		// Otherwise we will use the norms we've already computed, and use a "virtual"
+		//  reordered data2.
+		int[] reorderedDiscreteData = MatrixUtils.extractSelectedTimePoints(discreteData, reordering);
+
+		if (xNorms == null) {
+			computeNorms();
+		}
+
+		// Count the average number of points within eps_x and eps_y
+		double averageDiGammas = 0;
+		double avNx = 0;
+		double avNy = 0;
+		
+		for (int t = 0; t < N; t++) {
+			// Compute eps_x and eps_y for this time step:
+			//  using x norms to all neighbours
+			//  (note that norm of point t to itself will be set to infinity).
+			// Then find the k closest neighbours in the same discrete bin
+			double eps_x = MatrixUtils.kthMinSubjectTo(xNorms[t], k, reorderedDiscreteData, reorderedDiscreteData[t]);			
+			
+			// Count the number of points whose x distance is less
+			//  than or equal to eps_x
+			int n_x = 0;
+			for (int t2 = 0; t2 < N; t2++) {
+				if (xNorms[t][t2] <= eps_x) {
+					n_x++;
+				}
+			}
+			// n_y is number of points in that bin minus that point
+			int n_y = counts[reorderedDiscreteData[t]] - 1;
+			avNx += n_x;
+			avNy += n_y;
+			// And take the digamma before adding into the 
+			//  average:
+			averageDiGammas += MathsUtils.digamma(n_x) + MathsUtils.digamma(n_y);
+		}
+		averageDiGammas /= (double) N;
+		if (debug) {
+			avNx /= (double)N;
+			avNy /= (double)N;
+			System.out.println(String.format("Average n_x=%.3f, Average n_y=%.3f", avNx, avNy));
+		}
+		
+		mi = MathsUtils.digamma(k) - 1.0/(double)k - averageDiGammas + MathsUtils.digamma(N);
+		miComputed = true;
+		return mi;
+	}
+
+	public double computeAverageLocalOfObservations() throws Exception {
+		if (!tryKeepAllPairsNorms || (continuousData.length > MAX_DATA_SIZE_FOR_KEEP_ALL_PAIRS_NORM)) {
+			return computeAverageLocalOfObservationsWhileComputingDistances();
+		}
+		
+		if (xNorms == null) {
+			computeNorms();
+		}
+		int N = continuousData.length; // number of observations
+
+		// Count the average number of points within eps_x and eps_y
+		double averageDiGammas = 0;
+		double avNx = 0;
+		double avNy = 0;
+		
+		for (int t = 0; t < N; t++) {
+			// Compute eps_x and eps_y for this time step:
+			//  using x norms to all neighbours
+			//  (note that norm of point t to itself will be set to infinity).
+			// Then find the k closest neighbours in the same discrete bin
+			double eps_x = MatrixUtils.kthMinSubjectTo(xNorms[t], k, discreteData, discreteData[t]);			
+
+			// Count the number of points whose x distance is less
+			//  than or equal to eps_x (not including this point)
+			int n_x = 0;
+			for (int t2 = 0; t2 < N; t2++) {
+				if ((t2 != t) && (xNorms[t][t2] <= eps_x)) {
+					// xNorms has infinity for t == t2 anyway ...
+					n_x++;
+				}
+			}
+			// n_y is number of points in that bin, minus this point
+			int n_y = counts[discreteData[t]] - 1;
+			avNx += n_x;
+			avNy += n_y;
+			// And take the digamma before adding into the 
+			//  average:
+			averageDiGammas += MathsUtils.digamma(n_x) + MathsUtils.digamma(n_y);			
+		}
+		averageDiGammas /= (double) N;
+		if (debug) {
+			avNx /= (double)N;
+			avNy /= (double)N;
+			System.out.println(String.format("Average n_x=%.3f (-> digam=%.3f %.3f), Average n_y=%.3f (-> digam=%.3f)",
+					avNx, MathsUtils.digamma((int) avNx), MathsUtils.digamma((int) avNx - 1), avNy, MathsUtils.digamma((int) avNy)));
+			System.out.printf("Independent average num in joint box is %.3f\n", (avNx * avNy / (double) N));
+			System.out.println(String.format("digamma(k)=%.3f - 1/k=%.3f - averageDiGammas=%.3f + digamma(N)=%.3f\n",
+					MathsUtils.digamma(k), 1.0/(double)k, averageDiGammas, MathsUtils.digamma(N)));
+		}
+		
+		mi = MathsUtils.digamma(k) - 1.0/(double)k - averageDiGammas + MathsUtils.digamma(N);
+		miComputed = true;
+		return mi;
+	}
+
+	/**
+	 * This method correctly computes the average local MI, but recomputes the x and y 
+	 *  distances between all tuples in time.
+	 * Kept here for cases where we have too many observations
+	 *  to keep the norm between all pairs, and for testing purposes.
+	 * 
+	 * @return
+	 * @throws Exception
+	 */
+	public double computeAverageLocalOfObservationsWhileComputingDistances() throws Exception {
+		int N = continuousData.length; // number of observations
+
+		// Count the average number of points within eps_x and eps_y
+		double averageDiGammas = 0;
+		double avNx = 0;
+		double avNy = 0;
+		
+		for (int t = 0; t < N; t++) {
+			// Compute eps_x and eps_y for this time step:
+			//  First get x norms to all neighbours
+			//  (note that norm of point t to itself will be set to infinity).
+			double[] norms = new double[N]; 
+			for (int t2 = 0; t2 < N; t2++) {
+				if (t2 == t) {
+					norms[t2] = Double.POSITIVE_INFINITY;
+					continue;
+				}
+				// Compute norm in the continuous space
+				norms[t2] = EuclideanUtils.norm(continuousData[t], continuousData[t2]);
+			}
+
+			// Then find the k closest neighbours in the same discrete bin
+			double eps_x = MatrixUtils.kthMinSubjectTo(norms, k, discreteData, discreteData[t]);			
+
+			// Count the number of points whose x distance is less
+			//  than or equal to eps_x
+			int n_x = 0;
+			for (int t2 = 0; t2 < N; t2++) {
+				if (norms[t2] <= eps_x) {
+					n_x++;
+				}
+			}
+			// n_y is number of points in that bin, minus that point
+			int n_y = counts[discreteData[t]] - 1;
+			avNx += n_x;
+			avNy += n_y;
+			// And take the digamma before adding into the 
+			//  average:
+			averageDiGammas += MathsUtils.digamma(n_x) + MathsUtils.digamma(n_y);
+		}
+		averageDiGammas /= (double) N;
+		if (debug) {
+			avNx /= (double)N;
+			avNy /= (double)N;
+			System.out.println(String.format("Average n_x=%.3f, Average n_y=%.3f", avNx, avNy));
+		}
+		
+		mi = MathsUtils.digamma(k) - 1.0/(double)k - averageDiGammas + MathsUtils.digamma(N);
+		miComputed = true;
+		return mi;
+	}
+
+	/**
+	 * Compute the significance of the mutual information of the previously supplied observations.
+	 * We destroy the p(x,y) correlations, while retaining the p(x), p(y) marginals, to check how
+	 *  significant this mutual information actually was.
+	 *  
+	 * This is in the spirit of Chavez et. al., "Statistical assessment of nonlinear causality:
+	 *  application to epileptic EEG signals", Journal of Neuroscience Methods 124 (2003) 113-128
+	 *  which was performed for Transfer entropy.
+	 * 
+	 * @param numPermutationsToCheck
+	 * @return the proportion of MI scores from the distribution which have higher or equal MIs to ours.
+	 */
+	public synchronized MeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception {
+		// Generate the re-ordered indices:
+		RandomGenerator rg = new RandomGenerator();
+		int[][] newOrderings = rg.generateDistinctRandomPerturbations(continuousData.length, numPermutationsToCheck);
+		return computeSignificance(newOrderings);
+	}
+	
+	/**
+	 * Compute the significance of the mutual information of the previously supplied observations.
+	 * We destroy the p(x,y) correlations, while retaining the p(x), p(y) marginals, to check how
+	 *  significant this mutual information actually was.
+	 *  
+	 * This is in the spirit of Chavez et. al., "Statistical assessment of nonlinear causality:
+	 *  application to epileptic EEG signals", Journal of Neuroscience Methods 124 (2003) 113-128
+	 *  which was performed for Transfer entropy.
+	 * 
+	 * @param newOrderings the specific new orderings to use
+	 * @return the proportion of MI scores from the distribution which have higher or equal MIs to ours.
+	 */
+	public MeasurementDistribution computeSignificance(int[][] newOrderings) throws Exception {
+		
+		int numPermutationsToCheck = newOrderings.length;
+		if (!miComputed) {
+			computeAverageLocalOfObservations();
+		}
+		// Store the real observations and their MI:
+		double actualMI = mi;
+		
+		MeasurementDistribution measDistribution = new MeasurementDistribution(numPermutationsToCheck);
+		
+		int countWhereMiIsMoreSignificantThanOriginal = 0;
+		for (int i = 0; i < numPermutationsToCheck; i++) {
+			// Compute the MI under this reordering
+			double newMI = computeAverageLocalOfObservations(newOrderings[i]);
+			measDistribution.distribution[i] = newMI;
+			if (debug){
+				System.out.println("New MI was " + newMI);
+			}
+			if (newMI >= actualMI) {
+				countWhereMiIsMoreSignificantThanOriginal++;
+			}
+		}
+		
+		// Restore the actual MI and the observations
+		mi = actualMI;
+
+		// And return the significance
+		measDistribution.pValue = (double) countWhereMiIsMoreSignificantThanOriginal / (double) numPermutationsToCheck;
+		measDistribution.actualValue = mi;
+		return measDistribution;
+	}
+
+	public double[] computeLocalUsingPreviousObservations(double[][] continuousStates,
+			int[] discreteStates) throws Exception {
+		throw new Exception("Local method not implemented yet");
+	}
+
+	public void setDebug(boolean debug) {
+		this.debug = debug;
+	}
+
+	public double getLastAverage() {
+		return mi;
+	}
+	
+	public int getNumObservations() {
+		return continuousData.length;
+	}
+}
