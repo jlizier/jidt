@@ -25,7 +25,7 @@ public class MultiInformationCalculator extends InfoMeasureCalculator {
 	private boolean checkedFirst = false;
 
 	/**
-	 * Null constructor
+	 * Constructor
 	 *
 	 */
 	public MultiInformationCalculator(int base, int numVars) {

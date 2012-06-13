@@ -61,7 +61,7 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 	/**
 	 * User to create new instances through this factory method.
 	 * This allows us to return an efficient calculator for
-	 * base 2, for example, without the user needing to have 
+	 * particular situations without the user needing to have 
 	 * knowledge of this.
 	 * @param base
 	 * @param history
