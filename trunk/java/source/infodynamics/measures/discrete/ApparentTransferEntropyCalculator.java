@@ -36,10 +36,9 @@ public class ApparentTransferEntropyCalculator extends ContextOfPastMeasureCalcu
 	protected int startObservationTime = 1;
 	
 	/**
-	 * User to create new instances through this factory method.
-	 * This allows us to return an efficient calculator for
-	 * base 2, for example, without the user needing to have 
-	 * knowledge of this.
+	 * User was formerly forced to create new instances through this factory method.
+	 * Retained for backwards compatibility.
+	 * 
 	 * @param base
 	 * @param history
 	 * 

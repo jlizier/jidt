@@ -23,10 +23,9 @@ public class EntropyCalculator extends InfoMeasureCalculator
 	protected int[] stateCount = null; // Count for i[t]
 
 	/**
-	 * User to create new instances through this factory method.
-	 * This allows us to return an efficient calculator for
-	 * base 2, for example, without the user needing to have 
-	 * knowledge of this. (This is obselete though)
+	 * User was formerly forced to create new instances through this factory method.
+	 * Retained for backwards compatibility.
+	 * 
 	 * @param base
 	 * @param blocksize
 	 * 
