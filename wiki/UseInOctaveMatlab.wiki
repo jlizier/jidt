@@ -1,0 +1,32 @@
+#summary How to use the toolkit in Octave or Matlab
+#labels octave,matlab
+
+= Introduction =
+
+The java code from this toolkit can easily be used in Octave or Matlab. This page describes how.
+
+= Use in Matlab =
+
+To be filled in ...
+
+= Use in Octave =
+
+Here I will describe material I found useful to get started with Java inside Octave, then how I installed octave-java, then how to run the code.
+
+Material that I found useful regarding using Java code inside Octave:
+  * http://sourceforge.net/mailarchive/forum.php?thread_name=128f38bd0911170856i2d9dc349x28e02b3fe3333011%40mail.gmail.com&forum_name=octave-dev
+  * http://octave.1599824.n4.nabble.com/How-do-I-install-the-java-and-jhandles-packages-td1632116.html
+  * http://www.octave.org/wiki/index.php?title=Java_package
+
+Here is a list of how I got octave-java installed:
+  # Set-up steps::
+    # Set up an environment variable for JAVA_HOME - for me `/usr/lib/jvm/java-6-openjdk-amd64`
+    # Make sure that `$JAVA_HOME/jre/lib/<ARCH>/client/libjvm.so` exists - on 64-bit machines, the required file exists in `server` directory, not `client`. We can get around this by adding a symlink - I created the directory `client` and symlink from inside the `client` directory to the file in the `server` directory.
+  # Install [http://octave.sourceforge.net/java/ octave-java] from the [http://octave.sourceforge.net/ Octave-forge project] either:
+    # through your linux package manager (this didn't work properly for me on ubuntu 12.04), or
+    # via directly downloading the `.tar.gz` file from http://octave.sourceforge.net/java/ then starting octave in root mode (`sudo octave`), and inside octave run the installation, e.g.: `pkg install -verbose java-1.2.8.tar.gz`. To uninstall at a later date, you can run: `pkg uninstall java`. After running the installation in root mode, you will need to add read access for yourself to the `doc.info` file for running the `doc java` command.
+
+Once all that is set up, you can run your java code fairly simply:
+  # Tell octave-java about your jar, e.g.: `javaaddpath('../Information Dynamics/infoDynamics.jar');`
+  # Create an instance of a class, e.g.: `miCalc = javaObject("infodynamics.measures.continuous.kernel.MutualInfoCalculatorMultiVariateWithDiscreteKernel");`
+  # Use the object: `miCalc.initialise(4, 2, 0.5);`
