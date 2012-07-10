@@ -7,7 +7,13 @@ The java code from this toolkit can easily be used in Octave or Matlab. This pag
 
 = Use in Matlab =
 
-To be filled in ...
+The ability to use Java from within Matlab comes with Matlab out of the box. Full info is available at:
+  * http://www.mathworks.com.au/help/techdoc/matlab_external/f44062.html
+
+You can run your Java code inside Matlab fairly simply:
+  # Tell Matlab about your jar, e.g.: `javaaddpath('../Information Dynamics/infoDynamics.jar');`
+  # Create an instance of a class, e.g. by direct instantiation `miCalc = infodynamics.measures.continuous.kernel.MutualInfoCalculatorMultiVariateWithDiscreteKernel();` or using `miCalc = javaObjectEDT('infodynamics.measures.continuous.kernel.MutualInfoCalculatorMultiVariateWithDiscreteKernel')
+  # Use the object: `miCalc.initialise(4, 2, 0.5);`
 
 = Use in Octave =
 
@@ -26,7 +32,7 @@ Here is a list of how I got octave-java installed:
     # through your linux package manager (this didn't work properly for me on ubuntu 12.04), or
     # via directly downloading the `.tar.gz` file from http://octave.sourceforge.net/java/ then starting octave in root mode (`sudo octave`), and inside octave run the installation, e.g.: `pkg install -verbose java-1.2.8.tar.gz`. To uninstall at a later date, you can run: `pkg uninstall java`. After running the installation in root mode, you will need to add read access for yourself to the `doc.info` file for running the `doc java` command.
 
-Once all that is set up, you can run your java code fairly simply:
+Once all that is set up, you can run your java code just as simply as in Matlab:
   # Tell octave-java about your jar, e.g.: `javaaddpath('../Information Dynamics/infoDynamics.jar');`
   # Create an instance of a class, e.g.: `miCalc = javaObject("infodynamics.measures.continuous.kernel.MutualInfoCalculatorMultiVariateWithDiscreteKernel");`
   # Use the object: `miCalc.initialise(4, 2, 0.5);`
