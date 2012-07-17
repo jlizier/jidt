@@ -39,4 +39,4 @@ Once all that is set up, you can run your java code just as simply as in Matlab:
   # Create an instance of a class, e.g.: `miCalc = javaObject("infodynamics.measures.continuous.kernel.MutualInfoCalculatorMultiVariateWithDiscreteKernel");`
   # Use the object: `miCalc.initialise(4, 2, 0.5);`
 
-For static methods, you can call them on an object of the class itself, or using the javaMethod function - http://octave.sourceforge.net/java/function/javaMethod.html
+For _static_ methods, you can call them on an object of the class itself, or using the javaMethod function - http://octave.sourceforge.net/java/function/javaMethod.html
