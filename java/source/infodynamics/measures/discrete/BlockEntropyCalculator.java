@@ -4,7 +4,8 @@ import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 
 /**
- * Block entropy calculator
+ * Computes entropy over blocks of consecutive states in time.
+ * 
  * Implemented separately from the single state entropy 
  *  calculator to allow the single state calculator 
  *  to have optimal performance.
