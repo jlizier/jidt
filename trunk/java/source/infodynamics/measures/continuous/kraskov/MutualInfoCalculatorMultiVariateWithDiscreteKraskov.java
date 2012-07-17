@@ -413,9 +413,77 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		return measDistribution;
 	}
 
-	public double[] computeLocalUsingPreviousObservations(double[][] continuousStates,
-			int[] discreteStates) throws Exception {
-		throw new Exception("Local method not implemented yet");
+	/**
+	 * <p>Compute the local MI values for the given observations,
+	 *  using the previously set observations to compute the PDFs.
+	 *  That is to say, we will evaluate the required counts for each
+	 *  observation here based on the state space constructed from the
+	 *  previous observations only (not these ones). This is non-standard,
+	 *  and is not considered in the Kraskov paper. It is slightly unclear
+	 *  how to account for the fact that this observation itself is not
+	 *  in the data set used for computing the PDFs - I think though that
+	 *  it should be ignored, since the data point was not counted in its
+	 *  own counts in the standard version anyway.</p>
+	 *  
+	 *  <p>The supplied observations are intended to be new observations,
+	 *  not those fed in to compute the PDFs from. There would be
+	 *  some subtle changes necessary to accomodate computing locals on
+	 *  the same data set (e.g. not counting the current point as one
+	 *  of those within eps_x etc.). 
+	 *  </p>
+	 *  
+	 *  @param continuousStates multivariate observations of the continuous variable
+	 *    (1st index is time, 2nd is variable number)
+	 *  @param discreteStates unvariate observations of the discrete variable
+	 * 
+	 */
+	public double[] computeLocalUsingPreviousObservations(double[][] continuousNewStates,
+			int[] discreteNewStates) throws Exception {
+		
+		int N = continuousNewStates.length; // number of observations
+		double[] locals = new double[N];
+		
+		double fixedPartOfLocals = MathsUtils.digamma(k) - 1.0/(double)k +
+									MathsUtils.digamma(N);
+		double avNx = 0;
+		double avNy = 0;
+		
+		for (int t = 0; t < N; t++) {
+			// Compute eps_x and eps_y for this time step:
+			//  First get x norms to all points in the previously
+			//   given observations.
+			double[] norms = new double[continuousData.length];
+			for (int t2 = 0; t2 < continuousData.length; t2++) {
+				// Compute norm in the continuous space
+				norms[t2] = EuclideanUtils.norm(continuousNewStates[t], continuousData[t2]);
+			}
+
+			// Then find the k closest neighbours in the same discrete bin
+			double eps_x = MatrixUtils.kthMinSubjectTo(norms, k, discreteData, discreteNewStates[t]);			
+
+			// Count the number of points whose x distance is less
+			//  than or equal to eps_x
+			int n_x = 0;
+			for (int t2 = 0; t2 < continuousData.length; t2++) {
+				if (norms[t2] <= eps_x) {
+					n_x++;
+				}
+			}
+			// n_y is number of points in that discrete bin
+			int n_y = counts[discreteData[t]];
+			avNx += n_x;
+			avNy += n_y;
+			// Now compute the local value:
+			locals[N] = fixedPartOfLocals -
+					MathsUtils.digamma(n_x) - MathsUtils.digamma(n_y);
+		}
+		if (debug) {
+			avNx /= (double)N;
+			avNy /= (double)N;
+			System.out.println(String.format("Average n_x=%.3f, Average n_y=%.3f", avNx, avNy));
+		}
+		
+		return locals;
 	}
 
 	public void setDebug(boolean debug) {
