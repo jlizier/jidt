@@ -2704,4 +2704,53 @@ public class MatrixUtils {
 		}
 		return result;
 	}
+	
+	/**
+	 * Convert a double array to an int array.
+	 * This is designed specifically for use of the toolkit in Octave
+	 *  where all native arrays are considered as doubles for Java,
+	 *  and octave-java can't properly identify valid method signatures
+	 *  unless the arrays are converted to int arrays first.
+	 * 
+	 * @param array
+	 * @return
+	 */
+	public static int[] doubleToIntArray(double[] array) {
+		if (array == null) {
+			return null;
+		}
+		int[] intArray = new int[array.length];
+		for (int i = 0; i < array.length; i++) {
+			intArray[i] = (int) array[i];
+		}
+		return intArray;
+	}
+
+	/**
+	 * Convert a 2D double array to an int array.
+	 * This is designed specifically for use of the toolkit in Octave
+	 *  where all native arrays are considered as doubles for Java,
+	 *  and octave-java can't properly identify valid method signatures
+	 *  unless the arrays are converted to int arrays first.
+	 * 
+	 * @param array
+	 * @return
+	 */
+	public static int[][] doubleToIntArray(double[][] array) {
+		if (array == null) {
+			return null;
+		}
+		int[][] intArray = new int[array.length][];
+		for (int i = 0; i < array.length; i++) {
+			if (array[i] == null) {
+				intArray[i] = null;
+			} else {
+				intArray[i] = new int[array[i].length];
+				for (int j = 0; j < array[i].length; j++) {
+					intArray[i][j] = (int) array[i][j];
+				}
+			}
+		}
+		return intArray;
+	}
 }
