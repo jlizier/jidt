@@ -1,5 +1,5 @@
 #summary How to use the toolkit in Octave or Matlab
-#labels octave,matlab
+#labels octave,matlab,Phase-Deploy
 
 = Introduction =
 
@@ -12,7 +12,7 @@ The ability to use Java from within Matlab comes with Matlab out of the box. Ful
 
 You can run your Java code inside Matlab fairly simply:
   # Tell Matlab about your jar, e.g.: `javaaddpath('../Information Dynamics/infoDynamics.jar');`
-  # Create an instance of a class, e.g. by direct instantiation `miCalc = infodynamics.measures.continuous.kernel.MutualInfoCalculatorMultiVariateWithDiscreteKernel();` or using `miCalc = javaObjectEDT('infodynamics.measures.continuous.kernel.MutualInfoCalculatorMultiVariateWithDiscreteKernel')
+  # Create an instance of a class, e.g. by direct instantiation `miCalc = infodynamics.measures.continuous.kernel.MutualInfoCalculatorMultiVariateWithDiscreteKernel();` or using `miCalc = javaObjectEDT('infodynamics.measures.continuous.kernel.MutualInfoCalculatorMultiVariateWithDiscreteKernel')`
   # Use the object: `miCalc.initialise(4, 2, 0.5);`
 
 For _static_ methods, note that you can simply call it on the class itself, or on  an object of the class - see http://www.mathworks.com.au/help/techdoc/matlab_external/f46719.html#f23705
