@@ -3,10 +3,11 @@
 
 = Introduction =
 
-The java code from this toolkit can easily be used in Octave or Matlab. This page contains:
+The java code from this toolkit can easily be used in Octave or Matlab. This page contains basic information on how to get up and running with the toolkit:
   * [#Use_in_Matlab Matlab] instructions
   * [#Use_in_Octave Octave] instructions
-  * [#Longer_examples Several examples] of using the toolkit in Octave/Matlab
+
+Several longer examples of using the toolkit in Octave/Matlab can be viewed at LongerOctaveMatlabExamples.
 
 = Use in Matlab =
 
@@ -19,6 +20,8 @@ You can run your Java code inside Matlab fairly simply:
   # Use the object: `miCalc.initialise(4, 2, 0.5);`
 
 For _static_ methods, note that you can simply call it on the class itself, or on  an object of the class - see http://www.mathworks.com.au/help/techdoc/matlab_external/f46719.html#f23705
+
+See longer code examples at LongerOctaveMatlabExamples.
 
 = Use in Octave =
 
@@ -43,6 +46,8 @@ Once all that is set up, you can run your java code just as simply as in Matlab:
   # Use the object: `miCalc.initialise(4, 2, 0.5);`
 
 For _static_ methods, you can call them on an object of the class itself, or using the javaMethod function - http://octave.sourceforge.net/java/function/javaMethod.html
+
+See longer code examples at LongerOctaveMatlabExamples.
 
 = Longer examples =
 
@@ -107,7 +112,7 @@ teCalc.addObservations(twoDTimeSeries, 1);
 result2D = teCalc.computeAverageLocalOfObservations()
 }}}
 
-== Example 3 - Transfer entropy on continuous data ==
+== Example 3 - Transfer entropy on continuous data using Kraskov estimators ==
 
 Simple transfer entropy (TE) calculation on continuous-valued data using the Kraskov-estimator TE calculator.
 
@@ -132,7 +137,7 @@ result = teCalc.computeAverageLocalOfObservations();
 %  of what we expect, but not exactly equal to it; in fact, there will
 %  be a large variance around it.
 printf("TE result %.4f nats; expected to be close to %.4f nats for these correlated Gaussians\n", \
-result, log(1/(1-covariance^2)));
+    result, log(1/(1-covariance^2)));
 % Perform calculation with uncorrelated source:
 teCalc.initialise(); % Initialise leaving the parameters the same
 teCalc.setObservations(sourceArray2, destArray);
