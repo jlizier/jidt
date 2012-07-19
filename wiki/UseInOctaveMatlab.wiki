@@ -3,7 +3,10 @@
 
 = Introduction =
 
-The java code from this toolkit can easily be used in Octave or Matlab. This page describes how.
+The java code from this toolkit can easily be used in Octave or Matlab. This page contains:
+  * [#Use_in_Matlab Matlab] instructions
+  * [#Use_in_Octave Octave] instructions
+  * [#Longer_examples Several examples] of using the toolkit in Octave/Matlab
 
 = Use in Matlab =
 
@@ -41,7 +44,7 @@ Once all that is set up, you can run your java code just as simply as in Matlab:
 
 For _static_ methods, you can call them on an object of the class itself, or using the javaMethod function - http://octave.sourceforge.net/java/function/javaMethod.html
 
-= Longer example =
+= Longer examples =
 
 Here is a longer example. (Note: it's designed for Octave, but to run the following in Matlab, convert the `javaObject()` calls to `javaObjectEDT()` and it *should* work, though I haven't tested it.)
 
