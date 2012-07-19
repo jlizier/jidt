@@ -7,8 +7,8 @@ These examples are designed for Octave, but to run the following in Matlab, conv
 
 This page contains the following code examples:
   * [#Example_1_-_Transfer_entropy_on_binary_data 1 - Transfer entropy on binary data]
-  * [Example_2_-_Transfer_entropy_on_multidimensional_binary_data 1 - Transfer entropy on multidimensional binary data]
-  * [Example_3_-_Transfer_entropy_on_continuous_data_using_Kraskov_estimators 3 - Transfer entropy on continuous data using Kraskov estimators]
+  * [#Example_2_-_Transfer_entropy_on_multidimensional_binary_data 1 - Transfer entropy on multidimensional binary data]
+  * [#Example_3_-_Transfer_entropy_on_continuous_data_using_Kraskov_estimators 3 - Transfer entropy on continuous data using Kraskov estimators]
 
 = Example 1 - Transfer entropy on binary data =
 
