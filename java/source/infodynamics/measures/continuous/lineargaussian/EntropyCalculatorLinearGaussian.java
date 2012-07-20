@@ -19,6 +19,8 @@ import infodynamics.utils.MatrixUtils;
  * 	</ol>
  * </p>
  * 
+ * @see Differential entropy for Gaussian random variables defined at 
+ *      {@link http://mathworld.wolfram.com/DifferentialEntropy.html}
  * @author Joseph Lizier joseph.lizier_at_gmail.com
  *
  */
@@ -75,7 +77,7 @@ public class EntropyCalculatorLinearGaussian implements EntropyCalculator {
 	 * @return the entropy of the previously provided observations
 	 */
 	public double computeAverageLocalOfObservations() {
-		return Math.log(2.0*Math.PI*Math.E*variance);
+		return 0.5 * Math.log(2.0*Math.PI*Math.E*variance);
 	}
 
 	public void setDebug(boolean debug) {
