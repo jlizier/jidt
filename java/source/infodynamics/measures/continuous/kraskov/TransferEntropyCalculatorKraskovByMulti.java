@@ -51,7 +51,7 @@ import java.util.Iterator;
  * <ol>
  * 		<li>Construct</li>
  * 		<li>SetProperty() for each property</li>
- * 		<li>intialise()</li>
+ * 		<li>initialise()</li>
  * 		<li>setObservations(), or [startAddObservations(), addObservations()*, finaliseAddObservations()]
  *   Note: If not using setObservations(), the results from computeLocal or getSignificance
  *    are not likely to be particularly sensible.</li> 
@@ -99,6 +99,9 @@ public class TransferEntropyCalculatorKraskovByMulti
 		createKraskovMiCalculators();
 	}
 
+	/**
+	 * @param k history length (Schreiber k parameter, not Kraskov k parameter)
+	 */
 	public void initialise(int k) throws Exception {
 		super.initialise(k); // calls initialise();
 	}

@@ -61,7 +61,7 @@ public class TransferEntropyCalculatorKernel
 	public static final String FORCE_KERNEL_COMPARE_TO_ALL = "FORCE_KERNEL_COMPARE_TO_ALL";
 	
 	/**
-	 * Default value for epsilon
+	 * Default value for epsilon (kernel width)
 	 */
 	public static final double DEFAULT_EPSILON = 0.25;
 	/**

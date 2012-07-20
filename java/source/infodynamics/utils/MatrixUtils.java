@@ -2544,8 +2544,8 @@ public class MatrixUtils {
 	
 	/**
 	 * <p>Private function to compute the determinant recursively.
-	 * determinant() calls this after checking the matrix dimensions. <br/>
-	 * See - http://mathworld.wolfram.com/Determinant.html
+	 * {@link determinant()} calls this after checking the matrix dimensions. <br/>
+	 * @see {@link http://mathworld.wolfram.com/Determinant.html}
 	 * </p>
 	 * 
 	 * @param matrix
