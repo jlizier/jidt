@@ -17,6 +17,9 @@ import infodynamics.utils.RandomGenerator;
  * 2. Standalone computation from a single set of observations:
  *   Call: computeLocal() or computeAverageLocal()
  * 
+ * @see For transfer entropy: Schreiber, PRL 85 (2) pp.461-464, 2000; http://dx.doi.org/10.1103/PhysRevLett.85.461
+ * @see For local transfer entropy: Lizier et al, PRE 77, 026110, 2008; http://dx.doi.org/10.1103/PhysRevE.77.026110
+ * 
  * @author Joseph Lizier
  * joseph.lizier at gmail.com
  * http://lizier.me/joseph/
@@ -58,6 +61,14 @@ public class ApparentTransferEntropyCalculator extends ContextOfPastMeasureCalcu
 		*/
 	}
 	
+	/**
+	 * Create a new TE calculator for the given base and history length.
+	 * 
+	 * @param base number of quantisation levels for each variable.
+	 *        E.g. binary variables are in base-2.
+	 * @param history history length of the destination to condition on -
+	 *        this is k in Schreiber's notation.
+	 */
 	public ApparentTransferEntropyCalculator(int base, int history) {
 
 		super(base, history);
