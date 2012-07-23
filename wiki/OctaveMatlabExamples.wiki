@@ -63,6 +63,8 @@ end
 %  an int array here:
 mUtils = javaObject('infodynamics.utils.MatrixUtils');
 twoDTimeSeries = mUtils.doubleToIntArray(twoDTimeSeries);
+% Create a TE calculator and run it:
+teCalc=javaObject('infodynamics.measures.discrete.ApparentTransferEntropyCalculator', 2, 1);
 teCalc.initialise();
 teCalc.addObservations(twoDTimeSeries, 1);
 % The result should be close to 1 bit here, since we are executing copy operations 
