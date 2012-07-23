@@ -14,7 +14,7 @@ public interface ChannelCalculatorMultiVariate extends ChannelCalculatorCommon {
 	 * Initialise the calculator
 	 *
 	 */
-	public void initialise(int destDimensions, int sourceDimensions) throws Exception;
+	public void initialise(int sourceDimensions, int destDimensions) throws Exception;
 
 	public void setObservations(double[][] source, double[][] destination) throws Exception;
 

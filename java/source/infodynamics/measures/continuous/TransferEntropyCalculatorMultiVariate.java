@@ -11,6 +11,6 @@ package infodynamics.measures.continuous;
  */
 public interface TransferEntropyCalculatorMultiVariate extends ChannelCalculatorMultiVariate {
 
-	public void initialise(int k, int destDimensions, int sourceDimensions) throws Exception;
+	public void initialise(int k, int sourceDimensions, int destDimensions) throws Exception;
 	
 }
