@@ -68,15 +68,15 @@ public class TransferEntropyCalculatorMultiVariateSingleObservationsKernel
 		initialise(1, 1); // assume 1 dimension in source and dest
 	}
 
-	public void initialise(int destDimensions, int sourceDimensions) throws Exception {
+	public void initialise(int sourceDimensions, int destDimensions) throws Exception {
 		this.destDimensions = destDimensions;
 		this.sourceDimensions = sourceDimensions;
 		this.destPastDimensions = destDimensions; // assume same
 		super.initialise(1); // Feeds k=1 to super and calls initialise();
 	}
 
-	public void initialiseAllDimensions(int destDimensions, int destPastDimensions,
-			int sourceDimensions) throws Exception {
+	public void initialiseAllDimensions(int sourceDimensions,
+			int destDimensions, int destPastDimensions) throws Exception {
 		this.destDimensions = destDimensions;
 		this.sourceDimensions = sourceDimensions;
 		this.destPastDimensions = destPastDimensions;

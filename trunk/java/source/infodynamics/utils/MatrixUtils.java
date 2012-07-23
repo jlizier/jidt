@@ -2178,24 +2178,6 @@ public class MatrixUtils {
 	}
 	
 	/**
-	 * <p>Returns the covariance between the two columns of data.</p>
-	 * <p>See - <a href="http://mathworld.wolfram.com/Covariance.html">Mathworld</a>
-	 * </p>
-	 * 
-	 * @param data
-	 * @return the covariance
-	 */
-	public static double covariance(double[][] data) {
-		double c = 0;
-		double mean0 = mean(data, 0);
-		double mean1 = mean(data, 1);
-		for (int t = 0; t < data.length; t++) {
-			c += (data[t][0] - mean0)*(data[t][1]-mean1);
-		}
-		return c / (double) data.length;
-	}
-	
-	/**
 	 * <p>Returns the covariance between the two arrays of data.</p>
 	 * <p>See - <a href="http://mathworld.wolfram.com/Covariance.html">Mathworld</a>
 	 * </p>
@@ -2215,6 +2197,87 @@ public class MatrixUtils {
 	}
 
 	/**
+	 * <p>Returns the covariance between the first two columns of data.</p>
+	 * <p>See - <a href="http://mathworld.wolfram.com/Covariance.html">Mathworld</a>
+	 * </p>
+	 * 
+	 * @param data
+	 * @return the covariance
+	 */
+	public static double covarianceFirstTwoColumns(double[][] data) {
+		return covarianceTwoColumns(data, 0, 1);
+	}
+	
+	/**
+	 * <p>Returns the covariance between two columns of data in
+	 *  a multivariate array.</p>
+	 * <p>See - <a href="http://mathworld.wolfram.com/Covariance.html">Mathworld</a>
+	 * </p>
+	 * 
+	 * @param data multivariate array of data; first index is time, second is 
+	 *    variable number
+	 * @param col1 variable number 1 to compute the covariance to
+	 * @param col2 variable number 2 to compute the covariance to
+	 * @return the covariance
+	 */
+	public static double covarianceTwoColumns(double[][] data, int col1, int col2) {
+		double mean1 = mean(data, col1);
+		double mean2 = mean(data, col2);
+		return covarianceTwoColumns(data, col1, col2, mean1, mean2);
+	}
+	
+	/**
+	 * <p>Returns the covariance between two columns of data in
+	 *  a multivariate array.</p>
+	 * <p>See - <a href="http://mathworld.wolfram.com/Covariance.html">Mathworld</a>
+	 * </p>
+	 * 
+	 * @param data multivariate array of data; first index is time, second is 
+	 *    variable number
+	 * @param col1 variable number 1 to compute the covariance to
+	 * @param col2 variable number 2 to compute the covariance to
+	 * @param mean1 mean of variable 1
+	 * @param mean2 mean of variable 2
+	 * @return the covariance
+	 */
+	public static double covarianceTwoColumns(double[][] data, int col1, int col2,
+			double mean1, double mean2) {
+		double c = 0;
+		for (int t = 0; t < data.length; t++) {
+			c += (data[t][col1] - mean1)*(data[t][col2]-mean2);
+		}
+		return c / (double) data.length;
+	}
+	
+	/**
+	 * Compute the covariance matrix between all column pairs (variables) in the
+	 *  multivariate data set
+	 * 
+	 * @param data multivariate array of data; first index is time, second is 
+	 *    variable number
+	 * @return covariance matrix
+	 */
+	public static double[][] covarianceMatrix(double[][] data) {
+		int numVariables = data[0].length;
+		double[][] covariances = new double[numVariables][numVariables];
+		// Compute means of each variable once up front to save time
+		double[] means = new double[numVariables];
+		for (int r = 0; r < numVariables; r++) {
+			means[r] = mean(data, r);
+		}
+		for (int r = 0; r < numVariables; r++) {
+			for (int c = r; c < numVariables; c++) {
+				// Compute the covariance between variable r and c:
+				covariances[r][c] = covarianceTwoColumns(data, r, c,
+						means[r], means[c]);
+				// And of course this is symmetric between c and r:
+				covariances[c][r] = covariances[r][c];
+			}
+		}
+		return null;
+	}
+	
+	/**
 	 * <p>Returns the correlation between the two arrays of data.</p>
 	 * <p>The arrays are asssumed to have the same lengths</p>
 	 * <p>See - <a href="http://en.wikipedia.org/wiki/Correlation">Wikipedia</a>
@@ -2222,7 +2285,7 @@ public class MatrixUtils {
 	 * 
 	 * @param x
 	 * @param y
-	 * @return the covariance
+	 * @return the correlation
 	 */
 	public static double correlation(double[] x, double[] y) {
 		return correlation(x, y, x.length);
@@ -2237,7 +2300,7 @@ public class MatrixUtils {
 	 * @param y
 	 * @param dataLength - number of terms in each vector to consider (we look at the first dataLength terms).
 	 * 	Precondition: dataLength is less than min(x.length, y.length)
-	 * @return the covariance
+	 * @return the correlation
 	 */
 	public static double correlation(double[] x, double[] y, int dataLength) {
 		// return covariance(x, y) / stdDev(x) / stdDev(y);

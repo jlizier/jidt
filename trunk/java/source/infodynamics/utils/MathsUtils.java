@@ -9,8 +9,6 @@ public class MathsUtils {
 	private static double[] storedDigammas;
 	
 	public MathsUtils() {
-		super();
-		// TODO Auto-generated constructor stub
 	}
 
 	/**

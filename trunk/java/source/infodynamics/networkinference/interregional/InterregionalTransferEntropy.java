@@ -38,7 +38,7 @@ public class InterregionalTransferEntropy extends InterregionalChannelMeasure {
 	protected void initialiseCalculator() throws Exception {
 		TransferEntropyCalculatorMultiVariate teChannelCalc =
 			(TransferEntropyCalculatorMultiVariate) channelCalc;
-		teChannelCalc.initialise(k, jointVars2, jointVars1);
+		teChannelCalc.initialise(k, jointVars1, jointVars2);
 	}
 
 	public void setK(int k) {

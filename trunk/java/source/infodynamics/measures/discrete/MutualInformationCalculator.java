@@ -14,7 +14,7 @@ import infodynamics.utils.RandomGenerator;
  * 2. Standalone:
  *   Call: localMutualInformation()
  * 
- * @author Joseph Lizier, jlizier at it.usyd.edu.au
+ * @author Joseph Lizier, joseph.lizier at gmail.com
  *
  */
 public class MutualInformationCalculator extends InfoMeasureCalculator 

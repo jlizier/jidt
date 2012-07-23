@@ -43,7 +43,7 @@ public class EntropyCalculatorLinearGaussian implements EntropyCalculator {
 	/**
 	 * Initialise the calculator ready for reuse
 	 */
-	public void initialise() throws Exception {
+	public void initialise() {
 		// Nothing to do
 	}
 
@@ -68,13 +68,15 @@ public class EntropyCalculatorLinearGaussian implements EntropyCalculator {
 	}
 	
 	/**
-	 * The entropy for a Gaussian-distribution random variable with
-	 *  variance \sigma is \log_e{2*pi*e*\sigma}.
-	 * Here we compute the entropy assuming that the recorded estimation of the
-	 *  variance is correct (i.e. we will not make a bias correction for limited
-	 *  observations here).
+	 * <p>The entropy for a Gaussian-distribution random variable with
+	 *  variance \sigma is 0.5*\log_e{2*pi*e*\sigma}.</p>
 	 * 
-	 * @return the entropy of the previously provided observations
+	 * <p>Here we compute the entropy assuming that the recorded estimation of the
+	 *  variance is correct (i.e. we will not make a bias correction for limited
+	 *  observations here).</p>
+	 * 
+	 * @return the entropy of the previously provided observations or from the supplied
+	 *   covariance matrix.
 	 */
 	public double computeAverageLocalOfObservations() {
 		return 0.5 * Math.log(2.0*Math.PI*Math.E*variance);

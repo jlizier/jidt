@@ -40,7 +40,7 @@ public class TransferEntropyCalculatorMultiVariateKraskovByMulti
 		initialise(k, 1, 1);
 	}
 
-	public void initialise(int k, int destDimensions, int sourceDimensions) throws Exception {
+	public void initialise(int k, int sourceDimensions, int destDimensions) throws Exception {
 		super.initialise(k);
 		initialise(sourceDimensions, destDimensions);
 	}
