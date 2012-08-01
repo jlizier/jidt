@@ -4,7 +4,7 @@
 package infodynamics.networkinference.interregional;
 
 import infodynamics.utils.MatrixUtils;
-import infodynamics.utils.MeasurementDistribution;
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 
 /**
  * Extends MeasurementDistribution for computations over 
@@ -17,7 +17,7 @@ import infodynamics.utils.MeasurementDistribution;
  * @author Joseph Lizier
  *
  */
-public class MeasurementDistributionPermutationsOverSubsets extends MeasurementDistribution {
+public class MeasurementDistributionPermutationsOverSubsets extends EmpiricalMeasurementDistribution {
 
 	// The true measurements for each subset s
 	double[] actualValues;

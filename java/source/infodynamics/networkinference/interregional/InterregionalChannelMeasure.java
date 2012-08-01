@@ -5,7 +5,7 @@ import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.measures.continuous.TransferEntropyCalculatorMultiVariate;
 import infodynamics.utils.ArrayFileReader;
 import infodynamics.utils.MatrixUtils;
-import infodynamics.utils.MeasurementDistribution;
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.ParsedProperties;
 import infodynamics.utils.RandomGenerator;
 
@@ -455,7 +455,7 @@ public abstract class InterregionalChannelMeasure {
 			// Compute the measure for set s
 			measureForEachSet[s] = channelCalc.computeAverageLocalOfObservations();
 
-			MeasurementDistribution measDist;
+			EmpiricalMeasurementDistribution measDist;
 			if (allValid || !validityForIndividualElements) {
 				// Ask the TE calculator to work out the significance for us
 				measDist = channelCalc.computeSignificance(reorderings);
@@ -463,7 +463,7 @@ public abstract class InterregionalChannelMeasure {
 				// We need to explicitly reorder including the individual validities.
 				// Can't ask the calculator to do it, as it will only use the source-dest
 				//  pairings it originally used, which won't match across all subsets
-				measDist = new MeasurementDistribution(reorderingsForSignificance);
+				measDist = new EmpiricalMeasurementDistribution(reorderingsForSignificance);
 				measDist.actualValue = measureForEachSet[s];
 				int countWhereReorderedIsMoreSignificantThanOriginal = 0;
 				for (int p = 0; p < reorderingsForSignificance; p++) {

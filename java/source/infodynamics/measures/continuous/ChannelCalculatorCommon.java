@@ -1,6 +1,6 @@
 package infodynamics.measures.continuous;
 
-import infodynamics.utils.MeasurementDistribution;
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 
 /**
  * An abstract  interface for calculators computing measures from a source to a destination.
@@ -51,7 +51,7 @@ public abstract interface ChannelCalculatorCommon {
 	 * @param numPermutationsToCheck number of new orderings of the source values to compare against
 	 * @return
 	 */
-	public MeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception;
+	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception;
 	
 	/**
 	 * <p>As per {@link computeSignificance(int) computeSignificance()} but supplies
@@ -64,7 +64,7 @@ public abstract interface ChannelCalculatorCommon {
 	 * @return
 	 * @throws Exception
 	 */
-	public MeasurementDistribution computeSignificance(
+	public EmpiricalMeasurementDistribution computeSignificance(
 			int[][] newOrderings) throws Exception;
 
 	public void setDebug(boolean debug);

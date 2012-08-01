@@ -1,6 +1,6 @@
 package infodynamics.measures.discrete;
 
-import infodynamics.utils.MeasurementDistribution;
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 
 /**
  * An interface for calculators computing measures from a source to a destination.
@@ -47,5 +47,5 @@ public interface ChannelCalculator {
 	 * @param numPermutationsToCheck
 	 * @return
 	 */
-	public MeasurementDistribution computeSignificance(int numPermutationsToCheck);
+	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck);
 }

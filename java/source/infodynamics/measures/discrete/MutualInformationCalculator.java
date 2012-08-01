@@ -1,7 +1,7 @@
 package infodynamics.measures.discrete;
 
 import infodynamics.utils.MatrixUtils;
-import infodynamics.utils.MeasurementDistribution;
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.RandomGenerator;
 
 
@@ -185,7 +185,7 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 	 * @param numPermutationsToCheck number of new orderings of the source values to compare against
 	 * @return
 	 */
-	public MeasurementDistribution computeSignificance(int numPermutationsToCheck) {
+	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) {
 		RandomGenerator rg = new RandomGenerator();
 		int[][] newOrderings = rg.generateDistinctRandomPerturbations(observations, numPermutationsToCheck);
 		return computeSignificance(newOrderings);
@@ -197,7 +197,7 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 	 * @param newOrderings the reorderings to use
 	 * @return
 	 */
-	public MeasurementDistribution computeSignificance(int[][] newOrderings) {
+	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings) {
 		double actualMI = computeAverageLocalOfObservations();
 		
 		int numPermutationsToCheck = newOrderings.length;
@@ -222,7 +222,7 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 		mi2.iCount = iCount;
 		mi2.jCount = jCount;
 		int countWhereMIIsMoreSignificantThanOriginal = 0;
-		MeasurementDistribution measDistribution = new MeasurementDistribution(numPermutationsToCheck);
+		EmpiricalMeasurementDistribution measDistribution = new EmpiricalMeasurementDistribution(numPermutationsToCheck);
 		for (int p = 0; p < numPermutationsToCheck; p++) {
 			// Generate a new re-ordered data set for the i variable
 			int[] newDataI = MatrixUtils.extractSelectedTimePoints(iValues, newOrderings[p]);

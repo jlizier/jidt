@@ -1,6 +1,6 @@
 package infodynamics.measures.continuous;
 
-import infodynamics.utils.MeasurementDistribution;
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 
 /**
  * A conditional mutual information calculator between a joint set of continuous variables, 
@@ -31,9 +31,9 @@ public interface ConditionalMutualInfoCalculatorMultiVariateWithDiscrete {
 	public double[] computeLocalUsingPreviousObservations(double[][] contStates,
 			int[] discreteStates, int[] conditionedStates) throws Exception;
 
-	public MeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception;
+	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception;
 
-	public MeasurementDistribution computeSignificance(int[][] newOrderings) throws Exception;
+	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings) throws Exception;
 
 	public void setDebug(boolean debug);
 
