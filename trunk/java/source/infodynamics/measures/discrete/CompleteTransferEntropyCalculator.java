@@ -2,7 +2,7 @@ package infodynamics.measures.discrete;
 
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
-import infodynamics.utils.MeasurementDistribution;
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.RandomGenerator;
 
 
@@ -342,7 +342,7 @@ public class CompleteTransferEntropyCalculator extends InfoMeasureCalculator {
 	 * @param numPermutationsToCheck number of new orderings of the source values to compare against
 	 * @return
 	 */
-	public MeasurementDistribution computeSignificance(int numPermutationsToCheck) {
+	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) {
 		double actualTE = computeAverageLocalOfObservations();
 		
 		// Reconstruct the source values (not necessarily in order)
@@ -400,7 +400,7 @@ public class CompleteTransferEntropyCalculator extends InfoMeasureCalculator {
 		cte.pastOthersCount = pastOthersCount;
 		cte.destPastOthersCount = destPastOthersCount;
 		int countWhereTeIsMoreSignificantThanOriginal = 0;
-		MeasurementDistribution measDistribution = new MeasurementDistribution(numPermutationsToCheck);
+		EmpiricalMeasurementDistribution measDistribution = new EmpiricalMeasurementDistribution(numPermutationsToCheck);
 		for (int p = 0; p < numPermutationsToCheck; p++) {
 			// Generate a new re-ordered data set for the source
 			int[] newSourceData = MatrixUtils.extractSelectedTimePoints(sourceValues, newOrderings[p]);

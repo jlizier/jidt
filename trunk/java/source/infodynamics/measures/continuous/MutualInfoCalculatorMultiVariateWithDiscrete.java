@@ -1,6 +1,6 @@
 package infodynamics.measures.continuous;
 
-import infodynamics.utils.MeasurementDistribution;
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 
 public interface MutualInfoCalculatorMultiVariateWithDiscrete {
 
@@ -15,9 +15,9 @@ public interface MutualInfoCalculatorMultiVariateWithDiscrete {
 
 	public double[] computeLocalUsingPreviousObservations(double[][] contStates, int[] discreteStates) throws Exception;
 
-	public MeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception;
+	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception;
 
-	public MeasurementDistribution computeSignificance(int[][] newOrderings) throws Exception;
+	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings) throws Exception;
 
 	public void setDebug(boolean debug);
 

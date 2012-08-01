@@ -6,7 +6,7 @@ import infodynamics.measures.discrete.ApparentTransferEntropyCalculator;
 import infodynamics.utils.FirstIndexComparatorDouble;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
-import infodynamics.utils.MeasurementDistribution;
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.RandomGenerator;
 
 import java.util.Iterator;
@@ -300,7 +300,7 @@ public class TransferEntropyCalculatorSymbolic
 		return locals;
 	}
 
-	public MeasurementDistribution computeSignificance(
+	public EmpiricalMeasurementDistribution computeSignificance(
 			int numPermutationsToCheck) throws Exception {
 		return teCalc.computeSignificance(numPermutationsToCheck);
 	}
@@ -310,7 +310,7 @@ public class TransferEntropyCalculatorSymbolic
 	 *  which is not strictly what this method is meant to do.
 	 * 
 	 */
-	public MeasurementDistribution computeSignificance(int[][] newOrderings)
+	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings)
 			throws Exception {
 		System.out.println("TESymbolic.computeSignificance(): Not using the new orderings supplied");
 		return teCalc.computeSignificance(newOrderings.length);

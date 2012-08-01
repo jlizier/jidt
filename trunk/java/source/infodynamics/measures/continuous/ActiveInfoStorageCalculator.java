@@ -1,6 +1,6 @@
 package infodynamics.measures.continuous;
 
-import infodynamics.utils.MeasurementDistribution;
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 
 public interface ActiveInfoStorageCalculator {
 
@@ -77,9 +77,9 @@ public interface ActiveInfoStorageCalculator {
 
 	public double[] computeLocalOfPreviousObservations() throws Exception;
 
-	public MeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception;
+	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception;
 	
-	public MeasurementDistribution computeSignificance(
+	public EmpiricalMeasurementDistribution computeSignificance(
 			int[][] newOrderings) throws Exception;
 
 	public void setDebug(boolean debug);

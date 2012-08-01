@@ -5,7 +5,7 @@ import infodynamics.measures.discrete.MutualInformationCalculator;
 import infodynamics.utils.FirstIndexComparatorDouble;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
-import infodynamics.utils.MeasurementDistribution;
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.RandomGenerator;
 
 public class MutualInfoCalculatorMultiVariateWithDiscreteSymbolic implements
@@ -139,12 +139,12 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteSymbolic implements
 		throw new Exception("Local method not implemented yet");
 	}
 
-	public MeasurementDistribution computeSignificance(
+	public EmpiricalMeasurementDistribution computeSignificance(
 			int numPermutationsToCheck) throws Exception {
 		return miCalc.computeSignificance(numPermutationsToCheck);
 	}
 
-	public MeasurementDistribution computeSignificance(int[][] newOrderings)
+	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings)
 			throws Exception {
 		return miCalc.computeSignificance(newOrderings);
 	}

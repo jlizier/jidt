@@ -2,7 +2,7 @@ package infodynamics.measures.continuous.kernel;
 
 import infodynamics.measures.continuous.ActiveInfoStorageCalculator;
 import infodynamics.utils.MatrixUtils;
-import infodynamics.utils.MeasurementDistribution;
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 
 /**
  * 
@@ -207,7 +207,7 @@ public class ActiveInfoStorageCalculatorKernel
 	 * @param numPermutationsToCheck number of new orderings of the source values to compare against
 	 * @return
 	 */
-	public MeasurementDistribution computeSignificance(
+	public EmpiricalMeasurementDistribution computeSignificance(
 			int numPermutationsToCheck) throws Exception {
 		return miKernel.computeSignificance(numPermutationsToCheck);
 	}
@@ -222,7 +222,7 @@ public class ActiveInfoStorageCalculatorKernel
 	 * @return
 	 * @throws Exception
 	 */
-	public MeasurementDistribution computeSignificance(
+	public EmpiricalMeasurementDistribution computeSignificance(
 			int[][] newOrderings) throws Exception {
 		
 		return miKernel.computeSignificance(newOrderings);

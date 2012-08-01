@@ -4,7 +4,7 @@ import infodynamics.measures.continuous.TransferEntropyCalculator;
 import infodynamics.measures.continuous.TransferEntropyCommon;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
-import infodynamics.utils.MeasurementDistribution;
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 
 import java.util.Iterator;
 
@@ -420,12 +420,12 @@ public class TransferEntropyCalculatorKernelPlain
 		return true;
 	}
 
-	public MeasurementDistribution computeSignificance(
+	public EmpiricalMeasurementDistribution computeSignificance(
 			int numPermutationsToCheck) throws Exception {
 		throw new RuntimeException("Not implemented in this calculator");
 	}
 	
-	public MeasurementDistribution computeSignificance(
+	public EmpiricalMeasurementDistribution computeSignificance(
 			int[][] newOrderings) throws Exception {
 		throw new RuntimeException("Not implemented in this calculator");
 	}

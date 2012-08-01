@@ -5,7 +5,7 @@ import infodynamics.measures.continuous.TransferEntropyCommon;
 import infodynamics.measures.continuous.kernel.KernelEstimatorMultiVariate;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
-import infodynamics.utils.MeasurementDistribution;
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.RandomGenerator;
 
 import java.util.Iterator;
@@ -531,7 +531,7 @@ public class TransferEntropyCalculatorKernelSeparate
 	 * @param numPermutationsToCheck number of new orderings of the source values to compare against
 	 * @return
 	 */
-	public MeasurementDistribution computeSignificance(
+	public EmpiricalMeasurementDistribution computeSignificance(
 			int numPermutationsToCheck) throws Exception {
 		// Generate the re-ordered indices:
 		RandomGenerator rg = new RandomGenerator();
@@ -549,7 +549,7 @@ public class TransferEntropyCalculatorKernelSeparate
 	 * @return
 	 * @throws Exception
 	 */
-	public MeasurementDistribution computeSignificance(
+	public EmpiricalMeasurementDistribution computeSignificance(
 			int[][] newOrderings) throws Exception {
 		
 		int numPermutationsToCheck = newOrderings.length;
@@ -560,7 +560,7 @@ public class TransferEntropyCalculatorKernelSeparate
 		double[] originalSourceValuesInJoint = MatrixUtils.selectColumn(destPastSourceVectors, k);
 		
 		int countWhereTeIsMoreSignificantThanOriginal = 0;
-		MeasurementDistribution measDistribution = new MeasurementDistribution(numPermutationsToCheck);
+		EmpiricalMeasurementDistribution measDistribution = new EmpiricalMeasurementDistribution(numPermutationsToCheck);
 		for (int p = 0; p < numPermutationsToCheck; p++) {
 			// Check that the length of the reorderings is OK
 			if (newOrderings[p].length != totalObservations) {

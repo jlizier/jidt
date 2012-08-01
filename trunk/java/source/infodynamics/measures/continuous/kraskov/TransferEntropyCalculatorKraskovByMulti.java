@@ -4,7 +4,7 @@ import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.measures.continuous.TransferEntropyCalculator;
 import infodynamics.measures.continuous.TransferEntropyCommon;
 import infodynamics.utils.MatrixUtils;
-import infodynamics.utils.MeasurementDistribution;
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.RandomGenerator;
 
 import java.util.Hashtable;
@@ -351,7 +351,7 @@ public class TransferEntropyCalculatorKraskovByMulti
 	 * @param numPermutationsToCheck number of new orderings of the source values to compare against
 	 * @return
 	 */
-	public MeasurementDistribution computeSignificance(
+	public EmpiricalMeasurementDistribution computeSignificance(
 			int numPermutationsToCheck) throws Exception {
 		// Generate the re-ordered indices:
 		RandomGenerator rg = new RandomGenerator();
@@ -373,7 +373,7 @@ public class TransferEntropyCalculatorKraskovByMulti
 	 * @return
 	 * @throws Exception
 	 */
-	public MeasurementDistribution computeSignificance(
+	public EmpiricalMeasurementDistribution computeSignificance(
 			int[][] newOrderings) throws Exception {
 		
 		int numPermutationsToCheck = newOrderings.length;
@@ -381,7 +381,7 @@ public class TransferEntropyCalculatorKraskovByMulti
 		double actualTE = computeAverageLocalOfObservations();
 		
 		int countWhereTeIsMoreSignificantThanOriginal = 0;
-		MeasurementDistribution measDistribution = new MeasurementDistribution(numPermutationsToCheck);
+		EmpiricalMeasurementDistribution measDistribution = new EmpiricalMeasurementDistribution(numPermutationsToCheck);
 		for (int p = 0; p < numPermutationsToCheck; p++) {
 			// Generate a new re-ordered data set for the source in the destPastSourceVectors 
 			//  and destNextPastSourceVectors vectors
@@ -423,7 +423,7 @@ public class TransferEntropyCalculatorKraskovByMulti
 	 * @return
 	 * @throws Exception
 	 */
-	public MeasurementDistribution computeSignificanceExplicitlyReordering(
+	public EmpiricalMeasurementDistribution computeSignificanceExplicitlyReordering(
 			int[][] newOrderings) throws Exception {
 		
 		int numPermutationsToCheck = newOrderings.length;
@@ -437,7 +437,7 @@ public class TransferEntropyCalculatorKraskovByMulti
 		}
 		
 		int countWhereTeIsMoreSignificantThanOriginal = 0;
-		MeasurementDistribution measDistribution = new MeasurementDistribution(numPermutationsToCheck);
+		EmpiricalMeasurementDistribution measDistribution = new EmpiricalMeasurementDistribution(numPermutationsToCheck);
 		for (int p = 0; p < numPermutationsToCheck; p++) {
 			// Generate a new re-ordered data set for the source in the destPastSourceVectors 
 			//  and destNextPastSourceVectors vectors

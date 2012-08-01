@@ -3,7 +3,7 @@ package infodynamics.measures.continuous.kraskov;
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.utils.EuclideanUtils;
 import infodynamics.utils.MatrixUtils;
-import infodynamics.utils.MeasurementDistribution;
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.RandomGenerator;
 
 /**
@@ -175,7 +175,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov implements
 	 * @param numPermutationsToCheck
 	 * @return the proportion of MI scores from the distribution which have higher or equal MIs to ours.
 	 */
-	public synchronized MeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception {
+	public synchronized EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception {
 		// Generate the re-ordered indices:
 		RandomGenerator rg = new RandomGenerator();
 		int[][] newOrderings = rg.generateDistinctRandomPerturbations(data1.length, numPermutationsToCheck);
@@ -194,7 +194,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov implements
 	 * @param newOrderings the specific new orderings to use
 	 * @return the proportion of MI scores from the distribution which have higher or equal MIs to ours.
 	 */
-	public MeasurementDistribution computeSignificance(int[][] newOrderings) throws Exception {
+	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings) throws Exception {
 		int numPermutationsToCheck = newOrderings.length;
 		if (!miComputed) {
 			computeAverageLocalOfObservations();
@@ -202,7 +202,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov implements
 		// Store the real observations and their MI:
 		double actualMI = mi;
 		
-		MeasurementDistribution measDistribution = new MeasurementDistribution(numPermutationsToCheck);
+		EmpiricalMeasurementDistribution measDistribution = new EmpiricalMeasurementDistribution(numPermutationsToCheck);
 		
 		int countWhereMiIsMoreSignificantThanOriginal = 0;
 		for (int i = 0; i < numPermutationsToCheck; i++) {

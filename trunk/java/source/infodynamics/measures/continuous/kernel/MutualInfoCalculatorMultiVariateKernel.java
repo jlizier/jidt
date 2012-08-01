@@ -2,7 +2,7 @@ package infodynamics.measures.continuous.kernel;
 
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.utils.MatrixUtils;
-import infodynamics.utils.MeasurementDistribution;
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.RandomGenerator;
 
 public class MutualInfoCalculatorMultiVariateKernel implements
@@ -187,7 +187,7 @@ public class MutualInfoCalculatorMultiVariateKernel implements
 	 * @param numPermutationsToCheck
 	 * @return the proportion of MI scores from the distribution which have higher or equal MIs to ours.
 	 */
-	public synchronized MeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception {
+	public synchronized EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception {
 		// Generate the re-ordered indices:
 		RandomGenerator rg = new RandomGenerator();
 		int[][] newOrderings = rg.generateDistinctRandomPerturbations(observations1.length, numPermutationsToCheck);
@@ -206,7 +206,7 @@ public class MutualInfoCalculatorMultiVariateKernel implements
 	 * @param newOrderings the specific new orderings to use
 	 * @return the proportion of MI scores from the distribution which have higher or equal MIs to ours.
 	 */
-	public MeasurementDistribution computeSignificance(int[][] newOrderings) throws Exception {
+	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings) throws Exception {
 		int numPermutationsToCheck = newOrderings.length;
 		if (!miComputed) {
 			computeAverageLocalOfObservations();
@@ -217,7 +217,7 @@ public class MutualInfoCalculatorMultiVariateKernel implements
 		double[][] originalData2 = observations2;
 		double[][] data2;
 		
-		MeasurementDistribution measDistribution = new MeasurementDistribution(numPermutationsToCheck);
+		EmpiricalMeasurementDistribution measDistribution = new EmpiricalMeasurementDistribution(numPermutationsToCheck);
 		
 		int countWhereMiIsMoreSignificantThanOriginal = 0;
 		for (int i = 0; i < numPermutationsToCheck; i++) {

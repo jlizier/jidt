@@ -282,6 +282,98 @@ public class MathsUtils {
 	}
 
 	/**
+	 * <p>Return the value of the cummulative distribution function of the
+	 *  chi-square distribution, evaluated at x, for k degrees of freedom.</p>
+	 *  
+	 * <p>Note that this relies on our approximation of the error function,
+	 *  which is the limiting part of the accuracy. Testing against
+	 *  values produced by octave indicates this is accurate to 5-6
+	 *  decimal places.</p>
+	 * 
+	 * @param x value at which to evaluate the CDF
+	 * @param k degrees of freedom (must have k>0)
+	 * @return chi squared CDF evaluated at x given k degrees of freedom
+	 * @see {@link http://en.wikipedia.org/wiki/Chi-squared_distribution}
+	 */
+	public static double chiSquareCdf(double x, int k) {
+		if (k <= 0) {
+			throw new IllegalArgumentException("k (" + k + ") must be > 0");
+		}
+		return lowerIncompleteGammaFunctionOfArgsOn2(k,x) /
+				gammaOfArgOn2Plus1(k-2); // denominator is Gamma(k/2)
+	}
+	
+	/**
+	 * Return the value of the lower Incomplete Gamma function,
+	 * given arguments s/2 and x/2.
+	 * We assume postive integer parameter s (s could be complex in general,
+	 * with positive real part, but we restrict it to real and integer for
+	 * this method). We make the evaluation using a recurrence relation,
+	 * which terminates at s/2 = 1 or 1/2 (i.e. s = 2 or 1)
+	 * 
+	 * @param s for parameter s/2 to lower incomplete gamma
+	 * @param x for value x/2 to lower incomplete gamma
+	 * @return value of lower gamma incomplete function
+	 * @see {@link http://en.wikipedia.org/wiki/Incomplete_Gamma_function}
+	 */
+	public static double lowerIncompleteGammaFunctionOfArgsOn2(int s, double x) {
+		if (s <= 0) {
+			throw new IllegalArgumentException("s must be > 0");
+		}
+		if (s == 2) {
+			// Terminating condition: evaluate lower gamma(1, x/2):
+			return 1 - Math.exp(-x/2.0);
+		} else if (s == 1) {
+			// Terminating condition: evaluate lower gamma(1/2, x/2):
+			return Math.sqrt(Math.PI) * erf(Math.sqrt(x/2.0));
+		} else {
+			// Else evaluate recurrence relation:
+			return (s/2.0-1.0)*lowerIncompleteGammaFunctionOfArgsOn2(s-2,x) -
+					Math.pow(x/2.0, s/2.0 - 1.0) * Math.exp(-x/2.0);
+		}
+	}
+	
+	/**
+	 * Return the value of the error function at a given x.
+	 * We approximate the error function using elementary functions
+	 *  as described at the link below (quoting Abramowitz and Stegun).
+	 *  This approximation is quoted to
+	 *  have maximum error 1.5e-7 (and indeed this appears to be the
+	 *  case in comparison to values produced by octave).
+	 * 
+	 * @param x value at which to evaluate the error function
+	 * @return erf(x)
+	 * @see {@link http://en.wikipedia.org/wiki/Error_function#Approximation_with_elementary_functions}
+	 * @see Abramowitz, Milton; Stegun, Irene A., eds. (1972),
+	 * "Handbook of Mathematical Functions with Formulas, Graphs, and Mathematical Tables",
+	 * New York: Dover Publications, ISBN 978-0-486-61272-0
+	 */
+	public static double erf(double x) {
+		// Constants:
+		double p = 0.3275911;
+		double[] a = {0.254829592, -0.284496736, 1.421413741,
+				-1.453152027, 1.061405429};
+		boolean negArg = (x < 0);
+
+		if (negArg) {
+			// The rest of the method requires x >= 0, but since erf(x)
+			//  is an odd function, we just reflect x.
+			x = -x;
+		}
+		
+		double t = 1.0 / (1 + p * x);
+		double multiplier = 0.0;
+		double tToPower = t;
+		for (int i = 0; i < 5; i++) {
+			multiplier += a[i] * tToPower;
+			tToPower *= t;
+		}
+		double retVal = 1.0 - multiplier * Math.exp(-x*x);
+		// Remember that erf(x) was an odd function:
+		return negArg ? - retVal: retVal;
+	}
+	
+	/**
 	 * Return the number of possible combinations of p from n (i.e. n choose p)
 	 * 
 	 * @param n
@@ -359,6 +451,12 @@ public class MathsUtils {
 		return upToSetNum;
 	}
 
+	/**
+	 * Perform some testing:
+	 * 
+	 * @param args
+	 * @throws Exception
+	 */
 	public static void main(String args[]) throws Exception {
 		/*
 		System.out.println(numOfSets(158,4));
@@ -368,6 +466,7 @@ public class MathsUtils {
 		// int[][] sets = generateAllSets(6,4);
 		// MatrixUtils.printMatrix(System.out, sets);
 		
+		/*
 		System.out.printf("digamma()  digammaOld()\n");
 		for (int n = 0; n < 100; n++) {
 			System.out.printf("%d  %.3f  %.3f\n", n, MathsUtils.digamma(n), MathsUtils.digammaByDefinition(n));
@@ -375,5 +474,23 @@ public class MathsUtils {
 		for (int n = 0; n < 101; n++) {
 			System.out.printf("%d  %.3f  %.3f\n", n, MathsUtils.digamma(n), MathsUtils.digammaByDefinition(n));
 		}
+		*/
+		
+		/*
+		System.out.println("erf(" + 1 + ")= " + MathsUtils.erf(1));
+		System.out.println("erf(" + 2 + ")= " + MathsUtils.erf(2));
+		System.out.println("erf(" + 0 + ")= " + MathsUtils.erf(0));
+		for (int n=0; n<100; n++) {
+			System.out.println("erf(" + n*0.1 + ")= " + MathsUtils.erf(n*0.1));
+		}*/
+		
+		int degFree = 10;
+		System.out.println("chi2cdf(1," + degFree +")= " + MathsUtils.chiSquareCdf(1, degFree));
+		System.out.println("chi2cdf(2," + degFree +")= " + MathsUtils.chiSquareCdf(2, degFree));
+		System.out.println("chi2cdf(3," + degFree +")= " + MathsUtils.chiSquareCdf(3, degFree));
+		for (int n=0; n<100; n++) {
+			System.out.println("chi2cdf(" + n*0.1 + "," + degFree +")= " + MathsUtils.chiSquareCdf(n*0.1, degFree));
+		}
+		
 	}
 }
