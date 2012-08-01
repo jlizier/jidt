@@ -4,7 +4,7 @@ import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.RandomGenerator;
 import junit.framework.TestCase;
 
-public class EntropyCalculatorLinearGaussianTest extends TestCase {
+public class EntropyCalculatorGaussianTest extends TestCase {
 
 	public void testVarianceSetting() {
 		EntropyCalculatorGaussian entcalc = new EntropyCalculatorGaussian();
