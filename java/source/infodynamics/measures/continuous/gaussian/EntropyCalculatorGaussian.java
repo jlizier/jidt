@@ -1,4 +1,4 @@
-package infodynamics.measures.continuous.lineargaussian;
+package infodynamics.measures.continuous.gaussian;
 
 import infodynamics.measures.continuous.EntropyCalculator;
 import infodynamics.utils.MatrixUtils;
@@ -19,10 +19,12 @@ import infodynamics.utils.MatrixUtils;
  * 	</ol>
  * </p>
  * 
+ * @see Differential entropy for Gaussian random variables defined at 
+ *      {@link http://mathworld.wolfram.com/DifferentialEntropy.html}
  * @author Joseph Lizier joseph.lizier_at_gmail.com
  *
  */
-public class EntropyCalculatorLinearGaussian implements EntropyCalculator {
+public class EntropyCalculatorGaussian implements EntropyCalculator {
 
 	/**
 	 * Variance of the most recently supplied observations
@@ -34,14 +36,14 @@ public class EntropyCalculatorLinearGaussian implements EntropyCalculator {
 	/**
 	 * Constructor
 	 */
-	public EntropyCalculatorLinearGaussian() {
+	public EntropyCalculatorGaussian() {
 		// Nothing to do
 	}
 	
 	/**
 	 * Initialise the calculator ready for reuse
 	 */
-	public void initialise() throws Exception {
+	public void initialise() {
 		// Nothing to do
 	}
 
@@ -66,16 +68,18 @@ public class EntropyCalculatorLinearGaussian implements EntropyCalculator {
 	}
 	
 	/**
-	 * The entropy for a Gaussian-distribution random variable with
-	 *  variance \sigma is \log_e{2*pi*e*\sigma}.
-	 * Here we compute the entropy assuming that the recorded estimation of the
-	 *  variance is correct (i.e. we will not make a bias correction for limited
-	 *  observations here).
+	 * <p>The entropy for a Gaussian-distribution random variable with
+	 *  variance \sigma is 0.5*\log_e{2*pi*e*\sigma}.</p>
 	 * 
-	 * @return the entropy of the previously provided observations
+	 * <p>Here we compute the entropy assuming that the recorded estimation of the
+	 *  variance is correct (i.e. we will not make a bias correction for limited
+	 *  observations here).</p>
+	 * 
+	 * @return the entropy of the previously provided observations or from the supplied
+	 *   covariance matrix. Entropy returned in nats, not bits!
 	 */
 	public double computeAverageLocalOfObservations() {
-		return Math.log(2.0*Math.PI*Math.E*variance);
+		return 0.5 * Math.log(2.0*Math.PI*Math.E*variance);
 	}
 
 	public void setDebug(boolean debug) {
