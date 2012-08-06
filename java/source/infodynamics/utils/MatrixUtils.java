@@ -5,14 +5,30 @@ import java.util.Arrays;
 import java.util.Vector;
 
 /**
- * Utilities for computations on matrices.
- * All multidimensional matrices are assumed to have consistent lengths in each dimension
+ * Utilities for computations on matrices, represented as two-dimensional
+ *  arrays of doubles (double[][] matrix) - it is assumed that all
+ *  multidimensional matrices have consistent lengths in each dimension
+ *  matrix[i].
  * 
  * @author Joseph Lizier, joseph.lizier at gmail.com
  *
  */
 public class MatrixUtils {
 
+	/**
+	 * Generate the identity matrix of the given size
+	 * 
+	 * @param size (size along one dimension)
+	 * @return two dimensional double array representing the identity matrix
+	 */
+	public static double[][] identityMatrix(int size) {
+		double[][] I = new double[size][size];
+		for (int r = 0; r < size; r++) {
+			I[r][r] = 1.0;
+		}
+		return I;
+	}
+	
 	/**
 	 * Return an array with values enumerated through the given range
 	 * 
@@ -114,6 +130,24 @@ public class MatrixUtils {
 	public static double[] sums(double[][] input) {
 		double[] theSums = new double[input[0].length];
 		for (int r = 0; r < input.length; r++) {
+			for (int c = 0; c < input[r].length; c++) {
+				theSums[c] += input[r][c];
+			}
+		}
+		return theSums;
+	}
+	
+	/**
+	 * Return an array of the sums for each column in the 2D input
+	 * 
+	 * @param input
+	 * @param startRow which row to start from
+	 * @param length how many rows to take the sum over
+	 * @return
+	 */
+	public static double[] sums(double[][] input, int startRow, int length) {
+		double[] theSums = new double[input[0].length];
+		for (int r = startRow; r < startRow + length; r++) {
 			for (int c = 0; c < input[r].length; c++) {
 				theSums[c] += input[r][c];
 			}
@@ -226,6 +260,22 @@ public class MatrixUtils {
 		double[] theMeans = sums(input);
 		for (int i = 0; i < theMeans.length; i++) {
 			theMeans[i] = theMeans[i] / input.length;
+		}
+		return theMeans;
+	}
+
+	/**
+	 * Return an array of the means of each column in the 2D input
+	 * 
+	 * @param input
+	 * @param startRow which row to start from
+	 * @param length how many rows to take the mean over
+	 * @return
+	 */
+	public static double[] means(double[][] input, int startRow, int length) {
+		double[] theMeans = sums(input, startRow, length);
+		for (int i = 0; i < theMeans.length; i++) {
+			theMeans[i] = theMeans[i] / length;
 		}
 		return theMeans;
 	}
@@ -592,29 +642,96 @@ public class MatrixUtils {
 	}
 
 	/**
-	 * Return the matrix product a x b
+	 * Return the matrix product A x B
 	 * 
-	 * @param a
-	 * @param b
-	 * @return
+	 * @param A mxn matrix
+	 * @param B nxq matrix
+	 * @return mxq matrix product of A and B
 	 */
-	public static double[][] matrixProduct(double[][] a, double[][] b) throws Exception {
-		if (a[0].length != b.length) {
-			throw new Exception("Number of columns of a " + a[0].length +
-					" does not match the number of rows of b " + b.length);
+	public static double[][] matrixProduct(double[][] A, double[][] B) throws Exception {
+		if (A[0].length != B.length) {
+			throw new Exception("Number of columns of a " + A[0].length +
+					" does not match the number of rows of b " + B.length);
 		}
-		double[][] result = new double[a.length][b[0].length];
+		double[][] result = new double[A.length][B[0].length];
 		for (int r = 0; r < result.length; r++) {
 			for (int c = 0; c < result[r].length; c++) {
 				result[r][c] = 0;
-				for (int k = 0; k < a[r].length; k++) {
-					result[r][c] += a[r][k] * b[k][c];
+				for (int k = 0; k < A[r].length; k++) {
+					result[r][c] += A[r][k] * B[k][c];
 				}
 			}
 		}
 		return result;
 	}
 	
+	/**
+	 * Return the matrix product v A
+	 *  (i.e. a left multiplication of the 1xn vector and the nxm matrix A)
+	 * 
+	 * @param v a 1xn vector
+	 * @param A an nxm matrix
+	 * @return a 1xm vector output
+	 */
+	public static double[] matrixProduct(double[] v, double[][] A) throws Exception {
+		if (v.length != A.length) {
+			throw new Exception("Number of entries of v " + v.length +
+					" does not match the number of rows of A " + A.length);
+		}
+		// Result length is the number of columns of A
+		double[] result = new double[A[0].length];
+		for (int c = 0; c < result.length; c++) {
+			result[c] = 0;
+			for (int r = 0; r < v.length; r++) {
+				result[c] += v[r]*A[r][c];
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Return the matrix product A v
+	 *  (i.e. a right multiplication of the nxm matrix A and the 1xn vector)
+	 * 
+	 * @param A an mxn matrix
+	 * @param v a nx1 vector
+	 * @return a mx1 vector output
+	 */
+	public static double[] matrixProduct(double[][] A, double[] v) throws Exception {
+		if (v.length != A[0].length) {
+			throw new Exception("Number of entries of v " + v.length +
+					" does not match the number of columns of A " + A[0].length);
+		}
+		// Result length is the number of rows of A
+		double[] result = new double[A.length];
+		for (int r = 0; r < result.length; r++) {
+			result[r] = 0;
+			for (int c = 0; c < v.length; c++) {
+				result[r] += A[r][c] * v[c];
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Return the dot product of two vectors v u
+	 * 
+	 * @param v a nx1 vector
+	 * @param u a nx1 vector
+	 * @return the scalar dot product
+	 */
+	public static double dotProduct(double[] v, double[] u) throws Exception {
+		if (v.length != u.length) {
+			throw new Exception("Number of entries of v " + v.length +
+					" does not match the number of entries of u " + u.length);
+		}
+		double result = 0;
+		for (int r = 0; r < v.length; r++) {
+			result += v[r] * u[r];
+		}
+		return result;
+	}
+
 	/**
 	 * Duplicates a matrix; handles different number of columns
 	 *  for each row
@@ -641,6 +758,21 @@ public class MatrixUtils {
 		for (int r = 0; r < src.length; r++) {
 			System.arraycopy(src[r], 0,	dest[r], 0,	src[r].length);
 		}
+	}
+
+	/**
+	 * Copies all rows and columns between two double arrays
+	 * 
+	 * @param src
+	 * @param dest
+	 */
+	public static double[][] arrayCopy(double[][] src) {
+		double[][] dest = new double[src.length][];
+		for (int r = 0; r < src.length; r++) {
+			dest[r] = new double[src[r].length];
+			System.arraycopy(src[r], 0,	dest[r], 0,	src[r].length);
+		}
+		return dest;
 	}
 
 	/**
@@ -759,6 +891,20 @@ public class MatrixUtils {
 		}
 	}
 
+	/**
+	 * Append the vector u to the vector v and return the result
+	 * 
+	 * @param v vector 1
+	 * @param u vector 2
+	 * @return [v, u] appended result
+	 */
+	public static double[] append(double[] v, double[] u) {
+		double[] result = new double[v.length + u.length];
+		System.arraycopy(v, 0, result, 0, v.length);
+		System.arraycopy(u, 0, result, v.length, u.length);
+		return result;
+	}
+	
 	/**
 	 * 
 	 * @param separateValues
@@ -2332,6 +2478,41 @@ public class MatrixUtils {
 	 */
 	public static double[][] covarianceMatrix(
 			double[][] data1, double[][] data2) {
+		return covarianceMatrix(data1, data2, 0);
+	}
+
+	/**
+	 * Compute the covariance matrix between all column pairs (variables) in the
+	 *  multivariate data set, which consists of two separate
+	 *  multivariate vectors.
+	 * 
+	 * @param data1 multivariate array of data; first index is time, second is 
+	 *    variable number
+	 * @param data2 a second multivariate array of data, which can be though
+	 *    of as extensions of rows of the first.
+	 * @param delay compute the lagged covariance of the given delay from
+	 *    data1 to data2 (assumes delay >= 0); i.e. compute correlation
+	 *    between data1[x] and data2[x+delay]. 
+	 * @return covariance matrix, where the columns of dat1 are numbered
+	 *   first, and the columns of data2 after that.
+	 */
+	public static double[][] covarianceMatrix(
+			double[][] data1, double[][] data2, int delay) {
+		if (delay > 0) {
+			// Trim out the last delay rows of data1, and the
+			//  first delay rows of data2:
+			double[][] data1Trimmed = new double[data1.length - delay][];
+			double[][] data2Trimmed = new double[data2.length - delay][];
+			for (int x = 0; x < data1.length - delay; x++) {
+				data1Trimmed[x] = data1[x];
+				data2Trimmed[x] = data2[x + delay];
+			}
+			// Just overwrite our local copy of the pointers to the
+			//  original data
+			data1 = data1Trimmed;
+			data2 = data2Trimmed;
+		}
+		
 		int numVariables1 = data1[0].length;
 		int numVariables2 = data2[0].length;
 		int numVariables = numVariables1 + numVariables2;
@@ -2693,11 +2874,15 @@ public class MatrixUtils {
 	}
 
 	/**
-	 * <p> Returns the determinant of the input matrix.
+	 * <p>Returns the determinant of the input matrix.
 	 * </p>
+	 * 
+	 * <p>This uses a fairly naive calculation - it will work for small sized
+	 * matrices but will not be efficient enough for larger sizes.</p>
 	 * 
 	 * @param matrix
 	 * @return determinant of matrix
+	 * @throws Exception if supplied a non-square matrix
 	 */
 	public static double determinant(double[][] matrix) throws Exception {
 		int rows = matrix.length;
@@ -2710,7 +2895,7 @@ public class MatrixUtils {
 	}
 	
 	/**
-	 * <p>Private function to compute the determinant recursively.
+	 * <p>Private method to compute the determinant recursively.
 	 * {@link determinant()} calls this after checking the matrix dimensions. <br/>
 	 * @see {@link http://mathworld.wolfram.com/Determinant.html}
 	 * </p>
@@ -2738,6 +2923,131 @@ public class MatrixUtils {
 		}
 
 		return result; 
+	}
+	
+	/**
+	 * <p>Make the Cholesky decomposition L of a given input matrix A,
+	 * where:
+	 * 	<ol>
+	 * 		<li>A is symmetric and positive definite (has full rank)</li>
+	 * 		<li>A = L L^T (L^T is the transpose of L - here A has real
+	 * 		entries only, though a Cholesky decomposition is possible
+	 * 		with complex entries)</li>
+	 * 		<li>L is a lower triangular matrix</li>
+	 * 	</ol>
+	 * We perform the decomposition using the Cholesky–Banachiewicz
+	 *  algorithm, computing L from the top left, row by row (see wikipedia)
+	 * </p>
+	 * 
+	 * <p>This method has been adapted from the JAMA project (public domain software)
+	 * </p>
+	 * 
+	 * @param A input matrix
+	 * @return L 
+	 * @throws Exception when the matrix A is not symmetric, or
+	 * 		not positive definite
+	 * @see {@link en.wikipedia.org/wiki/Cholesky_decomposition}
+	 * @see {@link http://mathworld.wolfram.com/CholeskyDecomposition.html}
+	 * @see {@link http://en.wikipedia.org/wiki/Positive-definite_matrix}
+	 * @see {@link http://math.nist.gov/javanumerics/jama/}
+	 */
+	public static double[][] CholeskyDecomposition(double[][] A) throws Exception {
+		int n = A.length;
+		double[][] L = new double[n][n];
+		// Loop over all rows:
+		for (int j = 0; j < n; j++) {
+			// Check length of row keeps this a square matrix:
+			if (A[j].length != n) {
+				throw new Exception("CholeskyDecomposition is only performed on square matrices");
+			}
+			double d = 0.0;
+			for (int k = 0; k < j; k++) {
+				double s = 0.0;
+				for (int i = 0; i < k; i++) {
+					s += L[k][i]*L[j][i];
+				}
+				L[j][k] = s = (A[j][k] - s)/L[k][k];
+				d = d + s*s;
+				// Check that these matrix entries remain symmetric:
+				if (A[k][j] != A[j][k]) {
+					throw new Exception("CholeskyDecomposition is only performed on symmetric matrices");
+				}
+			}
+			d = A[j][j] - d;
+			// Check the positive definite condition:
+			if (d <= 0.0) {
+				throw new Exception("CholeskyDecomposition is only performed on positive-definite matrices");
+			}
+			L[j][j] = Math.sqrt(d);
+			// Set the upper triangular part to all zeros:
+			for (int k = j+1; k < n; k++) {
+				L[j][k] = 0.0;
+			}
+		}
+		return L;
+	}
+	
+	/**
+	 * Compute matrix inversion of a symmetric, positive definite matrix
+	 *  by using the Cholesky Decomposition L of the matrix A.
+	 * Since A = L L^T, then A^-1 = (L^T)^-1 L^-1, and the inverses
+	 *  of 
+	 * 
+	 * @param A matrix to be inverted
+	 * @return the inverse of A
+	 * @throws Exception when the matrix is not symmetric or positive definite
+	 */
+	public static double[][] invertSymmPosDefMatrix(double[][] A) throws Exception {
+		// First do the Cholesky Decomposition:
+		
+		double[][] L = CholeskyDecomposition(A);
+		
+		return solveViaCholeskyResult(L, identityMatrix(A.length));
+	}
+	// TODO implement solve for identity matrix
+	
+	/**
+	 * <p>Solve A*X = B, where A = L*L^T via Cholesky decomposition.
+	 * </p>
+	 * 
+	 * <p>This method has been adapted from the JAMA project (public domain software)
+	 * </p>
+	 *
+	 * @param L Cholesky decomposition of the matrix A
+	 * @param B matrix with as many rows as A and any number of columns
+	 * @return X so that A*X = B
+	 * @see {@link http://math.nist.gov/javanumerics/jama/}
+	 */
+	public static double[][] solveViaCholeskyResult(double[][] L, double[][] B) {
+		int aRows = L.length;
+		if (aRows != B.length) {
+			throw new IllegalArgumentException("Matrix row dimensions must agree.");
+		}
+
+		// Copy B matrix 
+		double[][] X = MatrixUtils.arrayCopy(B);
+		int bCols = B[0].length;
+		
+		// Solve L*Y = B;
+		for (int k = 0; k < aRows; k++) {
+			for (int j = 0; j < bCols; j++) {
+				for (int i = 0; i < k ; i++) {
+					X[k][j] -= X[i][j]*L[k][i];
+				}
+				X[k][j] /= L[k][k];
+			}
+		}
+
+		// Solve L'*X = Y;
+		for (int k = aRows-1; k >= 0; k--) {
+			for (int j = 0; j < bCols; j++) {
+				for (int i = k+1; i < aRows; i++) {
+					X[k][j] -= X[i][j]*L[i][k];
+				}
+				X[k][j] /= L[k][k];
+			}
+		}
+		return X;
 	}
 	
 	public static void printMatrix(PrintStream out, double[][] matrix) {

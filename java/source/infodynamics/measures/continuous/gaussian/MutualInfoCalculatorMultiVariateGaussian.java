@@ -1,8 +1,11 @@
 package infodynamics.measures.continuous.gaussian;
 
+import java.util.Iterator;
+
+import infodynamics.measures.continuous.AnalyticNullDistributionComputer;
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
+import infodynamics.measures.continuous.MutualInfoMultiVariateCommon;
 import infodynamics.utils.ChiSquareMeasurementDistribution;
-import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 
@@ -38,40 +41,27 @@ import infodynamics.utils.EmpiricalMeasurementDistribution;
  * @author Joseph Lizier joseph.lizier_at_gmail.com
  *
  */
-public class MutualInfoCalculatorMultiVariateGaussian implements
-		MutualInfoCalculatorMultiVariate {
+public class MutualInfoCalculatorMultiVariateGaussian 
+		extends MutualInfoMultiVariateCommon
+		implements MutualInfoCalculatorMultiVariate, AnalyticNullDistributionComputer {
 
 	/**
-	 * Covariance matrix of the most recently supplied observations
+	 * Covariance matrix of the most recently supplied observations.
+	 * Is a matrix [C_ss, C_sd; C_ds, C_dd], where C_ss is the covariance
+	 * matrix of the source observations, C_dd is the covariance matrix
+	 * of the destination observations, and C_sd and C_ds are the covariances
+	 * of source to destination and destination to source observations.
 	 */
 	protected double[][] covariance;
-
-	/**
-	 * The set of source observations, retained in case the user wants to retrieve the local
-	 *  entropy values of these.
-	 * They're held in the order in which they were supplied in the
-	 *  {@link addObservations(double[][], double[][])} functions.
-	 */
-	protected double[][] sourceObservations;
-
-	/**
-	 * The set of destination observations, retained in case the user wants to retrieve the local
-	 *  entropy values of these.
-	 * They're held in the order in which they were supplied in the
-	 *  {@link addObservations(double[][], double[][])} functions.
-	 */
-	protected double[][] destObservations;
-
-	/**
-	 * Number of dimenions for each of our multivariate data sets
-	 */
-	protected int dimensionsDest;
-	protected int dimensionsSource;
 	
-	protected double lastAverage;
-	
-	protected boolean debug;
+	/**
+	 * Means of the most recently supplied observations (source variables
+	 *  listed first, destination variables second).
+	 */
+	protected double[] means;
 
+	protected double detCovariance;
+	
 	public MutualInfoCalculatorMultiVariateGaussian() {
 		// Nothing to do
 	}
@@ -80,73 +70,60 @@ public class MutualInfoCalculatorMultiVariateGaussian implements
 	 * Clear any previously supplied probability distributions and prepare
 	 * the calculator to be used again.
 	 * 
-	 * @param sourceDimensions number of joing variables in the source
-	 * @param destDimensions number of joing variables in the destination
+	 * @param sourceDimensions number of joint variables in the source
+	 * @param destDimensions number of joint variables in the destination
 	 */
 	public void initialise(int sourceDimensions, int destDimensions) {
+		super.initialise(sourceDimensions, destDimensions);
 		covariance = null;
+		means = null;
 		sourceObservations = null;
 		destObservations = null;
-		dimensionsSource = sourceDimensions;
-		dimensionsDest = destDimensions;
-	}
-
-	/**
-	 * Provide the complete set of observations to use to compute the
-	 *  mutual information.
-	 * One cannot use the {@link addObservations(double[][], double[][])}
-	 *  style methods after this without calling initialise again first.
-	 * 
-	 */
-	public void setObservations(double[][] source, double[][] destination)
-			throws Exception {
-		sourceObservations = source;
-		destObservations = destination;
-		covariance = MatrixUtils.covarianceMatrix(source, destination);
-		// Check that the observations was of the correct number of dimensions:
-		//  (done afterwards since the covariance matrix computation checks that
-		//  all rows had the right number of columns
-		if (covariance.length != dimensionsSource + dimensionsDest) {
-			throw new RuntimeException("Supplied observations do not match initialised number of dimensions");
-		}
-	}
-
-	public void addObservations(double[][] source, double[][] destination)
-			throws Exception {
-		// TODO implement these addObservations style functions.
-		// This will not be hard to implement - see the implementation
-		//  for TE in TransferEntropyCommon. It might be useful
-		//  to have a MutualInfoCommon which pulls the same functionality
-		//  together for the MI calculators anyway.
-		throw new RuntimeException("Not implemented yet");
-	}
-
-	public void addObservations(double[][] source, double[][] destination,
-			int startTime, int numTimeSteps) throws Exception {
-		throw new RuntimeException("Not implemented yet");
+		detCovariance = 0;
 	}
 
 	public void setObservations(double[][] source, double[][] destination,
 			boolean[] sourceValid, boolean[] destValid) throws Exception {
+		// TODO implement me
 		throw new RuntimeException("Not implemented yet");
 	}
 
 	public void setObservations(double[][] source, double[][] destination,
 			boolean[][] sourceValid, boolean[][] destValid) throws Exception {
-		throw new RuntimeException("Not implemented yet");
-	}
-
-	public void startAddObservations() {
-		throw new RuntimeException("Not implemented yet");
-	}
-
-	public void finaliseAddObservations() {
+		// TODO implement me
 		throw new RuntimeException("Not implemented yet");
 	}
 
 	/**
-	 * Set the covariance of the distribution for which we will compute the
-	 *  mutual information.
+	 * Finalise the addition of multiple observation sets.
+	 * 
+	 */
+	public void finaliseAddObservations() {
+
+		// Get the observations properly stored in the sourceObservations[][] and
+		//  destObservations[][] arrays.
+		super.finaliseAddObservations();
+
+		// Store the means of each variable (useful for local values later)
+		means = new double[dimensionsSource + dimensionsDest];
+		double[] sourceMeans = MatrixUtils.means(sourceObservations);
+		double[] destMeans = MatrixUtils.means(destObservations);
+		System.arraycopy(sourceMeans, 0, means, 0, dimensionsSource);
+		System.arraycopy(destMeans, 0, means, dimensionsSource, dimensionsDest);
+		
+		// Store the covariances of the variables
+		covariance = MatrixUtils.covarianceMatrix(sourceObservations,
+				destObservations);
+	}
+
+	/**
+	 * <p>Set the covariance of the distribution for which we will compute the
+	 *  mutual information.</p>
+	 *  
+	 * <p>Note that without setting any observations, you cannot later
+	 *  call {@link #computeLocalOfPreviousObservations()}, and without
+	 *  providing the means of the variables, you cannot later call
+	 *  {@link #computeLocalUsingPreviousObservations(double[][], double[][])}.</p>
 	 * 
 	 * @param covariance covariance matrix of the source and destination
 	 *  variables, considered together (variable indices start with the source
@@ -162,13 +139,35 @@ public class MutualInfoCalculatorMultiVariateGaussian implements
 		}
 		for (int r = 0; r < rows; r++) {
 			if (covariance[r].length != rows) {
-				throw new Exception("Cannot compute the determinant of a non-square matrix");
+				throw new Exception("Covariance matrix must be square");
+			}
+			// Check that is is symmetric
+			for (int c = 0; c < r; c++) {
+				if (covariance[r][c] != covariance[c][r]) {
+					throw new Exception("Covariance matrix is not symmetric!");
+				}
 			}
 		}
 
 		this.covariance = covariance;
 	}
-	
+
+	/**
+	 * <p>Set the covariance of the distribution for which we will compute the
+	 *  mutual information.</p>
+	 * 
+	 * <p>Note that without setting any observations, you cannot later
+	 *  call {@link #computeLocalOfPreviousObservations()}.</p>
+	 * 
+	 * @param covariance covariance matrix of the source and destination
+	 *  variables, considered together (variable indices start with the source
+	 *  and continue into the destination).
+	 */
+	public void setCovarianceAndMeans(double[][] covariance, double[] means) throws Exception {
+		this.means = means;
+		setCovariance(covariance);
+	}
+
 	/**
 	 * <p>The joint entropy for a multivariate Gaussian-distribution of dimension n
 	 *  with covariance matrix C is 0.5*\log_e{(2*pi*e)^n*|det(C)|},
@@ -182,37 +181,45 @@ public class MutualInfoCalculatorMultiVariateGaussian implements
 	 *  observations here).</p>
 	 * 
 	 * @return the mutual information of the previously provided observations or from the
-	 *  supplied covariance matrix.
+	 *  supplied covariance matrix, in nats (not bits!).
+	 *  Returns NaN if any of the determinants are zero
+	 *  (because this will make the denominator of the log zero)
 	 */
 	public double computeAverageLocalOfObservations() throws Exception {
-		try {
-			int[] sourceIndicesInCovariance = MatrixUtils.range(0, dimensionsSource - 1);
-			int[] destIndicesInCovariance = MatrixUtils.range(dimensionsSource,
-						dimensionsSource + dimensionsDest - 1);
-			double[][] sourceCovariance =
-				MatrixUtils.selectRowsAndColumns(covariance, 
-						sourceIndicesInCovariance, sourceIndicesInCovariance);
-			double[][] destCovariance =
-				MatrixUtils.selectRowsAndColumns(covariance, 
-					destIndicesInCovariance, destIndicesInCovariance);
-			double sourceEntropy = 0.5 *
-				Math.log(Math.abs(MatrixUtils.determinant(sourceCovariance)));
-			double destEntropy = 0.5 *
-				Math.log(Math.abs(MatrixUtils.determinant(destCovariance)));
-			double jointEntropy = 0.5 *
-				Math.log(Math.abs(MatrixUtils.determinant(covariance)));
-			lastAverage = sourceEntropy + destEntropy - jointEntropy;
-			return lastAverage;
-		} catch (Exception e) {
-			// Should not happen, since we check the validity of the supplied
-			//  matrix beforehand; so we'll throw an Error in this case
-			throw new Error(e);
-		}
+		int[] sourceIndicesInCovariance = MatrixUtils.range(0, dimensionsSource - 1);
+		int[] destIndicesInCovariance = MatrixUtils.range(dimensionsSource,
+					dimensionsSource + dimensionsDest - 1);
+		double[][] sourceCovariance =
+			MatrixUtils.selectRowsAndColumns(covariance, 
+					sourceIndicesInCovariance, sourceIndicesInCovariance);
+		double[][] destCovariance =
+			MatrixUtils.selectRowsAndColumns(covariance, 
+				destIndicesInCovariance, destIndicesInCovariance);
+		detCovariance = MatrixUtils.determinant(covariance);
+		lastAverage = 0.5 * Math.log(Math.abs(
+					MatrixUtils.determinant(sourceCovariance) *
+						MatrixUtils.determinant(destCovariance) /
+						detCovariance));
+		return lastAverage;
 	}
 
+	/**
+	 * <p>Compute the local or pointwise mutual information for each of the previously
+	 * supplied observations</p>
+	 * 
+	 * @return array of the local values in nats (not bits!)
+	 * @see {@link http://en.wikipedia.org/wiki/Positive-definite_matrix}
+	 */
 	public double[] computeLocalOfPreviousObservations() throws Exception {
-		// TODO Implement me
-		throw new RuntimeException("Not implemented yet");
+		// Cannot do if destObservations haven't been set
+		if (destObservations == null) {
+			throw new Exception("Cannot compute local values of previous observations " +
+					"if they have not been set!");
+		}
+		
+		return computeLocalUsingPreviousObservations(sourceObservations,
+				destObservations, true);
+		
 	}
 
 	/**
@@ -226,9 +233,7 @@ public class MutualInfoCalculatorMultiVariateGaussian implements
 	 *  degrees of freedom equal to the product of the number of variables
 	 *  in each joint variable.</p>
 	 *
-	 * @return MeasurementDistribution object with only the 
-	 *  {@link EmpiricalMeasurementDistribution#actualValue} and
-	 *  {@link EmpiricalMeasurementDistribution#pValue} fields filled out.
+	 * @return ChiSquareMeasurementDistribution object 
 	 *  This object contains the proportion of MI scores from the distribution
 	 *  which have higher or equal MIs to ours.
 	 *  
@@ -260,48 +265,177 @@ public class MutualInfoCalculatorMultiVariateGaussian implements
 	}
 
 	/**
-	 * <p>Set the given property to the given value.</p>
-	 * 
-	 * <p>There are currently no properties to set for this calculator</p>
-	 * 
-	 * @param propertyName name of the property
-	 * @param propertyValue value of the property.
-	 * @throws Exception
-	 */
-	public void setProperty(String propertyName, String propertyValue)
-			throws Exception {
-		// No properties to set here
-	}
-
-	public void setDebug(boolean debug) {
-		this.debug = debug;
-	}
-
-	/**
-	 * @return the previously computed average mutual information
-	 */
-	public double getLastAverage() {
-		return lastAverage;
-	}
-
-	/**
 	 * @return the number of previously supplied observations for which
 	 *  the mutual information will be / was computed.
 	 */
-	public int getNumObservations() {
+	public int getNumObservations() throws Exception {
+		if (destObservations == null) {
+			throw new Exception("Cannot return number of observations because either " +
+					"this calculator has not had observations supplied or " +
+					"the user supplied the covariance matrix instead of observations");
+		}
 		return destObservations.length;
 	}
 
+	/**
+	 * Compute the mutual information if the second variable were ordered as per the ordering
+	 *  specified in newOrdering
+	 * 
+	 * @param newOrdering
+	 * @return
+	 * @throws Exception
+	 */
 	public double computeAverageLocalOfObservations(int[] newOrdering)
 			throws Exception {
 		// TODO Implement me
+		// Cannot do if means haven't been set
+		if (means == null) {
+			throw new Exception("Cannot compute local values of previous observations " +
+					"without the means having been supplied (either directly or by " +
+					"supplying observations)");
+		}
 		throw new RuntimeException("Not implemented yet");
 	}
 
-	public double[] computeLocalUsingPreviousObservations(double[][] states1,
-			double[][] states2) throws Exception {
-		// TODO Implement me
-		throw new RuntimeException("Not implemented yet");
+	/**
+	 * Compute the local mutual information for a new series of 
+	 *  observations, based on variances computed with the previously
+	 *  supplied observations.
+	 * 
+	 * @param newSourceObs provided source observations
+	 * @param newDestObs provided destination observations
+	 * @return the local values in nats (not bits).
+	 *  If the {@link MutualInfoCalculatorMultiVariate#PROP_TIME_DIFF}
+	 *  property was set to say k, then the local values align with the
+	 *  destination value (i.e. after the given delay k). As such, the
+	 *  first k values of the array will be zeros.  
+	 * @throws Exception
+	 */
+	public double[] computeLocalUsingPreviousObservations(double[][] newSourceObs,
+			double[][] newDestObs) throws Exception {
+		return computeLocalUsingPreviousObservations(newSourceObs, newDestObs, false);
+	}
+
+	/**
+	 * Compute the local mutual information for a new series of 
+	 *  observations, based on variances computed with the previously
+	 *  supplied observations.
+	 * 
+	 * @param newSourceObs provided source observations
+	 * @param newDestObs provided destination observations
+	 * @param isPreviousObservations whether these are our previous
+	 *  observations - this determines whether to add zeros for the first
+	 *  timeDiff local values, and also 
+	 *  whether to set the internal lastAverage field,
+	 *  which is returned by later calls to {@link #getLastAverage()}
+	 * @return the local values in nats (not bits).
+	 *  If the {@link MutualInfoCalculatorMultiVariate#PROP_TIME_DIFF}
+	 *  property was set to say k, then the local values align with the
+	 *  destination value (i.e. after the given delay k). As such, the
+	 *  first k values of the array will be zeros.  
+	 * @throws Exception
+	 */
+	protected double[] computeLocalUsingPreviousObservations(double[][] newSourceObs,
+			double[][] newDestObs, boolean isPreviousObservations) throws Exception {
+		
+		// Check that the covariance matrix was positive definite:
+		//  it is known (i think because it is symmetric) that the covariance
+		//  matrix will be positive definite unless one variable is an exact
+		//  linear combination of the others (ref: wikipedia, above).
+		// We can check for linear dependence by ensuring that the determinant
+		//  of the covariance matrix is non-zero:
+		if (detCovariance == 0) {
+			// We need to check:
+			detCovariance = MatrixUtils.determinant(covariance); 
+			if (detCovariance == 0) {
+				throw new Exception("Covariance matrix is not positive definite");
+			}
+		}
+		// Now we are clear to take the matrix inverse (via Cholesky decomposition,
+		//  since we have a symmetric positive definite matrix):
+		double[][] invCovariance = MatrixUtils.invertSymmPosDefMatrix(covariance);
+		
+		// Pull out the source and dest components of the covariance,
+		//  and take their inverses:
+		int[] sourceIndicesInCovariance = MatrixUtils.range(0, dimensionsSource - 1);
+		double[][] sourceCovariance = MatrixUtils.selectRowsAndColumns(covariance,
+				sourceIndicesInCovariance, sourceIndicesInCovariance);
+		double detSourceCovariance = MatrixUtils.determinant(sourceCovariance);
+		double[][] invSourceCovariance = MatrixUtils.invertSymmPosDefMatrix(sourceCovariance);
+		int[] destIndicesInCovariance = MatrixUtils.range(dimensionsSource,
+			dimensionsSource + dimensionsDest - 1);
+		double[][] destCovariance = MatrixUtils.selectRowsAndColumns(covariance,
+				destIndicesInCovariance, destIndicesInCovariance);
+		double detDestCovariance = MatrixUtils.determinant(destCovariance);
+		double[][] invDestCovariance = MatrixUtils.invertSymmPosDefMatrix(destCovariance);
+		
+		double[] sourceMeans = MatrixUtils.select(means, 0, dimensionsSource);
+		double[] destMeans = MatrixUtils.select(means, dimensionsSource, dimensionsDest);
+		
+		int lengthOfReturnArray, offset;
+		if (isPreviousObservations && addedMoreThanOneObservationSet) {
+			// We're returning the local values for a set of disjoint
+			//  observations. So we don't add timeDiff zeros to the start,
+			//  and note that the required timeDiff is already 
+			//  built into the supplied observations.
+			lengthOfReturnArray = newDestObs.length;
+			offset = 0;
+		} else {
+			lengthOfReturnArray = newDestObs.length + timeDiff;
+			offset = timeDiff;
+		}
+		// If we have a time delay, slide the local values
+		double[] localValues = new double[lengthOfReturnArray];
+		double newAverage = 0.0;
+		for (int t = offset; t < newDestObs.length; t++) {
+			// Computing local values for:
+			//  a. sourceObservations[t - offset]
+			//  b. destObservations[t]
+			
+			double[] sourceDeviationsFromMean =
+					MatrixUtils.subtract(newSourceObs[t - offset],
+							sourceMeans);
+			double[] destDeviationsFromMean =
+					MatrixUtils.subtract(newDestObs[t], destMeans);
+			double[] deviationsFromMean =
+					MatrixUtils.append(sourceDeviationsFromMean,
+							destDeviationsFromMean);
+			
+			// Computing PDFs WITHOUT (2*pi)^dim factor, since these will cancel:
+			double sourceExpArg = MatrixUtils.dotProduct(
+						MatrixUtils.matrixProduct(sourceDeviationsFromMean,
+								invSourceCovariance),
+						sourceDeviationsFromMean);
+			double adjustedPSource = Math.exp(-0.5 * sourceExpArg) /
+						Math.sqrt(detSourceCovariance);
+			double destExpArg = MatrixUtils.dotProduct(
+					MatrixUtils.matrixProduct(destDeviationsFromMean,
+							invDestCovariance),
+					destDeviationsFromMean);
+			double adjustedPDest = Math.exp(-0.5 * destExpArg) /
+					Math.sqrt(detDestCovariance);
+			double jointExpArg = MatrixUtils.dotProduct(
+					MatrixUtils.matrixProduct(deviationsFromMean,
+							invCovariance),
+					deviationsFromMean);
+			double adjustedPJoint = Math.exp(-0.5 * jointExpArg) /
+					Math.sqrt(detCovariance);
+			
+			// Returning results in nats:
+			double localValue = Math.log(adjustedPJoint /
+					(adjustedPSource * adjustedPDest));
+			localValues[t] = localValue;
+			
+			if (isPreviousObservations) {
+				newAverage += localValue;
+			}
+		}
+		
+		if (isPreviousObservations) {
+			lastAverage = newAverage / (newDestObs.length - timeDiff); 
+		}
+		
+		return localValues;
 	}
 
 }

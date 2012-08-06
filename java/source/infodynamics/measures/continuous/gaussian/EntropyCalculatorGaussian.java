@@ -11,9 +11,10 @@ import infodynamics.utils.MatrixUtils;
  * Usage:
  * 	<ol>
  * 		<li>Construct</li>
- *		<li>initialise()</li>
- * 		<li>setObservations(), or setVariance().</li> 
- * 		<li>computeAverageLocalOfObservations() to return the average differential
+ *		<li>{@link #initialise()}</li>
+ * 		<li>Either set the observations: {@link #setObservations()}, or 
+ * 			directly set the variance {@link #setVariance()}.</li> 
+ * 		<li>{@link #computeAverageLocalOfObservations()} to return the average differential
  *          entropy based on either the set variance or the variance of
  *          the supplied observations.</li>
  * 	</ol>
