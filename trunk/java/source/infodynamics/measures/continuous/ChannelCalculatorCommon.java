@@ -71,6 +71,6 @@ public abstract interface ChannelCalculatorCommon {
 	
 	public double getLastAverage();
 
-	public int getNumObservations();
+	public int getNumObservations() throws Exception;
 
 }

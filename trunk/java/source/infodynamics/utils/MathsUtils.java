@@ -8,9 +8,6 @@ public class MathsUtils {
 	private static final int NUM_STORED_DIGAMMAS = 10000;
 	private static double[] storedDigammas;
 	
-	public MathsUtils() {
-	}
-
 	/**
 	 * Returns the integer result of base^power
 	 * 
@@ -53,6 +50,12 @@ public class MathsUtils {
 		return result;
 	}
 	
+	/**
+	 * Compute n! (n factorial), without checking for overflow
+	 * 
+	 * @param n
+	 * @return
+	 */
 	public static long factorial(int n) {
 		long result = 1;
 		for (int i = 1; i <= n; i++) {
@@ -61,6 +64,13 @@ public class MathsUtils {
 		return result;
 	}
 	
+	/**
+	 * Compute n! (n factorial), but check if this causes integer overflow
+	 * 
+	 * @param n
+	 * @return the integer (not long value of) n factorial
+	 * @throws Exception when the result exceeds {@link Integer#MAX_VALUE}
+	 */
 	public static int factorialCheckBounds(int n) throws Exception {
 		long result = 1;
 		for (int i = 1; i <= n; i++) {
@@ -371,6 +381,108 @@ public class MathsUtils {
 		double retVal = 1.0 - multiplier * Math.exp(-x*x);
 		// Remember that erf(x) was an odd function:
 		return negArg ? - retVal: retVal;
+	}
+	
+	/**
+	 * Compute the probability density function (PDF) of an observation
+	 *  x, given the mean mu, and the standard deviation sigma,
+	 *  given that the observations follow a univariate normal distribution.
+	 * 
+	 * @param x observation
+	 * @param mu mean of distribution
+	 * @param sigma standard deviation (not the variance)
+	 * @return PDF value
+	 * @throws Exception when sigma < 0
+	 */
+	public static double normalPdf(double x, double mu, double sigma)
+			throws Exception {
+		if (sigma < 0) {
+			throw new Exception("Standard deviation cannot be < 0");
+		}
+		double expArg = (x - mu)/sigma;
+		expArg *= expArg;
+		double pdf =
+				Math.pow(2.0*Math.PI, -0.5) /
+					sigma *
+						Math.exp(-0.5 * expArg);
+		return pdf;
+	}
+	
+	/**
+	 * Compute the cumulative density function (CDF) of an observation
+	 *  x, given the mean mu, and the standard deviation sigma,
+	 *  given that the observations follow a univariate normal distribution.
+	 * 
+	 * @param x observation
+	 * @param mu mean of distribution
+	 * @param sigma standard deviation (not the variance)
+	 * @return CDF value
+	 * @throws Exception when sigma < 0
+	 */
+	public static double normalCdf(double x, double mu, double sigma)
+			throws Exception {
+		if (sigma < 0) {
+			throw new Exception("Standard deviation cannot be < 0");
+		}
+		double erfArg = (x - mu)/Math.sqrt(2.0*sigma*sigma);
+		double cdf = 0.5 * (1 +
+				erf(erfArg));
+		return cdf;
+	}
+	
+
+	/**
+	 * Compute the probability density function (PDF) of a vector of observations
+	 *  x, given the means, and the
+	 *  covariance of the variables, given that the observations
+	 *  follow a multivariate normal distribution
+	 * 
+	 * @param x observations
+	 * @param means means of each variable
+	 * @param covariance covariance matrix
+	 * @return PDF value
+	 * @throws Exception when the lengths of x and covariance
+	 *  do not match, or if supplied a non-square matrix, or if the covariance
+	 *  is not symmetric or not positive-definite.
+	 */
+	public static double normalPdf(double[] x, double[] means,
+			double[][] covariance) throws Exception {
+		if (x.length != means.length) {
+			throw new Exception("Length of observations must match means");
+		}
+		return normalPdf(MatrixUtils.subtract(x, means), covariance);
+	}
+	
+	/**
+	 * Compute the probability density function (PDF) of a vector of observations
+	 *  x, given the deviationsFromMean of x, i.e. (x - \mu), and the
+	 *  covariance of the variables, given that the observations
+	 *  follow a multivariate normal distribution
+	 * 
+	 * @param deviationsFromMean x - \mu
+	 * @param covariance
+	 * @return PDF value
+	 * @throws Exception when the lengths of deviationsFromMean and covariance
+	 *  do not match, or if supplied a non-square matrix, or if the covariance
+	 *  is not symmetric or not positive-definite.
+	 */
+	public static double normalPdf(double[] deviationsFromMean,
+			double[][] covariance) throws Exception {
+		if (deviationsFromMean.length != covariance.length) {
+			throw new Exception("Vector length of deviations does not " +
+					"match the size of the covariance matrix");
+		}
+		double det = MatrixUtils.determinant(covariance);
+		double[][] invCovariance = MatrixUtils.invertSymmPosDefMatrix(covariance);
+		double expArg = MatrixUtils.dotProduct(
+				MatrixUtils.matrixProduct(deviationsFromMean,
+						invCovariance),
+				deviationsFromMean);
+		double pdf =
+				Math.pow(2.0*Math.PI, -deviationsFromMean.length / 2.0) /
+					Math.sqrt(det) *
+						Math.exp(-0.5 * expArg);
+		return pdf;
 	}
 	
 	/**
