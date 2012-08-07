@@ -13,13 +13,16 @@ import infodynamics.utils.MatrixUtils;
  * function on the joint history.
  * </p> 
  * 
- * @author Joseph Lizier joseph.lizier at gmail.com
+ * @see KernelEstimatorMultiVariate
+ * @see "H. Kantz and T. Schreiber, 'Nonlinear Time Series Analysis'.
+ *   Cambridge, MA: Cambridge University Press, 1997"
+ * @author Joseph Lizier, <a href="mailto:joseph.lizier at gmail.com">joseph.lizier at gmail.com</>
  *
  */
 public class KernelEstimatorTransferEntropy extends KernelEstimatorMultiVariate {
 
-	private double epsilonSource;
-	private double epsilonSourceInUse;
+	private double suppliedKernelWidthSource;
+	private double kernelWidthSourceInUse;
 	
 	private double[] destNext;
 	private double[] source;
@@ -42,13 +45,13 @@ public class KernelEstimatorTransferEntropy extends KernelEstimatorMultiVariate 
 
 	public void initialise(int dimensions, double epsilon) {
 		super.initialise(dimensions, epsilon);
-		this.epsilonSource = epsilon;
+		this.suppliedKernelWidthSource = epsilon;
 	}
 	
 	public void initialise(int dimensions, double epsilonDest, 
 			double epsilonSource) {
 		super.initialise(dimensions, epsilonDest);
-		this.epsilonSource = epsilonSource;
+		this.suppliedKernelWidthSource = epsilonSource;
 	}
 	
 	public void setObservations(double[][] destPastVectors,
@@ -61,9 +64,9 @@ public class KernelEstimatorTransferEntropy extends KernelEstimatorMultiVariate 
 		
 		if (normalise) {
 			double std = MatrixUtils.stdDev(source);
-			epsilonSourceInUse = epsilonSource * std;
+			kernelWidthSourceInUse = suppliedKernelWidthSource * std;
 		} else {
-			epsilonSourceInUse = epsilonSource;
+			kernelWidthSourceInUse = suppliedKernelWidthSource;
 		}
 
 		this.source = source;
@@ -107,7 +110,7 @@ public class KernelEstimatorTransferEntropy extends KernelEstimatorMultiVariate 
 	}
 
 	public void setEpsSource(double epsilonSource) {
-		this.epsilonSource = epsilonSource;
+		this.suppliedKernelWidthSource = epsilonSource;
 	}
 
 	/**
@@ -118,13 +121,13 @@ public class KernelEstimatorTransferEntropy extends KernelEstimatorMultiVariate 
 	 */
 	protected void correlatedPointAddedCallback(int correlatedTimeStep) {
 		boolean sourceMatches = false;
-		if (Math.abs(sourceObs - source[correlatedTimeStep]) <= epsilonSourceInUse) {
+		if (Math.abs(sourceObs - source[correlatedTimeStep]) <= kernelWidthSourceInUse) {
 			countPastSource++;
 			sourceMatches = true;
 		}
 		// The epsilons across the destination variables should all be approximately 
 		//  equal, so just use the first one.
-		if (Math.abs(destNextObs - destNext[correlatedTimeStep]) <= epsilonInUse[0]) {
+		if (Math.abs(destNextObs - destNext[correlatedTimeStep]) <= kernelWidthsInUse[0]) {
 			countNextPast++;
 			if (sourceMatches) {
 				countNextPastSource++;
@@ -139,13 +142,13 @@ public class KernelEstimatorTransferEntropy extends KernelEstimatorMultiVariate 
 	 */
 	protected void correlatedPointRemovedCallback(int removedCorrelatedTimeStep) {
 		boolean sourceMatches = false;
-		if (Math.abs(sourceObs - source[removedCorrelatedTimeStep]) <= epsilonSourceInUse) {
+		if (Math.abs(sourceObs - source[removedCorrelatedTimeStep]) <= kernelWidthSourceInUse) {
 			countPastSource--;
 			sourceMatches = true;
 		}
 		// The epsilons across the destination variables should all be approximately 
 		//  equal, so just use the first one.
-		if (Math.abs(destNextObs - destNext[removedCorrelatedTimeStep]) <= epsilonInUse[0]) {
+		if (Math.abs(destNextObs - destNext[removedCorrelatedTimeStep]) <= kernelWidthsInUse[0]) {
 			countNextPast--;
 			if (sourceMatches) {
 				countNextPastSource--;

@@ -8,17 +8,24 @@ import java.util.Hashtable;
 
 
 /**
- * Class to maintain probability distribution function for
- *  a single variable, using kernel estimates.
+ * <p>Class to maintain probability distribution function for
+ *  a multivariate set, using kernel estimates.</p>
  * 
+ * <p>
+ *  For more details on kernel estimation for computing probability distribution functions,
+ *  see Kantz and Schreiber (below).
+ * </p>
  * 
- * @author Joseph Lizier
+ * @see KernelEstimatorSingleVariate
+ * @see "H. Kantz and T. Schreiber, 'Nonlinear Time Series Analysis'.
+ *   Cambridge, MA: Cambridge University Press, 1997"
+ * @author Joseph Lizier, <a href="mailto:joseph.lizier at gmail.com">joseph.lizier at gmail.com</>
  *
  */
 public class KernelEstimatorMultiVariate implements Cloneable {
 
-	protected double[] epsilon = null;
-	protected double[] epsilonInUse = null;
+	protected double[] suppliedKernelWidths = null;
+	protected double[] kernelWidthsInUse = null;
 	protected int dimensions = 1;
 	private int[] bins = null;
 	private boolean usingIntegerIndexBins = true;
@@ -107,9 +114,9 @@ public class KernelEstimatorMultiVariate implements Cloneable {
 	 */
 	public void initialise(int dimensions, double epsilon) {
 		this.dimensions = dimensions;
-		this.epsilon = new double[dimensions];
+		this.suppliedKernelWidths = new double[dimensions];
 		for (int d = 0; d < dimensions; d++) {
-			this.epsilon[d] = epsilon;
+			this.suppliedKernelWidths[d] = epsilon;
 		}
 		finishInitialisation();
 	}
@@ -121,9 +128,9 @@ public class KernelEstimatorMultiVariate implements Cloneable {
 	 */
 	public void initialise(double[] epsilon) {
 		dimensions = epsilon.length;
-		this.epsilon = new double[dimensions];
+		this.suppliedKernelWidths = new double[dimensions];
 		for (int d = 0; d < dimensions; d++) {
-			this.epsilon[d] = epsilon[d];
+			this.suppliedKernelWidths[d] = epsilon[d];
 		}
 		finishInitialisation();
 	}
@@ -142,7 +149,7 @@ public class KernelEstimatorMultiVariate implements Cloneable {
 		multipliers = null;
 		rawData = null;
 		totalObservations = 0;
-		epsilonInUse = new double[dimensions];
+		kernelWidthsInUse = new double[dimensions];
 	}
 
 	/**
@@ -172,11 +179,11 @@ public class KernelEstimatorMultiVariate implements Cloneable {
 				//  it should expand with the standard deviation.
 				// This saves us from normalising all of the incoming data points!
 				std = MatrixUtils.stdDev(data, d);
-				epsilonInUse[d] = epsilon[d] * std;
+				kernelWidthsInUse[d] = suppliedKernelWidths[d] * std;
 			} else {
-				epsilonInUse[d] = epsilon[d];
+				kernelWidthsInUse[d] = suppliedKernelWidths[d];
 			}
-			bins[d] = (int) Math.ceil((max - mins[d]) / epsilonInUse[d]);
+			bins[d] = (int) Math.ceil((max - mins[d]) / kernelWidthsInUse[d]);
 			if (bins[d] == 0) {
 				// This means the min and max are exactly the same:
 				//  for our purposes this is akin to requiring one bin here.
@@ -196,7 +203,7 @@ public class KernelEstimatorMultiVariate implements Cloneable {
 				System.out.println("Dim: " + d + " => Max: " + max + ", min: " + mins[d] +
 					", bins: " + bins[d] +
 					(normalise ? ", std: " + std : "") +
-					", eps: " + epsilonInUse[d]);
+					", eps: " + kernelWidthsInUse[d]);
 			}
 		}
 		
@@ -774,7 +781,7 @@ public class KernelEstimatorMultiVariate implements Cloneable {
 	}
 	
 	private int getBinIndex(double value, int dimension) {
-		int bin = (int) Math.floor((value - mins[dimension]) / epsilonInUse[dimension]);
+		int bin = (int) Math.floor((value - mins[dimension]) / kernelWidthsInUse[dimension]);
 		// Check for any rounding errors on the bin assignment:
 		if (bin >= bins[dimension]) {
 			bin = bins[dimension] - 1;
@@ -915,7 +922,7 @@ public class KernelEstimatorMultiVariate implements Cloneable {
 	 */
 	public int stepKernel(double[] observation, double[] candidate) {
 		for (int d = 0; d < dimensions; d++) {
-			if (Math.abs(observation[d] - candidate[d]) > epsilonInUse[d]) {
+			if (Math.abs(observation[d] - candidate[d]) > kernelWidthsInUse[d]) {
 				return 0;
 			}
 		}

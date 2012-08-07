@@ -6,17 +6,23 @@ import java.util.Vector;
 import java.util.Arrays;
 
 /**
- * Class to maintain probability distribution function for
- *  a single variable, using kernel estimates.
+ * <p>Class to maintain probability distribution function for
+ *  a single variable, using kernel estimates.</p>
  * 
+ * <p>
+ *  For more details on kernel estimation for computing probability distribution functions,
+ *  see Kantz and Schreiber (below).
+ * </p>
  * 
- * @author Joseph Lizier
+ * @see "H. Kantz and T. Schreiber, 'Nonlinear Time Series Analysis'.
+ *   Cambridge, MA: Cambridge University Press, 1997"
+ * @author Joseph Lizier, <a href="mailto:joseph.lizier at gmail.com">joseph.lizier at gmail.com</>
  *
  */
 public class KernelEstimatorSingleVariate {
 
-	private double epsilon = 0.1;
-	private double epsilonInUse;
+	private double suppliedKernelWidth = 0.1;
+	private double kernelWidthInUse;
 	private double min = 0;
 	private double max = 0;
 	private int bins = 0;
@@ -72,7 +78,7 @@ public class KernelEstimatorSingleVariate {
 	 * @param epsilon
 	 */
 	public void initialise(double epsilon) {
-		this.epsilon = epsilon;
+		this.suppliedKernelWidth = epsilon;
 		sortedObservations = null;
 	}
 	
@@ -90,14 +96,14 @@ public class KernelEstimatorSingleVariate {
 			//  it should expand with the standard deviation.
 			// This saves us from normalising all of the incoming data points!
 			double std = MatrixUtils.stdDev(data);
-			epsilonInUse = epsilon * std;
+			kernelWidthInUse = suppliedKernelWidth * std;
 		} else {
-			epsilonInUse = epsilon;
+			kernelWidthInUse = suppliedKernelWidth;
 		}
 
 		// Create the bins
 		Vector<TimeStampedObservation>[] observations = null;
-		bins = (int) Math.ceil((max - min) / epsilonInUse);
+		bins = (int) Math.ceil((max - min) / kernelWidthInUse);
 		if (bins == 0) {
 			// The max and min are the same.
 			// Should still have one bin here to put all the data in,
@@ -207,7 +213,7 @@ public class KernelEstimatorSingleVariate {
 			//  are no longer within epsilon of the given value.
 			int topIndex;
 			for (topIndex = sortedObservations[bin-1].length;
-					(topIndex > 0) && (sortedObservations[bin-1][topIndex-1].observation > observation - epsilonInUse);
+					(topIndex > 0) && (sortedObservations[bin-1][topIndex-1].observation > observation - kernelWidthInUse);
 					topIndex--) {
 				// This observation is within epsilon.
 				// Before adding to the count just check if it's a dynamic correlation if required:
@@ -233,7 +239,7 @@ public class KernelEstimatorSingleVariate {
 			int bottomIndex;
 			for (bottomIndex = 0;
 					(bottomIndex < sortedObservations[bin+1].length) &&
-						(sortedObservations[bin+1][bottomIndex].observation < observation + epsilonInUse);
+						(sortedObservations[bin+1][bottomIndex].observation < observation + kernelWidthInUse);
 					bottomIndex++) {
 				// This observation is within epsilon.
 				// Before adding to the count just check if it's a dynamic correlation if required:
@@ -256,7 +262,7 @@ public class KernelEstimatorSingleVariate {
 	}
 	
 	private int getBinIndex(double value) {
-		int bin = (int) Math.floor((value - min) / epsilonInUse);
+		int bin = (int) Math.floor((value - min) / kernelWidthInUse);
 		// Check for any rounding errors on the bin assignment:
 		if (bin >= bins) {
 			bin = bins - 1;

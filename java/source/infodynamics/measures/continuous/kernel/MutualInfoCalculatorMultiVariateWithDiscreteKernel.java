@@ -143,7 +143,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKernel implements
 			double[][] obsForThisDiscValue = MatrixUtils.extractSelectedPointsMatchingCondition(
 					continuousObservations, discreteObservations, i, discCounts[i]);
 			// Set the kernel width for the relevant kernel estimator:
-			mvkeForEachDiscrete[i].initialise(mvke.epsilonInUse);
+			mvkeForEachDiscrete[i].initialise(mvke.kernelWidthsInUse);
 			// Set these observations for the relevant kernel estimator:
 			mvkeForEachDiscrete[i].setObservations(obsForThisDiscValue);
 		}
@@ -599,6 +599,6 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKernel implements
 	 */
 	public double[] getKernelWidthsInUse() {
 		// Return a copy so that the user can't mess with it
-		return Arrays.copyOf(mvke.epsilonInUse, mvke.epsilonInUse.length);
+		return Arrays.copyOf(mvke.kernelWidthsInUse, mvke.kernelWidthsInUse.length);
 	}
 }
