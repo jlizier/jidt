@@ -1,13 +1,10 @@
 package infodynamics.measures.continuous.gaussian;
 
-import java.util.Iterator;
-
 import infodynamics.measures.continuous.AnalyticNullDistributionComputer;
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.measures.continuous.MutualInfoMultiVariateCommon;
 import infodynamics.utils.ChiSquareMeasurementDistribution;
 import infodynamics.utils.MatrixUtils;
-import infodynamics.utils.EmpiricalMeasurementDistribution;
 
 /**
  * <p>Computes the differential mutual information of two given multivariate sets of
@@ -20,16 +17,17 @@ import infodynamics.utils.EmpiricalMeasurementDistribution;
  * 	<ol>
  * 		<li>Construct {@link #MutualInfoCalculatorMultiVariateLinearGaussian()}</li>
  *		<li>{@link #initialise(int, int)}</li>
+ * 		<li>Set properties using {@link #setProperty(String, String)}</li>
  * 		<li>Provide the observations to the calculator using:
  * 			{@link #setObservations(double[][], double[][])}, or
  * 			{@link #setCovariance(double[][])}, or
  * 			a sequence of:
  * 			{@link #startAddObservations()},
  *          multiple calls to either {@link #addObservations(double[][], double[][])}
- *          or @{link {@link #addObservations(double[][], double[][], int, int)}, and then
- *          @{link {@link #finaliseAddObservations()}.</li>
+ *          or {@link #addObservations(double[][], double[][], int, int)}, and then
+ *          {@link #finaliseAddObservations()}.</li>
  * 		<li>Compute the required information-theoretic results, primarily:
- * 			@{link #computeAverageLocalOfObservations()} to return the average differential
+ * 			{@link #computeAverageLocalOfObservations()} to return the average differential
  *          entropy based on either the set variance or the variance of
  *          the supplied observations; or other calls to compute
  *          local values or statistical significance.</li>
@@ -43,7 +41,8 @@ import infodynamics.utils.EmpiricalMeasurementDistribution;
  */
 public class MutualInfoCalculatorMultiVariateGaussian 
 		extends MutualInfoMultiVariateCommon
-		implements MutualInfoCalculatorMultiVariate, AnalyticNullDistributionComputer {
+		implements MutualInfoCalculatorMultiVariate,
+			AnalyticNullDistributionComputer, Cloneable {
 
 	/**
 	 * Covariance matrix of the most recently supplied observations.
@@ -77,21 +76,7 @@ public class MutualInfoCalculatorMultiVariateGaussian
 		super.initialise(sourceDimensions, destDimensions);
 		covariance = null;
 		means = null;
-		sourceObservations = null;
-		destObservations = null;
 		detCovariance = 0;
-	}
-
-	public void setObservations(double[][] source, double[][] destination,
-			boolean[] sourceValid, boolean[] destValid) throws Exception {
-		// TODO implement me
-		throw new RuntimeException("Not implemented yet");
-	}
-
-	public void setObservations(double[][] source, double[][] destination,
-			boolean[][] sourceValid, boolean[][] destValid) throws Exception {
-		// TODO implement me
-		throw new RuntimeException("Not implemented yet");
 	}
 
 	/**
@@ -200,6 +185,7 @@ public class MutualInfoCalculatorMultiVariateGaussian
 					MatrixUtils.determinant(sourceCovariance) *
 						MatrixUtils.determinant(destCovariance) /
 						detCovariance));
+		miComputed = true;
 		return lastAverage;
 	}
 
@@ -219,7 +205,6 @@ public class MutualInfoCalculatorMultiVariateGaussian
 		
 		return computeLocalUsingPreviousObservations(sourceObservations,
 				destObservations, true);
-		
 	}
 
 	/**
@@ -252,18 +237,6 @@ public class MutualInfoCalculatorMultiVariateGaussian
 				dimensionsSource * dimensionsDest);
 	}
 	
-	public EmpiricalMeasurementDistribution computeSignificance(
-			int numPermutationsToCheck) throws Exception {
-		// TODO Implement me
-		throw new RuntimeException("Not implemented yet");
-	}
-
-	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings)
-			throws Exception {
-		// TODO Implement me
-		throw new RuntimeException("Not implemented yet");
-	}
-
 	/**
 	 * @return the number of previously supplied observations for which
 	 *  the mutual information will be / was computed.
@@ -274,27 +247,28 @@ public class MutualInfoCalculatorMultiVariateGaussian
 					"this calculator has not had observations supplied or " +
 					"the user supplied the covariance matrix instead of observations");
 		}
-		return destObservations.length;
+		return super.getNumObservations();
 	}
 
 	/**
-	 * Compute the mutual information if the second variable were ordered as per the ordering
-	 *  specified in newOrdering
+	 * Compute the mutual information if the first (source) variable were
+	 *  ordered as per the ordering specified in newOrdering
 	 * 
-	 * @param newOrdering
-	 * @return
-	 * @throws Exception
+	 * @param newOrdering array of time indices with which to reorder the data
+	 * @return a surrogate MI evaluated for the given ordering of the source variable
+	 * @throws Exception if the user previously supplied covariance directly rather
+	 *  than by setting observations (this means we have no observations
+	 *  to reorder).
 	 */
 	public double computeAverageLocalOfObservations(int[] newOrdering)
 			throws Exception {
-		// TODO Implement me
-		// Cannot do if means haven't been set
-		if (means == null) {
+		// Cannot do if observations haven't been set (i.e. the variances
+		//  were directly supplied)
+		if (destObservations == null) {
 			throw new Exception("Cannot compute local values of previous observations " +
-					"without the means having been supplied (either directly or by " +
-					"supplying observations)");
+					"without supplying observations");
 		}
-		throw new RuntimeException("Not implemented yet");
+		return super.computeAverageLocalOfObservations(newOrdering);
 	}
 
 	/**
@@ -432,7 +406,8 @@ public class MutualInfoCalculatorMultiVariateGaussian
 		}
 		
 		if (isPreviousObservations) {
-			lastAverage = newAverage / (newDestObs.length - timeDiff); 
+			lastAverage = newAverage / (newDestObs.length - timeDiff);
+			miComputed = true;
 		}
 		
 		return localValues;

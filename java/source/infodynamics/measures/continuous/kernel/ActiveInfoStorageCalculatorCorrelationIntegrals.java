@@ -258,7 +258,7 @@ public abstract class ActiveInfoStorageCalculatorCorrelationIntegrals
 		return totalObservations;
 	}
 	
-	public void setProperty(String propertyName, String propertyValue) {
+	public void setProperty(String propertyName, String propertyValue) throws Exception {
 		boolean propertySet = true;
 		if (propertyName.equalsIgnoreCase(K_PROP_NAME)) {
 			k = Integer.parseInt(propertyValue);
