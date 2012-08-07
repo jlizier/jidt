@@ -6,28 +6,33 @@ package infodynamics.measures.continuous.kernel;
 import infodynamics.utils.MatrixUtils;
 
 /**
- * <p>Kernel estimator for use with the transfer entropy.</p>
+ * <p>Kernel estimator for use with the transfer entropy on
+ * multivariate source and destination.</p>
  * 
  * <p>Extends KernelEstimatorMultiVariate, using the super class to manage the history of the destination
  * variable, and adds the next state and source on top of this. Any calls to the super class methods will only
  * function on the joint history.
  * </p> 
  * 
- * @author Joseph Lizier joseph.lizier at gmail.com
+ * @see KernelEstimatorMultiVariate
+ * @see KernelEstimatorTransferEntropy
+ * @see "H. Kantz and T. Schreiber, 'Nonlinear Time Series Analysis'.
+ *   Cambridge, MA: Cambridge University Press, 1997"
+ * @author Joseph Lizier, <a href="mailto:joseph.lizier at gmail.com">joseph.lizier at gmail.com</>
  *
  */
 public class KernelEstimatorTransferEntropyMultiVariate extends KernelEstimatorMultiVariate {
 
 	private int sourceDimensions;
-	private double[] epsilonSource;
-	private double[] epsilonSourceInUse;
+	private double[] suppliedKernelWidthSource;
+	private double[] kernelWidthSourceInUse;
 
 	// Keep a separate epsilon for the destination next state, just in case
 	//  we're doing something funky and using different variables to track
 	//  the destination's past and next state (e.g. in swarm analysis).
-	private double epsilonDestNextFixed;
-	private double[] epsilonDestNext;
-	private double[] epsilonDestNextInUse;
+	private double suppliedKernelWidthDestNextFixed;
+	private double[] suppliedKernelWidthDestNext;
+	private double[] kernelWidthDestNextInUse;
 
 	private double[][] destNext;
 	private double[][] source;
@@ -56,24 +61,24 @@ public class KernelEstimatorTransferEntropyMultiVariate extends KernelEstimatorM
 			double epsilonDest, double epsilonSource) {
 		super.initialise(destDimensionsWithPast, epsilonDest);
 		this.sourceDimensions = sourceDimensions;
-		this.epsilonSource = new double[sourceDimensions];
+		this.suppliedKernelWidthSource = new double[sourceDimensions];
 		for (int d = 0; d < sourceDimensions; d++) {
-			this.epsilonSource[d] = epsilonSource;
+			this.suppliedKernelWidthSource[d] = epsilonSource;
 		}
-		epsilonSourceInUse = new double[sourceDimensions];
+		kernelWidthSourceInUse = new double[sourceDimensions];
 		// Track that we're using a fixed epsilon for destination next
-		epsilonDestNext = null;
-		epsilonDestNextFixed = epsilonDest;
+		suppliedKernelWidthDestNext = null;
+		suppliedKernelWidthDestNextFixed = epsilonDest;
 	}
 	
 	public void initialise(double[] epsilonDest, 
 			double[] epsilonSource) {
 		super.initialise(epsilonDest);
-		this.epsilonSource = epsilonSource;
-		epsilonSourceInUse = new double[sourceDimensions];
+		this.suppliedKernelWidthSource = epsilonSource;
+		kernelWidthSourceInUse = new double[sourceDimensions];
 		// Assume that we are doing an ordinary TE computation (dest past
 		//  and next state are the same variable)
-		epsilonDestNext = epsilonDest;
+		suppliedKernelWidthDestNext = epsilonDest;
 	}
 
 	/**
@@ -96,11 +101,11 @@ public class KernelEstimatorTransferEntropyMultiVariate extends KernelEstimatorM
 		if (normalise) {
 			for (int d = 0; d < sourceDimensions; d++) {
 				double std = MatrixUtils.stdDev(source, d);
-				epsilonSourceInUse[d] = epsilonSource[d] * std;
+				kernelWidthSourceInUse[d] = suppliedKernelWidthSource[d] * std;
 			}
 		} else {
 			for (int d = 0; d < sourceDimensions; d++) {
-				epsilonSourceInUse[d] = epsilonSource[d];
+				kernelWidthSourceInUse[d] = suppliedKernelWidthSource[d];
 			}
 		}
 
@@ -109,22 +114,22 @@ public class KernelEstimatorTransferEntropyMultiVariate extends KernelEstimatorM
 		//  we're doing something funky with different dest past and next
 		//  state variables).
 		int destNextDimensions = destNext[0].length;
-		if (epsilonDestNext == null) {
+		if (suppliedKernelWidthDestNext == null) {
 			// We must be using a fixed epsilon
-			epsilonDestNext = new double[destNextDimensions];
+			suppliedKernelWidthDestNext = new double[destNextDimensions];
 			for (int d = 0; d < destNextDimensions; d++) {
-				epsilonDestNext[d] = epsilonDestNextFixed;
+				suppliedKernelWidthDestNext[d] = suppliedKernelWidthDestNextFixed;
 			}
 		}
-		epsilonDestNextInUse = new double[destNextDimensions];
+		kernelWidthDestNextInUse = new double[destNextDimensions];
 		if (normalise) {
 			for (int d = 0; d < destNextDimensions; d++) {
 				double std = MatrixUtils.stdDev(destNext, d);
-				epsilonDestNextInUse[d] = epsilonDestNext[d] * std;
+				kernelWidthDestNextInUse[d] = suppliedKernelWidthDestNext[d] * std;
 			}
 		} else {
 			for (int d = 0; d < destNextDimensions; d++) {
-				epsilonDestNextInUse[d] = epsilonDestNext[d];
+				kernelWidthDestNextInUse[d] = suppliedKernelWidthDestNext[d];
 			}
 		}
 
@@ -169,7 +174,7 @@ public class KernelEstimatorTransferEntropyMultiVariate extends KernelEstimatorM
 	}
 
 	public void setEpsSource(double[] epsilonSource) {
-		this.epsilonSource = epsilonSource;
+		this.suppliedKernelWidthSource = epsilonSource;
 	}
 
 	/**
@@ -180,7 +185,7 @@ public class KernelEstimatorTransferEntropyMultiVariate extends KernelEstimatorM
 	 */
 	protected void correlatedPointAddedCallback(int correlatedTimeStep) {
 		boolean sourceMatches = false;
-		if (stepKernel(sourceObs, source[correlatedTimeStep], epsilonSourceInUse) > 0) {
+		if (stepKernel(sourceObs, source[correlatedTimeStep], kernelWidthSourceInUse) > 0) {
 			countPastSource++;
 			sourceMatches = true;
 		}
@@ -191,7 +196,7 @@ public class KernelEstimatorTransferEntropyMultiVariate extends KernelEstimatorM
 		//  is achieved simply by passing in epsilon, since
 		//  stepKernel just uses the first dimensions elements
 		//  of the widths argument).
-		if (stepKernel(destNextObs, destNext[correlatedTimeStep], epsilonDestNextInUse) > 0) {
+		if (stepKernel(destNextObs, destNext[correlatedTimeStep], kernelWidthDestNextInUse) > 0) {
 			countNextPast++;
 			if (sourceMatches) {
 				countNextPastSource++;
@@ -206,7 +211,7 @@ public class KernelEstimatorTransferEntropyMultiVariate extends KernelEstimatorM
 	 */
 	protected void correlatedPointRemovedCallback(int removedCorrelatedTimeStep) {
 		boolean sourceMatches = false;
-		if (stepKernel(sourceObs, source[removedCorrelatedTimeStep], epsilonSourceInUse) > 0) {
+		if (stepKernel(sourceObs, source[removedCorrelatedTimeStep], kernelWidthSourceInUse) > 0) {
 			countPastSource--;
 			sourceMatches = true;
 		}
@@ -217,7 +222,7 @@ public class KernelEstimatorTransferEntropyMultiVariate extends KernelEstimatorM
 		//  is achieved simply by passing in epsilon, since
 		//  stepKernel just uses the first dimensions elements
 		//  of the widths argument).
-		if (stepKernel(destNextObs, destNext[removedCorrelatedTimeStep], epsilonDestNextInUse) > 0) {
+		if (stepKernel(destNextObs, destNext[removedCorrelatedTimeStep], kernelWidthDestNextInUse) > 0) {
 			countNextPast--;
 			if (sourceMatches) {
 				countNextPastSource--;
