@@ -1,6 +1,7 @@
 package infodynamics.measures.continuous.kernel;
 
 import infodynamics.measures.continuous.ActiveInfoStorageCalculator;
+import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 
@@ -100,11 +101,13 @@ public class ActiveInfoStorageCalculatorKernel
 	 * Set properties for the calculator.
 	 * Can include any of the accepted values for
 	 * {@link MutualInfoCalculatorMultiVariateKernel#setProperty(String, String)}
+	 * except {@link infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate#PROP_TIME_DIFF}
 	 * 
 	 * @param propertyName
 	 * @param propertyValue
+	 * @throws Exception 
 	 */
-	public void setProperty(String propertyName, String propertyValue) {
+	public void setProperty(String propertyName, String propertyValue) throws Exception {
 		super.setProperty(propertyName, propertyValue);
 		if (propertyName.equalsIgnoreCase(MutualInfoCalculatorMultiVariateKernel.EPSILON_PROP_NAME)) {
 			// Grab epsilon here - we need it for the initialisation:
@@ -114,6 +117,9 @@ public class ActiveInfoStorageCalculatorKernel
 				System.out.println(this.getClass().getSimpleName() + ": Set property " + propertyName +
 					" to " + propertyValue);
 			}
+		} if (propertyName.equalsIgnoreCase(MutualInfoCalculatorMultiVariate.PROP_TIME_DIFF)) {
+			throw new Exception("Cannot set " + MutualInfoCalculatorMultiVariate.PROP_TIME_DIFF
+					+ " property on the ActiveInfoStorageCalculator");
 		} else {
 			// Pass any other property through to the miKernel object
 			miKernel.setProperty(propertyName, propertyValue);

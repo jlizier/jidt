@@ -131,8 +131,10 @@ public abstract class TransferEntropyCommon implements
 	 * 
 	 * @param source observations for the source variable
 	 * @param destination observations for the destination variable
-	 * @param sourceValid
-	 * @param destValid
+	 * @param sourceValid array indicating whether the source values
+	 *  are valid at each time step.
+	 * @param destValid array indicating whether the destination values
+	 *  are valid at each time step.
 	 */
 	public void setObservations(double[] source, double[] destination,
 			boolean[] sourceValid, boolean[] destValid) throws Exception {

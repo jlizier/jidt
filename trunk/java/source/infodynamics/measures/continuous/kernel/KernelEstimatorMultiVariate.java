@@ -15,7 +15,7 @@ import java.util.Hashtable;
  * @author Joseph Lizier
  *
  */
-public class KernelEstimatorMultiVariate {
+public class KernelEstimatorMultiVariate implements Cloneable {
 
 	protected double[] epsilon = null;
 	protected double[] epsilonInUse = null;
@@ -977,5 +977,20 @@ public class KernelEstimatorMultiVariate {
 	 */
 	protected void correlatedPointRemovedCallback(int removedCorrelatedTimeStep) {
 		
+	}
+
+	/**
+	 * Provide an implementation of the clone() method.
+	 * This does not deeply copy all of the underlying data, just providing
+	 *  a copy of the references to it all.
+	 * This is enough to protect the integrity of the kernel estimator
+	 *  however if the clone is supplied different data (though the 
+	 *  clone should not alter the data).
+	 * 
+	 * @see java.lang.Object#clone()
+	 */
+	@Override
+	protected Object clone() throws CloneNotSupportedException {
+		return super.clone();
 	}
 }

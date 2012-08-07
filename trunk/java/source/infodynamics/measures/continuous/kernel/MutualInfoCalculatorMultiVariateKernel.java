@@ -1,121 +1,143 @@
 package infodynamics.measures.continuous.kernel;
 
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
-import infodynamics.utils.MatrixUtils;
-import infodynamics.utils.EmpiricalMeasurementDistribution;
-import infodynamics.utils.RandomGenerator;
+import infodynamics.measures.continuous.MutualInfoMultiVariateCommon;
 
-public class MutualInfoCalculatorMultiVariateKernel implements
-	MutualInfoCalculatorMultiVariate {
+/**
+ * <p>Computes the differential mutual information of two given multivariate sets of
+ *  observations,
+ *  using kernel estimation.
+ *  For more details on kernel estimation for computing probability distribution functions,
+ *  see Kantz and Schreiber (below).</p>
+ *  
+ * <p>
+ * Usage:
+ * 	<ol>
+ * 		<li>Construct {@link #MutualInfoCalculatorMultiVariateKernel()}</li>
+ * 		<li>Set properties using {@link #setProperty(String, String)}</li>
+ *		<li>{@link #initialise(int, int)} or {@link #initialise(int, int, double)}</li>
+ * 		<li>Provide the observations to the calculator using:
+ * 			{@link #setObservations(double[][], double[][])}, or
+ * 			{@link #setCovariance(double[][])}, or
+ * 			a sequence of:
+ * 			{@link #startAddObservations()},
+ *          multiple calls to either {@link #addObservations(double[][], double[][])}
+ *          or {@link #addObservations(double[][], double[][], int, int)}, and then
+ *          {@link #finaliseAddObservations()}.</li>
+ * 		<li>Compute the required information-theoretic results, primarily:
+ * 			{@link #computeAverageLocalOfObservations()} to return the average MI
+ *          entropy based on the supplied observations; or other calls to compute
+ *          local values or statistical significance.</li>
+ * 	</ol>
+ * </p>
+ * 
+ * @see "H. Kantz and T. Schreiber, 'Nonlinear Time Series Analysis'.
+ *   Cambridge, MA: Cambridge University Press, 1997"
+ * @author Joseph Lizier, <a href="mailto:joseph.lizier at gmail.com">joseph.lizier at gmail.com</>
+ */
+public class MutualInfoCalculatorMultiVariateKernel
+	extends MutualInfoMultiVariateCommon
+	implements MutualInfoCalculatorMultiVariate, Cloneable {
 
-	KernelEstimatorMultiVariate mvke1 = null;
-	KernelEstimatorMultiVariate mvke2 = null;
+	KernelEstimatorMultiVariate mvkeSource = null;
+	KernelEstimatorMultiVariate mvkeDest = null;
 	KernelEstimatorMultiVariate mvkeJoint = null;
 
-	private int totalObservations = 0;
-	// private int dimensions1 = 0;
-	// private int dimensions2 = 0;
-	private boolean debug = false;
-	private double[][] observations1; 
-	private double[][] observations2; 
-	private double lastAverage;
-	private boolean miComputed;
-	
 	private boolean normalise = true;
+	/**
+	 * Property name for whether to normalise the incoming variables or not
+	 */
 	public static final String NORMALISE_PROP_NAME = "NORMALISE";
 	
 	private boolean dynCorrExcl = false;
 	private int dynCorrExclTime = 100;
+	/**
+	 * Property name for a supplied dynamics exclusion time window (see Kantz and Schreiber).
+	 */
 	public static final String DYN_CORR_EXCL_TIME_NAME = "DYN_CORR_EXCL";
 	
 	private boolean forceCompareToAll = false;
+	/**
+	 * Whether to force the underlying kernel estimators to compare
+	 *  each data point to each other (or else allow it to use optimisations)
+	 */
 	public static final String FORCE_KERNEL_COMPARE_TO_ALL = "FORCE_KERNEL_COMPARE_TO_ALL";
 	
 	/**
-	 * Default value for epsilon
+	 * Default value for kernel width
 	 */
-	public static final double DEFAULT_EPSILON = 0.25;
+	public static final double DEFAULT_KERNEL_WIDTH = 0.25;
 	/**
 	 * Kernel width
 	 */
-	private double epsilon = DEFAULT_EPSILON;
+	private double kernelWidth = DEFAULT_KERNEL_WIDTH;
+	/**
+	 * Property name for the kernel width
+	 */
+	public static final String KERNEL_WIDTH_PROP_NAME = "KERNEL_WIDTH";
+	/**
+	 * Legacy property name for the kernel width
+	 */
 	public static final String EPSILON_PROP_NAME = "EPSILON";
 	
 	public MutualInfoCalculatorMultiVariateKernel() {
-		mvke1 = new KernelEstimatorMultiVariate();
-		mvke2 = new KernelEstimatorMultiVariate();
+		// Create our kernel estimator objects:
+		mvkeSource = new KernelEstimatorMultiVariate();
+		mvkeDest = new KernelEstimatorMultiVariate();
 		mvkeJoint = new KernelEstimatorMultiVariate();
-		mvke1.setNormalise(normalise);
-		mvke2.setNormalise(normalise);
+		mvkeSource.setNormalise(normalise);
+		mvkeDest.setNormalise(normalise);
 		mvkeJoint.setNormalise(normalise);
 	}
 
 	/**
-	 * Initialise using a default epsilon
+	 * Initialise using a default kernel width
 	 * 
-	 * @param dimensions1
-	 * @param dimensions2
+	 * @param sourceDimensions
+	 * @param destDimensions
 	 */
-	public void initialise(int dimensions1, int dimensions2) {
-		initialise(dimensions1, dimensions2, epsilon);
-	}
-
-	public void initialise(int dimensions1, int dimensions2, double epsilon) {
-		this.epsilon = epsilon;
-		mvke1.initialise(dimensions1, epsilon);
-		mvke2.initialise(dimensions2, epsilon);
-		mvkeJoint.initialise(dimensions1 + dimensions2, epsilon);
-		// this.dimensions1 = dimensions1;
-		// this.dimensions2 = dimensions2;
-		lastAverage = 0.0;
-		miComputed = false;
-	}
-
-	public void addObservations(double[][] source, double[][] destination) throws Exception {
-		// TODO If we ever implement these (which will require changing the kernel
-		//  estimators) we will need to throw an exception if dynamic correlation
-		//  exclusion was set.
-		throw new RuntimeException("Not implemented yet");
-	}
-
-	public void addObservations(double[][] source, double[][] destination, int startTime, int numTimeSteps) throws Exception {
-		throw new RuntimeException("Not implemented yet");
-	}
-
-	public void setObservations(double[][] source, double[][] destination, boolean[] sourceValid, boolean[] destValid) throws Exception {
-		throw new RuntimeException("Not implemented yet");
-	}
-
-	public void setObservations(double[][] source, double[][] destination, boolean[][] sourceValid, boolean[][] destValid) throws Exception {
-		throw new RuntimeException("Not implemented yet");
-	}
-
-	public void startAddObservations() {
-		throw new RuntimeException("Not implemented yet");
-	}
-
-	public void finaliseAddObservations() {
-		throw new RuntimeException("Not implemented yet");
+	public void initialise(int sourceDimensions, int destDimensions) {
+		initialise(sourceDimensions, destDimensions, kernelWidth);
 	}
 
 	/**
-	 * Set the observations for the PDFs.
-	 * Should only be called once, the last call contains the
-	 *  observations that are used (they are not accumulated). 
+	 * Initialise the calculator with a specific kernel width
 	 * 
-	 * @param observations
+	 * @param sourceDimensions
+	 * @param destDimensions
+	 * @param kernelWidth if {@link #NORMALISE_PROP_NAME} property has
+	 *  been set, then this kernel width corresponds to the number of
+	 *  standard deviations from the mean (else it is an absolute value)
 	 */
-	public void setObservations(double observations1[][], double observations2[][]) throws Exception {
-		mvke1.setObservations(observations1);
-		mvke2.setObservations(observations2);
-		// This call will throw an exception for us if the length of observations1 and 2 
-		//  are not the same
-		mvkeJoint.setObservations(observations1, observations2);
-		totalObservations = observations1.length;
-		this.observations1 = observations1;
-		this.observations2 = observations2;
+	public void initialise(int sourceDimensions, int destDimensions, double kernelWidth) {
+		super.initialise(sourceDimensions, destDimensions);
+		// Store kernel width for local use
+		this.kernelWidth = kernelWidth;
+		// Initialise the kernel estimators:
+		mvkeSource.initialise(sourceDimensions, kernelWidth);
+		mvkeDest.initialise(destDimensions, kernelWidth);
+		mvkeJoint.initialise(sourceDimensions + destDimensions, kernelWidth);
 	}
-	
+
+	public void finaliseAddObservations() {
+		// Get the observations properly stored in the sourceObservations[][] and
+		//  destObservations[][] arrays.
+		super.finaliseAddObservations();
+
+		// Now assign these observations to the underlying kernel estimators:
+		mvkeSource.setObservations(sourceObservations);
+		mvkeDest.setObservations(destObservations);
+		try {
+			// This will only throw an exception, in theory, if
+			//  the time length of the observations is different
+			//  or if they are null - since we constructed them 
+			//  neither of these should be the case.
+			mvkeJoint.setObservations(sourceObservations, destObservations);
+		} catch (Exception e) {
+			throw new RuntimeException("Unhandled exception from MultivariateKernelEstimator.setObservations(double[][], double[][])", e);
+		}
+	}
+
 	/**
 	 * Compute the MI from the observations we were given
 	 * 
@@ -124,9 +146,9 @@ public class MutualInfoCalculatorMultiVariateKernel implements
 	public double computeAverageLocalOfObservations() {
 		double mi = 0.0;
 		for (int b = 0; b < totalObservations; b++) {
-			double prob1 = mvke1.getProbability(observations1[b], b);
-			double prob2 = mvke2.getProbability(observations2[b], b);
-			double probJoint = mvkeJoint.getProbability(observations1[b], observations2[b], b);
+			double prob1 = mvkeSource.getProbability(sourceObservations[b], b);
+			double prob2 = mvkeDest.getProbability(destObservations[b], b);
+			double probJoint = mvkeJoint.getProbability(sourceObservations[b], destObservations[b], b);
 			double logTerm = 0.0;
 			double cont = 0.0;
 			if (probJoint > 0.0) {
@@ -146,112 +168,6 @@ public class MutualInfoCalculatorMultiVariateKernel implements
 	}
 
 	/**
-	 * Compute the MI if data were reordered.
-	 * 
-	 * @param newOrdering
-	 * @return MI under the reordering scheme
-	 */
-	public double computeAverageLocalOfObservations(int[] newOrdering) throws Exception {
-		// Store the real observations and their MI:
-		double actualMI = lastAverage;
-		double[][] originalData2 = observations2;
-		double[][] data2;
-		
-		// Generate a new re-ordered data2
-		data2 = MatrixUtils.extractSelectedTimePointsReusingArrays(originalData2, newOrdering);
-		observations2 = data2;
-		// Perform new initialisations
-		mvkeJoint.initialise(observations1[0].length + originalData2[0].length, epsilon);
-		// Set new observations
-		mvkeJoint.setObservations(observations1, data2);
-		// Compute the MI
-		double newMI = computeAverageLocalOfObservations();
-		
-		// Restore the actual MI and the observations
-		lastAverage = actualMI;
-		observations2 = originalData2;
-		mvkeJoint.initialise(observations1[0].length + originalData2[0].length, epsilon);
-		mvkeJoint.setObservations(observations1, originalData2);
-		return newMI;
-	}
-
-	/**
-	 * Compute the significance of the mutual information of the previously supplied observations.
-	 * We destroy the p(x,y) correlations, while retaining the p(x), p(y) marginals, to check how
-	 *  significant this mutual information actually was.
-	 *  
-	 * This is in the spirit of Chavez et. al., "Statistical assessment of nonlinear causality:
-	 *  application to epileptic EEG signals", Journal of Neuroscience Methods 124 (2003) 113-128
-	 *  which was performed for Transfer entropy.
-	 * 
-	 * @param numPermutationsToCheck
-	 * @return the proportion of MI scores from the distribution which have higher or equal MIs to ours.
-	 */
-	public synchronized EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception {
-		// Generate the re-ordered indices:
-		RandomGenerator rg = new RandomGenerator();
-		int[][] newOrderings = rg.generateDistinctRandomPerturbations(observations1.length, numPermutationsToCheck);
-		return computeSignificance(newOrderings);
-	}
-
-	/**
-	 * Compute the significance of the mutual information of the previously supplied observations.
-	 * We destroy the p(x,y) correlations, while retaining the p(x), p(y) marginals, to check how
-	 *  significant this mutual information actually was.
-	 *  
-	 * This is in the spirit of Chavez et. al., "Statistical assessment of nonlinear causality:
-	 *  application to epileptic EEG signals", Journal of Neuroscience Methods 124 (2003) 113-128
-	 *  which was performed for Transfer entropy.
-	 * 
-	 * @param newOrderings the specific new orderings to use
-	 * @return the proportion of MI scores from the distribution which have higher or equal MIs to ours.
-	 */
-	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings) throws Exception {
-		int numPermutationsToCheck = newOrderings.length;
-		if (!miComputed) {
-			computeAverageLocalOfObservations();
-		}
-		// Store the real observations and their MI:
-		double actualMI = lastAverage;
-		double[][] originalData1 = observations1;
-		double[][] originalData2 = observations2;
-		double[][] data2;
-		
-		EmpiricalMeasurementDistribution measDistribution = new EmpiricalMeasurementDistribution(numPermutationsToCheck);
-		
-		int countWhereMiIsMoreSignificantThanOriginal = 0;
-		for (int i = 0; i < numPermutationsToCheck; i++) {
-			// Generate a new re-ordered data2
-			data2 = MatrixUtils.extractSelectedTimePointsReusingArrays(originalData2, newOrderings[i]);
-			observations2 = data2;
-			// Perform new initialisations
-			mvkeJoint.initialise(originalData1[0].length + originalData2[0].length, epsilon);
-			// Set new observations
-			mvkeJoint.setObservations(originalData1, data2);
-			// Compute the MI
-			double newMI = computeAverageLocalOfObservations();
-			measDistribution.distribution[i] = newMI;
-			if (debug){
-				System.out.println("New MI was " + newMI);
-			}
-			if (newMI >= actualMI) {
-				countWhereMiIsMoreSignificantThanOriginal++;
-			}
-		}
-		
-		// Restore the actual MI and the observations
-		lastAverage = actualMI;
-		observations2 = originalData2;
-		mvkeJoint.initialise(originalData1[0].length + originalData2[0].length, epsilon);
-		mvkeJoint.setObservations(originalData1, originalData2);
-		// And return the significance
-		measDistribution.pValue = (double) countWhereMiIsMoreSignificantThanOriginal / (double) numPermutationsToCheck;
-		measDistribution.actualValue = actualMI;
-		
-		return measDistribution;
-	}
-
-	/**
 	 * Extra utility method to return the joint entropy
 	 * 
 	 * @return
@@ -259,7 +175,7 @@ public class MutualInfoCalculatorMultiVariateKernel implements
 	public double computeAverageJointEntropy() {
 		double entropy = 0.0;
 		for (int b = 0; b < totalObservations; b++) {
-			double prob = mvkeJoint.getProbability(observations1[b], observations2[b], b);
+			double prob = mvkeJoint.getProbability(sourceObservations[b], destObservations[b], b);
 			double cont = 0.0;
 			if (prob > 0.0) {
 				cont = - Math.log(prob);
@@ -280,7 +196,7 @@ public class MutualInfoCalculatorMultiVariateKernel implements
 	public double computeAverageEntropyOfObservation1() {
 		double entropy = 0.0;
 		for (int b = 0; b < totalObservations; b++) {
-			double prob = mvke1.getProbability(observations1[b], b);
+			double prob = mvkeSource.getProbability(sourceObservations[b], b);
 			double cont = 0.0;
 			// Comparing the prob to 0.0 should be fine - it would have to be
 			//  an impossible number of samples for us to hit machine resolution here.
@@ -303,7 +219,7 @@ public class MutualInfoCalculatorMultiVariateKernel implements
 	public double computeAverageEntropyOfObservation2() {
 		double entropy = 0.0;
 		for (int b = 0; b < totalObservations; b++) {
-			double prob = mvke2.getProbability(observations2[b], b);
+			double prob = mvkeDest.getProbability(destObservations[b], b);
 			double cont = 0.0;
 			if (prob > 0.0) {
 				cont = -Math.log(prob);
@@ -324,9 +240,9 @@ public class MutualInfoCalculatorMultiVariateKernel implements
 	public double computeAverageInfoDistanceOfObservations() {
 		double infoDistance = 0.0;
 		for (int b = 0; b < totalObservations; b++) {
-			double prob1 = mvke1.getProbability(observations1[b], b);
-			double prob2 = mvke2.getProbability(observations2[b], b);
-			double probJoint = mvkeJoint.getProbability(observations1[b], observations2[b], b);
+			double prob1 = mvkeSource.getProbability(sourceObservations[b], b);
+			double prob2 = mvkeDest.getProbability(destObservations[b], b);
+			double probJoint = mvkeJoint.getProbability(sourceObservations[b], destObservations[b], b);
 			double logTerm = 0.0;
 			double cont = 0.0;
 			if (probJoint > 0.0) {
@@ -347,7 +263,7 @@ public class MutualInfoCalculatorMultiVariateKernel implements
 	 * @return
 	 */
 	public double[] computeLocalOfPreviousObservations() throws Exception {
-		return computeLocalUsingPreviousObservations(observations1, observations2, true);
+		return computeLocalUsingPreviousObservations(sourceObservations, destObservations, true);
 	}
 
 
@@ -384,14 +300,14 @@ public class MutualInfoCalculatorMultiVariateKernel implements
 			if (isOurPreviousObservations) {
 				// We've been called with our previous observations, so we
 				//  can pass the time step through for dynamic correlation exclusion
-				prob1 = mvke1.getProbability(states1[b], b);
-				prob2 = mvke2.getProbability(states2[b], b);
+				prob1 = mvkeSource.getProbability(states1[b], b);
+				prob2 = mvkeDest.getProbability(states2[b], b);
 				probJoint = mvkeJoint.getProbability(states1[b], states2[b], b);
 			} else {
 				// We don't know whether these were our previous observation or not
 				//  so we don't do dynamic correlation exclusion
-				prob1 = mvke1.getProbability(states1[b]);
-				prob2 = mvke2.getProbability(states2[b]);
+				prob1 = mvkeSource.getProbability(states1[b]);
+				prob2 = mvkeDest.getProbability(states2[b]);
 				probJoint = mvkeJoint.getProbability(states1[b], states2[b]);
 			}
 			double logTerm = 0.0;
@@ -422,8 +338,8 @@ public class MutualInfoCalculatorMultiVariateKernel implements
 	 * @return
 	 */
 	public double[] computeLocalJointEntropyOfPreviousObservations() throws Exception {
-		return computeLocalJointEntropyUsingPreviousObservations(observations1,
-				observations2, true);
+		return computeLocalJointEntropyUsingPreviousObservations(sourceObservations,
+				destObservations, true);
 	}
 
 	/**
@@ -456,9 +372,9 @@ public class MutualInfoCalculatorMultiVariateKernel implements
 		double prob;
 		for (int b = 0; b < totalObservations; b++) {
 			if (isOurPreviousObservations) {
-				prob = mvkeJoint.getProbability(observations1[b], observations2[b], b);
+				prob = mvkeJoint.getProbability(sourceObservations[b], destObservations[b], b);
 			} else {
-				prob = mvkeJoint.getProbability(observations1[b], observations2[b]);
+				prob = mvkeJoint.getProbability(sourceObservations[b], destObservations[b]);
 			}
 			localJoint[b] = 0.0;
 			if (prob > 0.0) {
@@ -480,7 +396,7 @@ public class MutualInfoCalculatorMultiVariateKernel implements
 	 * @return
 	 */
 	public double[] computeLocalEntropy1OfPreviousObservations() {
-		return computeLocalEntropyFromPreviousObservations(observations1, 1, true);
+		return computeLocalEntropyFromPreviousObservations(sourceObservations, 1, true);
 	}
 
 	/**
@@ -506,7 +422,7 @@ public class MutualInfoCalculatorMultiVariateKernel implements
 	 * @return
 	 */
 	public double[] computeLocalEntropy2OfPreviousObservations() {
-		return computeLocalEntropyFromPreviousObservations(observations2, 2, true);
+		return computeLocalEntropyFromPreviousObservations(destObservations, 2, true);
 	}
 
 	/**
@@ -540,15 +456,15 @@ public class MutualInfoCalculatorMultiVariateKernel implements
 		for (int b = 0; b < totalObservations; b++) {
 			if (useProbsForWhichVar == 1) {
 				if (isOurPreviousObservations) {
-					prob = mvke1.getProbability(states[b], b);
+					prob = mvkeSource.getProbability(states[b], b);
 				} else {
-					prob = mvke1.getProbability(states[b]);
+					prob = mvkeSource.getProbability(states[b]);
 				}
 			} else {
 				if (isOurPreviousObservations) {
-					prob = mvke2.getProbability(states[b], b);
+					prob = mvkeDest.getProbability(states[b], b);
 				} else {
-					prob = mvke2.getProbability(states[b]);
+					prob = mvkeDest.getProbability(states[b]);
 				}
 			}
 			localEntropy[b] = 0.0;
@@ -569,8 +485,8 @@ public class MutualInfoCalculatorMultiVariateKernel implements
 	 * @return
 	 */
 	public double[] computeLocalInfoDistanceOfPreviousObservations() {
-		return computeLocalInfoDistanceUsingPreviousObservations(observations1,
-				observations2, true);
+		return computeLocalInfoDistanceUsingPreviousObservations(sourceObservations,
+				destObservations, true);
 	}
 
 	/**
@@ -594,12 +510,12 @@ public class MutualInfoCalculatorMultiVariateKernel implements
 		double prob1, prob2, probJoint;
 		for (int b = 0; b < timeSteps; b++) {
 			if (isOurPreviousObservations) {
-				prob1 = mvke1.getProbability(states1[b], b);
-				prob2 = mvke2.getProbability(states2[b], b);
+				prob1 = mvkeSource.getProbability(states1[b], b);
+				prob2 = mvkeDest.getProbability(states2[b], b);
 				probJoint = mvkeJoint.getProbability(states1[b], states2[b], b);
 			} else {
-				prob1 = mvke1.getProbability(states1[b]);
-				prob2 = mvke2.getProbability(states2[b]);
+				prob1 = mvkeSource.getProbability(states1[b]);
+				prob2 = mvkeDest.getProbability(states2[b]);
 				probJoint = mvkeJoint.getProbability(states1[b], states2[b]);
 			}
 			double logTerm = 0.0;
@@ -624,16 +540,19 @@ public class MutualInfoCalculatorMultiVariateKernel implements
 	}
 
 	/**
-	 * Set properties for the mutual information calculator.
+	 * <p>Set properties for the mutual information calculator.
 	 * These can include:
 	 * <ul>
-	 * 		<li>{@link #EPSILON_PROP_NAME}</li>
+	 * 		<li>{@link #KERNEL_WIDTH_PROP_NAME} (legacy value is {@link #EPSILON_PROP_NAME})</li>
 	 * 		<li>{@link #NORMALISE_PROP_NAME}</li>
 	 * 		<li>{@link #DYN_CORR_EXCL_TIME_NAME}</li>
 	 * 		<li>{@link #FORCE_KERNEL_COMPARE_TO_ALL}</li>
 	 * </ul>
+	 * or any properties set in {@link MutualInfoMultiVariateCommon#setProperty(String, String)}.
+	 * </p>
 	 * 
-	 * Note that dynamic correlation exclusion may have unexpected results if multiple
+	 * <p>Note that dynamic correlation exclusion (set with {@link #DYN_CORR_EXCL_TIME_NAME})
+	 *  may have unexpected results if multiple
 	 *  observation sets have been added. This is because multiple observation sets
 	 *  are treated as though they are from a single time series, so observations from
 	 *  near the end of observation set i will be excluded from comparison to 
@@ -642,40 +561,40 @@ public class MutualInfoCalculatorMultiVariateKernel implements
 	 * @param propertyName
 	 * @param propertyValue
 	 */
-	public void setProperty(String propertyName, String propertyValue) {
+	public void setProperty(String propertyName, String propertyValue)
+			throws Exception {
+		
 		boolean propertySet = true;
-		if (propertyName.equalsIgnoreCase(EPSILON_PROP_NAME)) {
-			epsilon = Double.parseDouble(propertyValue);
+		if (propertyName.equalsIgnoreCase(KERNEL_WIDTH_PROP_NAME) ||
+				propertyName.equalsIgnoreCase(EPSILON_PROP_NAME)) {
+			kernelWidth = Double.parseDouble(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(NORMALISE_PROP_NAME)) {
 			normalise = Boolean.parseBoolean(propertyValue);
-			mvke1.setNormalise(normalise);
-			mvke2.setNormalise(normalise);
+			mvkeSource.setNormalise(normalise);
+			mvkeDest.setNormalise(normalise);
 			mvkeJoint.setNormalise(normalise);
 		} else if (propertyName.equalsIgnoreCase(DYN_CORR_EXCL_TIME_NAME)) {
 			dynCorrExclTime = Integer.parseInt(propertyValue);
 			dynCorrExcl = (dynCorrExclTime > 0);
 			if (dynCorrExcl) {
-				mvke1.setDynamicCorrelationExclusion(dynCorrExclTime);
-				mvke2.setDynamicCorrelationExclusion(dynCorrExclTime);
+				mvkeSource.setDynamicCorrelationExclusion(dynCorrExclTime);
+				mvkeDest.setDynamicCorrelationExclusion(dynCorrExclTime);
 				mvkeJoint.setDynamicCorrelationExclusion(dynCorrExclTime);
 			} else {
-				mvke1.clearDynamicCorrelationExclusion();
-				mvke2.clearDynamicCorrelationExclusion();
+				mvkeSource.clearDynamicCorrelationExclusion();
+				mvkeDest.clearDynamicCorrelationExclusion();
 				mvkeJoint.clearDynamicCorrelationExclusion();
 			}
 		} else if (propertyName.equalsIgnoreCase(FORCE_KERNEL_COMPARE_TO_ALL)) {
 			forceCompareToAll = Boolean.parseBoolean(propertyValue);
-			mvke1.setForceCompareToAll(forceCompareToAll);
-			mvke2.setForceCompareToAll(forceCompareToAll);
+			mvkeSource.setForceCompareToAll(forceCompareToAll);
+			mvkeDest.setForceCompareToAll(forceCompareToAll);
 			mvkeJoint.setForceCompareToAll(forceCompareToAll);
-		} else if (propertyName.equalsIgnoreCase(PROP_TIME_DIFF)) {
-			int diff = Integer.parseInt(propertyValue);
-			if (diff != 0) {
-				throw new RuntimeException(PROP_TIME_DIFF + " property != 0 not implemented yet");
-			}
 		} else {
-			// No property was set
+			// No property was set here
 			propertySet = false;
+			// try the superclass:
+			super.setProperty(propertyName, propertyValue);
 		}
 		if (debug && propertySet) {
 			System.out.println(this.getClass().getSimpleName() + ": Set property " + propertyName +
@@ -685,5 +604,28 @@ public class MutualInfoCalculatorMultiVariateKernel implements
 
 	public int getNumObservations() {
 		return totalObservations;
+	}
+
+	/**
+	 * Clone the object - note: while it does create new cloned instances of
+	 *  the MulitVariateKernelEstimator objects, I think these only
+	 *  have shallow copies to the data.
+	 * This is enough though to maintain the structure across 
+	 *  various {@link #computeSignificance(int)} calls.
+	 * 
+	 * @see java.lang.Object#clone()
+	 */
+	@Override
+	protected Object clone() throws CloneNotSupportedException {
+		MutualInfoCalculatorMultiVariateKernel theClone = 
+				(MutualInfoCalculatorMultiVariateKernel) super.clone();
+		// Now assign clones of the KernelEstimatorMultiVariate objects:
+		theClone.mvkeSource =
+				(KernelEstimatorMultiVariate) mvkeSource.clone();
+		theClone.mvkeDest =
+				(KernelEstimatorMultiVariate) mvkeDest.clone();
+		theClone.mvkeJoint =
+				(KernelEstimatorMultiVariate) mvkeJoint.clone();
+		return theClone;
 	}
 }
