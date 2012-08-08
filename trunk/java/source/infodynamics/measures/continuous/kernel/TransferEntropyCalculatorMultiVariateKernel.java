@@ -201,10 +201,16 @@ public class TransferEntropyCalculatorMultiVariateKernel
 	}
 
 	/**
-	 * Set the observations to compute the probabilities from 
+	 * <p>Sets the single set of observations to compute the PDFs from.
+	 * Cannot be called in conjunction with 
+	 * {@link #startAddObservations()}/{@link #addObservations(double[], double[])} /
+	 * {@link #finaliseAddObservations()}.</p>
 	 * 
-	 * @param source
-	 * @param destination
+	 * @param source multivariate observations for the source variable
+	 *  (first index is time, second is variable number)
+	 * @param destination multivariate observations for the destination variable
+	 *  (first index is time, second is variable number)
+	 * @throws Exception
 	 */
 	public void setObservations(double[][] source, double[][] destination) throws Exception {
 		startAddObservations();
@@ -213,16 +219,19 @@ public class TransferEntropyCalculatorMultiVariateKernel
 	}
 	
 	/**
-	 * Sets the observations to compute the PDFs from.
-	 * Cannot be called in conjunction with start/add/finaliseAddObservations.
-	 * destValid is a time series (with time indices the same as destination)
-	 *  indicating whether the destination at that point is valid.
-	 * sourceValid is the same for the source
+	 * <p>Sets the single set of observations to compute the PDFs from.
+	 * Cannot be called in conjunction with 
+	 * {@link #startAddObservations()}/{@link #addObservations(double[], double[])} /
+	 * {@link #finaliseAddObservations()}.</p>
 	 * 
-	 * @param source observations for the source variable
-	 * @param destination observations for the destination variable
-	 * @param sourceValid
-	 * @param destValid
+	 * @param source multivariate observations for the source variable
+	 *  (first index is time, second is variable number)
+	 * @param destination multivariate observations for the destination variable
+	 *  (first index is time, second is variable number)
+	 * @param sourceValid time series (with time indices the same as source)
+	 *  indicating whether the source at that point is valid.
+	 * @param destValid time series (with time indices the same as destination)
+	 *  indicating whether the destination at that point is valid.
 	 */
 	public void setObservations(double[][] source, double[][] destination, boolean[] sourceValid, boolean[] destValid) throws Exception {
 		Vector<int[]> startAndEndTimePairs = computeStartAndEndTimePairs(sourceValid, destValid);

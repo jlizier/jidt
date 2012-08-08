@@ -6,16 +6,27 @@ import java.util.Vector;
 
 
 /**
- * <p>Base class for implementations of the transfer entropy,
- * e.g. kernel estimation, Kraskov style extensions.
- * It implements some common code to be used across transfer entropy calculators
- * </p>
+ * <p>Base class for implementations of the transfer entropy (see Schreiber, PRL, 2000)
+ *  and local transfer entropy (see Lizier et al, PRE, 2008).
+ *  We use the term <i>apparent</i> transfer entropy to mean that
+ *  we compute the transfer that appears to come from a single
+ *  source variable, without examining any other potential sources
+ *  (see Lizier et al, PRE, 2008).</p>
  * 
+ * <p>Specifically, this provides base implementations of the transfer entropy for 
+ * <i>continuous</i>-valued variables (univariate).
+ * It provides common code used in multiple child implementations.</p>
  * 
- * @author Joseph Lizier, joseph.lizier at gmail.com
- *
- * @see For transfer entropy: Schreiber, PRL 85 (2) pp.461-464, 2000; http://dx.doi.org/10.1103/PhysRevLett.85.461
- * @see For local transfer entropy: Lizier et al, PRE 77, 026110, 2008; http://dx.doi.org/10.1103/PhysRevE.77.026110
+ * @see "Schreiber, Physical Review Letters 85 (2) pp.461-464, 2000;
+ *  <a href='http://dx.doi.org/10.1103/PhysRevLett.85.461'>download</a>
+ *  (for definition of transfer entropy)"
+ * @see "Lizier, Prokopenko and Zomaya, Physical Review E 77, 026110, 2008;
+ * <a href='http://dx.doi.org/10.1103/PhysRevE.77.026110'>download</a>
+ *  (for definition of <i>local</i> transfer entropy and qualification
+ *  of naming it as <i>apparent</i> transfer entropy)"
+ *  
+ * @author Joseph Lizier, <a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>
  */
 public abstract class TransferEntropyCommon implements
 		TransferEntropyCalculator {
@@ -51,10 +62,14 @@ public abstract class TransferEntropyCommon implements
 	}
 
 	/**
-	 * Set the observations to compute the probabilities from 
+	 * <p>Sets the single set of observations to compute the PDFs from.
+	 * Cannot be called in conjunction with 
+	 * {@link #startAddObservations()}/{@link #addObservations(double[], double[])} /
+	 * {@link #finaliseAddObservations()}.</p>
 	 * 
-	 * @param source
-	 * @param destination
+	 * @param source observations for the source variable
+	 * @param destination observations for the destination variable
+	 * @throws Exception
 	 */
 	public void setObservations(double[] source, double[] destination) throws Exception {
 		startAddObservations();
@@ -72,12 +87,27 @@ public abstract class TransferEntropyCommon implements
 	}
 	
 	/**
-	 * Add some more observations.
-	 * Note that the arrays source and destination must not be over-written by the user
-	 *  until after finaliseAddObservations() has been called.
+	 * <p>Adds a new set of observations to update the PDFs with - is
+	 * intended to be called multiple times.
+	 * Must be called after {@link #startAddObservations()}; call
+	 * {@link #finaliseAddObservations()} once all observations have
+	 * been supplied.</p>
 	 * 
-	 * @param source
-	 * @param destination
+	 * <p><b>Important:</b> this does not append these observations to the previously
+	 *  supplied observations, but treats them independently - i.e. this
+	 *  will not join them up to examine k
+	 *  consecutive values in time (which would be an incorrect transfer entropy
+	 *  calculation, since the end of one observation set should not 
+	 *  necessarily be followed by the start of another).</p>
+	 *  
+	 * <p>Note that the arrays source and destination must not be over-written by the user
+	 *  until after finaliseAddObservations() has been called
+	 *  (they are not copied by this method necessarily, but the method
+	 *  may simply hold a pointer to them).</p>
+	 * 
+	 * @param source observations for the source variable
+	 * @param destination observations for the destination variable
+	 * @throws Exception
 	 */
 	public void addObservations(double[] source, double[] destination) throws Exception {
 		if (vectorOfSourceObservations == null) {
@@ -97,12 +127,29 @@ public abstract class TransferEntropyCommon implements
 	}
 
 	/**
-	 * Add some more observations.
+	 * <p>Adds a new set of observations to update the PDFs with - is
+	 * intended to be called multiple times.
+	 * Must be called after {@link #startAddObservations()}; call
+	 * {@link #finaliseAddObservations()} once all observations have
+	 * been supplied.</p>
 	 * 
-	 * @param source
-	 * @param destination
+	 * <p><b>Important:</b> this does not append these observations to the previously
+	 *  supplied observations, but treats them independently - i.e. this
+	 *  will not join them up to examine k
+	 *  consecutive values in time (which would be an incorrect transfer entropy
+	 *  calculation, since the end of one observation set should not 
+	 *  necessarily be followed by the start of another).</p>
+	 *  
+	 * <p>Note that the arrays source and destination must not be over-written by the user
+	 *  until after finaliseAddObservations() has been called
+	 *  (they are not copied by this method necessarily, but the method
+	 *  may simply hold a pointer to them).</p>
+	 * 
+	 * @param source observations for the source variable
+	 * @param destination observations for the destination variable
 	 * @param startTime first time index to take observations on
 	 * @param numTimeSteps number of time steps to use
+	 * @throws Exception
 	 */
 	public void addObservations(double[] source, double[] destination,
 			int startTime, int numTimeSteps) throws Exception {
@@ -123,18 +170,18 @@ public abstract class TransferEntropyCommon implements
 	}
 
 	/**
-	 * Sets the observations to compute the PDFs from.
-	 * Cannot be called in conjunction with start/add/finaliseAddObservations.
-	 * destValid is a time series (with time indices the same as destination)
-	 *  indicating whether the destination at that point is valid.
-	 * sourceValid is the same for the source
+	 * <p>Sets the single set of observations to compute the PDFs from.
+	 * Cannot be called in conjunction with 
+	 * {@link #startAddObservations()}/{@link #addObservations(double[], double[])} /
+	 * {@link #finaliseAddObservations()}.</p>
 	 * 
 	 * @param source observations for the source variable
 	 * @param destination observations for the destination variable
-	 * @param sourceValid array indicating whether the source values
-	 *  are valid at each time step.
-	 * @param destValid array indicating whether the destination values
-	 *  are valid at each time step.
+	 * @param sourceValid time series (with time indices the same as source)
+	 *  indicating whether the source at that point is valid.
+	 * @param destValid time series (with time indices the same as destination)
+	 *  indicating whether the destination at that point is valid.
+	 * @throws Exception
 	 */
 	public void setObservations(double[] source, double[] destination,
 			boolean[] sourceValid, boolean[] destValid) throws Exception {
