@@ -5,24 +5,51 @@ import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.RandomGenerator;
 
 /**
- * Implements transfer entropy (see Schreiber, PRL, 2000)
- *  and local transfer entropy (see Lizier et al, PRE, 2008)
+ * <p>Implements transfer entropy (see Schreiber, PRL, 2000)
+ *  and local transfer entropy (see Lizier et al, PRE, 2008).
+ *  We use the term <i>apparent</i> transfer entropy to mean that
+ *  we compute the transfer that appears to come from a single
+ *  source variable, without examining any other potential sources
+ *  (see Lizier et al, PRE, 2008).</p>
  * 
- * Usage:
- * 0. Construct or call newInstance
- * 1. Continuous accumulation of observations before computing :
- *   Call: a. initialise()
- *         b. addObservations() several times over
- *         c. computeLocalFromPreviousObservations() or computeAverageLocalOfObservations()
- * 2. Standalone computation from a single set of observations:
- *   Call: computeLocal() or computeAverageLocal()
+ * <p>Specifically, this implements the transfer entropy for 
+ * <i>discrete</i>-valued variables.</p>
  * 
- * @see For transfer entropy: Schreiber, PRL 85 (2) pp.461-464, 2000; http://dx.doi.org/10.1103/PhysRevLett.85.461
- * @see For local transfer entropy: Lizier et al, PRE 77, 026110, 2008; http://dx.doi.org/10.1103/PhysRevE.77.026110
+ * <p>Usage:
+ * <ol>
+ * 	<li>Construct: {@link #ApparentTransferEntropyCalculator(int, int)}</li>
+ * 	<li>Initialise: {@link #initialise()}</li>
+ *  <li>Either:
+ *  	<ol>
+ *  	<li>Continuous accumulation of observations then measurement; call:
+ *  		<ol>
+ *  			<li>{@link #addObservations(int[], int[])} or related calls
+ *         several times over - <b>note:</b> each method call adding 
+ *         observations can be viewed as updating the PDFs; they do not
+ *         append the separate time series (this would be incorrect behaviour
+ *         for the transfer entropy, since the start of one time series
+ *         is not necessarily related to the end of the other).</li>
+ *   			<li>The compute relevant quantities, e.g.
+ *   	   {@link #computeLocalFromPreviousObservations(int[], int[])} or
+ *         {@link #computeAverageLocalOfObservations()}</li>
+ *       	</ol>
+ * 		<li>or Standalone computation from a single set of observations;
+ *   call e.g.: {@link #computeLocal(int[], int[])} or
+ *   {@link #computeAverageLocal(int[][], int)}.>/li>
+ *     </ol>
+ * </ol>
+ * </p>
  * 
- * @author Joseph Lizier
- * joseph.lizier at gmail.com
- * http://lizier.me/joseph/
+ * @see "Schreiber, Physical Review Letters 85 (2) pp.461-464, 2000;
+ *  <a href='http://dx.doi.org/10.1103/PhysRevLett.85.461'>download</a>
+ *  (for definition of transfer entropy)"
+ * @see "Lizier, Prokopenko and Zomaya, Physical Review E 77, 026110, 2008;
+ * <a href='http://dx.doi.org/10.1103/PhysRevE.77.026110'>download</a>
+ *  (for definition of <i>local</i> transfer entropy and qualification
+ *  of naming it as <i>apparent</i> transfer entropy)"
+ * 
+ * @author Joseph Lizier, <a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>
  *
  */
 public class ApparentTransferEntropyCalculator extends ContextOfPastMeasureCalculator 

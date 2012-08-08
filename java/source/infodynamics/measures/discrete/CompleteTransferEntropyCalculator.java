@@ -7,31 +7,68 @@ import infodynamics.utils.RandomGenerator;
 
 
 /**
- * Implements complete transfer entropy (see Lizier et al, PRE, 2008)
- * Complete transfer entropy  = transfer entropy conditioned on all causal information
+ * <p>Implements complete transfer entropy,
+ * and local complete transfer entropy (see Lizier et al, PRE, 2008).
+ * Complete transfer entropy is the transfer entropy <i>conditioned</i> on all causal information
  *  contributors to the destination.
- * This class can also be used for incrementally conditioned mutual information terms 
+ * This class can of course be used for any general conditional transfer entropy 
  *  (see Lizier et al, Chaos 2010) by only supplying a limited
- *  number of the causal information contributors in the array of other agents to be 
+ *  number of sources in the array of other variables to be 
  *  conditioned on.
- * The causal information contributors (either their offsets or their absolute column numbers)
+ * The causal information contributors (specified using either their
+ *  offsets from the destination variable or their absolute column numbers
+ *  in the multivariate data set)
  *  should be supplied in the same order in every method call, otherwise the answer supplied will
  *  be incorrect.
+ * </p>
  * 
- * Ideally, this class would extend ContextOfPastMeasure, however
+ * <p>Specifically, this implements the complete transfer entropy for 
+ * <i>discrete</i>-valued variables.</p>
+ *
+ * <p>Ideally, this class would extend ContextOfPastMeasure, however
  *  by conditioning on other info contributors, we need to alter
  *  the arrays pastCount and nextPastCount to consider all
  *  conditioned variables (i.e. other sources) also.
+ * </p>
  * 
- * Usage:
- * 1. Continuous accumulation of observations:
- *   Call: a. initialise()
- *         b. addObservations() several times over
- *         c. computeLocalFromPreviousObservations()
- * 2. Standalone:
- *   Call: localActiveInformation()
+ * <p>Usage:
+ * <ol>
+ * 	<li>Construct: {@link #CompleteTransferEntropyCalculator(int, int)}</li>
+ * 	<li>Initialise: {@link #initialise()}</li>
+ *  <li>Either:
+ *  	<ol>
+ *  	<li>Continuous accumulation of observations then measurement; call:
+ *  		<ol>
+ *  			<li>{@link #addObservations(int[][], int, int[])} or related calls
+ *         several times over - <b>note:</b> each method call adding 
+ *         observations can be viewed as updating the PDFs; they do not
+ *         append the separate time series (this would be incorrect behaviour
+ *         for the transfer entropy, since the start of one time series
+ *         is not necessarily related to the end of the other).</li>
+ *   			<li>The compute relevant quantities, e.g.
+ *   	   {@link #computeLocalFromPreviousObservations(int[][], int, int[])} or
+ *         {@link #computeAverageLocalOfObservations()}</li>
+ *       	</ol>
+ * 		<li>or Standalone computation from a single set of observations;
+ *   call e.g.: {@link #computeLocal(int[][], int, int[])} or
+ *   {@link #computeAverageLocal(int[][], int, int, int[])}.>/li>
+ *     </ol>
+ * </ol>
+ * </p>
  * 
- * @author Joseph Lizier
+ * @see "Schreiber, Physical Review Letters 85 (2) pp.461-464, 2000;
+ *  <a href='http://dx.doi.org/10.1103/PhysRevLett.85.461'>download</a>
+ *  (for definition of transfer entropy)"
+ * @see "Lizier, Prokopenko and Zomaya, Physical Review E 77, 026110, 2008;
+ * <a href='http://dx.doi.org/10.1103/PhysRevE.77.026110'>download</a>
+ *  (for definition of <i>local</i> transfer entropy and 
+ *  <i>complete</i> transfer entropy)"
+ * @see "Lizier, Prokopenko and Zomaya, Chaos vol. 20, no. 3, 037109, 2010;
+ * <a href='http://dx.doi.org/10.1063/1.3486801'>download</a>
+ *  (for definition of <i>conditional</i> transfer entropy)"
+ *  
+ * @author Joseph Lizier, <a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>
  *
  */
 public class CompleteTransferEntropyCalculator extends InfoMeasureCalculator {
