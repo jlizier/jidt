@@ -34,8 +34,9 @@ import infodynamics.utils.MatrixUtils;
  * 	</ol>
  * </p>
  * 
- * @see Differential entropy for Gaussian random variables defined at 
- *      {@link http://mathworld.wolfram.com/DifferentialEntropy.html}
+ * @see <a href="http://mathworld.wolfram.com/DifferentialEntropy.html">Differential entropy for Gaussian random variables at Mathworld</a>
+ * @see <a href="http://en.wikipedia.org/wiki/Differential_entropy">Differential entropy for Gaussian random variables at Wikipedia</a>
+ * @see <a href="http://en.wikipedia.org/wiki/Multivariate_normal_distribution">Multivariate normal distribution on Wikipedia</a>
  * @author Joseph Lizier joseph.lizier_at_gmail.com
  *
  */
@@ -147,6 +148,8 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	 * @param covariance covariance matrix of the source and destination
 	 *  variables, considered together (variable indices start with the source
 	 *  and continue into the destination).
+	 * @param means mean of the source and destination variables (as per
+	 *  covariance)
 	 */
 	public void setCovarianceAndMeans(double[][] covariance, double[] means) throws Exception {
 		this.means = means;
@@ -306,7 +309,8 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	 *  If the {@link MutualInfoCalculatorMultiVariate#PROP_TIME_DIFF}
 	 *  property was set to say k, then the local values align with the
 	 *  destination value (i.e. after the given delay k). As such, the
-	 *  first k values of the array will be zeros.  
+	 *  first k values of the array will be zeros.
+	 * @see <a href="http://en.wikipedia.org/wiki/Multivariate_normal_distribution">Multivariate normal distribution on Wikipedia</a>
 	 * @throws Exception
 	 */
 	protected double[] computeLocalUsingPreviousObservations(double[][] newSourceObs,
@@ -360,7 +364,6 @@ public class MutualInfoCalculatorMultiVariateGaussian
 		}
 		// If we have a time delay, slide the local values
 		double[] localValues = new double[lengthOfReturnArray];
-		double newAverage = 0.0;
 		for (int t = offset; t < newDestObs.length; t++) {
 			// Computing local values for:
 			//  a. sourceObservations[t - offset]
@@ -376,6 +379,7 @@ public class MutualInfoCalculatorMultiVariateGaussian
 							destDeviationsFromMean);
 			
 			// Computing PDFs WITHOUT (2*pi)^dim factor, since these will cancel:
+			// (see the PDFs defined at the wikipedia page referenced in the method header)
 			double sourceExpArg = MatrixUtils.dotProduct(
 						MatrixUtils.matrixProduct(sourceDeviationsFromMean,
 								invSourceCovariance),
@@ -398,17 +402,13 @@ public class MutualInfoCalculatorMultiVariateGaussian
 			// Returning results in nats:
 			double localValue = Math.log(adjustedPJoint /
 					(adjustedPSource * adjustedPDest));
-			localValues[t] = localValue;
-			
-			if (isPreviousObservations) {
-				newAverage += localValue;
-			}
+			localValues[t] = localValue;			
 		}
 		
-		if (isPreviousObservations) {
-			lastAverage = newAverage / (newDestObs.length - timeDiff);
-			miComputed = true;
-		}
+		// if (isPreviousObservations) {
+		// Don't store the average value here, since it won't be exactly 
+		//  the same as what would have been computed under the analytic expression
+		// }
 		
 		return localValues;
 	}

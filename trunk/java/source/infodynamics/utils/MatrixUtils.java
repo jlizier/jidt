@@ -2359,11 +2359,10 @@ public class MatrixUtils {
 
 	/**
 	 * <p>Returns the covariance between the first two columns of data.</p>
-	 * <p>See - <a href="http://mathworld.wolfram.com/Covariance.html">Mathworld</a>
-	 * </p>
 	 * 
 	 * @param data
 	 * @return the covariance
+	 * @see <a href="http://mathworld.wolfram.com/Covariance.html">Mathworld</a>
 	 */
 	public static double covarianceFirstTwoColumns(double[][] data) {
 		return covarianceTwoColumns(data, 0, 1);
@@ -2445,13 +2444,21 @@ public class MatrixUtils {
 	 * @return covariance matrix
 	 */
 	public static double[][] covarianceMatrix(double[][] data) {
+		return covarianceMatrix(data, means(data));
+	}
+	
+	/**
+	 * Compute the covariance matrix between all column pairs (variables) in the
+	 *  multivariate data set
+	 * 
+	 * @param data multivariate array of data; first index is time, second is 
+	 *    variable number
+	 * @param means the mean of each variable (column) in the data
+	 * @return covariance matrix
+	 */
+	public static double[][] covarianceMatrix(double[][] data, double[] means) {
 		int numVariables = data[0].length;
 		double[][] covariances = new double[numVariables][numVariables];
-		// Compute means of each variable once up front to save time
-		double[] means = new double[numVariables];
-		for (int r = 0; r < numVariables; r++) {
-			means[r] = mean(data, r);
-		}
 		for (int r = 0; r < numVariables; r++) {
 			for (int c = r; c < numVariables; c++) {
 				// Compute the covariance between variable r and c:
@@ -3017,6 +3024,7 @@ public class MatrixUtils {
 	 * @param B matrix with as many rows as A and any number of columns
 	 * @return X so that A*X = B
 	 * @see {@link http://math.nist.gov/javanumerics/jama/}
+	 * @see #CholeskyDecomposition(double[][])
 	 */
 	public static double[][] solveViaCholeskyResult(double[][] L, double[][] B) {
 		int aRows = L.length;

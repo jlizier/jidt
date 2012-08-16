@@ -10,9 +10,9 @@ import infodynamics.utils.RandomGenerator;
 public class MutualInfoCalculatorMultiVariateWithDiscreteKernel implements
 	MutualInfoCalculatorMultiVariateWithDiscrete {
 
-	KernelEstimatorMultiVariate mvke = null;
-	KernelEstimatorMultiVariate[] mvkeForEachDiscrete = null;
-	int base = 0;
+	protected KernelEstimatorMultiVariate mvke = null;
+	protected KernelEstimatorMultiVariate[] mvkeForEachDiscrete = null;
+	protected int base = 0;
 
 	private int totalObservations = 0;
 	// private int dimensions1 = 0;
@@ -207,18 +207,6 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKernel implements
 		return newMI;
 	}
 
-	/**
-	 * Compute the significance of the mutual information of the previously supplied observations.
-	 * We destroy the p(x,y) correlations, while retaining the p(x), p(y) marginals, to check how
-	 *  significant this mutual information actually was.
-	 *  
-	 * This is in the spirit of Chavez et. al., "Statistical assessment of nonlinear causality:
-	 *  application to epileptic EEG signals", Journal of Neuroscience Methods 124 (2003) 113-128
-	 *  which was performed for Transfer entropy.
-	 * 
-	 * @param numPermutationsToCheck
-	 * @return the proportion of MI scores from the distribution which have higher or equal MIs to ours.
-	 */
 	public synchronized EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception {
 		// Generate the re-ordered indices:
 		RandomGenerator rg = new RandomGenerator();
@@ -226,18 +214,6 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKernel implements
 		return computeSignificance(newOrderings);
 	}
 
-	/**
-	 * Compute the significance of the mutual information of the previously supplied observations.
-	 * We destroy the p(x,y) correlations, while retaining the p(x), p(y) marginals, to check how
-	 *  significant this mutual information actually was.
-	 *  
-	 * This is in the spirit of Chavez et. al., "Statistical assessment of nonlinear causality:
-	 *  application to epileptic EEG signals", Journal of Neuroscience Methods 124 (2003) 113-128
-	 *  which was performed for Transfer entropy.
-	 * 
-	 * @param newOrderings the specific new orderings to use
-	 * @return the proportion of MI scores from the distribution which have higher or equal MIs to ours.
-	 */
 	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings) throws Exception {
 		int numPermutationsToCheck = newOrderings.length;
 		if (!miComputed) {
@@ -540,19 +516,20 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKernel implements
 	}
 
 	/**
-	 * Set properties for the mutual information calculator.
+	 * <p>Set properties for the mutual information calculator.
 	 * These can include:
 	 * <ul>
 	 * 		<li>{@link #EPSILON_PROP_NAME} - applies to full marginal space of continuous</li>
 	 * 		<li>{@link #NORMALISE_PROP_NAME}</li>
 	 * 		<li>{@link #FORCE_KERNEL_COMPARE_TO_ALL}</li>
-	 * </ul>
+	 * </ul></p>
 	 * 
-	 * Note that dynamic correlation exclusion may have unexpected results if multiple
+	 * <p>Note that dynamic correlation exclusion may have unexpected results if multiple
 	 *  observation sets have been added. This is because multiple observation sets
 	 *  are treated as though they are from a single time series, so observations from
 	 *  near the end of observation set i will be excluded from comparison to 
 	 *  observations near the beginning of observation set (i+1). 
+	 * </p>
 	 * 
 	 * @param propertyName
 	 * @param propertyValue
