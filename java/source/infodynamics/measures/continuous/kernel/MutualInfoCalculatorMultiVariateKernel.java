@@ -608,7 +608,7 @@ public class MutualInfoCalculatorMultiVariateKernel
 
 	/**
 	 * Clone the object - note: while it does create new cloned instances of
-	 *  the MulitVariateKernelEstimator objects, I think these only
+	 *  the {@link KernelEstimatorMultiVariate} objects, I think these only
 	 *  have shallow copies to the data.
 	 * This is enough though to maintain the structure across 
 	 *  various {@link #computeSignificance(int)} calls.

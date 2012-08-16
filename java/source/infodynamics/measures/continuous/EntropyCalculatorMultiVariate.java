@@ -18,7 +18,7 @@ public interface EntropyCalculatorMultiVariate {
 	
 	public double[] computeLocalUsingPreviousObservations(double states[][]) throws Exception;
 
-	public double[] computeLocalOfPreviousObservations();
+	public double[] computeLocalOfPreviousObservations() throws Exception;
 	
 	public double getLastAverage();
 	
