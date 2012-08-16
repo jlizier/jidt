@@ -6,6 +6,67 @@ import infodynamics.utils.RandomGenerator;
 
 public class MutualInfoMultiVariateTester extends TestCase {
 
+	public void testCovarianceDoesntMatchDimensions(){
+		MutualInfoCalculatorMultiVariateGaussian miCalc =
+				new MutualInfoCalculatorMultiVariateGaussian();
+		miCalc.initialise(1, 1);
+		boolean caughtException = false;
+		// Check that we catch a covariance matrix which doesn't have
+		//  the right number of rows
+		try {
+			miCalc.setCovariance(new double[][] {{2,1,0.5}, {1,2,0.5}, {0.5,0.5,2}});
+		} catch (Exception e) {
+			caughtException = true;
+		}
+		assertTrue(caughtException);
+		// Check that we catch a covariance matrix which isn't square
+		caughtException = false;
+		try {
+			miCalc.setCovariance(new double[][] {{2,1}, {1,2,0.5}});
+		} catch (Exception e) {
+			caughtException = true;
+		}
+		assertTrue(caughtException);
+		// Check that we catch a covariance matrix which isn't symmetric
+		caughtException = false;
+		try {
+			miCalc.setCovariance(new double[][] {{2,1}, {1.000001,2}});
+		} catch (Exception e) {
+			caughtException = true;
+		}
+		assertTrue(caughtException);
+		// Check that no exception is thrown for an ok covariance matrix
+		caughtException = false;
+		double[][] goodCovariance = new double[][] {{2,1}, {1,2}};
+		try {
+			miCalc.setCovariance(goodCovariance);
+		} catch (Exception e) {
+			caughtException = true;
+		}
+		assertFalse(caughtException);
+		// and that this covariance has been set:
+		assertEquals(goodCovariance, miCalc.covariance);
+	}
+	
+	public void testAnalyticMatchesCouplingValue() throws Exception {
+		double[][] covarianceMatrix = {{1.0, 0}, {0, 1.0}};
+		
+		MutualInfoCalculatorMultiVariateGaussian miCalc =
+				new MutualInfoCalculatorMultiVariateGaussian();
+		
+		for (double covar = 0.0; covar < 1.0; covar += 0.01) {
+			// Insert the new covariance into the matrix:
+			covarianceMatrix[0][1] = covar;
+			covarianceMatrix[1][0] = covar;
+
+			miCalc.initialise(1, 1);
+			miCalc.setCovariance(covarianceMatrix);
+			assertEquals(-0.5 * Math.log(1.0 - covar*covar),
+					miCalc.computeAverageLocalOfObservations(), 0.00000000001);
+		}
+	}
+	
+	
 	public void testComputeSignificanceDoesntAlterAverage() throws Exception {
 		
 		MutualInfoCalculatorMultiVariateGaussian miCalc =
