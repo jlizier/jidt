@@ -63,6 +63,7 @@ public class MutualInfoMultiVariateWithDiscreteTester extends TestCase {
 			miCalc.setObservations(contDataCorrect, discDataCorrect);
 		} catch (Exception e) {
 			caughtException = true;
+			e.printStackTrace();
 		}
 		assertFalse(caughtException);
 		

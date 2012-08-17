@@ -136,8 +136,77 @@ public class MatrixUtilsTest extends TestCase {
 		//  Check more complicated example
 		double[][] A2 = {{6, 2, 3, 1}, {2, 5, 1, 0.5}, {3, 1, 4, 2}, {1, 0.5, 2, 3}};
 		double[][] B2 = {{10, 5, 4, 12}, {4, 6, -1, 4.3}, {20, 1, 0, -5}, {6, 3, 2, 1}};
+		double[][] expectedX2 = {{-1.740519, 1.019960, 1.445110, 4.600798},
+			   {0.247505, 0.942116, -0.590818, -0.042315},
+			   {7.461078, -1.502994, -1.616766, -6.140120},
+			   {-2.435130, 1.504990, 1.361277, 2.900200}};
+		double[][] X2 = MatrixUtils.solveViaCholeskyResult(
+				MatrixUtils.CholeskyDecomposition(A2), B2);
+		checkMatrix(expectedX2, X2, OCTAVE_RESOLUTION);
 		
-		// Check error conditions
+		// TODO Check error conditions
+	}
+	
+	public void testDeterminant() throws Exception {
+
+		// test some error conditions:
+		double[][] AnonSquare = {{6, 2}, {2, 5, 1}, {3, 1, 4}};
+		boolean flaggedException = false;
+		try {
+			MatrixUtils.determinant(AnonSquare);
+		} catch (Exception e) {
+			flaggedException = true;
+		}
+		assertTrue(flaggedException);
+		
+		// Test some simple examples:
+		double[][] A1 = {{3.445454}};
+		assertEquals(3.445454, MatrixUtils.determinant(A1), OCTAVE_RESOLUTION);
+		
+		double[][] A2 = {{6, 2}, {2, 5}};
+		assertEquals(26, MatrixUtils.determinant(A2), OCTAVE_RESOLUTION);
+
+		// Check against value computed by Octave:
+		double[][] A = {{6, 2, 3}, {2, 5, 1}, {3, 1, 4}};
+		assertEquals(65, MatrixUtils.determinant(A), OCTAVE_RESOLUTION);
+		
+		// Check zero determinant case
+		double[][] AzeroDet = {{6, 2, 3}, {2, 5, 1}, {10, -14, 5}};
+		assertEquals(0, MatrixUtils.determinant(AzeroDet), OCTAVE_RESOLUTION);		
+	}
+	
+	public void testDeterminantSymmPosDef() throws Exception {
+		// Test some simple examples:
+		double[][] A1 = {{3.445454}};
+		assertEquals(3.445454,
+				MatrixUtils.determinantSymmPosDefMatrix(A1), OCTAVE_RESOLUTION);
+		
+		double[][] A2 = {{6, 2}, {2, 5}};
+		assertEquals(26, MatrixUtils.determinantSymmPosDefMatrix(A2), OCTAVE_RESOLUTION);
+
+		// Check against value computed by Octave:
+		double[][] A = {{6, 2, 3}, {2, 5, 1}, {3, 1, 4}};
+		assertEquals(65, MatrixUtils.determinantSymmPosDefMatrix(A), OCTAVE_RESOLUTION);
+		
+		// Now check that it picks up asymmetric A:
+		double[][] asymmetricA = {{6, 2, 3}, {2, 5, 1}, {3, 1.0001, 4}};
+		boolean flaggedException = false;
+		try {
+			MatrixUtils.determinantSymmPosDefMatrix(asymmetricA);
+		} catch (Exception e) {
+			flaggedException = true;
+		}
+		assertTrue(flaggedException);
+
+		// Now check that it picks up if A is not positive definite:
+		double[][] notpositiveDefiniteA = {{1, 2, 3}, {2, 4, 5}, {3, 5, 6}};
+		flaggedException = false;
+		try {
+			MatrixUtils.determinantSymmPosDefMatrix(notpositiveDefiniteA);
+		} catch (Exception e) {
+			flaggedException = true;
+		}
+		assertTrue(flaggedException);
 	}
 	
 	/**
@@ -148,7 +217,7 @@ public class MatrixUtilsTest extends TestCase {
 	 * @param actual
 	 * @param resolution
 	 */
-	protected void checkMatrix(double[][] expected, double[][] actual, double resolution) {
+	public static void checkMatrix(double[][] expected, double[][] actual, double resolution) {
 		for (int r = 0; r < expected.length; r++) {
 			for (int c = 0; c < expected[r].length; c++) {
 				assertEquals(expected[r][c], actual[r][c], resolution);

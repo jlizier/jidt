@@ -2,11 +2,13 @@ package infodynamics.measures.continuous.gaussian;
 
 import junit.framework.TestCase;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
+import infodynamics.utils.MatrixUtils;
+import infodynamics.utils.MatrixUtilsTest;
 import infodynamics.utils.RandomGenerator;
 
 public class MutualInfoMultiVariateTester extends TestCase {
 
-	public void testCovarianceDoesntMatchDimensions(){
+	public void testCovarianceDoesntMatchDimensions() throws Exception {
 		MutualInfoCalculatorMultiVariateGaussian miCalc =
 				new MutualInfoCalculatorMultiVariateGaussian();
 		miCalc.initialise(1, 1);
@@ -44,8 +46,10 @@ public class MutualInfoMultiVariateTester extends TestCase {
 			caughtException = true;
 		}
 		assertFalse(caughtException);
-		// and that this covariance has been set:
-		assertEquals(goodCovariance, miCalc.covariance);
+		// and that this covariance has been set (by verifying the Cholesky
+		// decomposition of it is stored):
+		MatrixUtilsTest.checkMatrix(MatrixUtils.CholeskyDecomposition(goodCovariance),
+				miCalc.L, 0.00001);
 	}
 	
 	public void testAnalyticMatchesCouplingValue() throws Exception {
@@ -66,6 +70,23 @@ public class MutualInfoMultiVariateTester extends TestCase {
 		}
 	}
 	
+	public void testMIfromSuppliedCovariance() throws Exception {
+		MutualInfoCalculatorMultiVariateGaussian miCalc =
+				new MutualInfoCalculatorMultiVariateGaussian();
+
+		double[][] covarianceMatrix = {{5, 3}, {3, 4}}; // det is 11
+		miCalc.initialise(1, 1);
+		miCalc.setCovariance(covarianceMatrix);
+		assertEquals(0.5 * Math.log(20.0 / 11.0),
+				miCalc.computeAverageLocalOfObservations(), 0.00000000001);
+		
+		double[][] covarianceMatrix2 = {{5, 3, 1}, {3, 4, 1.5}, {1, 1.5, 2}}; // det is 15.75
+		miCalc.initialise(2, 1);
+		miCalc.setCovariance(covarianceMatrix2);
+		assertEquals(0.5 * Math.log(11.0 * 2.0 / 15.75), // marginal dets are 11 and 2
+				miCalc.computeAverageLocalOfObservations(), 0.00000000001);
+
+	}
 	
 	public void testComputeSignificanceDoesntAlterAverage() throws Exception {
 		
