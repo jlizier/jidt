@@ -122,7 +122,15 @@ public class MutualInfoCalculatorMultiVariateKernel
 	public void finaliseAddObservations() {
 		// Get the observations properly stored in the sourceObservations[][] and
 		//  destObservations[][] arrays.
-		super.finaliseAddObservations();
+		try {
+			// Currently, the throws declaration in super is only there to
+			//  allow other children to throw Exceptions - there are no compile
+			//  time Exceptions being thrown there.
+			super.finaliseAddObservations();
+		} catch (Exception e) {
+			// So we cast any found Exception to a RuntimeException
+			throw new RuntimeException(e);
+		}
 
 		// Now assign these observations to the underlying kernel estimators:
 		mvkeSource.setObservations(sourceObservations);

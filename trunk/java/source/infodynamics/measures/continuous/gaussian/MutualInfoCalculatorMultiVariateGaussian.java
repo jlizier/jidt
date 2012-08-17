@@ -46,13 +46,24 @@ public class MutualInfoCalculatorMultiVariateGaussian
 			AnalyticNullDistributionComputer, Cloneable {
 
 	/**
-	 * Covariance matrix of the most recently supplied observations.
+	 * Cached Cholesky decomposition of the covariance matrix
+	 * of the most recently supplied observations.
 	 * Is a matrix [C_ss, C_sd; C_ds, C_dd], where C_ss is the covariance
 	 * matrix of the source observations, C_dd is the covariance matrix
 	 * of the destination observations, and C_sd and C_ds are the covariances
 	 * of source to destination and destination to source observations.
+	 * The covariance matrix is symmetric, and should be positive definite
+	 * (otherwise we have linealy dependent variables).
 	 */
-	protected double[][] covariance;
+	protected double[][] L;
+	/**
+	 * Cached Cholesky decomposition of the source covariance matrix
+	 */
+	protected double[][] Lsource;
+	/**
+	 * Cached Cholesky decomposition of the destination covariance matrix
+	 */
+	protected double[][] Ldest;
 	
 	/**
 	 * Means of the most recently supplied observations (source variables
@@ -60,7 +71,12 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	 */
 	protected double[] means;
 
+	/**
+	 * Cached determinants of the covariance matrices
+	 */
 	protected double detCovariance;
+	protected double detSourceCovariance;
+	protected double detDestCovariance;
 	
 	public MutualInfoCalculatorMultiVariateGaussian() {
 		// Nothing to do
@@ -75,16 +91,22 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	 */
 	public void initialise(int sourceDimensions, int destDimensions) {
 		super.initialise(sourceDimensions, destDimensions);
-		covariance = null;
+		L = null;
+		Lsource = null;
+		Ldest = null;
 		means = null;
 		detCovariance = 0;
+		detSourceCovariance = 0;
+		detDestCovariance = 0;
 	}
 
 	/**
 	 * Finalise the addition of multiple observation sets.
 	 * 
+	 * @throws Exception if the observation variables are not linearly independent
+	 *  (leading to a non-positive definite covariance matrix).
 	 */
-	public void finaliseAddObservations() {
+	public void finaliseAddObservations() throws Exception {
 
 		// Get the observations properly stored in the sourceObservations[][] and
 		//  destObservations[][] arrays.
@@ -98,8 +120,15 @@ public class MutualInfoCalculatorMultiVariateGaussian
 		System.arraycopy(destMeans, 0, means, dimensionsSource, dimensionsDest);
 		
 		// Store the covariances of the variables
-		covariance = MatrixUtils.covarianceMatrix(sourceObservations,
-				destObservations);
+		// Generally, this should not throw an exception, since we checked
+		//  the observations had the correct number of variables
+		//  on receiving them, and in constructing the covariance matrix
+		//   ourselves we know it should be symmetric.
+		// It could occur however if the covariance matrix was not
+		//  positive definite, which would occur if one variable
+		//  is linearly redundant.
+		setCovariance(MatrixUtils.covarianceMatrix(sourceObservations,
+			destObservations), true);
 	}
 
 	/**
@@ -114,28 +143,67 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	 * @param covariance covariance matrix of the source and destination
 	 *  variables, considered together (variable indices start with the source
 	 *  and continue into the destination).
+	 *  I.e. it is a matrix [C_ss, C_sd; C_ds, C_dd], where C_ss is the covariance
+	 * matrix of the source observations, C_dd is the covariance matrix
+	 * of the destination observations, and C_sd and C_ds are the covariances
+	 * of source to destination and destination to source observations.
+	 * @throws Exception for covariance matrix not matching the expected dimensions,
+	 *  being non-square, asymmetric or non-positive definite
 	 */
 	public void setCovariance(double[][] covariance) throws Exception {
-		sourceObservations = null;
-		destObservations = null;
-		// Make sure the supplied covariance matrix is square:
+		setCovariance(covariance, false);
+	}
+
+	/**
+	 * <p>Set the covariance of the distribution for which we will compute the
+	 *  mutual information.</p>
+	 *  
+	 * <p>Note that without setting any observations, you cannot later
+	 *  call {@link #computeLocalOfPreviousObservations()}, and without
+	 *  providing the means of the variables, you cannot later call
+	 *  {@link #computeLocalUsingPreviousObservations(double[][], double[][])}.</p>
+	 * 
+	 * @param covariance covariance matrix of the source and destination
+	 *  variables, considered together (variable indices start with the source
+	 *  and continue into the destination).
+	 * @param determinedFromObservations whether the covariance matrix
+	 *  was determined internally from observations or not
+	 * @throws Exception for covariance matrix not matching the expected dimensions,
+	 *  being non-square, asymmetric or non-positive definite
+	 */
+	protected void setCovariance(double[][] covariance, boolean determinedFromObservations)
+			throws Exception {
+		if (!determinedFromObservations) {
+			// Make sure we're not keeping any observations
+			sourceObservations = null;
+			destObservations = null;
+		}
+		// Make sure the supplied covariance matrix matches the required dimenions:
 		int rows = covariance.length;
 		if (rows != dimensionsSource + dimensionsDest) {
 			throw new Exception("Supplied covariance matrix does not match initialised number of dimensions");
 		}
-		for (int r = 0; r < rows; r++) {
-			if (covariance[r].length != rows) {
-				throw new Exception("Covariance matrix must be square");
-			}
-			// Check that is is symmetric
-			for (int c = 0; c < r; c++) {
-				if (covariance[r][c] != covariance[c][r]) {
-					throw new Exception("Covariance matrix is not symmetric!");
-				}
-			}
-		}
 
-		this.covariance = covariance;
+		// Make sure the matrix is symmetric and positive definite, by taking the 
+		//  Cholesky decomposition (which we need for the determinant later anyway):
+		//  (this will check and throw Exceptions for non-square,
+		//   asymmetric, non-positive definite A)
+		L = MatrixUtils.CholeskyDecomposition(covariance);
+		
+		// And store the Cholesky decompositions for the source covariance
+		//  and dest covariance as well:
+		int[] sourceIndicesInCovariance = MatrixUtils.range(0, dimensionsSource - 1);
+		double[][] sourceCovariance =
+			MatrixUtils.selectRowsAndColumns(covariance, 
+					sourceIndicesInCovariance, sourceIndicesInCovariance);
+		Lsource = MatrixUtils.CholeskyDecomposition(sourceCovariance);
+
+		int[] destIndicesInCovariance = MatrixUtils.range(dimensionsSource,
+				dimensionsSource + dimensionsDest - 1);
+		double[][] destCovariance =
+			MatrixUtils.selectRowsAndColumns(covariance, 
+				destIndicesInCovariance, destIndicesInCovariance);
+		Ldest = MatrixUtils.CholeskyDecomposition(destCovariance);
 	}
 
 	/**
@@ -174,19 +242,15 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	 *  (because this will make the denominator of the log zero)
 	 */
 	public double computeAverageLocalOfObservations() throws Exception {
-		int[] sourceIndicesInCovariance = MatrixUtils.range(0, dimensionsSource - 1);
-		int[] destIndicesInCovariance = MatrixUtils.range(dimensionsSource,
-					dimensionsSource + dimensionsDest - 1);
-		double[][] sourceCovariance =
-			MatrixUtils.selectRowsAndColumns(covariance, 
-					sourceIndicesInCovariance, sourceIndicesInCovariance);
-		double[][] destCovariance =
-			MatrixUtils.selectRowsAndColumns(covariance, 
-				destIndicesInCovariance, destIndicesInCovariance);
-		detCovariance = MatrixUtils.determinant(covariance);
+		// Simple way:
+		// detCovariance = MatrixUtils.determinantSymmPosDefMatrix(covariance);
+		// Using cached Cholesky decomposition:
+		detCovariance = MatrixUtils.determinantViaCholeskyResult(L);
+		detSourceCovariance = MatrixUtils.determinantViaCholeskyResult(Lsource);
+		detDestCovariance = MatrixUtils.determinantViaCholeskyResult(Ldest);
+
 		lastAverage = 0.5 * Math.log(Math.abs(
-					MatrixUtils.determinant(sourceCovariance) *
-						MatrixUtils.determinant(destCovariance) /
+				detSourceCovariance * detDestCovariance /
 						detCovariance));
 		miComputed = true;
 		return lastAverage;
@@ -197,7 +261,6 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	 * supplied observations</p>
 	 * 
 	 * @return array of the local values in nats (not bits!)
-	 * @see {@link http://en.wikipedia.org/wiki/Positive-definite_matrix}
 	 */
 	public double[] computeLocalOfPreviousObservations() throws Exception {
 		// Cannot do if destObservations haven't been set
@@ -234,8 +297,8 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	 *  {@link http://arxiv.org/abs/1205.6339}
 	 */
 	public ChiSquareMeasurementDistribution computeSignificance() {
-		// TODO Check that the null distribution actually follows chi with
-		//  these degrees of freedom
+		// TODO Empirically check that the null distribution actually follows
+		//  chi-sqr with these degrees of freedom
 		return new ChiSquareMeasurementDistribution(lastAverage,
 				dimensionsSource * dimensionsDest);
 	}
@@ -311,42 +374,42 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	 *  destination value (i.e. after the given delay k). As such, the
 	 *  first k values of the array will be zeros.
 	 * @see <a href="http://en.wikipedia.org/wiki/Multivariate_normal_distribution">Multivariate normal distribution on Wikipedia</a>
-	 * @throws Exception
+	 * @see <a href="http://en.wikipedia.org/wiki/Positive-definite_matrix>"Positive definite matrix in Wikipedia"</a>
+	 * @throws Exception if means were not defined by {@link #setObservations(double[][], double[][])} etc
+	 *  or {@link #setCovarianceAndMeans(double[][], double[])}
 	 */
 	protected double[] computeLocalUsingPreviousObservations(double[][] newSourceObs,
 			double[][] newDestObs, boolean isPreviousObservations) throws Exception {
 		
+		if (means == null) {
+			throw new Exception("Cannot compute local values without having means either supplied or computed via setObservations()");
+		}
+
 		// Check that the covariance matrix was positive definite:
-		//  it is known (i think because it is symmetric) that the covariance
-		//  matrix will be positive definite unless one variable is an exact
-		//  linear combination of the others (ref: wikipedia, above).
-		// We can check for linear dependence by ensuring that the determinant
-		//  of the covariance matrix is non-zero:
+		// (this was done earlier in computing the Cholesky decomposition,
+		//  we may still need to compute the determinant)
 		if (detCovariance == 0) {
-			// We need to check:
-			detCovariance = MatrixUtils.determinant(covariance); 
+			// The determinant has not been computed yet
+			// Simple way:
+			// detCovariance = MatrixUtils.determinantSymmPosDefMatrix(covariance);
+			// Using cached Cholesky decomposition:
+			detCovariance = MatrixUtils.determinantViaCholeskyResult(L);
 			if (detCovariance == 0) {
 				throw new Exception("Covariance matrix is not positive definite");
 			}
+			detSourceCovariance = MatrixUtils.determinantViaCholeskyResult(Lsource);
+			detDestCovariance = MatrixUtils.determinantViaCholeskyResult(Ldest);
 		}
+
 		// Now we are clear to take the matrix inverse (via Cholesky decomposition,
 		//  since we have a symmetric positive definite matrix):
-		double[][] invCovariance = MatrixUtils.invertSymmPosDefMatrix(covariance);
-		
-		// Pull out the source and dest components of the covariance,
-		//  and take their inverses:
-		int[] sourceIndicesInCovariance = MatrixUtils.range(0, dimensionsSource - 1);
-		double[][] sourceCovariance = MatrixUtils.selectRowsAndColumns(covariance,
-				sourceIndicesInCovariance, sourceIndicesInCovariance);
-		double detSourceCovariance = MatrixUtils.determinant(sourceCovariance);
-		double[][] invSourceCovariance = MatrixUtils.invertSymmPosDefMatrix(sourceCovariance);
-		int[] destIndicesInCovariance = MatrixUtils.range(dimensionsSource,
-			dimensionsSource + dimensionsDest - 1);
-		double[][] destCovariance = MatrixUtils.selectRowsAndColumns(covariance,
-				destIndicesInCovariance, destIndicesInCovariance);
-		double detDestCovariance = MatrixUtils.determinant(destCovariance);
-		double[][] invDestCovariance = MatrixUtils.invertSymmPosDefMatrix(destCovariance);
-		
+		double[][] invCovariance = MatrixUtils.solveViaCholeskyResult(L,
+				MatrixUtils.identityMatrix(L.length));
+		double[][] invSourceCovariance = MatrixUtils.solveViaCholeskyResult(Lsource,
+				MatrixUtils.identityMatrix(Lsource.length));
+		double[][] invDestCovariance = MatrixUtils.solveViaCholeskyResult(Ldest,
+				MatrixUtils.identityMatrix(Ldest.length));
+			
 		double[] sourceMeans = MatrixUtils.select(means, 0, dimensionsSource);
 		double[] destMeans = MatrixUtils.select(means, dimensionsSource, dimensionsDest);
 		
