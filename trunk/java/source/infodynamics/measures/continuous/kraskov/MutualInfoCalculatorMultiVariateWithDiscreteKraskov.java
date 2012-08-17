@@ -474,7 +474,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 			avNx += n_x;
 			avNy += n_y;
 			// Now compute the local value:
-			locals[N] = fixedPartOfLocals -
+			locals[t] = fixedPartOfLocals -
 					MathsUtils.digamma(n_x) - MathsUtils.digamma(n_y);
 		}
 		if (debug) {

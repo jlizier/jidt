@@ -10,9 +10,19 @@ import infodynamics.utils.RandomGenerator;
  *  observations
  *  (<i>assuming that the probability distribution function for these observations is
  *  a multivariate Gaussian distribution</i>) 
- *  and a discrete variable.
- *  This is done by examining the conditional probability distribution (given the discrete
- *  variable) against the probability distribution for the mulitvariate set.</p>
+ *  and a discrete variable.</p>
+ *  
+ * <p>This is done by examining the conditional probability distribution for
+ *  the multivariate continuous variable C (given the discrete
+ *  variable D) against the probability distribution for C:
+ *  MI(C;D) := H(C) - H(C|D).</p>
+ *  
+ * <p><b>CAVEAT EMPTOR</b>: The real question this type of calculation asks
+ * is to what extent does knowing the value of the discrete variable reduce
+ * variance in the continuous variable(s). Indeed, it does not seem to behave
+ * as we would normally expect a mutual information calculation: if we add more
+ * continuous variables in, it increases in spite of redundancy between these
+ * variables. TODO Further exploration should take place here ...</p>
  *  
  * <p>
  * Usage:
