@@ -2951,7 +2951,7 @@ public class MatrixUtils {
 	 * 
 	 * @param A input matrix
 	 * @return L 
-	 * @throws Exception when the matrix A is not symmetric, or
+	 * @throws Exception when the matrix A is not square, is asymmetric, or
 	 * 		not positive definite
 	 * @see {@link en.wikipedia.org/wiki/Cholesky_decomposition}
 	 * @see {@link http://mathworld.wolfram.com/CholeskyDecomposition.html}
@@ -3003,6 +3003,7 @@ public class MatrixUtils {
 	 * @param A matrix to be inverted
 	 * @return the inverse of A
 	 * @throws Exception when the matrix is not symmetric or positive definite
+	 * @see #CholeskyDecomposition(double[][])
 	 */
 	public static double[][] invertSymmPosDefMatrix(double[][] A) throws Exception {
 		// First do the Cholesky Decomposition:
@@ -3058,6 +3059,47 @@ public class MatrixUtils {
 		return X;
 	}
 	
+	/**
+	 * <p>Compute determinant(A), where A = L*L^T via Cholesky decomposition
+	 * is a symmetric, positive definite matrix.
+	 * </p>
+	 * 
+	 * <p>This is an efficient computation, since det(A) = det(L*L^T) = det(L)*det(L^T)
+	 * and L is triangular so det(L) is just the product along the diagonal
+	 * </p>
+	 * 
+	 * @param A symmetric, positive definite matrix to take the determinant of
+	 * @return the determinant of A
+	 * @throws Exception when the matrix is not symmetric or positive definite
+	 */
+	public static double determinantSymmPosDefMatrix(double[][] A) throws Exception {
+		double[][] L = CholeskyDecomposition(A);
+		
+		return determinantViaCholeskyResult(L);
+	}
+
+	/**
+	 * <p>Compute determinant(A), where A = L*L^T via Cholesky decomposition
+	 * is a symmetric, positive definite matrix.
+	 * </p>
+	 * 
+	 * <p>This is an efficient computation, since det(A) = det(L*L^T) = det(L)*det(L^T)
+	 * and L is triangular so det(L) is just the product along the diagonal
+	 * </p>
+	 * 
+	 * @param L Cholesky decomposition L of the symmetric positive definite matrix A
+	 * @return det(A)
+	 * @see #CholeskyDecomposition(double[][])
+	 */
+	public static double determinantViaCholeskyResult(double[][] L) {
+		double detL = 1.0;
+		int n = L.length;
+		for (int i = 0; i < n; i++) {
+			detL *= L[i][i];
+		}
+		return detL * detL;
+	}
+
 	public static void printMatrix(PrintStream out, double[][] matrix) {
 		for (int r = 0; r < matrix.length; r++) {
 			for (int c = 0; c < matrix[r].length; c++) {

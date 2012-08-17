@@ -34,9 +34,10 @@ public abstract interface ChannelCalculatorCommon {
 	
 	/**
 	 * Flag that the observations are complete, probability distribution functions can now be built.
+	 * @throws Exception 
 	 *
 	 */
-	public void finaliseAddObservations();
+	public void finaliseAddObservations() throws Exception;
 	
 	/**
 	 * 

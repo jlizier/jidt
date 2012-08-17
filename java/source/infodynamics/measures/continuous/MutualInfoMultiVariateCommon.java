@@ -277,9 +277,11 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 *  the {@link #sourceObservations} and {@link #destObservations} arrays.
 	 * Usually child implementations will override this, call this implementation
 	 *  to perform the common processing, then perform their own processing.
+	 * @throws Exception Allow child classes to throw an exception if there
+	 *  is an issue detected specific to that calculator.
 	 * 
 	 */
-	public void finaliseAddObservations() {
+	public void finaliseAddObservations() throws Exception {
 		// First work out the size to allocate the joint vectors, and do the allocation:
 		totalObservations = 0;
 		for (double[][] destination : vectorOfDestinationObservations) {

@@ -113,11 +113,13 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteGaussian implements
 		if (continuousObservations.length != discreteObservations.length) {
 			throw new Exception("Observations are not of the same length");
 		}
-		totalObservations = continuousObservations.length;
 		// Set the complete set of observations:
+		//  (this will pick up any errors in the dimensions of the continuous
+		//   observations)
 		entCalc.setObservations(continuousObservations);
 		// Set the observations corresponding to each discrete value:
 		setDiscreteData(continuousObservations, discreteObservations);
+		totalObservations = continuousObservations.length;
 	}
 
 	protected void setDiscreteData(double continuousObservations[][],
@@ -139,6 +141,13 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteGaussian implements
 		this.discreteObservations = discreteObservations;
 	}
 
+	/**
+	 * Compute the average mutual information from the previously supplied
+	 *  observations via {@link #setObservations(double[][], int[])}
+	 * 
+	 * @return a scalar for the average mutual information in nats (NOT bits)
+	 * @throws Exception
+	 */
 	public double computeAverageLocalOfObservations() throws Exception {
 		// The average mutual information can be expressed
 		//  as a difference between the entropy of the continuous observations
@@ -169,6 +178,20 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteGaussian implements
 		return meanConditionalEntropy;
 	}
 
+	/**
+	 * Compute the local mutual information for each pair of continuous
+	 *  and discrete values supplied here, using probability distribution
+	 *  functions generated using the observations previously supplied
+	 *  to the method {@link #setObservations(double[][], int[])}.
+	 * 
+	 * @param contStates observations of the joint continuous variables,
+	 *  as specified in {@link #setObservations(double[][], int[])}
+	 * @param discreteStates observations of the discrete variable,
+	 *  as specified in {@link #setObservations(double[][], int[])}
+	 * @return a time series of the local mutual information values
+	 *  for each supplied observation, in nats (NOT bits)
+	 * @throws Exception
+	 */
 	public double[] computeLocalUsingPreviousObservations(
 			double[][] contStates, int[] discreteStates) throws Exception {
 

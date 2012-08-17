@@ -177,6 +177,21 @@ public class RandomGenerator {
 	}
 	
 	/**
+	 * Generate an array of random integers in the range 0 .. cap-1.
+	 * 
+	 * @param length length of array to return
+	 * @param cap number of distinct values to choose from (0..cap-1)
+	 * @return array of random integers
+	 */
+	public int[] generateRandomInts(int length, int cap) {
+		int[] data = new int[length];
+		for (int i = 0; i < length; i++) {
+			data[i] = random.nextInt(cap);
+		}
+		return data;
+	}
+	
+	/**
 	 * Generate (up to) numSets distinct sets of p distinct values in [0..n-1] 
 	 * Done using random guesses as this is designed for high dimension n
 	 *  where its highly unlikely we repeat a set (though this is checked)
@@ -298,7 +313,7 @@ public class RandomGenerator {
 	 * @param setsToAvoidOverlapWith
 	 * @return
 	 */
-	public int[][] generateDistinctRandomSets(int n, int p, int maxNumSets, int[][] setsToAvoidOverlapWith) {
+	private int[][] generateDistinctRandomSets(int n, int p, int maxNumSets, int[][] setsToAvoidOverlapWith) {
 		
 		// TODO Write this
 		

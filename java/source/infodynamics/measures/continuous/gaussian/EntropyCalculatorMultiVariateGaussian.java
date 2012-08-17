@@ -29,10 +29,10 @@ public class EntropyCalculatorMultiVariateGaussian
 	implements EntropyCalculatorMultiVariate, Cloneable {
 
 	/**
-	 * Covariance matrix of the most recently supplied observations
+	 * Cached Cholesky decomposition of the most recently supplied covariance matrix
 	 */
-	protected double[][] covariance;
-	
+	protected double[][] L;
+
 	/**
 	 * Means of the most recently supplied observations (source variables
 	 *  listed first, destination variables second).
@@ -70,8 +70,8 @@ public class EntropyCalculatorMultiVariateGaussian
 	 * Initialise the calculator ready for reuse
 	 */
 	public void initialise(int dimensions) {
-		covariance = null;
 		means = null;
+		L = null;
 		observations = null;
 		this.dimensions = dimensions;
 		detCovariance = 0;
@@ -82,18 +82,22 @@ public class EntropyCalculatorMultiVariateGaussian
 	 * 
 	 * @param observations the observations to compute the entropy from.
 	 *        First index is time, second index is variable number.
+	 * @throws Exception where the observations do not match the expected number of 
+	 *  dimensions, or covariance matrix is not positive definite (reflecting 
+	 *  redundant variables in the observations)
 	 */
-	public void setObservations(double[][] observations) {
-		this.observations = observations;
-		means = MatrixUtils.means(observations);
-		covariance = MatrixUtils.covarianceMatrix(observations, means);
-		detCovariance = 0;
+	public void setObservations(double[][] observations) throws Exception {
 		// Check that the observations was of the correct number of dimensions:
-		//  (done afterwards since the covariance matrix computation checks that
-		//  all rows had the right number of columns
-		if (covariance.length != dimensions) {
-			throw new RuntimeException("Supplied observations does not match initialised number of dimensions");
+		if (observations[0].length != dimensions) {
+			means = null;
+			L = null;
+			throw new Exception("Supplied observations does not match initialised number of dimensions");
 		}
+		means = MatrixUtils.means(observations);
+		setCovariance(MatrixUtils.covarianceMatrix(observations, means));
+		// And keep a reference to the observations used here (must set this
+		//  *after* setCovariance, since setCovariance sets the observations to null
+		this.observations = observations;
 	}
 
 	/**
@@ -104,22 +108,23 @@ public class EntropyCalculatorMultiVariateGaussian
 	 *  call {@link #computeLocalOfPreviousObservations()}.</p>
 	 *  
 	 * @param covariance covariance matrix
+	 * @throws Exception if the covariance matrix does not match the dimensions supplied
+	 *  in {@link #initialise(int)}, is non-square, is asymmetric or is non-positive
+	 *  definite (i.e. there are redundant terms).
 	 */
 	public void setCovariance(double[][] covariance) throws Exception {
 		detCovariance = 0;
 		observations = null;
-		// Make sure the supplied covariance matrix is square:
+		// Check the dimensions of the covariance matrix:
 		int rows = covariance.length;
 		if (rows != dimensions) {
 			throw new Exception("Supplied covariance matrix does not match initialised number of dimensions");
 		}
-		for (int r = 0; r < rows; r++) {
-			if (covariance[r].length != rows) {
-				throw new Exception("Cannot compute the determinant of a non-square matrix");
-			}
-		}
-
-		this.covariance = covariance;
+		// Make sure the matrix is symmetric and positive definite, by taking the 
+		//  Cholesky decomposition (which we need for the determinant later anyway):
+		//  (this will check and throw Exceptions for non-square,
+		//   asymmetric, non-positive definite A)
+		L = MatrixUtils.CholeskyDecomposition(covariance);
 	}
 	
 	/**
@@ -131,14 +136,17 @@ public class EntropyCalculatorMultiVariateGaussian
 	 * 
 	 * @param covariance covariance matrix of the variables
 	 * @param means mean of the variables
-	 * @throws Exception where the dimensions of the covariance or means are not correct
+	 * @throws Exception where the dimensions of the covariance or means are not correct,
+	 *  or the covariance matrix is non-square, is asymmetric or is non-positive
+	 *  definite (i.e. there are redundant terms).
 	 */
 	public void setCovarianceAndMeans(double[][] covariance, double[] means) throws Exception {
+		setCovariance(covariance);
+		// Only set means after setCovariance has returned ok
 		if (means.length != dimensions) {
 			throw new Exception("Supplied mean matrix does not match initialised number of dimensions");
 		}
 		this.means = means;
-		setCovariance(covariance);
 	}
 
 	/**
@@ -151,19 +159,16 @@ public class EntropyCalculatorMultiVariateGaussian
 	 *  observations here).</p>
 	 * 
 	 * @return the joint entropy of the previously provided observations or from the
-	 *  supplied covariance matrix.
+	 *  supplied covariance matrix. Returned in nats (NOT bits).
 	 */
 	public double computeAverageLocalOfObservations() {
-		try {
-			detCovariance = MatrixUtils.determinant(covariance);
-			lastAverage =  0.5 * (dimensions* (1 + Math.log(2.0*Math.PI)) +
-				Math.log(Math.abs(detCovariance)));
-			return lastAverage;
-		} catch (Exception e) {
-			// Should not happen, since we check the validity of the supplied
-			//  matrix beforehand; so we'll throw an Error in this case
-			throw new Error(e);
-		}
+		// Simple way:
+		// detCovariance = MatrixUtils.determinantSymmPosDefMatrix(covariance);
+		// Using cached Cholesky decomposition:
+		detCovariance = MatrixUtils.determinantViaCholeskyResult(L);
+		lastAverage =  0.5 * (dimensions* (1 + Math.log(2.0*Math.PI)) +
+			Math.log(detCovariance));
+		return lastAverage;
 	}
 
 	public void setDebug(boolean debug) {
@@ -197,7 +202,7 @@ public class EntropyCalculatorMultiVariateGaussian
 	 * 
 	 * @param states joint vectors of observations; first index
 	 *  is observation number, second is variable number.
-	 * @return an array of local values
+	 * @return an array of local values in nats (NOT bits).
 	 * @see <a href="http://en.wikipedia.org/wiki/Multivariate_normal_distribution">Multivariate normal distribution on Wikipedia</a>
 	 */
 	public double[] computeLocalUsingPreviousObservations(double[][] states)
@@ -207,21 +212,22 @@ public class EntropyCalculatorMultiVariateGaussian
 		}
 		
 		// Check that the covariance matrix was positive definite:
-		//  it is known (i think because it is symmetric) that the covariance
-		//  matrix will be positive definite unless one variable is an exact
-		//  linear combination of the others (ref: wikipedia, above).
-		// We can check for linear dependence by ensuring that the determinant
-		//  of the covariance matrix is non-zero:
+		// (this was done earlier in computing the Cholesky decomposition,
+		//  we may still need to compute the determinant)
 		if (detCovariance == 0) {
-			// We need to check:
-			detCovariance = MatrixUtils.determinant(covariance); 
+			// The determinant has not been computed yet
+			// Simple way:
+			// detCovariance = MatrixUtils.determinantSymmPosDefMatrix(covariance);
+			// Using cached Cholesky decomposition:
+			detCovariance = MatrixUtils.determinantViaCholeskyResult(L);
 			if (detCovariance == 0) {
 				throw new Exception("Covariance matrix is not positive definite");
 			}
 		}
 		// Now we are clear to take the matrix inverse (via Cholesky decomposition,
 		//  since we have a symmetric positive definite matrix):
-		double[][] invCovariance = MatrixUtils.invertSymmPosDefMatrix(covariance);
+		double[][] invCovariance = MatrixUtils.solveViaCholeskyResult(L,
+				MatrixUtils.identityMatrix(L.length));
 		
 		// If we have a time delay, slide the local values
 		double[] localValues = new double[states.length];
