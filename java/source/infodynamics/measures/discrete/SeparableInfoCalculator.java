@@ -1618,7 +1618,7 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 		if (computeMultiInfoCoherence) {
 			miCalc.setDebug(debug);
 		}
-		this.debug = debug;
+		super.setDebug(debug);
 	}
 
 }

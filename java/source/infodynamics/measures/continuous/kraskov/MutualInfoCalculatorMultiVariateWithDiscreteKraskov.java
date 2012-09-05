@@ -35,7 +35,14 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 	protected double[][] continuousData;
 	protected int[] discreteData;
 	protected int[] counts;
+	/**
+	 * Number of possible states of the discrete variable
+	 */
 	protected int base;
+	/**
+	 * Number of dimenions of the joint continuous variable
+	 */
+	protected int dimensions;
 	protected boolean debug;
 	protected double mi;
 	protected boolean miComputed;
@@ -50,7 +57,19 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 	public final static String PROP_K = "k";
 	public final static String PROP_NORM_TYPE = "NORM_TYPE";	
 	public static final String PROP_NORMALISE = "NORMALISE";
-	private boolean normalise = true;
+	
+	/**
+	 * Track whether we're going to normalise the joint variables individually
+	 */
+	protected boolean normalise = true;
+	/**
+	 * Track the means of the joint variables if we are normalising them
+	 */
+	protected double[] means;
+	/**
+	 * Track the std devs of the joint variables if we are normalising them
+	 */
+	protected double[] stds;
 
 	public MutualInfoCalculatorMultiVariateWithDiscreteKraskov() {
 		super();
@@ -68,8 +87,10 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		miComputed = false;
 		xNorms = null;
 		continuousData = null;
+		means = null;
+		stds = null;
 		discreteData = null;
-		// No need to keep the dimenions here
+		this.dimensions = dimensions;
 		this.base = base;
 	}
 
@@ -122,11 +143,18 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		if (continuousObservations[0].length == 0) {
 			throw new Exception("Computing MI with a null set of data");
 		}
+		if (continuousObservations[0].length != dimensions) {
+			throw new Exception("The continuous observations do not have the expected number of variables (" + dimensions + ")");
+		}
 		continuousData = continuousObservations;
 		discreteData = discreteObservations;
 		if (normalise) {
 			// Take a copy since we're going to normalise it
-			continuousData = MatrixUtils.normaliseIntoNewArray(continuousObservations);
+			// And we need to keep the means/stds ready to normalise local values
+			//  that are supplied later:
+			means = MatrixUtils.means(continuousObservations);
+			stds = MatrixUtils.stdDevs(continuousObservations, means);
+			continuousData = MatrixUtils.normaliseIntoNewArray(continuousObservations, means, stds);
 		}
 		// count the discrete states:
 		counts = new int[base];
@@ -237,6 +265,9 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 			return computeAverageLocalOfObservationsWhileComputingDistances();
 		}
 		
+		// Postcondition: we'll compute the norms before the main loop,
+		//  unless they have already been computed:
+		
 		if (xNorms == null) {
 			computeNorms();
 		}
@@ -246,6 +277,8 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		double averageDiGammas = 0;
 		double avNx = 0;
 		double avNy = 0;
+		
+		double testSum = 0.0; // Used for debugging prints
 		
 		for (int t = 0; t < N; t++) {
 			// Compute eps_x and eps_y for this time step:
@@ -269,7 +302,20 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 			avNy += n_y;
 			// And take the digamma before adding into the 
 			//  average:
-			averageDiGammas += MathsUtils.digamma(n_x) + MathsUtils.digamma(n_y);			
+			double localSum = MathsUtils.digamma(n_x) + MathsUtils.digamma(n_y);
+			averageDiGammas += localSum;
+
+			if (debug) {
+				double localValue = MathsUtils.digamma(k) - 1.0/(double)k - localSum + MathsUtils.digamma(N);
+				testSum += localValue;
+				if (dimensions == 1) {
+					System.out.printf("t=%d: x=%.3f, eps_x=%.3f, n_x=%d, n_y=%d, local=%.3f, running total = %.5f\n",
+							t, continuousData[t][0], eps_x, n_x, n_y, localValue, testSum);
+				} else {
+					System.out.printf("t=%d: eps_x=%.3f, n_x=%d, n_y=%d, local=%.3f, running total = %.5f\n",
+							t, eps_x, n_x, n_y, localValue, testSum);
+				}
+			}
 		}
 		averageDiGammas /= (double) N;
 		if (debug) {
@@ -304,6 +350,8 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		double avNx = 0;
 		double avNy = 0;
 		
+		double testSum = 0.0; // Used for debugging prints
+		
 		for (int t = 0; t < N; t++) {
 			// Compute eps_x and eps_y for this time step:
 			//  First get x norms to all neighbours
@@ -335,7 +383,20 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 			avNy += n_y;
 			// And take the digamma before adding into the 
 			//  average:
-			averageDiGammas += MathsUtils.digamma(n_x) + MathsUtils.digamma(n_y);
+			double localSum = MathsUtils.digamma(n_x) + MathsUtils.digamma(n_y);
+			averageDiGammas += localSum;
+
+			if (debug) {
+				double localValue = MathsUtils.digamma(k) - 1.0/(double)k - localSum + MathsUtils.digamma(N);
+				testSum += localValue;
+				if (dimensions == 1) {
+					System.out.printf("t=%d: x=%.3f, eps_x=%.3f, n_x=%d, n_y=%d, local=%.3f, running total = %.5f\n",
+							t, continuousData[t][0], eps_x, n_x, n_y, localValue, testSum);
+				} else {
+					System.out.printf("t=%d: eps_x=%.3f, n_x=%d, n_y=%d, local=%.3f, running total = %.5f\n",
+							t, eps_x, n_x, n_y, localValue, testSum);
+				}
+			}
 		}
 		averageDiGammas /= (double) N;
 		if (debug) {
@@ -425,7 +486,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 	 *  it should be ignored, since the data point was not counted in its
 	 *  own counts in the standard version anyway.</p>
 	 *  
-	 *  <p>The supplied observations are intended to be new observations,
+	 *  <p><b>Importantly</b>, the supplied observations are intended to be new observations,
 	 *  not those fed in to compute the PDFs from. There would be
 	 *  some subtle changes necessary to accomodate computing locals on
 	 *  the same data set (e.g. not counting the current point as one
@@ -440,11 +501,25 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 	public double[] computeLocalUsingPreviousObservations(double[][] continuousNewStates,
 			int[] discreteNewStates) throws Exception {
 		
+		if (normalise) {
+			// The stored observations continuousData have been normalised
+			//  according to their stored means and stds; we need to 
+			//  normalise the incoming observations the same way before
+			//  comparing them
+			continuousNewStates = MatrixUtils.normaliseIntoNewArray(
+					continuousNewStates, means, stds);
+		}
+		
 		int N = continuousNewStates.length; // number of observations
 		double[] locals = new double[N];
 		
 		double fixedPartOfLocals = MathsUtils.digamma(k) - 1.0/(double)k +
 									MathsUtils.digamma(N);
+		double testSum = 0.0;
+		if (debug) {
+			System.out.printf("digamma(k)=%.3f - 1/k=%.3f + digamma(N)=%.3f\n",
+					MathsUtils.digamma(k), 1.0/(double)k, MathsUtils.digamma(N));
+		}
 		double avNx = 0;
 		double avNy = 0;
 		
@@ -476,11 +551,21 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 			// Now compute the local value:
 			locals[t] = fixedPartOfLocals -
 					MathsUtils.digamma(n_x) - MathsUtils.digamma(n_y);
+			if (debug) {
+				testSum += locals[t];
+				if (dimensions == 1) {
+					System.out.printf("t=%d: x=%.3f, eps_x=%.3f, n_x=%d, n_y=%d, local=%.3f, running total = %.5f\n",
+							t, continuousNewStates[t][0], eps_x, n_x, n_y, locals[t], testSum);
+				} else {
+					System.out.printf("t=%d: eps_x=%.3f, n_x=%d, n_y=%d, local=%.3f, running total = %.5f\n",
+							t, eps_x, n_x, n_y, locals[t], testSum);
+				}
+			}
 		}
 		if (debug) {
 			avNx /= (double)N;
 			avNy /= (double)N;
-			System.out.println(String.format("Average n_x=%.3f, Average n_y=%.3f", avNx, avNy));
+			System.out.printf("Average n_x=%.3f, Average n_y=%.3f\n", avNx, avNy);
 		}
 		
 		return locals;

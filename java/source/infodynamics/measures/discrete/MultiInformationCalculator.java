@@ -151,7 +151,7 @@ public class MultiInformationCalculator extends InfoMeasureCalculator {
 			}
 			double jointProb = (double) jointCount[jointValue] / (double) observations;
 			double logValue = jointProb / prodMarginalProbs;
-			double localValue = Math.log(logValue) / log_base;
+			double localValue = Math.log(logValue) / log_2;
 			if (jointProb > 0.0) {
 				if (!checkedFirst) {
 					max = localValue;

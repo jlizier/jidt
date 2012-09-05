@@ -110,7 +110,7 @@ public interface MutualInfoCalculatorMultiVariateWithDiscrete {
 	 * 
 	 * @param numPermutationsToCheck the number of permuted surrogates to examine
 	 * @return the proportion of MI scores from the distribution which have higher or equal MIs to ours.
-	 * @link "Chavez et. al., 'Statistical assessment of nonlinear causality:
+	 * @see "Chavez et. al., 'Statistical assessment of nonlinear causality:
 	 *  application to epileptic EEG signals', Journal of Neuroscience Methods 124 (2003) 113-128"
 	 * @throws Exception
 	 */
