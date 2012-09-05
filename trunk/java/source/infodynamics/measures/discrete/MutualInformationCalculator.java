@@ -103,47 +103,9 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 		max = 0;
 		min = 0;
 		double meanSqLocals = 0;
-		for (int i = 0; i < base; i++) {
-			// compute p_i
-			double probi = (double) iCount[i] / (double) observations;
-			for (int j = 0; j < base; j++) {
-				// compute p_j
-				double probj = (double) jCount[j] / (double) observations;
-				// compute p(veci=i, vecj=j)
-				double jointProb = (double) jointCount[i][j] / (double) observations;
-				// Compute MI contribution:
-				if (jointProb * probi * probj > 0.0) {
-					double localValue = Math.log(jointProb / (probi * probj)) / log_base;
-					miCont = jointProb * localValue;
-					if (localValue > max) {
-						max = localValue;
-					} else if (localValue < min) {
-						min = localValue;
-					}
-					// Add this contribution to the mean 
-					//  of the squared local values
-					meanSqLocals += miCont * localValue;
-				} else {
-					miCont = 0.0;
-				}
-				mi += miCont;
-			}
+		if (debug) {
+			System.out.println("i\tj\tp_i\tp_j\tp_joint\tlocal");
 		}
-		
-		average = mi;
-		std = Math.sqrt(meanSqLocals - average * average);
-
-		return mi;
-	}
-
-	public double debugLocalOfObservations() {
-		double mi = 0.0;
-		double miCont = 0.0;
-
-		max = 0;
-		min = 0;
-		double meanSqLocals = 0;
-		System.out.println("i\tj\tp_i\tp_j\tp_joint\tlocal");
 		for (int i = 0; i < base; i++) {
 			// compute p_i
 			double probi = (double) iCount[i] / (double) observations;
@@ -154,10 +116,12 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 				double jointProb = (double) jointCount[i][j] / (double) observations;
 				// Compute MI contribution:
 				if (jointProb * probi * probj > 0.0) {
-					double localValue = Math.log(jointProb / (probi * probj)) / log_base;
+					double localValue = Math.log(jointProb / (probi * probj)) / log_2;
 					miCont = jointProb * localValue;
-					System.out.printf("%d\t%d\t%.4f\t%.4f\t%.4f\t%.4f\n",
-							i, j, probi, probj, jointProb, localValue);
+					if (debug) {
+						System.out.printf("%d\t%d\t%.4f\t%.4f\t%.4f\t%.4f\n",
+								i, j, probi, probj, jointProb, localValue);
+					}
 					if (localValue > max) {
 						max = localValue;
 					} else if (localValue < min) {
@@ -273,7 +237,7 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 			//  and we've got two counts on the bottom
 			//  but one count on the top:
 			logTerm *= (double) observations;
-			localMI[r] = Math.log(logTerm) / log_base;
+			localMI[r] = Math.log(logTerm) / log_2;
 			average += localMI[r];
 			if (localMI[r] > max) {
 				max = localMI[r];

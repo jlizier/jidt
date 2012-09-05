@@ -328,6 +328,8 @@ public abstract class MutualInfoCalculatorMultiVariateKraskovByMulti implements
 	}
 
 	public double[] computeLocalUsingPreviousObservations(double[][] states1, double[][] states2) throws Exception {
+		// TODO When implemented, we'll need to normalise the data in the same way
+		//  as previously supplied observations (if they were normalised here)
 		throw new Exception("Local method not implemented yet");
 	}
 	

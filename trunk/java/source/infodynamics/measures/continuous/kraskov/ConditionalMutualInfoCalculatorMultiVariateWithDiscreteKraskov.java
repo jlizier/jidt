@@ -541,6 +541,10 @@ public class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteKraskov impl
 
 	public double[] computeLocalUsingPreviousObservations(double[][] continuousStates,
 			int[] discreteStates) throws Exception {
+		// TODO Implement local method.
+		//  Note: will need to keep the means and stds of supplied observations
+		//  if we normalised them (since we'll need to normalise the 
+		//  observations supplied here to match them)
 		throw new Exception("Local method not implemented yet");
 	}
 
@@ -560,6 +564,9 @@ public class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteKraskov impl
 			double[][] contStates, int[] discreteStates,
 			double[][] conditionedStates) throws Exception {
 		// TODO Auto-generated method stub
+		//  Note: will need to keep the means and stds of supplied observations
+		//  if we normalised them (since we'll need to normalise the 
+		//  observations supplied here to match them)
 		throw new Exception("Not implemented yet");
 	}
 }

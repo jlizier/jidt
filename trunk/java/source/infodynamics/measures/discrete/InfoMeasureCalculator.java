@@ -1,15 +1,31 @@
 package infodynamics.measures.discrete;
 
 /**
- * Info theoretic measure calculator base class
+ * <p>Info theoretic measure calculator base class, providing common functionality
+ *  for user-level measure classes.</p>
  * 
- * Usage:
- * 1. Continuous accumulation of observations before computing :
- *   Call: a. initialise()
- *         b. addObservations() several times over
- *         c. computeLocalFromPreviousObservations() or computeAverageLocalOfObservations()
- * 2. Standalone computation from a single set of observations:
- *   Call: computeLocal() or computeAverageLocal()
+ * <p>Usage of child classes is intended to follow this general pattern:
+ * <ol>
+ * 	<li>Construct;</li>
+ *  <li>{@link #initialise()};</li>
+ *  <li>Then, either of the following:
+ *  	<ol>
+ *  		<li>Continuous accumulation of observations before computing, via:
+ * 				<ol>
+ * 					<li>calling "addObservations()" methods of children
+ * 					several times over;</li>
+ *  				<li>Compute required quantities, using 
+ *  				{@link #computeAverageLocalOfObservations()} or 
+ *		        	 "computeLocalUsinPreviousObservations()".</li>
+ *         		</ol></li>
+ *  		<li>Standalone computation from a single set of observations; call:
+ *   			"computeLocal()" or "computeAverageLocal()".</li>
+ * 		</ol>
+ * </ol></p>
+ * 
+ * <p>Note: various functions referred to above (e.g. "addObservations()")
+ * are not specified here, so that this class can be a superclass
+ * for both univariate, pairwise and multivariate methods.</p>
  * 
  * @author Joseph Lizier
  * joseph.lizier at gmail.com
@@ -119,5 +135,20 @@ public abstract class InfoMeasureCalculator {
 			return false;
 		}
 		return true;
+	}
+	
+	/**
+	 * Compute the average value of the measure from the previously supplied
+	 * observations
+	 * 
+	 * @return average value
+	 */
+	public abstract double computeAverageLocalOfObservations();
+	
+	/**
+	 * @param debug the debug status to set
+	 */
+	public void setDebug(boolean debug) {
+		this.debug = debug;
 	}
 }

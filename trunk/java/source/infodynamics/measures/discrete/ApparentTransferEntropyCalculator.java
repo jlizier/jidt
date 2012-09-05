@@ -638,7 +638,7 @@ public class ApparentTransferEntropyCalculator extends ContextOfPastMeasureCalcu
 					double logTerm = (double) nextPastCount[nextVal][prevVal] /
 								(double) pastCount[prevVal] /
 								p_next;
-					double localValue = Math.log(logTerm) / log_base;
+					double localValue = Math.log(logTerm) / log_2;
 					activeCont = (nextPastCount[nextVal][prevVal] /
 								(double) observations) * localValue;
 				} else {

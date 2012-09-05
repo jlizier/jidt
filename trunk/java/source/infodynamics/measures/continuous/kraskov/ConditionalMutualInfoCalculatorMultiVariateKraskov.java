@@ -228,7 +228,9 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov {
 	public abstract double[] computeLocalOfPreviousObservations() throws Exception;
 
 	public double[] computeLocalUsingPreviousObservations(double[][] states1, double[][] states2) throws Exception {
-		// If implemented, will need to incorporate any time difference here.
+		// If implemented, will need to incorporate any normalisation here
+		//  (normalising the incoming data the same way the previously
+		//   supplied observations were normalised).
 		throw new Exception("Local method not implemented yet");
 	}
 	

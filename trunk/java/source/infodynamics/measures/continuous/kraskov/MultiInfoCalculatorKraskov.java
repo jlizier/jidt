@@ -244,6 +244,9 @@ public abstract class MultiInfoCalculatorKraskov implements
 	public abstract double[] computeLocalOfPreviousObservations() throws Exception;
 
 	public double[] computeLocalUsingPreviousObservations(double[][] states) throws Exception {
+		// TODO If this is implemented, will need to normalise the incoming
+		//  observations the same way that previously supplied ones were
+		//  normalised (if they were normalised, that is)
 		throw new Exception("Local method not implemented yet");
 	}
 
