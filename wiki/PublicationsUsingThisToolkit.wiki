@@ -1,0 +1,11 @@
+#summary List of publications including results which were produced using this toolkit
+
+= My publications =
+
+  * List all here ...
+
+
+= Publications by other authors =
+
+Publications by other authors using this toolkit:
+  * Dasgupta et al. (though the paper does not specifically reference the use of the toolkit)
