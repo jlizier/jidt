@@ -8,4 +8,4 @@
 = Publications by other authors =
 
 Publications by other authors using this toolkit:
-  * Dasgupta et al. (though the paper does not specifically reference the use of the toolkit)
+  * Dasgupta et al. (though the paper does not specifically reference the use of the toolkit) http://manoonpong.com/paper/2012/EANN2012_Memory.pdf
