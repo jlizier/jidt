@@ -1,8 +1,8 @@
 package infodynamics.measures.continuous.gaussian;
 
-import infodynamics.measures.continuous.AnalyticNullDistributionComputer;
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.measures.continuous.MutualInfoMultiVariateCommon;
+import infodynamics.utils.AnalyticNullDistributionComputer;
 import infodynamics.utils.ChiSquareMeasurementDistribution;
 import infodynamics.utils.MatrixUtils;
 
