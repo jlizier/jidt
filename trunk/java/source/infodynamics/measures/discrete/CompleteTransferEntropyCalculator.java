@@ -7,11 +7,11 @@ import infodynamics.utils.RandomGenerator;
 
 
 /**
- * <p>Implements complete transfer entropy,
- * and local complete transfer entropy (see Lizier et al, PRE, 2008).
- * Complete transfer entropy is the transfer entropy <i>conditioned</i> on all causal information
+ * <p>Implements <i>complete</i> transfer entropy,
+ * and <i>local complete</i> transfer entropy (see Lizier et al, PRE, 2008).
+ * Complete transfer entropy is the transfer entropy <i>conditioned</i> on <i>all</i> causal information
  *  contributors to the destination.
- * This class can of course be used for any general conditional transfer entropy 
+ * This class can of course be used for any general <i>conditional</i> transfer entropy 
  *  (see Lizier et al, Chaos 2010) by only supplying a limited
  *  number of sources in the array of other variables to be 
  *  conditioned on.
@@ -272,7 +272,7 @@ public class CompleteTransferEntropyCalculator extends InfoMeasureCalculator {
 		} else {
 			cleanedOthersAbsolute = cleanAbsoluteOthers(othersAbsolute, destCol,
 					sourceCol, k > 0);
-			// This call made redundant by cleanOffsetOthers:
+			// This call made redundant by cleanAbsoluteOthers:
 			// confirmEnoughAbsoluteOthers(othersAbsolute, destCol, sourceCol);
 		}
 		
