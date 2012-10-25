@@ -3262,9 +3262,11 @@ public class MatrixUtils {
 	/**
 	 * Convert a double array to an int array.
 	 * This is designed specifically for use of the toolkit in Octave
-	 *  where all native arrays are considered as doubles for Java,
-	 *  and octave-java can't properly identify valid method signatures
-	 *  unless the arrays are converted to int arrays first.
+	 *  where all native arrays are considered as doubles for Java.
+	 * To use an integer 1D array (to supply to a java method), one must
+	 *  first create the native Octave 1D array, then create a java 1D Double
+	 *  array, then use this method to convert that java 1D Double array
+	 *  to a java 1D integer array.
 	 * 
 	 * @param array
 	 * @return
@@ -3283,9 +3285,11 @@ public class MatrixUtils {
 	/**
 	 * Convert a 2D double array to an int array.
 	 * This is designed specifically for use of the toolkit in Octave
-	 *  where all native arrays are considered as doubles for Java,
-	 *  and octave-java can't properly identify valid method signatures
-	 *  unless the arrays are converted to int arrays first.
+	 *  where all native arrays are considered as doubles for Java.
+	 * To use an integer 2D array (to supply to a java method), one must
+	 *  first create the native Octave 2D array, then create a java 2D Double
+	 *  array, then use this method to convert that java 2D Double array
+	 *  to a java 2D integer array.
 	 * 
 	 * @param array
 	 * @return
