@@ -10,7 +10,7 @@ import java.util.Random;
 public class MultiInfoCalculatorKernel implements
 	MultiInfoCalculator {
 
-	KernelEstimatorSingleVariate[] svkeMarginals = null;
+	KernelEstimatorUniVariate[] svkeMarginals = null;
 	KernelEstimatorMultiVariate mvkeJoint = null;
 
 	private int dimensions = 0;
@@ -58,9 +58,9 @@ public class MultiInfoCalculatorKernel implements
 		if (this.dimensions != dimensions) {
 			// Need to create a new array of marginal kernel estimators 
 			this.dimensions = dimensions;
-			svkeMarginals = new KernelEstimatorSingleVariate[dimensions];
+			svkeMarginals = new KernelEstimatorUniVariate[dimensions];
 			for (int i = 0; i < dimensions; i++) {
-				svkeMarginals[i] = new KernelEstimatorSingleVariate();
+				svkeMarginals[i] = new KernelEstimatorUniVariate();
 				svkeMarginals[i].setNormalise(normalise);
 				if (dynCorrExcl) {
 					svkeMarginals[i].setDynamicCorrelationExclusion(dynCorrExclTime);

@@ -16,7 +16,7 @@ import java.util.Hashtable;
  *  see Kantz and Schreiber (below).
  * </p>
  * 
- * @see KernelEstimatorSingleVariate
+ * @see KernelEstimatorUniVariate
  * @see "H. Kantz and T. Schreiber, 'Nonlinear Time Series Analysis'.
  *   Cambridge, MA: Cambridge University Press, 1997"
  * @author Joseph Lizier, <a href="mailto:joseph.lizier at gmail.com">joseph.lizier at gmail.com</>

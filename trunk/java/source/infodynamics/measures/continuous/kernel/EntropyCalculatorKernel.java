@@ -4,7 +4,7 @@ import infodynamics.measures.continuous.EntropyCalculator;
 
 public class EntropyCalculatorKernel implements EntropyCalculator {
 
-	protected KernelEstimatorSingleVariate svke = null;
+	protected KernelEstimatorUniVariate svke = null;
 	protected int totalObservations = 0;
 	protected boolean debug = false;
 	protected double[] observations;
@@ -23,7 +23,7 @@ public class EntropyCalculatorKernel implements EntropyCalculator {
 	public static final String EPSILON_PROP_NAME = "EPSILON";
 	
 	public EntropyCalculatorKernel() {
-		svke = new KernelEstimatorSingleVariate();
+		svke = new KernelEstimatorUniVariate();
 		svke.setDebug(debug);
 		svke.setNormalise(normalise);
 	}
