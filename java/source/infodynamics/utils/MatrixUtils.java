@@ -3242,6 +3242,24 @@ public class MatrixUtils {
 	}
 	
 	/**
+	 * Convert a single dimensional double array to a 2D array,
+	 *  where the first dimension matches that of the original array
+	 *  and second is always 0 (with our convention for first index being
+	 *  time and second variable number, this means we have a 2D array
+	 *  where the original array becomes the first variable).
+	 * 
+	 * @param array
+	 * @return 2D array with the original array as the only column.
+	 */
+	public static double[][] doubleTo2DArray(double[] array) {
+		double[][] twoDArray = new double[array.length][1];
+		for (int i = 0; i < array.length; i++) {
+			twoDArray[i][0] = array[i];
+		}
+		return twoDArray;
+	}
+	
+	/**
 	 * Convert a double array to an int array.
 	 * This is designed specifically for use of the toolkit in Octave
 	 *  where all native arrays are considered as doubles for Java,

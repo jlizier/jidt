@@ -52,7 +52,7 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov {
 		k = 1; // by default
 	}
 
-	public void initialise(int dimensions1, int dimensions2, int dimensions3) {
+	public void initialise(int dimensions1, int dimensions2, int dimensionsCond) {
 		condMi = 0.0;
 		condMiComputed = false;
 		xNorms = null;
