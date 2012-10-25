@@ -1,0 +1,22 @@
+#summary The measures (and estimation techniques) implemented by this toolkit
+#labels Phase-Design,Featured,measures
+
+The JIDT implements a range of information-theoretic measures, for both _discrete_ and _continuous_-valued.
+
+The measures (and estimation techniques) implemented by this toolkit are as follows
+
+|| *Measure* || *Discrete* || *Continuous* (implementation technique specified) ||
+|| *Entropy* || yes || (box) kernel estimation`*`, Kozachenko`*`, Gaussian`*` ||
+|| *Entropy rate* || yes || _Use two multivariate entropy calculators_ ||
+|| *Mutual information* || yes || (box) kernel estimation`*`+, Kozachenko, Kraskov`*`+, Symbolic`*`+, Gaussian`*`+||
+|| *Conditional mutual information* ||   || Kraskov`*`+, Symbolic`*`+ ||
+|| *Multi-information / Integration* || yes || (box) kernel estimation`*`, Kraskov`*` ||
+|| *Transfer Entropy* || yes || (box) kernel estimation`*`, Kraskov estimation`*`, Symbolic ||
+|| *Conditional/Complete Transfer Entropy* || yes || _Use multivariate conditional MI calculators_ ||
+|| *Active information storage* || yes || (box) kernel estimation ||
+|| *Excess entropy / predictive information* || yes || _Use multivariate MI calculators_ ||
+|| *Separable information* || yes ||  ||
+
+Key to table:
+  * `*` indicates multivariate (i.e. joint state) implementation is provided.<br/>
+  * + also implements MI from multivariate continuous variables to a discrete variable
