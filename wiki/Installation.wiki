@@ -1,0 +1,27 @@
+#summary How to install and start using the toolkit
+#labels Phase-Deploy,Featured
+
+= Introduction =
+
+Here we describe how to install and start using the toolkit (it's pretty simple!)
+
+= Download =
+
+Download the latest distribution; either:
+ # jar file alone <add link>;
+ # jar file plus demonstrations <add link>
+ # full source code via SVN - see http://code.google.com/p/information-dynamics-toolkit/source/checkout
+
+= Dependencies =
+
+None! You don't need any other downloads to start using this code
+
+= Install =
+
+Just put the jar in a relevant location in your file structure.
+
+If you have the source code, javac all of it, and make a jar.
+
+= Usage =
+
+See OctaveMatlabExamples for some guided examples on using the code. More to be added later.
