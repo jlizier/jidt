@@ -170,7 +170,7 @@ public class TransferEntropyCalculatorSymbolic
 		sourceSymbolsVector = new Vector<int[]>();
 		
 		// Construct the symbols from the given observations
-		int startObservation = 0;
+		//int startObservation = 0;
 		Iterator<double[]> iterator = vectorOfDestinationObservations.iterator();
 		for (double[] source : vectorOfSourceObservations) {
 			double[] destination = iterator.next();
@@ -243,7 +243,9 @@ public class TransferEntropyCalculatorSymbolic
 						destSymbols.length - 1, destination.length - maxEmbeddingLength));
 			}
 			
-			startObservation += destSymbols.length - 1;
+			// I don't remember why we were tracking this:
+			// (probably before using vectors of observations)
+			//startObservation += destSymbols.length - 1;
 		}
 		
 	}
