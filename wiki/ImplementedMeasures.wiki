@@ -1,7 +1,7 @@
 #summary The measures (and estimation techniques) implemented by this toolkit
 #labels Phase-Design,Featured,measures
 
-The JIDT implements a range of information-theoretic measures, for both _discrete_ and _continuous_-valued.
+The JIDT implements a range of information-theoretic measures, for both _discrete_ and _continuous_-valued variables.
 
 The measures (and estimation techniques) implemented by this toolkit are as follows
 
