@@ -8,8 +8,8 @@ Here we describe how to install and start using the toolkit (it's pretty simple!
 = Download =
 
 Download the latest distribution; either:
- # jar file alone <add link>;
- # jar file plus demonstrations <add link>
+ # [http://code.google.com/p/information-dynamics-toolkit/downloads/detail?name=infodynamics-jar-0.1.zip jar file] alone;
+ # jar file plus demonstrations <coming soon>
  # full source code via SVN - see http://code.google.com/p/information-dynamics-toolkit/source/checkout
 
 = Dependencies =
