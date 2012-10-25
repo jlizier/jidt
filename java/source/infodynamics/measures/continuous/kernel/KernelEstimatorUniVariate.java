@@ -19,7 +19,7 @@ import java.util.Arrays;
  * @author Joseph Lizier, <a href="mailto:joseph.lizier at gmail.com">joseph.lizier at gmail.com</>
  *
  */
-public class KernelEstimatorSingleVariate {
+public class KernelEstimatorUniVariate {
 
 	private double suppliedKernelWidth = 0.1;
 	private double kernelWidthInUse;
@@ -69,7 +69,7 @@ public class KernelEstimatorSingleVariate {
 		}
 	}
 
-	public KernelEstimatorSingleVariate() {
+	public KernelEstimatorUniVariate() {
 	}
 
 	/**
