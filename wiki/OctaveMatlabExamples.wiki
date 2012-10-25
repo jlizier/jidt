@@ -1,5 +1,5 @@
 #summary Examples of using the toolkit in Octave or Matlab
-#labels octave,matlab,Phase-Deploy,examples
+#labels octave,matlab,Phase-Deploy,examples,Featured
 
 = Octave/Matlab code examples =
 
