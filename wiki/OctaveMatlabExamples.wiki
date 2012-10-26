@@ -7,7 +7,7 @@ These examples are designed for Octave, but to run the following in Matlab, conv
 
 Please see UseInOctaveMatlab for instructions on how to begin using the java toolkit from inside octave or matlab.
 
-*Be aware* that there are some strange issues in octave in converting between native octave types and java. This is particularly true for methods which take array arguments - octave often reports that a method is not find if, e.g. there are two methods of the same name taking different sized double arrays or one taking a double array and one taking an int array, or where the method takes or returns an int array. In these cases, it seems to work better to directly convert your octave array to a java array first. <Add examples here ...>
+*Be aware* that in octave conversion between native octave array types and java arrays is not straightforward (particularly for multidimensional arrays, or int arrays). Octave often reports that a method is not found. One could directly convert each element in an octave array to a java array first (see commented out code in [#Example_2_-_Transfer_entropy_on_multidimensional_binary_data Example 2]); however we recommend using the supplied scripts described in OctaveJavaArrayConversion (and see example use in [#Example_2_-_Transfer_entropy_on_multidimensional_binary_data Example 2]).
 
 This page contains the following code examples:
   * [#Example_1_-_Transfer_entropy_on_binary_data Example 1 - Transfer entropy on binary data]
@@ -20,7 +20,8 @@ This page contains the following code examples:
 Simple transfer entropy (TE) calculation on binary data using the discrete TE calculator:
 
 {{{
-javaaddpath('infoDynamics.jar');
+% Change location of jar to match yours:
+javaaddpath('../../infodynamics.jar');
 
 % Generate some random binary data.
 % Note that we need the *1 to make this a number not a Boolean,
@@ -31,12 +32,13 @@ sourceArray2=(rand(100,1)>0.5)*1;
 % Create a TE calculator and run it:
 teCalc=javaObject('infodynamics.measures.discrete.ApparentTransferEntropyCalculator', 2, 1);
 teCalc.initialise();
+% Since we have simple arrays of doubles, we can directly pass these in:
 teCalc.addObservations(destArray, sourceArray);
-% For copied source, should give something close to 1 bit:
+printf("For copied source, result should be close to 1 bit : ");
 result = teCalc.computeAverageLocalOfObservations()
 teCalc.initialise();
 teCalc.addObservations(destArray, sourceArray2);
-% For random source, it should give something close to 0 bits
+printf("For random source, result should be close to 0 bits: ");
 result2 = teCalc.computeAverageLocalOfObservations()
 }}}
 
