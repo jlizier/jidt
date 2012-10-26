@@ -32,7 +32,7 @@ The conversion is performed using the {{{org.octave.Matrix}}} class (distributed
 
 The {{{org.octave.Matrix}}} conversion doesn't work for java {{{int[]}}} or {{{int[][]}}} however; our solution in  [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/octaveToJavaIntArray.m octaveToJavaIntArray.m] and [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/octaveToJavaIntMatrix.m octaveToJavaIntMatrix.m] is to convert to {{{double[]}}} or {{{double[][]}}} first, then call our [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/java/source/infodynamics/utils/MatrixUtils.java MatrixUtils].doubleToIntArray() functions to convert the Java arrays internally.
 
-The reverse conversion is performed using the {{{java_convert_matrix}}} feature (to automatically convert {{{org.octave.Matrix}}} to octave native types.
+The reverse conversion is performed using the {{{java_convert_matrix}}} feature (to automatically convert {{{org.octave.Matrix}}} to octave native types).
 
 Note that these scripts will work in either Octave or Matlab. In Matlab however, since the org.octave.Matrix solution is not available, we simple convert element by element (which is very slow). If matlab users have a solution, feel free to share it (I haven't tried looking for one since I'm not running matlab).
 
