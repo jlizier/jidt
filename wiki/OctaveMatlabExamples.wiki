@@ -19,7 +19,7 @@ This page contains the following code examples:
 
 = Example 1 - Transfer entropy on binary data =
 
-Simple transfer entropy (TE) calculation on binary data using the discrete TE calculator:
+[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/example1TeBinaryData.m example1TeBinaryData.m] - Simple transfer entropy (TE) calculation on binary data using the discrete TE calculator:
 
 {{{
 % Change location of jar to match yours:
@@ -46,7 +46,7 @@ result2 = teCalc.computeAverageLocalOfObservations()
 
 = Example 2 - Transfer entropy on multidimensional binary data =
 
-Simple transfer entropy (TE) calculation on multidimensional binary data using the discrete TE calculator.
+[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/example2TeMultidimBinaryData.m example2TeMultidimBinaryData.m] - Simple transfer entropy (TE) calculation on multidimensional binary data using the discrete TE calculator.
 
 This example is important for Octave users, because it shows how to handle multidimensional arrays from Octave to Java (this is not as simple as single dimensional arrays in example 1 - it requires using supplied scripts to convert the array).
 
@@ -78,7 +78,7 @@ result2D = teCalc.computeAverageLocalOfObservations()
 
 = Example 3 - Transfer entropy on continuous data using kernel estimators =
 
-Simple transfer entropy (TE) calculation on continuous-valued data using the (box) kernel-estimator TE calculator.
+[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/example3TeContinuousDataKernel.m example3TeContinuousDataKernel.m] - Simple transfer entropy (TE) calculation on continuous-valued data using the (box) kernel-estimator TE calculator.
 
 {{{
 % Change location of jar to match yours:
@@ -109,7 +109,7 @@ printf("TE result %.4f bits; expected to be close to 0 bits for uncorrelated Gau
 
 = Example 4 - Transfer entropy on continuous data using Kraskov estimators =
 
-Simple transfer entropy (TE) calculation on continuous-valued data using the Kraskov-estimator TE calculator.
+[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/example4TeContinuousDataKraskov.m example4TeContinuousDataKraskov.m] - Simple transfer entropy (TE) calculation on continuous-valued data using the Kraskov-estimator TE calculator.
 
 {{{
 javaaddpath('../../infodynamics.jar');
