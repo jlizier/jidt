@@ -1,0 +1,71 @@
+#summary Demos to show how to compute local information dynamics profiles in cellular automata
+#labels CellularAutomata,octave,matlab
+
+= Cellular Automata demos =
+
+This demonstration set shows how to compute local information dynamics profiles in (1D) [http://en.wikipedia.org/wiki/Cellular_automaton cellular automata] (CAs).
+
+This demonstration set is found at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave%2FCellularAutomata demos/octave/CellularAutomata/] in the svn or full distribution.
+
+= Code design =
+
+{{{plotLocalInfoMeasureForCA.m}}} is the main file, which you call supplying arguments specifying the CA, and which local information dynamics measure to profile:
+{{{
+% function plotLocalInfoMeasureForCA(neighbourhood, base, rule, cells, timeSteps, measureId, measureParams, options)
+%
+% Inputs:
+% - neighbourhood - neighbourhood size for the rule (ECA has neighbourhood 3).
+%     For an even size neighbourhood (meaning a different number of neighbours on each side of the cell),
+%     we take an extra cell from the lower cell indices (i.e. from the left).
+% - base - number of discrete states for each cell (for binary states this is 2)
+% - rule - supplied as either:
+%     a. an integer rule number if <= 2^31 - 1 (Wolfram style; e.g. 110, 54 are the complex ECA rules)
+%     b. a HEX string, e.g. phi_par from Mitchell et al. is "0xfeedffdec1aaeec0eef000a0e1a020a0" (note: the leading 0x is not required)
+% - cells - number of cells in the CA
+% - timeSteps - number of rows to execute the CA for (including the random initial row)
+% - measureId - which local info dynamics measure to plot - can be a string or an integer as follows:
+%    - "active", 0 - active information storage (requires options.k)
+%    - "all", -1 - plot all measures
+% - measureParams - a structure containing options as described for each measure above:
+%    - measureParams.k - history length for information dynamics measures
+% - options - a stucture containing a range of other options, i.e.:
+%    - plotOptions - structure as defined for the plotRawCa function
+%    - plotRawCa - default true
+%    - saveImages - whether to save the plots or not (default false)
+%    - movingFrameSpeed - to investigate a moving frame of reference (default 0) (as in Lizier & Mahoney paper)
+}}}
+
+= Running =
+
+Make sure that the jar location is entered correctly in {{{plotLocalInfoMeasureForCA.m}}}
+
+Set up the {{{measureParams}}} and {{{options}}} structures, e.g.:
+{{{
+measureParams.k = 16; % History length of 16 for info dynamics measures
+options.plotOptions.plotRows = 100; % plot only 100 rows
+options.plotOptions.plotCols = 100; % plot only 100 columns
+options.plotOptions.plotStartRow = 100; % plot from row 100 onwards
+options.plotOptions.plotStartCol = 100; % plot from column 100 onwards
+}}}
+
+Then call to plot a CA and a given local information dynamics profile, e.g. for ECA rule 54 and plotting local active information storage:
+{{{
+plotLocalInfoMeasureForCA(3, 2, 54, 10000, 600, "active", measureParams, options);
+}}}
+or for rule \phi_par from Mitchell et al. (see this [http://web.cecs.pdx.edu/~mm/evca-review.pdf paper]):
+{{{
+measureParams.k = 10; % History length of 10 for info dynamics measures
+options.plotOptions.plotRows = 100; % plot only 100 rows
+options.plotOptions.plotCols = 100; % plot only 100 columns
+options.plotOptions.plotStartRow = 10; % plot from row 100 onwards
+options.plotOptions.plotStartCol = 100; % plot from column 100 onwards
+
+plotLocalInfoMeasureForCA(7, 2, "feedffdec1aaeec0eef000a0e1a020a0", 10000, 1000, "active", measureParams, options);
+}}}
+
+= References =
+
+The code can be used to reproduce results from the following papers:
+ * J.T. Lizier, M. Prokopenko and A.Y. Zomaya, "Local information transfer as a spatiotemporal filter for complex systems", Physical Review E, vol. 77, 026110, 2008. doi: [http://dx.doi.org/10.1103/PhysRevE.77.026110 10.1103/PhysRevE.77.026110]
+ * J.T. Lizier, M. Prokopenko and A.Y. Zomaya, "Information modification and particle collisions in distributed computation", Chaos, vol. 20, no. 3, 037109, 2010; doi: [http://dx.doi.org/10.1063/1.3486801 10.1063/1.3486801]
+ * J.T. Lizier, M. Prokopenko and A.Y. Zomaya, "Local measures of information storage in complex distributed computation", Information Sciences, vol. 208, pp. 39-54, 2012; doi: [http://dx.doi.org/10.1016/j.ins.2012.04.016 10.1016/j.ins.2012.04.016]
