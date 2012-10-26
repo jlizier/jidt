@@ -58,6 +58,9 @@ function [caStates, ruleTable, executedRules] = runCA(neighbourhood, base, rule,
 	ruleTable = zeros(base .^ neighbourhood, 1);
 	if (ischar(rule))
 		
+		% First remove the "0x" from the front of the rule name:
+		rule = strrep(rule, "0x", "");
+		
 		% The rule is specified as a hex string - necessary for larger rule values
 		% Check that the rule length is not larger than it should be:
 		if (length(rule)*4 > length(ruleTable))
@@ -70,6 +73,7 @@ function [caStates, ruleTable, executedRules] = runCA(neighbourhood, base, rule,
 			%  starting from the least significant hex digit:
 			hexDigit = rule(x);
 			if (strcmp("x", hexDigit))
+				% (Can't happen since we removed the 0x already ...)
 				% We've reached the end of the hex string
 				break;
 			end

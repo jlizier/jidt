@@ -1,5 +1,6 @@
-%
+% function plotLocalInfoMeasureForCA(neighbourhood, base, rule, cells, timeSteps, measureId, measureParams, options)
 % 
+% Plot one run of the given CA and compute and plot a local information dynamics profile for it
 %
 % Inputs:
 % - neighbourhood - neighbourhood size for the rule (ECA has neighbourhood 3).
