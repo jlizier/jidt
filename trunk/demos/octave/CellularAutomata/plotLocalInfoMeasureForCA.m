@@ -44,7 +44,7 @@ function plotLocalInfoMeasureForCA(neighbourhood, base, rule, cells, timeSteps, 
 
 	% Assumes the jar is two levels up - change this if this is not the case
 	% Octave is happy to have the path added multiple times; I'm unsure if this is true for matlab
-	javaaddpath('../../infodynamics.jar');
+	javaaddpath('../../../infodynamics.jar');
 
 	% Simulate and plot the CA
 	caStates = runCA(neighbourhood, base, rule, cells, timeSteps, false);
