@@ -5,7 +5,7 @@
 
 Conversion between native octave array types and java arrays is not straightforward (particularly for multidimensional arrays, or int arrays).
 
-On this page, we describe these [#Issues], and then describe the [#Scripts_to_workaround_the_issue scripts] provided to perform the array conversion for you. Some [#Links] about the issues are provided as well.
+On this page, we describe these [#Issues issues], and then describe the [#Scripts_to_workaround_the_issue scripts] provided to perform the array conversion for you. Some [#Links links] about the issues are provided as well.
 
 = Issues =
 
