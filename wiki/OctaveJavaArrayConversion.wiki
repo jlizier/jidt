@@ -1,0 +1,33 @@
+#summary Issues and workarounds for converting arrays between Octave and Java format
+
+= Octave-Java array conversion =
+
+Conversion between native octave array types and java arrays is not straightforward (particularly for multidimensional arrays, or int arrays).
+
+On this page, we describe these [#Issues], and then describe the [#Scripts_to_workaround_the_issue scripts] provided to perform the array conversion for you.
+
+= Issues =
+
+One can generally call java methods which require a single dimensional double[] array by passing in a native octave single dimensional array (e.g. see [OctaveMatlabExamples#Example_1_-_Transfer_entropy_on_binary_data OctaveMatlabExamples-Example_1]).
+
+This does not work however for multidimensional arrays, or int arrays: octave often reports that a method is not found when one tries to call a method requiring one of these types as an argument with a simple octave array as the argument. 
+
+One could create arrays of the required Java type inside octave (e.g. {{{ jDoubleMatrix = javaArray('java.lang.Double', 2, 3);}}}) and then convert each element in an octave array into this java array. However, a. this can be time consuming, and b. this can't be done with Integer arrays anyway.
+
+= Scripts to workaround the issue =
+
+We have supplied scripts to make these conversions simple for the user, and indeed to make them as efficiently as possible.
+
+These scripts are available at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave demos/octave] in the svn or main distributions, and are the following files:
+ * [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/octaveToJavaDoubleArray.m octaveToJavaDoubleArray.m]
+ * [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/octaveToJavaDoubleMatrix.m octaveToJavaDoubleMatrix.m]
+ * [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/octaveToJavaIntArray.m octaveToJavaIntArray.m]
+ * [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/octaveToJavaIntMatrix.m octaveToJavaIntMatrix.m]
+ * [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/javaMatrixToOctave.m javaMatrixToOctave.m]
+
+
+
+Functionality
+
+
+See example use in [OctaveMatlabExamples#Example_2_-_Transfer_entropy_on_multidimensional_binary_data OctaveMatlabExamples-Example_2]). 
