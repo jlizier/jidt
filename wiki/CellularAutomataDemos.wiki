@@ -52,7 +52,7 @@ Then call to plot a CA and a given local information dynamics profile, e.g. for 
 {{{
 plotLocalInfoMeasureForCA(3, 2, 54, 10000, 600, "active", measureParams, options);
 }}}
-or for rule \phi_par from Mitchell et al. (see this [http://web.cecs.pdx.edu/~mm/evca-review.pdf paper]):
+or for the neighbourhood 7 rule \phi_par from Mitchell et al. (see this [http://web.cecs.pdx.edu/~mm/evca-review.pdf paper]):
 {{{
 measureParams.k = 10; % History length of 10 for info dynamics measures
 options.plotOptions.plotRows = 100; % plot only 100 rows
@@ -66,6 +66,6 @@ plotLocalInfoMeasureForCA(7, 2, "feedffdec1aaeec0eef000a0e1a020a0", 10000, 1000,
 = References =
 
 The code can be used to reproduce results from the following papers:
- * J.T. Lizier, M. Prokopenko and A.Y. Zomaya, "Local information transfer as a spatiotemporal filter for complex systems", Physical Review E, vol. 77, 026110, 2008. doi: [http://dx.doi.org/10.1103/PhysRevE.77.026110 10.1103/PhysRevE.77.026110]
- * J.T. Lizier, M. Prokopenko and A.Y. Zomaya, "Information modification and particle collisions in distributed computation", Chaos, vol. 20, no. 3, 037109, 2010; doi: [http://dx.doi.org/10.1063/1.3486801 10.1063/1.3486801]
- * J.T. Lizier, M. Prokopenko and A.Y. Zomaya, "Local measures of information storage in complex distributed computation", Information Sciences, vol. 208, pp. 39-54, 2012; doi: [http://dx.doi.org/10.1016/j.ins.2012.04.016 10.1016/j.ins.2012.04.016]
+ * J.T. Lizier, M. Prokopenko and A.Y. Zomaya, "Local information transfer as a spatiotemporal filter for complex systems", _Physical Review E_, vol. *77*, 026110, 2008. doi: [http://dx.doi.org/10.1103/PhysRevE.77.026110 10.1103/PhysRevE.77.026110]
+ * J.T. Lizier, M. Prokopenko and A.Y. Zomaya, "Information modification and particle collisions in distributed computation", _Chaos_, vol. *20*, no. 3, 037109, 2010; doi: [http://dx.doi.org/10.1063/1.3486801 10.1063/1.3486801]
+ * J.T. Lizier, M. Prokopenko and A.Y. Zomaya, "Local measures of information storage in complex distributed computation", _Information Sciences_, vol. *208*, pp. 39-54, 2012; doi: [http://dx.doi.org/10.1016/j.ins.2012.04.016 10.1016/j.ins.2012.04.016]
