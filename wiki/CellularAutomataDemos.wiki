@@ -52,7 +52,11 @@ Then call to plot a CA and a given local information dynamics profile, e.g. for 
 {{{
 plotLocalInfoMeasureForCA(3, 2, 54, 10000, 600, "active", measureParams, options);
 }}}
-or for the neighbourhood 7 rule \phi_par from Mitchell et al. (see this [http://web.cecs.pdx.edu/~mm/evca-review.pdf paper]):
+with sample results as follows:
+
+<img src="http://lizier.me/joseph/images/jidt/rule54-rawStates.png" height="300"/> <img src="http://lizier.me/joseph/images/jidt/rule54-activeInfoStorage.png" height="300"/>
+
+Or for the neighbourhood 7 rule \phi_par from Mitchell et al. (see this [http://web.cecs.pdx.edu/~mm/evca-review.pdf paper]):
 {{{
 measureParams.k = 10; % History length of 10 for info dynamics measures
 options.plotOptions.plotRows = 100; % plot only 100 rows
@@ -62,6 +66,9 @@ options.plotOptions.plotStartCol = 100; % plot from column 100 onwards
 
 plotLocalInfoMeasureForCA(7, 2, "feedffdec1aaeec0eef000a0e1a020a0", 10000, 1000, "active", measureParams, options);
 }}}
+with sample results as follows:
+
+<img src="http://lizier.me/joseph/images/jidt/phiPar-rawStates.png" height="300"/> <img src="http://lizier.me/joseph/images/jidt/phiPar-activeInfoStorage.png" height="300"/>
 
 = References =
 
