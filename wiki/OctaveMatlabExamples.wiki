@@ -9,7 +9,7 @@ These examples are designed for Octave, but to run the following in Matlab, conv
 
 Please see UseInOctaveMatlab for instructions on how to begin using the java toolkit from inside octave or matlab.
 
-*Be aware* that in octave conversion between native octave array types and java arrays is not straightforward (particularly for multidimensional arrays, or int arrays). Octave often reports that a method is not found. One could directly convert each element in an octave array to a java array first (see commented out code in [#Example_2_-_Transfer_entropy_on_multidimensional_binary_data Example 2]); however we recommend using the supplied scripts described in OctaveJavaArrayConversion (and see example use in [#Example_2_-_Transfer_entropy_on_multidimensional_binary_data Example 2]).
+*Be aware* that in octave conversion between native octave array types and java arrays is not straightforward (particularly for multidimensional arrays, or int arrays). Octave often reports that a method is not found. One could directly convert each element in an octave array to a java array first; however we recommend using the supplied scripts described in OctaveJavaArrayConversion (and see example use in [#Example_2_-_Transfer_entropy_on_multidimensional_binary_data Example 2]).
 
 This page contains the following code examples:
   * [#Example_1_-_Transfer_entropy_on_binary_data Example 1 - Transfer entropy on binary data]
