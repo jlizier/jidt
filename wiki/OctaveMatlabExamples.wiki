@@ -3,6 +3,8 @@
 
 = Octave/Matlab code examples =
 
+This page describes a basic set of demonstration scripts for using the toolkit in Octave or Matlab. The .m files can be found at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave demos/octave] in the svn (or main distributions). Please note that other more complicated examples are available from the main [Demos] page.
+
 These examples are designed for Octave, but to run the following in Matlab, convert the `javaObject()` calls to `javaObjectEDT()` and they *should* work, though I haven't tested them.
 
 Please see UseInOctaveMatlab for instructions on how to begin using the java toolkit from inside octave or matlab.
@@ -79,7 +81,8 @@ result2D = teCalc.computeAverageLocalOfObservations()
 Simple transfer entropy (TE) calculation on continuous-valued data using the (box) kernel-estimator TE calculator.
 
 {{{
-javaaddpath('infoDynamics.jar');
+% Change location of jar to match yours:
+javaaddpath('../../infodynamics.jar');
 
 % Generate some random normalised data.
 numObservations = 1000;
@@ -109,7 +112,7 @@ printf("TE result %.4f bits; expected to be close to 0 bits for uncorrelated Gau
 Simple transfer entropy (TE) calculation on continuous-valued data using the Kraskov-estimator TE calculator.
 
 {{{
-javaaddpath('infoDynamics.jar');
+javaaddpath('../../infodynamics.jar');
 
 % Generate some random normalised data.
 numObservations = 1000;
