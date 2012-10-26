@@ -4,7 +4,7 @@
 
 Conversion between native octave array types and java arrays is not straightforward (particularly for multidimensional arrays, or int arrays).
 
-On this page, we describe these [#Issues], and then describe the [#Scripts_to_workaround_the_issue scripts] provided to perform the array conversion for you.
+On this page, we describe these [#Issues], and then describe the [#Scripts_to_workaround_the_issue scripts] provided to perform the array conversion for you. Some [#Links] about the issues are provided as well.
 
 = Issues =
 
@@ -19,15 +19,22 @@ One could create arrays of the required Java type inside octave (e.g. {{{ jDoubl
 We have supplied scripts to make these conversions simple for the user, and indeed to make them as efficiently as possible.
 
 These scripts are available at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave demos/octave] in the svn or main distributions, and are the following files:
- * [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/octaveToJavaDoubleArray.m octaveToJavaDoubleArray.m]
- * [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/octaveToJavaDoubleMatrix.m octaveToJavaDoubleMatrix.m]
- * [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/octaveToJavaIntArray.m octaveToJavaIntArray.m]
- * [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/octaveToJavaIntMatrix.m octaveToJavaIntMatrix.m]
- * [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/javaMatrixToOctave.m javaMatrixToOctave.m]
-
-
-
-Functionality
-
+ * [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/octaveToJavaDoubleArray.m octaveToJavaDoubleArray.m] - convert native octave vector to a java double[]
+ * [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/octaveToJavaDoubleMatrix.m octaveToJavaDoubleMatrix.m] - convert native octave matrix to a java double[][] matrix
+ * [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/octaveToJavaIntArray.m octaveToJavaIntArray.m] - convert native octave vector to a java int[] array
+ * [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/octaveToJavaIntMatrix.m octaveToJavaIntMatrix.m]- convert native octave matrix to a java int[][] matrix
+ * [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/javaMatrixToOctave.m javaMatrixToOctave.m] - convert a java array or matrix (either int or double) to a native octave matrix
 
 See example use in [OctaveMatlabExamples#Example_2_-_Transfer_entropy_on_multidimensional_binary_data OctaveMatlabExamples-Example_2]). 
+
+The conversion is performed using the {{{org.octave.Matrix}}} class (distributed and installed with the octave-java package) - if you examine the source code of [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/octaveToJavaDoubleArray.m octaveToJavaDoubleArray.m] or [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/octaveToJavaDoubleMatrix.m octaveToJavaDoubleMatrix.m] you will see that we simply create a {{{org.octave.Matrix}}} object from the octave matrix, telling it the dimensions of that matrix, then extract the Java array object of the required type.
+
+The {{{org.octave.Matrix}}} conversion doesn't work for java int[] or int[][] however; our solution in  [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/octaveToJavaIntArray.m octaveToJavaIntArray.m] and [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/octaveToJavaIntMatrix.m octaveToJavaIntMatrix.m] is to convert to double[] or double[][] first, then call our [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/java/source/infodynamics/utils/MatrixUtils.java MatrixUtils].doubleToIntArray() functions to convert the Java arrays internally.
+
+Note that these scripts will work in either Octave or Matlab. In Matlab however, since the org.octave.Matrix solution is not available, we simple convert element by element (which is very slow). If matlab users have a solution, feel free to share it (I haven't tried looking for one since I'm not running matlab).
+
+= Links =
+
+Descriptions by others:
+
+????
