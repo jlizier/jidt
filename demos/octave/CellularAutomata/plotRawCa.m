@@ -28,6 +28,14 @@ function plotRawCa(states, plotOptions, saveIt)
 	if not(isfield(plotOptions, "plotStartCol"))
 		plotOptions.plotStartCol = 1;
 	end
+	if (plotOptions.plotRows > 1000)
+		printf("*** Limiting number of plotted rows to 1000\n");
+		plotOptions.plotRows = 1000;
+	end
+	if (plotOptions.plotCols > 1000)
+		printf("*** Limiting number of plotted columns to 1000\n");
+		plotOptions.plotCols = 1000;
+	end
 	if (nargin < 3)
 		saveIt = false;
 	end
