@@ -12,6 +12,8 @@ This demonstration set is found at [http://code.google.com/p/information-dynamic
 {{{plotLocalInfoMeasureForCA.m}}} is the main file, which you call supplying arguments specifying the CA, and which local information dynamics measure to profile:
 {{{
 % function plotLocalInfoMeasureForCA(neighbourhood, base, rule, cells, timeSteps, measureId, measureParams, options)
+% 
+% Plot one run of the given CA and compute and plot a local information dynamics profile for it
 %
 % Inputs:
 % - neighbourhood - neighbourhood size for the rule (ECA has neighbourhood 3).
@@ -24,12 +26,19 @@ This demonstration set is found at [http://code.google.com/p/information-dynamic
 % - cells - number of cells in the CA
 % - timeSteps - number of rows to execute the CA for (including the random initial row)
 % - measureId - which local info dynamics measure to plot - can be a string or an integer as follows:
-%    - "active", 0 - active information storage (requires options.k)
+%    - "active", 0 - active information storage (requires measureParams.k)
+%    - "transfer", 1 - apparent transfer entropy (requires measureParams.k and j)
+%    - "transfercomplete", 2 - complete transfer entropy (requires measureParams.k and j)
+%    - "separable", 3 - separable information (requires measureParams.k)
 %    - "all", -1 - plot all measures
 % - measureParams - a structure containing options as described for each measure above:
 %    - measureParams.k - history length for information dynamics measures
+%    - measureParams.j - we measure information transfer across j cells to the right per time step
 % - options - a stucture containing a range of other options, i.e.:
 %    - plotOptions - structure as defined for the plotRawCa function
+%    - seed - state for the random number generator used to set the initial condition of the CA (use this
+%       for reproducibility of plots, or to produce profiles for several different measures of the same CA raw states).
+%       We set rand("state", options.seed) if options.seed is supplied, and restore the previous seed afterwards.
 %    - plotRawCa - default true
 %    - saveImages - whether to save the plots or not (default false)
 %    - movingFrameSpeed - to investigate a moving frame of reference (default 0) (as in Lizier & Mahoney paper)
@@ -69,6 +78,8 @@ plotLocalInfoMeasureForCA(7, 2, "feedffdec1aaeec0eef000a0e1a020a0", 10000, 1000,
 with sample results as follows:
 
 <img src="http://lizier.me/joseph/images/jidt/phiPar-rawStates.png" height="300"/> <img src="http://lizier.me/joseph/images/jidt/phiPar-activeInfoStorage.png" height="300"/>
+
+To make several local information profiles for the one CA run (with the same initial CA state for each plot), set {{{options.seed}}} to a fixed value, and call {{{plotLocalInfoMeasureForCA}}} for each measure separately.
 
 = References =
 
