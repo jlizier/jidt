@@ -21,6 +21,7 @@
 % - neighbourhood - neighbourhood size for the rule (ECA has neighbourhood 3).
 %     For an even size neighbourhood (meaning a different number of neighbours on each side of the cell),
 %     we take an extra cell from the lower cell indices (i.e. from the left).
+%     The offset of parents can be generated from: ceil(-n / 2) : 1 : ceil(-n / 2) + (n-1), where n is neighbourhood size
 % - base - number of discrete states for each cell (for binary states this is 2)
 % - rule - supplied as either:
 %     a. an integer rule number if <= 2^31 - 1 (Wolfram style; e.g. 110, 54 are the complex ECA rules)

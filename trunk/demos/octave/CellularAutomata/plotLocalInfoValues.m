@@ -9,6 +9,8 @@
 %   - plotCols - how many columns to plot (default is all)
 %   - plotStartRow - which row to start plotting from (default is 1)
 %   - plotStartCol - which column to start plotting from (default is 1)
+%   - scaleColoursToSubsetOfPlot - whether to plot the darkest blue and red for the max and min of
+%      the entire profile, or use the darkest for the extremes within the subset that we are plotting (default true)
 %   - scaleColoursToExtremes - stretch the darkest red and blue to the max and min of the local values, 
 %      regardless of how imbalanced the max and mins are. (Default is false.)
 %   - mainSignVectorLength - length of the longest component (positive or negative values) for the colourmap
@@ -34,6 +36,9 @@ function plotLocalInfoValues(localResults, plotOptions)
 	if not(isfield(plotOptions, "plotStartCol"))
 		plotOptions.plotStartCol = 1;
 	end
+	if not(isfield(plotOptions, "scaleColoursToSubsetOfPlot"))
+		plotOptions.scaleColoursToSubsetOfPlot = true;
+	end
 	if not(isfield(plotOptions, "scaleColoursToExtremes"))
 		plotOptions.scaleColoursToExtremes = false;
 	end
@@ -45,6 +50,14 @@ function plotLocalInfoValues(localResults, plotOptions)
 	end
 	if not(isfield(plotOptions, "scalingScdryComponent"))
 		plotOptions.scalingScdryComponent = .4;
+	end
+	if (plotOptions.plotRows > 1000)
+		printf("*** Limiting number of plotted rows to 1000\n");
+		plotOptions.plotRows = 1000;
+	end
+	if (plotOptions.plotCols > 1000)
+		printf("*** Limiting number of plotted columns to 1000\n");
+		plotOptions.plotCols = 1000;
 	end
 	% Pull some options out for easier coding here:
 	scalingMainComponent = plotOptions.scalingMainComponent;
@@ -60,16 +73,32 @@ function plotLocalInfoValues(localResults, plotOptions)
 				plotOptions.plotRows, plotOptions.plotCols);
 		% JIDT jar file is assumed to be on the path since we already have java objects coming in
 		mUtils = javaObject('infodynamics.utils.MatrixUtils');
-		minLocal = mUtils.min(localResults);
-		maxLocal = mUtils.max(localResults);
+		% Max and min for the entire local profile (use these for the colour box):
+		minLocalEntireProfile = mUtils.min(localResults);
+		maxLocalEntireProfile = mUtils.max(localResults);
 	else
 		% Pull out the values we'll be plotting
 		localResultsToPlot = localResults(plotOptions.plotStartRow:plotOptions.plotStartRow+plotOptions.plotRows - 1, ...
 			plotOptions.plotStartCol:plotOptions.plotStartCol+plotOptions.plotCols - 1);
-		minLocal = min(min(localResults));
-		maxLocal = max(max(localResults));
+		% Max and min for the entire local profile (use these for the colour box):
+		minLocalEntireProfile = min(min(localResults));
+		maxLocalEntireProfile = max(max(localResults));
 	end
-	printf("[max,min] for local info dynamics profile is [%.3f, %.3f]\n", maxLocal, minLocal);
+	% Max and min for what we're plotting (use these for printing out only):
+	minLocalOfPlot = min(min(localResultsToPlot));
+	maxLocalOfPlot = max(max(localResultsToPlot));
+	printf("[max,min] for all spacetime local info dynamics profile is [%.3f, %.3f]\n", maxLocalEntireProfile, minLocalEntireProfile);
+	printf("[max,min] within this particular plot of the profile is    [%.3f, %.3f]\n", maxLocalOfPlot, minLocalOfPlot);
+	
+	if (plotOptions.scaleColoursToSubsetOfPlot)
+		% Scale the colours to the max and min of the points on the plot
+		minLocal = minLocalOfPlot;
+		maxLocal = maxLocalOfPlot;
+	else
+		% Scale the colours to the max and min of the entire profile (including points not plotted)
+		minLocal = minLocalEntireProfile;
+		maxLocal = maxLocalEntireProfile;
+	end
 	
 	if (minLocal < 0)
 		% We need a negative component for the colorchart
@@ -113,7 +142,7 @@ function plotLocalInfoValues(localResults, plotOptions)
 		% Construct the colormap with blue for positive and red for negative
 		colormap([redNegmap; bluePosmap]);
 		% Now, plot the local values with the pre-prepared colormap
-		imagesc(localResultsToPlot);
+		imagesc(localResultsToPlot, [minLocal, maxLocal]);
 	else
 		% We need to pin the minimum value of the blue-only plot to zero.
 		bluemap = prepareColourmap(mainSignVectorLength, true, scalingMainComponent, scalingScdryComponent);
