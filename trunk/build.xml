@@ -55,7 +55,7 @@
 		<copy file="${jarversiondistname}" tofile="${jarplainname}"/>
 	</target>
 	
-	<target depends="jar junit" name="dist" description="generate the full distribution">
+	<target depends="jar,junit" name="dist" description="generate the full distribution">
 		<echo message="${ant.project.name}: ${ant.file}"/>
 		<copy file="${jarversiondistname}" tofile="${jarplainname}"/>
 	</target>
