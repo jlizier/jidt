@@ -15,6 +15,8 @@ To run the JUnit test cases, you will need to have a junit.jar file on your clas
   * in your IDE if you're running the junit test cases there; or
   * supplied to {{{ant}}} if you're running the junit test cases via our {{{build.xml}}} ant file - see the [http://ant.apache.org/manual/Tasks/junit.html JUnit task] in the ant documentation for more information on how the junit.jar could be supplied to ant.
 
+I've been using ant 3.8.2; I haven't checked compatibility with other versions.
+
 = Running via ant =
 
 Make sure that junit.jar is available to ant, as above. Then in the main distribution directory run: {{{ant junit}}}
