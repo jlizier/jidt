@@ -6,6 +6,7 @@
 Several sets of demonstration code are distributed with the toolkit:
   * OctaveMatlabExamples - basic examples on using the Java toolkit from Octave or Matlab environments
   * CellularAutomataDemos - using the Java toolkit to plot local information dynamics profiles in cellular automata; the toolkit is run under Octave or Matlab.
+  * [JUnit] test cases - the test cases for the Java toolkit are included in the distribution - these case also be browsed to see simple use cases for the toolkit
   * More coming soon ...
 
 = Extras = 
