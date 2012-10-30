@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="." default="build" name="Java Information Dynamics Toolkit">
+	<description>
+		Build file for the Java Information Dynamics Toolkit
+	</description>
+	
+	<!-- set global properties for this build -->
+	<property name="version" value="0.1.1"/>
+	<property name="jarplainname" value="infodynamics.jar" />
+	<property name="jarversiondistname" value="infodynamics-${version}.jar" />
+	<property name="src" location="java/source"/>
+	<property name="bin" location="bin"/>
+	<property name="unittestssrc" location="java/unittests"/>
+	<property name="unittestsbin" location="unittestsbin"/>
+	
+	<path id="project.classpath">
+		<pathelement location="bin"/>
+	</path>
+	
+	<target name="init" description="Create the compiled code directories">
+		<mkdir dir="${bin}"/>
+		<mkdir dir="${unittestsbin}"/>
+	</target>
+	
+	<target name="compile" depends="init" description="compile the source and unittests">
+		<javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false"/>
+	</target>
+
+	<target name="jar" depends="compile" description="Create the jar for distribution">
+		<!-- Put everything in ${bin} into the infodynamics-${version}.jar file -->
+		<jar jarfile="${jarversiondistname}" basedir="${bin}"/>
+	</target>
+
+	<target name="junit" depends="compile" description="Run the junit tests and make sure they compile">
+		<!-- Compile the junit tests first -->
+		<javac destdir="${unittestsbin}" includeAntRuntime="false">
+			<src path="${unittestssrc}"/>
+			<classpath refid="project.classpath"/>
+		</javac>
+		<!-- TODO Run the junit tests and make sure they complete ok -->
+	</target>
+
+	<!-- TODO Compile javadoc -->
+
+	<target name="clean">
+		<!-- Delete the compiled code directories -->
+		<delete dir="${bin}"/>
+		<delete dir="${unittestsbin}"/>
+	</target>
+	
+	<!-- TODO Have a target for the jar distribution -->
+	
+	<target depends="jar" name="build" description="build the project for the user">
+		<echo message="${ant.project.name}: ${ant.file}"/>
+		<copy file="${jarversiondistname}" tofile="${jarplainname}"/>
+	</target>
+	
+	<target depends="jar junit" name="dist" description="generate the full distribution">
+		<echo message="${ant.project.name}: ${ant.file}"/>
+		<copy file="${jarversiondistname}" tofile="${jarplainname}"/>
+	</target>
+</project>
