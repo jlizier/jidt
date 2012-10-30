@@ -13,9 +13,9 @@ The java source code for the unit tests is at [http://code.google.com/p/informat
 
 To run the JUnit test cases, you will need to have a junit.jar file on your classpath, either:
   * in your IDE if you're running the junit test cases there; or
-  * supplied to {{{ant}}} if you're running the junit test cases via our {{{build.xml}}} ant file - see the [http://ant.apache.org/manual/Tasks/junit.html JUnit task] in the ant documentation for more information on how the junit.jar could be supplied to ant.
+  * supplied to {{{ant}}} if you're running the junit test cases via our {{{build.xml}}} ant file - see the [http://ant.apache.org/manual/Tasks/junit.html JUnit task] in the ant documentation for more information on how the junit.jar could be supplied to ant. The {{{build.xml}}} file is currently implementing option 4 from that page - directly referencing the required jar files: you can update these references in {{{build.xml}}} if they do not match yours. (I have the {{{ant}}} and {{{junit}}} packages installed on ubuntu 12.04, which puts those jars in the location I am referencing).
 
-I've been using ant 3.8.2; I haven't checked compatibility with other versions.
+I've been using ant 3.8.2; it does not appear to be compatible with later versions.
 
 = Running via ant =
 
