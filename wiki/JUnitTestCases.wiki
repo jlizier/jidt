@@ -1,0 +1,20 @@
+#summary How to find and run the JUnit test cases included in the full distribution
+#labels demos,Phase-QA,Phase-Implementation
+
+= Introduction =
+
+The full distribution also includes the JUnit test cases used to test the java code. These test cases can be browsed to see simple use cases of the java toolkit. Attempting to run them is also a good way to check that the source code compiles and runs ok on your machine.
+
+= Location =
+
+The java source code for the unit tests is at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fjava%2Funittests java/unittests].
+
+= Dependencies =
+
+To run the JUnit test cases, you will need to have a junit.jar file on your classpath, either:
+  * in your IDE if you're running the junit test cases there; or
+  * supplied to {{{ant}}} if you're running the junit test cases via our {{{build.xml}}} ant file - see the [http://ant.apache.org/manual/Tasks/junit.html JUnit task] in the ant documentation for more information on how the junit.jar could be supplied to ant.
+
+= Running via ant =
+
+Make sure that junit.jar is available to ant, as above. Then in the main distribution directory run: {{{ant junit}}}
