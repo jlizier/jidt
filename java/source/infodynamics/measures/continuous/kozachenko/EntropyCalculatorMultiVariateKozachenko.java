@@ -9,7 +9,7 @@ import infodynamics.utils.MathsUtils;
  * See:
  * - "A statistical estimate for the entropy of a random vector"
  * 		Kozachenko, L., Leonenko, N.,
- * 		Problems of Information Transmission, 23 (1987) 9–16
+ * 		Problems of Information Transmission, 23 (1987) 9-16
  * - "Estimating mutual information"
  * 		Kraskov, A., Stogbauer, H., Grassberger, P.,
  * 		Physical Review E 69, (2004) 066138
