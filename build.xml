@@ -6,57 +6,116 @@
 	
 	<!-- set global properties for this build -->
 	<property name="version" value="0.1.1"/>
-	<property name="jarplainname" value="infodynamics.jar" />
-	<property name="jarversiondistname" value="infodynamics-${version}.jar" />
+	<property name="mainfilename" value="infodynamics"/>
+	<property name="jarplainname" value="${mainfilename}.jar" />
+	<property name="jarversiondistnamezip" value="${mainfilename}-jar-${version}.zip" />
+	<property name="distname" value="${mainfilename}-dist-${version}" />
+	<property name="distnamezip" value="${distname}.zip" />
 	<property name="src" location="java/source"/>
 	<property name="bin" location="bin"/>
 	<property name="unittestssrc" location="java/unittests"/>
-	<property name="unittestsbin" location="unittestsbin"/>
+	<property name="unittestsbin" location="unittests/bin"/>
+	<property name="javadocsdir" location="javadocs"/>
+	<property name="reports.tests" location="unittests/reports"/>
 	
 	<path id="project.classpath">
 		<pathelement location="bin"/>
 	</path>
 	
+	<!-- Make required directories -->
 	<target name="init" description="Create the compiled code directories">
 		<mkdir dir="${bin}"/>
 		<mkdir dir="${unittestsbin}"/>
+		<mkdir dir="${reports.tests}"/>
 	</target>
 	
+	<!-- Compile the java toolkit -->
 	<target name="compile" depends="init" description="compile the source and unittests">
 		<javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false"/>
 	</target>
 
+	<!-- Jar the toolkit -->
 	<target name="jar" depends="compile" description="Create the jar for distribution">
 		<!-- Put everything in ${bin} into the infodynamics-${version}.jar file -->
-		<jar jarfile="${jarversiondistname}" basedir="${bin}"/>
+		<jar jarfile="${jarplainname}" basedir="${bin}"/>
 	</target>
 
+	<!-- Compile and run the JUnit tests -->
 	<target name="junit" depends="compile" description="Run the junit tests and make sure they compile">
 		<!-- Compile the junit tests first -->
-		<javac destdir="${unittestsbin}" includeAntRuntime="false">
+		<javac destdir="${unittestsbin}" includeAntRuntime="true">
+			<!-- Need includeAntRuntime=true if you want to pick up junit.jar and ant-junit.jar in ANT_HOME/lib;
+			     Otherwise you will need to set the classpath to include these here. -->
 			<src path="${unittestssrc}"/>
 			<classpath refid="project.classpath"/>
 		</javac>
-		<!-- TODO Run the junit tests and make sure they complete ok -->
+		<!-- Run the junit tests and make sure they complete ok -->
+		<junit printsummary="yes" showoutput="yes" haltonfailure="yes" haltonerror="yes" includeantruntime="true">
+			<classpath>
+				<path refid="project.classpath"/>
+				<pathelement path="${unittestsbin}"/>
+			</classpath>
+			<formatter type="plain"/>
+			<batchtest todir="${reports.tests}"> <!-- Writes full reports with stdout and stderr to ${reports.tests} -->
+				<fileset dir="${unittestsbin}">
+					<include name="**/*.class"/>
+				</fileset>
+			</batchtest>
+		</junit>
 	</target>
 
-	<!-- TODO Compile javadoc -->
+	<!-- Make javadocs -->
+	<target name="javadocs" depends="compile" description="Make the javadocs for the toolkit">
+		<javadoc sourcepath="${src}" destdir="${javadocsdir}"/>
+	</target>
 
+	<!-- Clean up -->
 	<target name="clean">
 		<!-- Delete the compiled code directories -->
 		<delete dir="${bin}"/>
 		<delete dir="${unittestsbin}"/>
+		<delete dir="${reports.tests}"/>
+		<delete dir="${javadocsdir}"/>
 	</target>
 	
-	<!-- TODO Have a target for the jar distribution -->
-	
-	<target depends="jar" name="build" description="build the project for the user">
+	<!-- Build the project jar for users -->
+	<target depends="jar" name="build" description="user: build the project jar file">
 		<echo message="${ant.project.name}: ${ant.file}"/>
-		<copy file="${jarversiondistname}" tofile="${jarplainname}"/>
+	</target>
+
+	<!-- Developer build - builds everything and makes the jar only distribution file -->
+	<target name="jardist" depends="build" description="developer: generate the jar distribution">
+		<tstamp>
+			<format property="TODAY_DATE" pattern="dd/MM/yyyy" locale="en,UK"/>
+			<format property="TODAY_YEAR" pattern="yyyy" locale="en,UK"/>
+		</tstamp>
+		<copy file="readme-template.txt" toFile="readme.txt" failonerror="false">
+			<!-- The template file only exists in SVN - this won't crash ant 
+			     if users try to run it though because failonerror="false" -->
+			<filterset>
+				<filter token="YEAR" value="${TODAY_YEAR}"/>
+				<filter token="DATE" value="${TODAY_DATE}"/>
+				<filter token="VERSION" value="${version}"/>
+			</filterset>
+		</copy>
+		<zip destfile="${jarversiondistnamezip}">
+			<fileset file="${jarplainname}"/>
+			<fileset file="license-gplv3.txt"/>
+			<fileset file="readme.txt"/>
+		</zip>
 	</target>
 	
-	<target depends="jar,junit" name="dist" description="generate the full distribution">
+	<!-- Developer build - builds everything and makes the full distribution file -->
+	<target name="dist" depends="jar,junit,javadocs" description="developer: generate the full distribution">
 		<echo message="${ant.project.name}: ${ant.file}"/>
-		<copy file="${jarversiondistname}" tofile="${jarplainname}"/>
+		<zip destfile="${distnamezip}">
+			<fileset file="build.xml"/>
+			<fileset file="${jarplainname}"/>
+			<fileset file="license-gplv3.txt"/>
+			<fileset file="readme.txt"/>
+			<zipfileset dir="java" includes="**/*.java" prefix="java"/>
+			<zipfileset dir="demos" includes="**/*.*,**/*" prefix="demos"/>
+			<zipfileset dir="javadocs" includes="**/*.*,**/*" prefix="javadocs"/>
+		</zip>
 	</target>
 </project>
