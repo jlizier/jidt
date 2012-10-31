@@ -1,0 +1,11 @@
+#summary References to related toolkits
+
+= Related toolkits =
+
+Here we briefly note some relevant related toolkits:
+
+== TRENTOOL ==
+
+[http://www.trentool.de/ TRENTOOL] is the Transfer Entropy Toolbox for the Fieldtrip data format, in Matlab. TRENTOOL is built from the ground up to perform effective network inference in brain imaging data. To do this, it uses the Transfer entropy on continuous data using Kraskov estimation. 
+
+It is developed by my friends and collaborators [http://www.michael-wibral.de/ Michael Wibral], Raul Vicente et al. from the Brain Imaging Center Frankfurt, and is distributed under GPLv3.
