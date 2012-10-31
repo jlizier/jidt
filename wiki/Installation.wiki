@@ -8,19 +8,23 @@ Here we describe how to install and start using the toolkit (it's pretty simple!
 = Download =
 
 Download the latest distribution; either:
- # [http://code.google.com/p/information-dynamics-toolkit/downloads/detail?name=infodynamics-jar-0.1.zip jar file] alone;
- # jar file plus demonstrations <coming soon>
+ # [http://code.google.com/p/information-dynamics-toolkit/downloads/detail?name=infodynamics-jar-0.1.1.zip jar file] alone;
+ # [http://code.google.com/p/information-dynamics-toolkit/downloads/detail?name=infodynamics-dist-0.1.1.zip full distribution] (includes jar file, javadocs, demonstrations, unit tests and build scripts); or
  # full source code via SVN - see http://code.google.com/p/information-dynamics-toolkit/source/checkout
 
 = Dependencies =
 
-None! You don't need any other downloads to start using this code
+None! You don't need any other downloads to start using this code (unless you want to run the JUnit test cases - see JUnitTestCases)
 
 = Install =
 
-Just put the jar in a relevant location in your file structure.
+If you have one of the distributions, you already have the{{{infodynamics.jar}}} file.
 
-If you have the source code, javac all of it, and make a jar.
+Otherwise, if you are running with the source code via an SVN checkout, run {{{ant}}} to generate {{{infodynamics.jar}}}.
+
+Then just put the jar in a relevant location in your file structure.
+
+That's it.
 
 = Usage =
 
