@@ -90,6 +90,14 @@
 		<echo message="${ant.project.name}: ${ant.file}"/>
 	</target>
 
+	<!--
+	***********************************
+	
+	Developer builds below here
+	
+	***********************************
+	-->
+
 	<!-- Developer build - creates readme and version files -->
 	<target name="readmefiles" description="developer: create the readme and version files from templates">
 		<tstamp>
@@ -117,7 +125,7 @@
 	</target>
 
 	<!-- Developer build - builds everything and makes the jar only distribution file -->
-	<target name="jardist,readmefiles" depends="build" description="developer: generate the jar distribution">
+	<target name="jardist" depends="build,readmefiles" description="developer: generate the jar distribution">
 		<zip destfile="${jarversiondistnamezip}">
 			<fileset file="${jarplainname}"/>
 			<fileset file="license-gplv3.txt"/>
