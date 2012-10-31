@@ -24,4 +24,4 @@ If you have the source code, javac all of it, and make a jar.
 
 = Usage =
 
-See OctaveMatlabExamples for some guided examples on using the code. More to be added later.
+See [Demos] for some guided examples on using the code, including OctaveMatlabExamples.
