@@ -146,6 +146,7 @@
 			<zipfileset dir="java" includes="**/*.java" prefix="java"/>
 			<zipfileset dir="demos" includes="**/*.*,**/*" prefix="demos"/>
 			<zipfileset dir="javadocs" includes="**/*.*,**/*" prefix="javadocs"/>
+			<!-- TODO Include the paper on the toolkit once it's ready -->
 		</zip>
 	</target>
 </project>
