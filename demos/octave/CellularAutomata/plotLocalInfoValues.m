@@ -1,3 +1,5 @@
+% function h = plotLocalInfoValues(localResults, plotOptions)
+%
 % J. Lizier, 2012.
 %
 % Plots the local values, both the positive and negative, in blues and reds respectively, on the current figure.
@@ -13,11 +15,14 @@
 %      the entire profile, or use the darkest for the extremes within the subset that we are plotting (default true)
 %   - scaleColoursToExtremes - stretch the darkest red and blue to the max and min of the local values, 
 %      regardless of how imbalanced the max and mins are. (Default is false.)
-%   - mainSignVectorLength - length of the longest component (positive or negative values) for the colourmap
+%   - mainSignVectorLength - length of the longest component (positive or negative values) for the colourmap (default 1024)
 %   - scalingMainComponent - what proportion to make the darkest shade of the primary colour (default .25)
 %   - scalingScdryComponent - what proportion to make the lighter shades with green added (default .4)
 %
-function plotLocalInfoValues(localResults, plotOptions)
+% Outputs:
+% - h - return value of imagesc
+%
+function h = plotLocalInfoValues(localResults, plotOptions)
 
 	% Set the colormap to have blue for positive, red for negative, scaled to the max and min of our local values
 
@@ -142,13 +147,13 @@ function plotLocalInfoValues(localResults, plotOptions)
 		% Construct the colormap with blue for positive and red for negative
 		colormap([redNegmap; bluePosmap]);
 		% Now, plot the local values with the pre-prepared colormap
-		imagesc(localResultsToPlot, [minLocal, maxLocal]);
+		h = imagesc(localResultsToPlot, [minLocal, maxLocal]);
 	else
 		% We need to pin the minimum value of the blue-only plot to zero.
 		bluemap = prepareColourmap(mainSignVectorLength, true, scalingMainComponent, scalingScdryComponent);
 		colormap(bluemap);
 		% Now, plot the local values with the pre-prepared colormap
-		imagesc(localResultsToPlot, [0, maxLocal]);
+		h = imagesc(localResultsToPlot, [0, maxLocal]);
 	end
 	colorbar
 end
