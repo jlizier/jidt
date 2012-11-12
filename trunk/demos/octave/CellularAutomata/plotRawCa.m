@@ -4,6 +4,7 @@
 %
 % Inputs
 % - states - 2D array of states of the CA (1st index time goes along the rows, 2nd index cells go across the columns)
+% - rule - Rule number (as number or a string) for the rule, used to label the file
 % - plotOptions - structure (optional) containing the following variables:
 %   - plotRows - how many rows to plot (default is all)
 %   - plotCols - how many columns to plot (default is all)
@@ -11,7 +12,7 @@
 %   - plotStartCol - which column to start plotting from (default is 1)
 % - saveIt - whether to save an eps file of the image (default false)
 
-function plotRawCa(states, plotOptions, saveIt)
+function plotRawCa(states, rule, plotOptions, saveIt)
 
 	if (nargin < 2)
 		plotOptions = {};
@@ -48,7 +49,13 @@ function plotRawCa(states, plotOptions, saveIt)
 	colorbar
 	printf("Adding colorbar to ensure that the size of the diagram matches that of local info plots\n");
 	if (saveIt)
-		print(sprintf("figures/raw-%d.eps", rule), "-color", "-deps");
+		set(gca, 'fontsize', 32);
+		colorbar('fontsize', 32);
+		if (ischar(rule))
+			print(sprintf("figures/raw-%s.eps", rule), "-color", "-deps");
+		else
+			print(sprintf("figures/raw-%d.eps", rule), "-color", "-deps");
+		end
 	end
 end
 

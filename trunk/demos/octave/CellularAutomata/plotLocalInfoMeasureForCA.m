@@ -26,7 +26,7 @@
 %        (for excess entropy, predictive information formulation, this is the history length and future length)
 %    - measureParams.j - we measure information transfer across j cells to the right per time step
 % - options - a stucture containing a range of other options, i.e.:
-%    - plotOptions - structure as defined for the plotRawCa function
+%    - plotOptions - structure as defined for the plotLocalInfoValues function
 %    - seed - state for the random number generator used to set the initial condition of the CA (use this
 %       for reproducibility of plots, or to produce profiles for several different measures of the same CA raw states).
 %       We set rand("state", options.seed) if options.seed is supplied, and restore the previous seed afterwards.
@@ -67,7 +67,7 @@ function plotLocalInfoMeasureForCA(neighbourhood, base, rule, cells, timeSteps, 
 		caStates = runCA(neighbourhood, base, rule, cells, timeSteps, false);
 	end
 	if (options.plotRawCa)
-		plotRawCa(caStates, options.plotOptions, options.saveImages);
+		plotRawCa(caStates, rule, options.plotOptions, options.saveImages);
 	end
 	figNum = 2;
 	toc
@@ -119,14 +119,16 @@ function plotLocalInfoMeasureForCA(neighbourhood, base, rule, cells, timeSteps, 
 		figNum = figNum + 1;
 		plotLocalInfoValues(localValues, options.plotOptions);
 		if (options.saveImages)
-			print("figures/active.eps", "-color", "-deps");
+			set(gca, 'fontsize', 32);
+			colorbar('fontsize', 32);
+			print(sprintf("figures/active-k%d.eps", measureParams.k), "-color", "-deps");
 		end
 		plottedOne = true;
 	end
 	
 	%============================
 	% Apparent transfer entropy
-	if ((ischar(measureId) && (strcmpi("transfer", measureId) || strcmpi("all", measureId))) || \
+	if ((ischar(measureId) && (strcmpi("transfer", measureId) || strcmpi("all", measureId) || strcmpi("apparenttransfer", measureId))) || \
 	    ((measureId == 1) || (measureId == -1)))
 		% Compute apparent transfer entropy
 		if (measureParams.j == 0)
@@ -150,7 +152,9 @@ function plotLocalInfoMeasureForCA(neighbourhood, base, rule, cells, timeSteps, 
 		figNum = figNum + 1;
 		plotLocalInfoValues(localValues, options.plotOptions);
 		if (options.saveImages)
-			print(sprintf("figures/transfer-%d.eps", measureParams.j), "-color", "-deps");
+			set(gca, 'fontsize', 32);
+			colorbar('fontsize', 32);
+			print(sprintf("figures/transfer-k%d-j%d.eps", measureParams.k, measureParams.j), "-color", "-deps");
 		end
 		plottedOne = true;
 	end
@@ -184,7 +188,9 @@ function plotLocalInfoMeasureForCA(neighbourhood, base, rule, cells, timeSteps, 
 		figNum = figNum + 1;
 		plotLocalInfoValues(localValues, options.plotOptions);
 		if (options.saveImages)
-			print(sprintf("figures/transferComp-%d.eps", measureParams.j), "-color", "-deps");
+			set(gca, 'fontsize', 32);
+			colorbar('fontsize', 32);
+			print(sprintf("figures/transferComp-k%d-j%d.eps", measureParams.k, measureParams.j), "-color", "-deps");
 		end
 		plottedOne = true;
 	end
@@ -215,6 +221,8 @@ function plotLocalInfoMeasureForCA(neighbourhood, base, rule, cells, timeSteps, 
 		figNum = figNum + 1;
 		plotLocalInfoValues(localValues, options.plotOptions);
 		if (options.saveImages)
+			set(gca, 'fontsize', 32);
+			colorbar('fontsize', 32);
 			print(sprintf("figures/separable-k%d.eps", measureParams.k), "-color", "-deps");
 		end
 		plottedOne = true;
@@ -245,6 +253,8 @@ function plotLocalInfoMeasureForCA(neighbourhood, base, rule, cells, timeSteps, 
 		figNum = figNum + 1;
 		plotLocalInfoValues(localValues, options.plotOptions);
 		if (options.saveImages)
+			set(gca, 'fontsize', 32);
+			colorbar('fontsize', 32);
 			print("figures/entropy.eps", "-color", "-deps");
 		end
 		plottedOne = true;
@@ -273,6 +283,8 @@ function plotLocalInfoMeasureForCA(neighbourhood, base, rule, cells, timeSteps, 
 		figNum = figNum + 1;
 		plotLocalInfoValues(localValues, options.plotOptions);
 		if (options.saveImages)
+			set(gca, 'fontsize', 32);
+			colorbar('fontsize', 32);
 			print(sprintf("figures/entrate-k%d.eps", measureParams.k), "-color", "-deps");
 		end
 		plottedOne = true;
@@ -304,6 +316,8 @@ function plotLocalInfoMeasureForCA(neighbourhood, base, rule, cells, timeSteps, 
 		figNum = figNum + 1;
 		plotLocalInfoValues(localValues, options.plotOptions);
 		if (options.saveImages)
+			set(gca, 'fontsize', 32);
+			colorbar('fontsize', 32);
 			print(sprintf("figures/excessentropy-k%d.eps", measureParams.k), "-color", "-deps");
 		end
 		plottedOne = true;
