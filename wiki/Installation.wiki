@@ -12,6 +12,8 @@ Download the latest distribution; either (note: these distributions are suitable
  # [http://code.google.com/p/information-dynamics-toolkit/downloads/detail?name=infodynamics-dist-0.1.2.zip full distribution] (includes jar file, javadocs, demonstrations, unit tests and build scripts); or
  # full source code via SVN - see http://code.google.com/p/information-dynamics-toolkit/source/checkout
 
+See all previous distributions and brief descriptions at ReleaseHistory.
+
 = Dependencies =
 
 None! You don't need any other downloads to start using this code (unless you want to run the JUnit test cases - see JUnitTestCases)
