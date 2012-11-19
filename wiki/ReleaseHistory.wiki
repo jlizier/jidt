@@ -1,0 +1,10 @@
+#summary Describes the history of release distributions
+#labels Phase-Deploy
+
+= Release history =
+
+The release history of the Java Information Dynamics Toolkit is described here:
+
+ * v0.1.2 ([http://code.google.com/p/information-dynamics-toolkit/downloads/detail?name=infodynamics-dist-0.1.2.zip full], [http://code.google.com/p/information-dynamics-toolkit/downloads/detail?name=infodynamics-jar-0.1.2.zip jar]) - 19/11/2012 - updated to include demo code for "Moving frames of reference ..." and "Measuring information-transfer delays" paper
+ * v0.1.1 ([http://code.google.com/p/information-dynamics-toolkit/downloads/detail?name=infodynamics-dist-0.1.1.zip full], [http://code.google.com/p/information-dynamics-toolkit/downloads/detail?name=infodynamics-jar-0.1.1.zip jar]) - 30/10/2012 - first full distribution with ant file, javadocs, jar, junit tests.
+ * v0.1 ([http://code.google.com/p/information-dynamics-toolkit/downloads/detail?name=infodynamics-jar-0.1.zip jar]) - 24/10/2012 - first jar distribution
