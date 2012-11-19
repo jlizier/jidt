@@ -86,7 +86,7 @@
 	</target>
 	
 	<!-- Build the project jar for users -->
-	<target depends="jar" name="build" description="user: build the project jar file">
+	<target name="build" depends="jar" description="user: build the project jar file">
 		<echo message="${ant.project.name}: ${ant.file}"/>
 	</target>
 
@@ -104,7 +104,7 @@
 			<format property="TODAY_DATE" pattern="dd/MM/yyyy" locale="en,UK"/>
 			<format property="TODAY_YEAR" pattern="yyyy" locale="en,UK"/>
 		</tstamp>
-		<copy file="readme-template.txt" toFile="readme.txt" failonerror="false">
+		<copy file="readme-template.txt" toFile="readme.txt" failonerror="false" overwrite="true">
 			<!-- The template file only exists in SVN - this won't crash ant 
 			     if users try to run it though because failonerror="false" -->
 			<filterset>
