@@ -18,6 +18,11 @@ See all previous distributions and brief descriptions at ReleaseHistory.
 
 None! You don't need any other downloads to start using this code (unless you want to run the JUnit test cases - see JUnitTestCases)
 
+There are only dependencies if:
+ # You don't have java installed - download it from [http://www.java.com/]
+ # You wish to build the project using the build.xml script - this requires [http://ant.apache.org/ ant]
+ # You wish to run the JUnit test cases - this requires [http://www.junit.org/ JUnit] - for how to run JUnit with our ant script see JUnitTestCases
+
 = Install =
 
 If you have one of the distributions, you already have the{{{infodynamics.jar}}} file.
