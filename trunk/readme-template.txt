@@ -76,7 +76,9 @@ Several sets of demonstration code are distributed with the toolkit:
  
  b. demos/octave/CellularAutomata - using the Java toolkit to plot local information dynamics profiles in cellular automata; the toolkit is run under Octave or Matlab - see description at http://code.google.com/p/information-dynamics-toolkit/wiki/CellularAutomataDemos
  
- c. java/unittests - the JUnit test cases for the Java toolkit are included in the distribution - these case also be browsed to see simple use cases for the toolkit - see description at http://code.google.com/p/information-dynamics-toolkit/wiki/JUnitTestCases
+ c. demos/octave/DetectingInteractionLags - brief examples using the transfer entropy to examine source-delay interaction lags. Documentation to come soon; in the interim, see header comments in the .m files.
+
+ d. java/unittests - the JUnit test cases for the Java toolkit are included in the distribution - these case also be browsed to see simple use cases for the toolkit - see description at http://code.google.com/p/information-dynamics-toolkit/wiki/JUnitTestCases
 
 =============
 
