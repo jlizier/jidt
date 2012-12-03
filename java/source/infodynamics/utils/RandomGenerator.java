@@ -70,8 +70,8 @@ public class RandomGenerator {
 	 * @param cap
 	 * @return
 	 */
-	public double[] generateDistinctRandomInts(int length, int cap){
-		double[] data = new double[length];
+	public int[] generateDistinctRandomInts(int length, int cap){
+		int[] data = new int[length];
 		boolean[] used = new boolean[cap];
 		for (int i = 0; i < length; i++) {
 			int nextAttempt;

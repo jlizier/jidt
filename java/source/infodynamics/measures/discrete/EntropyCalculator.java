@@ -3,18 +3,31 @@ package infodynamics.measures.discrete;
 import infodynamics.utils.MatrixUtils;
 
 /**
- * Single state entropy calculator
+ * <p>Univariate entropy calculator</p>
  * 
- * Usage:
- * 1. Continuous accumulation of observations:
- *   Call: a. initialise()
- *         b. addObservations() several times over
- *         c. computeLocalFromPreviousObservations()
- * 2. Standalone:
- *   Call: localActiveInformation()
+ * <p>Usage:
+ * <ol>
+ *  <li>Continuous accumulation of observations. Call:
+ *  	<ol>
+ *  		<li>{@link #initialise()};</li>
+ *          <li>then supply the observations using any of the addObservations()
+ *          methods (several times over), e.g. {@link #addObservations(int[][])};</li>
+ *          <li>then when all observations have been added, call any of the
+ *          compute methods (several times over), e.g.: 
+ *          {@link #computeLocalFromPreviousObservations(int[][])}</li>
+ *      </ol>
+ *   </li>
+ *   <li>Standalone mode. Call:
+ *   	<ol>
+ *   		<li>one of the standalone methods which supply observations
+ *          and compute at once, e.g. {@link #computeAverageLocal(int[][])}.</li>
+ *      </ol>
+ *   </li>
+ * </ol></p>
+ * 
+ * TODO Add method calls for single dimensional arrays
  * 
  * @author Joseph Lizier
- *
  */
 public class EntropyCalculator extends InfoMeasureCalculator
 				implements SingleAgentMeasure
@@ -180,10 +193,10 @@ public class EntropyCalculator extends InfoMeasureCalculator
 	}
 
 	/**
-	 * Returns the average local entropy from
+	 * Returns the average entropy from
 	 *  the observed values which have been passed in previously. 
 	 *  
-	 * @return
+	 * @return the average entropy
 	 */
 	public double computeAverageLocalOfObservations() {
 		double ent = 0.0;
