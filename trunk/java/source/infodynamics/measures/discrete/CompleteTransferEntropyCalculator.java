@@ -69,6 +69,8 @@ import infodynamics.utils.RandomGenerator;
  *  
  * @author Joseph Lizier, <a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>
+ * 
+ * TODO Add methods for passing in single time series
  *
  */
 public class CompleteTransferEntropyCalculator extends InfoMeasureCalculator {
@@ -192,20 +194,21 @@ public class CompleteTransferEntropyCalculator extends InfoMeasureCalculator {
 	 * @param states
 	 * @param j - number of columns to compute transfer entropy across
 	 * 	(i.e. src i-j, dest i: transfer is j cells to the right) 
-	 * @param othersOffsets offsets of the other information contributors.
+	 * @param otherSourcesToDestOffsets offsets of the other information contributors.
+	 *        (i.e. offsets from each other information source to the destination -
+	 *        offset is signed the same way as j!)
 	 *        othersOffsets is permitted to include j, it will be ignored.
-	 *        Offset is signed the same way as j.
 	 */
-	public void addObservations(int states[][], int j, int othersOffsets[]) {
-		addObservations(states, j, othersOffsets, false);
+	public void addObservations(int states[][], int j, int otherSourcesToDestOffsets[]) {
+		addObservations(states, j, otherSourcesToDestOffsets, false);
 	}
-	private void addObservations(int states[][], int j, int othersOffsets[], boolean cleanedOthers) {
+	private void addObservations(int states[][], int j, int otherSourcesToDestOffsets[], boolean cleanedOthers) {
 		
 		int[] cleanedOthersOffsets;
 		if (cleanedOthers) {
-			cleanedOthersOffsets = othersOffsets;
+			cleanedOthersOffsets = otherSourcesToDestOffsets;
 		} else {
-			cleanedOthersOffsets = cleanOffsetOthers(othersOffsets, j, k > 0);
+			cleanedOthersOffsets = cleanOffsetOthers(otherSourcesToDestOffsets, j, k > 0);
 			// This call made redundant by cleanOffsetOthers:
 			// confirmEnoughOffsetOthers(othersOffsets, j);
 		}
@@ -465,18 +468,25 @@ public class CompleteTransferEntropyCalculator extends InfoMeasureCalculator {
 	}
 	
 	/**
-	 * Computes local active information storage for the given
+	 * Computes local complete transfer entropy for the given
 	 *  states, using pdfs built up from observations previously
 	 *  sent in via the addObservations method.
 	 * This method to be used for homogeneous agents only
 	 *  
-	 * @param states
+	 * @param states 2D multivariate time series of states
+	 * @param j - number of columns to compute transfer entropy across
+	 *  i.e. offset of destination from the source
+	 * 	(i.e. src i-j, dest i: transfer is j cells to the right) 
+	 * @param otherSourcesToDestOffsets offsets of the other information contributors.
+	 *        (i.e. offsets from each other information source to the destination -
+	 *        offset is signed the same way as j!)
+	 *        othersOffsets is permitted to include j, it will be ignored.
 	 * @return
 	 */
 	public double[][] computeLocalFromPreviousObservations
-		(int states[][], int j, int othersOffsets[]){
+		(int states[][], int j, int otherSourcesToDestOffsets[]){
 		
-		return computeLocalFromPreviousObservations(states, j, othersOffsets, false);
+		return computeLocalFromPreviousObservations(states, j, otherSourcesToDestOffsets, false);
 	}
 	private double[][] computeLocalFromPreviousObservations
 		(int states[][], int j, int othersOffsets[], boolean cleanedOthers){
@@ -632,13 +642,14 @@ public class CompleteTransferEntropyCalculator extends InfoMeasureCalculator {
 	 * 
 	 * @param states - 2D array of states
 	 * @param j - TE across j cells to the right
-	 * @param othersOffsets - column offsets for other causal info contributors
+	 * @param otherSourcesToDestOffsets - column offsets from other causal info contributors
+	 *  to the destination
 	 * @return
 	 */
-	public double[][] computeLocal(int states[][], int j, int[] othersOffsets) {
+	public double[][] computeLocal(int states[][], int j, int[] otherSourcesToDestOffsets) {
 		
 		initialise();
-		int[] cleanedOthersOffsets = cleanOffsetOthers(othersOffsets, j, k > 0);
+		int[] cleanedOthersOffsets = cleanOffsetOthers(otherSourcesToDestOffsets, j, k > 0);
 		addObservations(states, j, cleanedOthersOffsets, true);
 		return computeLocalFromPreviousObservations(states, j, cleanedOthersOffsets, true);
 	}
@@ -652,13 +663,14 @@ public class CompleteTransferEntropyCalculator extends InfoMeasureCalculator {
 	 * 
 	 * @param states - 2D array of states
 	 * @param j - TE across j cells to the right
-	 * @param othersOffsets - column offsets for other causal info contributors
+	 * @param otherSourcesToDestOffsets - column offsets from other causal info contributors
+	 *  to the destination
 	 * @return
 	 */
-	public double computeAverageLocal(int states[][], int j, int[] othersOffsets) {
+	public double computeAverageLocal(int states[][], int j, int[] otherSourcesToDestOffsets) {
 		
 		initialise();
-		addObservations(states, j, othersOffsets);
+		addObservations(states, j, otherSourcesToDestOffsets);
 		return computeAverageLocalOfObservations();
 	}
 
@@ -707,21 +719,21 @@ public class CompleteTransferEntropyCalculator extends InfoMeasureCalculator {
 	
 	/**
 	 * Counts the information contributors to this node which
-	 * are not equal to the offset j or the node itself (offset 0,
+	 * are not equal to the source to dest offset j or the node itself (offset 0,
 	 * node itself not included only when removeDest is set to true)
 	 * 
-	 * @param othersOffsets
-	 * @param j
+	 * @param otherSourcesToDestOffsets array of offsets of the destination from each source
+	 * @param j offset of the destination from the source
 	 * @param removeDest remove the destination itself from the count
 	 *     of offset others.
 	 * @return
 	 */
-	public static int countOfOffsetOthers(int[] othersOffsets, int j,
+	public static int countOfOffsetOthers(int[] otherSourcesToDestOffsets, int j,
 			boolean removeDest) {
 		int countOfOthers = 0;
-		for (int index = 0; index < othersOffsets.length; index++) {
-			if ((othersOffsets[index] != j) && 
-				((othersOffsets[index] != 0) || !removeDest)) {
+		for (int index = 0; index < otherSourcesToDestOffsets.length; index++) {
+			if ((otherSourcesToDestOffsets[index] != j) && 
+				((otherSourcesToDestOffsets[index] != 0) || !removeDest)) {
 				countOfOthers++;
 			}
 		}
@@ -756,8 +768,8 @@ public class CompleteTransferEntropyCalculator extends InfoMeasureCalculator {
 	 * Check that the supplied array of offsets as other info 
 	 * contributors is long enough compared to our expectation
 	 * 
-	 * @param othersOffsets
-	 * @param j
+	 * @param othersOffsets array of offsets from each source to the destination
+	 * @param j offset from the source to the destination
 	 * @param removeDest remove the destination itself from the count
 	 *     of absolute others.
 	 * @return
@@ -797,8 +809,8 @@ public class CompleteTransferEntropyCalculator extends InfoMeasureCalculator {
 	 * removed only if removeDest is set to true).
 	 * Checks that there are enough other information contributors.
 	 * 
-	 * @param othersOffsets
-	 * @param j
+	 * @param othersOffsets array of offsets from each source to the destination
+	 * @param j offset from the source to the destination
 	 * @param removeDest Remove the destination itself from the cleaned
 	 *           other sources (if it is there). Should not be done
 	 *           if k == 0 (because then the destination is not included
