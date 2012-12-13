@@ -602,6 +602,8 @@ public class TransferEntropyCalculatorMultiVariateKernel
 	 * 
 	 * @param newOrderings first index is permutation number, i.e. newOrderings[i]
 	 * 		is an array of 1 permutation of 0..n-1, where there were n observations.
+	 * 		Note that n observations is generally less than the time series length
+	 * 		if the TE was estimated from a single time series.
 	 * @return
 	 * @throws Exception
 	 */
@@ -614,6 +616,15 @@ public class TransferEntropyCalculatorMultiVariateKernel
 		
 		// Space for the source observations:
 		double[][] oldSourceValues = sourceVectors;
+		
+		// Check that the largest value in the newOrderings is within range:
+		int maxNewIndex = MatrixUtils.max(newOrderings);
+		if (maxNewIndex >= sourceVectors.length) {
+			throw new Exception("Cannot prescribe a new ordering index of " + maxNewIndex +
+					" since this is outside the range 0..n-1, where n=" +
+					sourceVectors.length + " is the number of observations that " +
+					"have been supplied to the calculator.");
+		}
 		
 		int countWhereTeIsMoreSignificantThanOriginal = 0;
 		EmpiricalMeasurementDistribution measDistribution = new EmpiricalMeasurementDistribution(numPermutationsToCheck);

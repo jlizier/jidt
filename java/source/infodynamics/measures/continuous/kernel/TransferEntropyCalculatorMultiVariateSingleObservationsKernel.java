@@ -85,7 +85,15 @@ public class TransferEntropyCalculatorMultiVariateSingleObservationsKernel
 		//  dimensions if we're not careful)
 		addedMoreThanOneObservationSet = false;
 		k = 1;
-		initialise();
+		// Mimic super.initialise() (it would use k * destDimenions in the kernel estimator
+		//  for destPast instead of destPastDimensions if we're not careful)
+		teKernelEstimator.initialise(destPastDimensions,
+				sourceDimensions, epsilon, epsilon);
+		nextStateKernelEstimator.initialise(destDimensions, epsilon);
+		destPastVectors = null;
+		destNextVectors = null;
+		sourceVectors = null;
+		localProbNextCondPast = null;
 	}
 
 	/**
