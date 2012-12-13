@@ -89,6 +89,17 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov {
 		throw new RuntimeException("Not implemented yet");
 	}
 
+	/**
+	 * NOT IMPLEMENTED YET
+	 * 
+	 * @param var1
+	 * @param var2
+	 * @param conditionedVar
+	 * @param var1Valid
+	 * @param var2Valid
+	 * @param conditionedValid
+	 * @throws Exception
+	 */
 	public void setObservations(double[][] var1, double[][] var2,
 			double[][] conditionedVar, boolean[][] var1Valid,
 			boolean[][] var2Valid, boolean[][] conditionedValid) throws Exception {

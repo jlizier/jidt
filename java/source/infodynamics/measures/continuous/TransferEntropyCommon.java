@@ -31,6 +31,8 @@ import java.util.Vector;
 public abstract class TransferEntropyCommon implements
 		TransferEntropyCalculator {
 
+	protected final static double log2 = Math.log(2.0);
+	
 	/**
 	 * Length of past history to consider
 	 */
