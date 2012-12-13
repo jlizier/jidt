@@ -1,4 +1,4 @@
-package infodynamics.measures.continuous.kernel;
+package infodynamics.measures.continuous.kraskov;
 
 public class TransferEntropyMultiVariateTester
 	extends infodynamics.measures.continuous.TransferEntropyMultiVariateTester {
@@ -9,17 +9,17 @@ public class TransferEntropyMultiVariateTester
 	 */
 	public void testLocalsAverageCorrectly() throws Exception {
 		
-		TransferEntropyCalculatorMultiVariateKernel teCalc =
-				new TransferEntropyCalculatorMultiVariateKernel();
+		TransferEntropyCalculatorMultiVariateKraskov teCalc =
+				new TransferEntropyCalculatorMultiVariateKraskov();
 		
-		String kernelWidth = "1";
+		String kraskov_K = "4";
 		
 		teCalc.setProperty(
-				TransferEntropyCalculatorMultiVariateKernel.NORMALISE_PROP_NAME,
-				"true");
+				TransferEntropyCalculatorMultiVariateKraskov.PROP_KRASKOV_ALG_NUM,
+				"2");
 		teCalc.setProperty(
-				TransferEntropyCalculatorMultiVariateKernel.EPSILON_PROP_NAME,
-				kernelWidth);
+				MutualInfoCalculatorMultiVariateKraskov.PROP_K,
+				kraskov_K);
 
 		super.testLocalsAverageCorrectly(teCalc, 2, 100, 1);
 	}
@@ -32,17 +32,17 @@ public class TransferEntropyMultiVariateTester
 	 */
 	public void testComputeSignificanceDoesntAlterAverage() throws Exception {
 		
-		TransferEntropyCalculatorMultiVariateKernel teCalc =
-				new TransferEntropyCalculatorMultiVariateKernel();
+		TransferEntropyCalculatorMultiVariateKraskov teCalc =
+				new TransferEntropyCalculatorMultiVariateKraskov();
 		
-		String kernelWidth = "1";
+		String kraskov_K = "4";
 		
 		teCalc.setProperty(
-				TransferEntropyCalculatorMultiVariateKernel.NORMALISE_PROP_NAME,
-				"true");
+				TransferEntropyCalculatorMultiVariateKraskov.PROP_KRASKOV_ALG_NUM,
+				"2");
 		teCalc.setProperty(
-				TransferEntropyCalculatorMultiVariateKernel.EPSILON_PROP_NAME,
-				kernelWidth);
+				MutualInfoCalculatorMultiVariateKraskov.PROP_K,
+				kraskov_K);
 
 		super.testComputeSignificanceDoesntAlterAverage(teCalc, 2, 100, 1);
 	}
