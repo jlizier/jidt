@@ -58,6 +58,19 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov implements
 		// No need to keep the dimenions here
 	}
 
+	/**
+	 * Sets properties for the calculator.
+	 * Valid properties include:
+	 * <ul>
+	 *  <li>{@link #PROP_K} - number of neighbouring points in joint kernel space</li>
+	 * 	<li>{@link #PROP_NORM_TYPE}</li>
+	 *  <li>{@link #PROP_NORMALISE}</li>
+	 *  <li>{@link MutualInfoCalculatorMultiVariate#PROP_TIME_DIFF}</li>
+	 * </ul>
+	 * 
+	 * @param propertyName
+	 * @param propertyValue
+	 */
 	public void setProperty(String propertyName, String propertyValue) {
 		if (propertyName.equalsIgnoreCase(PROP_K)) {
 			k = Integer.parseInt(propertyValue);

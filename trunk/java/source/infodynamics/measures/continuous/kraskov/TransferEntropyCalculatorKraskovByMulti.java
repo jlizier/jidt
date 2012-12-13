@@ -149,12 +149,12 @@ public class TransferEntropyCalculatorKraskovByMulti
 	 * Sets properties for the calculator.
 	 * Valid properties include:
 	 * <ul>
-	 *  <li>K_PROP_NAME</li>
-	 * 	<li>PROP_KRASKOV_ALG_NUM</li>
-	 * 	<li>Any valid properties for MutualInfoCalculatorMultiVariateKraskov.setProperty except
-	 * 			for MutualInfoCalculatorMultiVariate.PROP_TIME_DIFF</li>
+	 *  <li>{@link TransferEntropyCalculator#K_PROP_NAME} - history length</li>
+	 * 	<li>{@link #PROP_KRASKOV_ALG_NUM}</li>
+	 * 	<li>Any valid properties for {@link MutualInfoCalculatorMultiVariateKraskov#setProperty(String, String)} except
+	 * 			for {@link MutualInfoCalculatorMultiVariate#PROP_TIME_DIFF}</li>
 	 * </ul>
-	 * One should set MutualInfoCalculatorMultiVariateKraskov.PROP_K here, the number
+	 * One should set {@link MutualInfoCalculatorMultiVariateKraskov#PROP_K} here, the number
 	 *  of neighbouring points one should count up to in determining the joint kernel size. 
 	 * 
 	 * @param propertyName

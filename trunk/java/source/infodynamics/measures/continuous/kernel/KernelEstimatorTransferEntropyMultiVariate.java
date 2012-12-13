@@ -96,7 +96,9 @@ public class KernelEstimatorTransferEntropyMultiVariate extends KernelEstimatorM
 		// epsilonInUse has been computed for the destination.
 		// TODO We could compute and set it directly here so
 		//  we don't have a mismatch between any of the vector
-		//  variables.
+		//  variables. Don't do this - it allows destPastVectors to hold
+		//  slightly different variables, e.g. in the case of
+		//  TEMultiVariateSingleObservationsKernel
 		
 		if (normalise) {
 			for (int d = 0; d < sourceDimensions; d++) {
