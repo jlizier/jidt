@@ -408,10 +408,10 @@ public class TransferEntropyCalculatorMultiVariateKernel
 				System.out.println(b + ": " + destPastVectors[b][0] + " (" +
 						kernelCounts.countNextPastSource + " / " + kernelCounts.countPastSource + ") / (" +
 						kernelCounts.countNextPast + " / " + kernelCounts.countPast + ") = " + 
-						logTerm + " -> " + (cont/Math.log(2.0)) + " -> sum: " + (te/Math.log(2.0)));
+						logTerm + " -> " + (cont/log2) + " -> sum: " + (te/log2));
 			}
 		}
-		lastAverage = te / (double) totalObservations / Math.log(2.0);
+		lastAverage = te / (double) totalObservations / log2;
 		return lastAverage;
 	}
 
@@ -442,12 +442,12 @@ public class TransferEntropyCalculatorMultiVariateKernel
 			te += cont;
 			/*
 			if (debug) {
-				System.out.println(b + ": " + logTerm + " -> " + (cont/Math.log(2.0)) + " -> sum: " + (te/Math.log(2.0)));
+				System.out.println(b + ": " + logTerm + " -> " + (cont/log2) + " -> sum: " + (te/log2));
 			}
 			*/
 		}
-		// Average it, and convert results to bytes
-		lastAverage = te / (double) totalObservations / Math.log(2.0);
+		// Average it, and convert results to bits
+		lastAverage = te / (double) totalObservations / log2;
 		return lastAverage;
 	}
 
@@ -469,7 +469,7 @@ public class TransferEntropyCalculatorMultiVariateKernel
 	}
 
 	/**
-	 * Comptues local transfer entropies for the given observations, using the previously supplied
+	 * Computes local transfer entropies for the given observations, using the previously supplied
 	 * observations to compute the PDFs.
 	 * I don't think it's such a good idea to do this for continuous variables (e.g. where
 	 * one can get kernel estimates for probabilities of zero now) but I've implemented
@@ -556,13 +556,13 @@ public class TransferEntropyCalculatorMultiVariateKernel
 			if (kernelCounts.countNextPastSource > 0) {
 				logTerm = ((double) kernelCounts.countNextPastSource / (double) kernelCounts.countPastSource) /
 							localProbNextCondPast[b];
-				local = Math.log(logTerm);
+				local = Math.log(logTerm) / log2;
 			}
 			localTE[offset + b] = local;
 			te += local;
 			/*
 			if (debug) {
-				System.out.println(b + ": " + logTerm + " -> " + (local/Math.log(2.0)) + " -> sum: " + (te/Math.log(2.0)));
+				System.out.println(b + ": " + logTerm + " -> " + (local) + " -> sum: " + (te));
 			}
 			*/
 		}
@@ -570,7 +570,7 @@ public class TransferEntropyCalculatorMultiVariateKernel
 		if (debug) {
 			System.out.printf("Average kernel count was %.3f\n", avKernelCount);
 		}
-		lastAverage = te / (double) numLocalObservations / Math.log(2.0);
+		lastAverage = te / (double) numLocalObservations;
 		return localTE;
 	}
 
@@ -755,10 +755,10 @@ public class TransferEntropyCalculatorMultiVariateKernel
 				logTerm = localProbNextCondPast[b] / nextStateProb;
 				local = Math.log(logTerm);
 			}
-			localActive[offset + b] = local;
+			localActive[offset + b] = local / log2;
 			/*
 			if (debug) {
-				System.out.println(b + ": " + logTerm + " -> " + (local/Math.log(2.0)) + " -> sum: " + (te/Math.log(2.0)));
+				System.out.println(b + ": " + logTerm + " -> " + (local/log2) + " -> sum: " + (te/log2));
 			}
 			*/
 		}

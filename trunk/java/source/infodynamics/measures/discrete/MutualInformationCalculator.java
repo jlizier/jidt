@@ -211,8 +211,8 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 	}
 
 	/**
-	 * Computes local active information storage for the given
-	 *  states, using pdfs built up from observations previously
+	 * Computes local mutual information (or pointwise mutual information)
+	 *  for the given states, using pdfs built up from observations previously
 	 *  sent in via the addObservations method 
 	 *  
 	 * @param states
@@ -253,7 +253,8 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 	
 	/**
 	 * Standalone routine to 
-	 * compute local active information storage across a 2D spatiotemporal
+	 * compute local mutual information (or pointwise mutual information)
+	 *  across a 2D spatiotemporal
 	 *  array of the states of homogeneous agents
 	 * Return a 2D spatiotemporal array of local values.
 	 * First history rows are zeros
