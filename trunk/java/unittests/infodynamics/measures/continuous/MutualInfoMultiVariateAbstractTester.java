@@ -4,7 +4,7 @@ import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.RandomGenerator;
 import junit.framework.TestCase;
 
-public abstract class MutualInfoMultiVariateTester extends TestCase {
+public abstract class MutualInfoMultiVariateAbstractTester extends TestCase {
 
 	/**
 	 * Confirm that the local values average correctly back to the average value

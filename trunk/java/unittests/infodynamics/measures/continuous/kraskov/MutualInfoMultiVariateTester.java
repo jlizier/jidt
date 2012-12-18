@@ -4,7 +4,7 @@ import infodynamics.utils.ArrayFileReader;
 import infodynamics.utils.MatrixUtils;
 
 public class MutualInfoMultiVariateTester
-	extends infodynamics.measures.continuous.MutualInfoMultiVariateTester {
+	extends infodynamics.measures.continuous.MutualInfoMultiVariateAbstractTester {
 
 	/**
 	 * Utility function to create a calculator for the given algorithm number

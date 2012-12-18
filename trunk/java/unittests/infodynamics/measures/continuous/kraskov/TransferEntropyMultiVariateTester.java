@@ -1,7 +1,7 @@
 package infodynamics.measures.continuous.kraskov;
 
 public class TransferEntropyMultiVariateTester
-	extends infodynamics.measures.continuous.TransferEntropyMultiVariateTester {
+	extends infodynamics.measures.continuous.TransferEntropyMultiVariateAbstractTester {
 
 	/**
 	 * Confirm that the local values average correctly back to the average value
