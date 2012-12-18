@@ -4,7 +4,7 @@ import junit.framework.TestCase;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.RandomGenerator;
 
-public abstract class TransferEntropyMultiVariateTester extends TestCase {
+public abstract class TransferEntropyMultiVariateAbstractTester extends TestCase {
 
 	/**
 	 * Confirm that the local values average correctly back to the average value
