@@ -47,6 +47,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 	protected double mi;
 	protected boolean miComputed;
 	
+	protected EuclideanUtils normCalculator;
 	// Storage for the norms from each observation to each other one
 	protected double[][] xNorms;
 	// Keep the norms each time (making reordering very quick)
@@ -74,6 +75,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 	public MutualInfoCalculatorMultiVariateWithDiscreteKraskov() {
 		super();
 		k = 1; // by default
+		normCalculator = new EuclideanUtils(EuclideanUtils.NORM_MAX_NORM);
 	}
 
 	/**
@@ -95,6 +97,17 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 	}
 
 	/**
+	 * Sets properties for the calculator.
+	 * Valid properties include:
+	 * <ul>
+	 *  <li>{@link #PROP_K} - number of neighbouring points in joint kernel space</li>
+	 * 	<li>{@link #PROP_NORM_TYPE}</li> - normalization type to apply to 
+	 * 		working out the norms between the points in each marginal space.
+	 * 		Options are defined by {@link EuclideanUtils#setNormToUse(String)} -
+	 * 		default is {@link EuclideanUtils#NORM_MAX_NORM}.
+	 *  <li>{@link #PROP_NORMALISE} - whether to normalise the individual
+	 *      variables (true by default)</li>
+	 * </ul>
 	 * 
 	 * @param propertyName name of the property to set
 	 * @param propertyValue value to set on that property
@@ -103,7 +116,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		if (propertyName.equalsIgnoreCase(PROP_K)) {
 			k = Integer.parseInt(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_NORM_TYPE)) {
-			EuclideanUtils.setNormToUse(propertyValue);
+			normCalculator.setNormToUse(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
 			normalise = Boolean.parseBoolean(propertyValue);
 		}
@@ -184,7 +197,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 					continue;
 				}
 				// Compute norm in the continuous space
-				xNorms[t][t2] = EuclideanUtils.norm(continuousData[t], continuousData[t2]);
+				xNorms[t][t2] = normCalculator.norm(continuousData[t], continuousData[t2]);
 			}
 		}
 	}
@@ -363,7 +376,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 					continue;
 				}
 				// Compute norm in the continuous space
-				norms[t2] = EuclideanUtils.norm(continuousData[t], continuousData[t2]);
+				norms[t2] = normCalculator.norm(continuousData[t], continuousData[t2]);
 			}
 
 			// Then find the k closest neighbours in the same discrete bin
@@ -530,7 +543,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 			double[] norms = new double[continuousData.length];
 			for (int t2 = 0; t2 < continuousData.length; t2++) {
 				// Compute norm in the continuous space
-				norms[t2] = EuclideanUtils.norm(continuousNewStates[t], continuousData[t2]);
+				norms[t2] = normCalculator.norm(continuousNewStates[t], continuousData[t2]);
 			}
 
 			// Then find the k closest neighbours in the same discrete bin
