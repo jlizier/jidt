@@ -105,7 +105,7 @@ public class MutualInfoMultiVariateTester
 	 * 
 	 * To run Kraskov's tool (http://www.klab.caltech.edu/~kraskov/MILCA/) for this 
 	 * data, run:
-	 * ./MIhigherdim <dataFile> 2 1 1 3000 <kNearestNeighbours> 0
+	 * ./MIxnyn <dataFile> 1 1 3000 <kNearestNeighbours> 0
 	 * 
 	 * @throws Exception if file not found 
 	 * 
@@ -152,14 +152,14 @@ public class MutualInfoMultiVariateTester
 	 * 
 	 * To run Kraskov's tool (http://www.klab.caltech.edu/~kraskov/MILCA/) for this 
 	 * data, run:
-	 * ./MIhigherdim <dataFile> 4 1 1 3000 <kNearestNeighbours> 0
+	 * ./MIxnyn <dataFile> 2 2 3000 <kNearestNeighbours> 0
 	 * 
 	 * @throws Exception if file not found 
 	 * 
 	 */
 	public void testMultivariateMIforRandomVariablesFromFile() throws Exception {
 		
-		// Test set 1:
+		// Test set 3:
 		
 		// We'll just take the first two columns from this data set
 		ArrayFileReader afr = new ArrayFileReader("demos/data/4randomCols-1.txt");
@@ -177,4 +177,148 @@ public class MutualInfoMultiVariateTester
 				kNNs, expectedFromMILCA_2);
 
 	}
+
+	/**
+	 * Test the computed multivariate MI against that calculated by Kraskov's own MILCA
+	 * tool on the same data.
+	 * 
+	 * To run Kraskov's tool (http://www.klab.caltech.edu/~kraskov/MILCA/) for this 
+	 * data, run:
+	 * ./MIxnyn <dataFile> 1 3 3000 <kNearestNeighbours> 0
+	 * 
+	 * @throws Exception if file not found 
+	 * 
+	 */
+	public void testImbalancedMultivariateMIforRandomVariablesFromFile() throws Exception {
+		
+		// Test set 4:
+		
+		// We'll take MI from first column to the next 3:
+		ArrayFileReader afr = new ArrayFileReader("demos/data/4randomCols-1.txt");
+		double[][] data = afr.getDouble2DMatrix();
+		
+		// Use various Kraskov k nearest neighbours parameter
+		int[] kNNs = {1, 2, 3, 4, 5, 6, 10, 15};
+		// Expected values from Kraskov's MILCA toolkit:
+		double[] expectedFromMILCA = {0.02473475, 0.00404451, -0.00454679,
+				-0.00737512, -0.00464896, -0.00610772, -0.00881741, -0.01306668};
+		
+		System.out.println("Kraskov comparison 4 - multivariate random data 2 (1 var to 3 vars)");
+		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0}),
+				MatrixUtils.selectColumns(data, new int[] {1, 2, 3}),
+				kNNs, expectedFromMILCA);
+	}
+
+	/**
+	 * Test the computed multivariate MI against that calculated by Kraskov's own MILCA
+	 * tool on the same data.
+	 * 
+	 * To run Kraskov's tool (http://www.klab.caltech.edu/~kraskov/MILCA/) for this 
+	 * data, run:
+	 * ./MIxnyn <dataFile> 2 2 3030 <kNearestNeighbours> 0
+	 * where the file has the first 30 rows repeated.
+	 * 
+	 * Kraskov et al recommend that a small amount of noise should be 
+	 * added to the data to avoid issues with repeated scores; we have not
+	 * implemented this yet.
+	 * 
+	 * @throws Exception if file not found 
+	 * 
+	 */
+	public void testMultivariateMIforRandomVariablesRepeatedDataFromFile() throws Exception {
+		
+		// Test set 5:
+		
+		// We'll just take the first two columns from this data set
+		ArrayFileReader afr = new ArrayFileReader("demos/data/4randomCols-1.txt");
+		double[][] data = afr.getDouble2DMatrix();
+		double[][] data2 = new double[data.length + 30][data[0].length];
+		for (int r = 0; r < data.length; r++) {
+			for (int c = 0; c < data[r].length; c++) {
+				data2[r][c] = data[r][c];
+			}
+		}
+		// Repeat the first 30 rows:
+		for (int r = 0; r < 30; r++) {
+			for (int c = 0; c < data[r].length; c++) {
+				data2[r+data.length][c] = data[r][c];
+			}			
+		}
+		
+		// Use various Kraskov k nearest neighbours parameter
+		int[] kNNs = {1, 2, 3, 4, 5, 6, 10, 15};
+		// Expected values from Kraskov's MILCA toolkit:
+		double[] expectedFromMILCA_2 = {0.16846374, 0.04091779, 0.02069109,
+				0.00700680, 0.00121768, -0.00134164, -0.00870685, -0.00966508};
+		
+		System.out.println("Kraskov comparison 5 - multivariate random data 1 with 30 repeated rows");
+		checkMIForGivenData(MatrixUtils.selectColumns(data2, new int[] {0, 1}),
+				MatrixUtils.selectColumns(data2, new int[] {2, 3}),
+				kNNs, expectedFromMILCA_2);
+	}
+
+	/**
+	 * Test the computed multivariate MI against that calculated by Kraskov's own MILCA
+	 * tool on the same data.
+	 * 
+	 * To run Kraskov's tool (http://www.klab.caltech.edu/~kraskov/MILCA/) for this 
+	 * data, run:
+	 * ./MIxnyn <dataFile> 2 2 3000 <kNearestNeighbours> 0
+	 * 
+	 * @throws Exception if file not found 
+	 * 
+	 */
+	public void testMultivariateMIforDependentVariablesFromFile() throws Exception {
+		
+		// Test set 6:
+		
+		// We'll just take the first two columns from this data set
+		ArrayFileReader afr = new ArrayFileReader("demos/data/4ColsPairedDirectDependence-1.txt");
+		double[][] data = afr.getDouble2DMatrix();
+		
+		// Use various Kraskov k nearest neighbours parameter
+		int[] kNNs = {1, 2, 3, 4, 5, 6, 10, 15};
+		// Expected values from Kraskov's MILCA toolkit:
+		double[] expectedFromMILCA_2 = {5.00322122, 4.29011291, 3.91312749, 
+				3.69192886, 3.52807488, 3.39865354, 3.05327646, 2.79951639};
+		
+		System.out.println("Kraskov comparison 6 - multivariate dependent data 1");
+		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0, 1}),
+				MatrixUtils.selectColumns(data, new int[] {2, 3}),
+				kNNs, expectedFromMILCA_2);
+
+	}
+
+	/**
+	 * Test the computed multivariate MI against that calculated by Kraskov's own MILCA
+	 * tool on the same data.
+	 * 
+	 * To run Kraskov's tool (http://www.klab.caltech.edu/~kraskov/MILCA/) for this 
+	 * data, run:
+	 * ./MIxnyn <dataFile> 2 2 3000 <kNearestNeighbours> 0
+	 * 
+	 * @throws Exception if file not found 
+	 * 
+	 */
+	public void testMultivariateMIforNoisyDependentVariablesFromFile() throws Exception {
+		
+		// Test set 6:
+		
+		// We'll just take the first two columns from this data set
+		ArrayFileReader afr = new ArrayFileReader("demos/data/4ColsPairedNoisyDependence-1.txt");
+		double[][] data = afr.getDouble2DMatrix();
+		
+		// Use various Kraskov k nearest neighbours parameter
+		int[] kNNs = {1, 2, 3, 4, 5, 6, 10, 15};
+		// Expected values from Kraskov's MILCA toolkit:
+		double[] expectedFromMILCA_2 = {0.33738970, 0.36251531, 0.34708687, 
+				0.36200563, 0.35766125, 0.35007623, 0.35023664, 0.33728287};
+		
+		System.out.println("Kraskov comparison 6 - multivariate dependent data 1");
+		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0, 1}),
+				MatrixUtils.selectColumns(data, new int[] {2, 3}),
+				kNNs, expectedFromMILCA_2);
+
+	}
+
 }
