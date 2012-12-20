@@ -1,6 +1,5 @@
 package infodynamics.measures.continuous.kraskov;
 
-import infodynamics.utils.EuclideanUtils;
 import infodynamics.utils.FirstIndexComparatorDouble;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
@@ -297,7 +296,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 			// Compute eps_x and eps_y and eps_z for this time step:
 			//  First get x and y and z norms to all neighbours
 			//  (note that norm of point t to itself will be set to infinity).
-			double[][] xyzNorms = EuclideanUtils.computeNorms(data1, data2, dataCond, t);
+			double[][] xyzNorms = normCalculator.computeNorms(data1, data2, dataCond, t);
 			double[][] jointNorm = new double[N][2];
 			for (int t2 = 0; t2 < N; t2++) {
 				jointNorm[t2][JOINT_NORM_VAL_COLUMN] = Math.max(xyzNorms[t2][0], 
@@ -400,7 +399,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 			// Compute eps_x and eps_y and eps_z for this time step:
 			//  First get x and y and z norms to all neighbours
 			//  (note that norm of point t to itself will be set to infinity).
-			double[][] xyzNorms = EuclideanUtils.computeNorms(data1, data2, dataCond, t);
+			double[][] xyzNorms = normCalculator.computeNorms(data1, data2, dataCond, t);
 			double[][] jointNorm = new double[N][2];
 			for (int t2 = 0; t2 < N; t2++) {
 				jointNorm[t2][JOINT_NORM_VAL_COLUMN] = Math.max(xyzNorms[t2][0],

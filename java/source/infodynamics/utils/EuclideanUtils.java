@@ -17,10 +17,19 @@ public class EuclideanUtils {
 	public static final String NORM_EUCLIDEAN_NORMALISED_STRING = "EUCLIDEAN_NORMALISED";
 	public static final int NORM_MAX_NORM = 2;
 	public static final String NORM_MAX_NORM_STRING = "MAX_NORM";
-	private static int normToUse = 0;
+	// Track which norm we should use here
+	private int normToUse = 0;
 
-	public EuclideanUtils() {
-		super();
+	/**
+	 * Construct a EuclideanUtils object, to take norms of the given type
+	 * 
+	 * @param normToUse norm type, one of
+	 * {@link #NORM_EUCLIDEAN_STRING},
+	 * {@link #NORM_EUCLIDEAN_NORMALISED_STRING},
+	 *  or {@link #NORM_MAX_NORM_STRING}
+	 */
+	public EuclideanUtils(int normToUse) {
+		this.normToUse = normToUse;
 	}
 
 	public static double[] computeMinEuclideanDistances(double[][] observations) {
@@ -144,7 +153,17 @@ public class EuclideanUtils {
 		return minDistance;
 	}
 
-	public static double maxJointSpaceNorm(double[] x1, double[] y1,
+	/**
+	 * Return the max norm out of the two norms (x1:x2) and (y1:y2),
+	 *  using the configured norm type
+	 * 
+	 * @param x1
+	 * @param y1
+	 * @param x2
+	 * @param y2
+	 * @return the max of the two norms
+	 */
+	public double maxJointSpaceNorm(double[] x1, double[] y1,
 			   double[] x2, double[] y2) {
 		return Math.max(norm(x1, x2), norm(y1,y2));
 	}
@@ -156,7 +175,7 @@ public class EuclideanUtils {
 	 * @param x2
 	 * @return
 	 */
-	public static double norm(double[] x1, double[] x2) {
+	public double norm(double[] x1, double[] x2) {
 		switch (normToUse) {
 		case NORM_EUCLIDEAN_NORMALISED:
 			return euclideanNorm(x1, x2) / Math.sqrt(x1.length);
@@ -207,7 +226,7 @@ public class EuclideanUtils {
 	}
 
 	/**
-	 * Compute the x and y norms of all other points from
+	 * Compute the x and y configured norms of all other points from
 	 *  the data points at time step t.
 	 * Puts norms of t from itself as infinity, which is useful
 	 *  when counting the number of points closer than epsilon say.
@@ -216,7 +235,7 @@ public class EuclideanUtils {
 	 * @param mvTimeSeries2
 	 * @return
 	 */
-	public static double[][] computeNorms(double[][] mvTimeSeries1,
+	public double[][] computeNorms(double[][] mvTimeSeries1,
 			double[][] mvTimeSeries2, int t) {
 		
 		int timeSteps = mvTimeSeries1.length;
@@ -246,7 +265,7 @@ public class EuclideanUtils {
 	 * @param mvTimeSeries3
 	 * @return
 	 */
-	public static double[][] computeNorms(double[][] mvTimeSeries1,
+	public double[][] computeNorms(double[][] mvTimeSeries1,
 			double[][] mvTimeSeries2, double[][] mvTimeSeries3, int t) {
 		
 		int timeSteps = mvTimeSeries1.length;
@@ -302,8 +321,8 @@ public class EuclideanUtils {
 	 * 
 	 * @param normType
 	 */
-	public static void setNormToUse(int normType) {
-		normToUse = normType;
+	public void setNormToUse(int normType) {
+		this.normToUse = normType;
 	}
 
 	/**
@@ -311,7 +330,7 @@ public class EuclideanUtils {
 	 * 
 	 * @param normType
 	 */
-	public static void setNormToUse(String normType) {
+	public void setNormToUse(String normType) {
 		if (normType.equalsIgnoreCase(NORM_EUCLIDEAN_NORMALISED_STRING)) {
 			normToUse = NORM_EUCLIDEAN_NORMALISED;
 		} else if (normType.equalsIgnoreCase(NORM_MAX_NORM_STRING)) {
@@ -321,7 +340,7 @@ public class EuclideanUtils {
 		}
 	}
 	
-	public static String getNormInUse() {
+	public String getNormInUse() {
 		switch (normToUse) {
 		case NORM_EUCLIDEAN_NORMALISED:
 			return NORM_EUCLIDEAN_NORMALISED_STRING;

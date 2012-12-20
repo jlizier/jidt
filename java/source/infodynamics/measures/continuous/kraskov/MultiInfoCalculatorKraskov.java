@@ -32,6 +32,7 @@ public abstract class MultiInfoCalculatorKraskov implements
 	protected int N; // number of observations
 	protected int V; // number of variables
 	
+	protected EuclideanUtils normCalculator;
 	// Storage for the norms for each marginal variable from each observation to each other one
 	protected double[][][] norms;
 	// Keep the norms each time (making reordering very quick)
@@ -46,6 +47,7 @@ public abstract class MultiInfoCalculatorKraskov implements
 	public MultiInfoCalculatorKraskov() {
 		super();
 		k = 1; // by default
+		normCalculator = new EuclideanUtils(EuclideanUtils.NORM_MAX_NORM);
 	}
 
 	public void initialise(int dimensions) {
@@ -56,11 +58,26 @@ public abstract class MultiInfoCalculatorKraskov implements
 		data = null;
 	}
 
+	/**
+	 * Sets properties for the calculator.
+	 * Valid properties include:
+	 * <ul>
+	 *  <li>{@link #PROP_K} - number of neighbouring points in joint kernel space</li>
+	 * 	<li>{@link #PROP_NORM_TYPE}</li> - normalization type to apply to 
+	 * 		working out the norms between the points in each marginal space.
+	 * 		Options are defined by {@link EuclideanUtils#setNormToUse(String)} -
+	 * 		default is {@link EuclideanUtils#NORM_MAX_NORM}.
+	 *  <li>{@link #PROP_TRY_TO_KEEP_ALL_PAIRS_NORM})</li>
+	 * </ul>
+	 * 
+	 * @param propertyName
+	 * @param propertyValue
+	 */
 	public void setProperty(String propertyName, String propertyValue) {
 		if (propertyName.equalsIgnoreCase(PROP_K)) {
 			k = Integer.parseInt(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_NORM_TYPE)) {
-			EuclideanUtils.setNormToUse(propertyValue);
+			normCalculator.setNormToUse(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_TRY_TO_KEEP_ALL_PAIRS_NORM)) {
 			tryKeepAllPairsNorms = Boolean.parseBoolean(propertyValue);
 		}

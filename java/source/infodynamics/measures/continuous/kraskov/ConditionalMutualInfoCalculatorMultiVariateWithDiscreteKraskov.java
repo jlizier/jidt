@@ -39,6 +39,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteKraskov impl
 	protected double condMi;
 	protected boolean miComputed;
 	
+	protected EuclideanUtils normCalculator;
 	// Storage for the norms from each observation to each other one
 	protected double[][] xNorms;
 	protected double[][] zNorms;
@@ -56,6 +57,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteKraskov impl
 	public ConditionalMutualInfoCalculatorMultiVariateWithDiscreteKraskov() {
 		super();
 		k = 1; // by default
+		normCalculator = new EuclideanUtils(EuclideanUtils.NORM_MAX_NORM);
 	}
 
 	/**
@@ -77,15 +79,26 @@ public class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteKraskov impl
 	}
 
 	/**
+	 * Sets properties for the calculator.
+	 * Valid properties include:
+	 * <ul>
+	 *  <li>{@link #PROP_K} - number of neighbouring points in joint kernel space</li>
+	 * 	<li>{@link #PROP_NORM_TYPE}</li> - normalization type to apply to 
+	 * 		working out the norms between the points in each marginal space.
+	 * 		Options are defined by {@link EuclideanUtils#setNormToUse(String)} -
+	 * 		default is {@link EuclideanUtils#NORM_MAX_NORM}.
+	 *  <li>{@link #PROP_NORMALISE} - whether to normalise the individual
+	 *      variables (true by default)</li>
+	 * </ul>
 	 * 
-	 * @param propertyName name of the property to set
-	 * @param propertyValue value to set on that property
+	 * @param propertyName
+	 * @param propertyValue
 	 */
 	public void setProperty(String propertyName, String propertyValue) {
 		if (propertyName.equalsIgnoreCase(PROP_K)) {
 			k = Integer.parseInt(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_NORM_TYPE)) {
-			EuclideanUtils.setNormToUse(propertyValue);
+			normCalculator.setNormToUse(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
 			normalise = Boolean.parseBoolean(propertyValue);
 		}
@@ -172,8 +185,8 @@ public class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteKraskov impl
 					continue;
 				}
 				// Compute norm in the continuous space
-				xNorms[t][t2] = EuclideanUtils.norm(continuousDataX[t], continuousDataX[t2]);
-				zNorms[t][t2] = EuclideanUtils.norm(conditionedDataZ[t], conditionedDataZ[t2]);
+				xNorms[t][t2] = normCalculator.norm(continuousDataX[t], continuousDataX[t2]);
+				zNorms[t][t2] = normCalculator.norm(conditionedDataZ[t], conditionedDataZ[t2]);
 				xzNorms[t][t2] = Math.max(xNorms[t][t2], zNorms[t][t2]);
 			}
 		}
@@ -406,7 +419,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteKraskov impl
 			// Compute eps_* for this time step:
 			//  First get xz norms to all neighbours
 			//  (note that norm of point t to itself will be set to infinity).
-			double[][] xzNorms = EuclideanUtils.computeNorms(continuousDataX, conditionedDataZ, t);
+			double[][] xzNorms = normCalculator.computeNorms(continuousDataX, conditionedDataZ, t);
 			double[][] jointNorm = new double[N][2];
 			for (int t2 = 0; t2 < N; t2++) {
 				jointNorm[t2][0] = Math.max(xzNorms[t2][0], 

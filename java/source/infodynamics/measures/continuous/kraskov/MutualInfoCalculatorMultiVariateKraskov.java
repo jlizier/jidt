@@ -29,6 +29,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov implements
 	protected double mi;
 	protected boolean miComputed;
 	
+	protected EuclideanUtils normCalculator;
 	// Storage for the norms from each observation to each other one
 	protected double[][] xNorms;
 	protected double[][] yNorms;
@@ -46,6 +47,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov implements
 	public MutualInfoCalculatorMultiVariateKraskov() {
 		super();
 		k = 1; // by default
+		normCalculator = new EuclideanUtils(EuclideanUtils.NORM_MAX_NORM);
 	}
 
 	public void initialise(int dimensions1, int dimensions2) {
@@ -63,8 +65,12 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov implements
 	 * Valid properties include:
 	 * <ul>
 	 *  <li>{@link #PROP_K} - number of neighbouring points in joint kernel space</li>
-	 * 	<li>{@link #PROP_NORM_TYPE}</li>
-	 *  <li>{@link #PROP_NORMALISE}</li>
+	 * 	<li>{@link #PROP_NORM_TYPE}</li> - normalization type to apply to 
+	 * 		working out the norms between the points in each marginal space.
+	 * 		Options are defined by {@link EuclideanUtils#setNormToUse(String)} -
+	 * 		default is {@link EuclideanUtils#NORM_MAX_NORM}.
+	 *  <li>{@link #PROP_NORMALISE} - whether to normalise the individual
+	 *      variables (true by default)</li>
 	 *  <li>{@link MutualInfoCalculatorMultiVariate#PROP_TIME_DIFF}</li>
 	 * </ul>
 	 * 
@@ -75,7 +81,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov implements
 		if (propertyName.equalsIgnoreCase(PROP_K)) {
 			k = Integer.parseInt(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_NORM_TYPE)) {
-			EuclideanUtils.setNormToUse(propertyValue);
+			normCalculator.setNormToUse(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
 			normalise = Boolean.parseBoolean(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_TIME_DIFF)) {
@@ -154,7 +160,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov implements
 		yNorms = new double[N][N];
 		for (int t = 0; t < N; t++) {
 			// Compute the norms from t to all other time points
-			double[][] xyNormsForT = EuclideanUtils.computeNorms(data1, data2, t);
+			double[][] xyNormsForT = normCalculator.computeNorms(data1, data2, t);
 			for (int t2 = 0; t2 < N; t2++) {
 				xNorms[t][t2] = xyNormsForT[t2][0];
 				yNorms[t][t2] = xyNormsForT[t2][1];
