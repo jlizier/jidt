@@ -51,6 +51,7 @@ function coupledLogisticMap()
 	cYToX = 0.2;
 	cXToY = 0.5;
 	T = 512;
+	printf('For 1000 repeats, expect the calculations to take ~5 minutes ...\n');
 	repeats = 1000; % General results visible for 100 repeats if you want to see them faster (~20 sec)
 	k = 1; % history length
 	
@@ -169,12 +170,12 @@ function coupledLogisticMap()
 		%teCalc.setObservations(X(seedSteps-1:rows(X)-1,r), Y(seedSteps:rows(Y),r));
 		%resultsLag2(r) = teCalc.computeAverageLocalOfObservations();
 	end
-	printf("TE(X->Y,delay=1) = %.4f nats (+/- std %.4f, stderr %.4f)\n", ...
-		mean(resultsLag1), std(resultsLag1), std(resultsLag1)./sqrt(repeats));
-	printf("TE(X->Y,delay=2) = %.4f nats (+/- std %.4f, stderr %.4f)\n", ...
-		mean(resultsLag2), std(resultsLag2), std(resultsLag2)./sqrt(repeats));
-	printf("If measured:\nTE(X->Y,delay=3) = %.4f nats (+/- std %.4f, stderr %.4f)\n", ...
-		mean(resultsLag3), std(resultsLag3), std(resultsLag3)./sqrt(repeats));
+	printf("TE(X->Y,delay=1) = %.4f nats (+/- std %.4f, stderr %.4f) or %.4f bits\n", ...
+		mean(resultsLag1), std(resultsLag1), std(resultsLag1)./sqrt(repeats), mean(resultsLag1)./log(2) );
+	printf("TE(X->Y,delay=2) = %.4f nats (+/- std %.4f, stderr %.4f) or %.4f bits\n", ...
+		mean(resultsLag2), std(resultsLag2), std(resultsLag2)./sqrt(repeats), mean(resultsLag2) ./log(2));
+	printf("If measured:\nTE(X->Y,delay=3) = %.4f nats (+/- std %.4f, stderr %.4f) or %.4f bits\n", ...
+		mean(resultsLag3), std(resultsLag3), std(resultsLag3)./sqrt(repeats), mean(resultsLag3) ./log(2));
 	
 	toc;
 end
