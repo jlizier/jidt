@@ -11,5 +11,5 @@ package infodynamics.utils;
  */
 public interface AnalyticNullDistributionComputer {
 
-	public AnalyticMeasurementDistribution computeSignificance();
+	public AnalyticMeasurementDistribution computeSignificance() throws Exception;
 }

@@ -226,7 +226,7 @@ public class MutualInfoCalculatorMultiVariateGaussian
 
 	/**
 	 * <p>The joint entropy for a multivariate Gaussian-distribution of dimension n
-	 *  with covariance matrix C is 0.5*\log_e{(2*pi*e)^n*|det(C)|},
+	 *  with covariance matrix C is -0.5*\log_e{(2*pi*e)^n*|det(C)|},
 	 *  where det() is the matrix determinant of C.</p>
 	 * 
 	 * <p>Here we compute the mutual information from the joint entropies
@@ -297,9 +297,7 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	 *  {@link http://arxiv.org/abs/1205.6339}
 	 */
 	public ChiSquareMeasurementDistribution computeSignificance() {
-		// TODO Empirically check that the null distribution actually follows
-		//  chi-sqr with these degrees of freedom
-		return new ChiSquareMeasurementDistribution(lastAverage,
+		return new ChiSquareMeasurementDistribution(2*totalObservations*lastAverage,
 				dimensionsSource * dimensionsDest);
 	}
 	

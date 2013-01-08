@@ -65,7 +65,8 @@ public abstract interface ChannelCalculatorCommon {
 	public double[] computeLocalOfPreviousObservations() throws Exception;
 
 	/**
-	 * <p>Compute the significance of obtaining the given average TE from the given observations.</p>
+	 * <p>Compute the significance of obtaining the given average 
+ 	 *    measure from the given observations.</p>
 	 * 
 	 * <p>This is as per Chavez et. al., "Statistical assessment of nonlinear causality:
 	 *  application to epileptic EEG signals", Journal of Neuroscience Methods 124 (2003) 113-128.
@@ -95,10 +96,27 @@ public abstract interface ChannelCalculatorCommon {
 	public EmpiricalMeasurementDistribution computeSignificance(
 			int[][] newOrderings) throws Exception;
 
+	/**
+	 * Set whether to print debug messages or not
+	 * 
+	 * @param debug whether to print debug messages or not
+	 */
 	public void setDebug(boolean debug);
 	
+	/**
+	 * Get the last computed average of the measure
+	 * 
+	 * @return the last computed average
+	 */
 	public double getLastAverage();
 
+	/**
+	 * Get the number of observations that have been supplied for
+	 *  computation of the PDFs
+	 * 
+	 * @return number of observations
+	 * @throws Exception
+	 */
 	public int getNumObservations() throws Exception;
 
 }
