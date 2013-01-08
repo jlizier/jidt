@@ -906,6 +906,20 @@ public class MatrixUtils {
 	}
 	
 	/**
+	 * Append the vector u to the vector v and return the result
+	 * 
+	 * @param v vector 1
+	 * @param u vector 2
+	 * @return [v, u] appended result
+	 */
+	public static int[] append(int[] v, int[] u) {
+		int[] result = new int[v.length + u.length];
+		System.arraycopy(v, 0, result, 0, v.length);
+		System.arraycopy(u, 0, result, v.length, u.length);
+		return result;
+	}
+
+	/**
 	 * 
 	 * @param separateValues
 	 * @return Single dimensional matrix where each row
@@ -1114,6 +1128,15 @@ public class MatrixUtils {
 		double[] column = new double[matrix.length];
 		for (int r = 0; r < matrix.length; r++) {
 			column[r] = matrix[r][columnNo];
+		}
+		return column;
+	}
+
+	public static double[] selectColumn(double matrix[][], int columnNo,
+			int startRow, int rows) {
+		double[] column = new double[rows];
+		for (int r = 0; r < rows; r++) {
+			column[r] = matrix[startRow + r][columnNo];
 		}
 		return column;
 	}
@@ -2363,7 +2386,7 @@ public class MatrixUtils {
 		for (int t = 0; t < x.length; t++) {
 			c += (x[t] - meanX)*(y[t]-meanY);
 		}
-		return c / (double) x.length;
+		return c / (double) (x.length - 1); // -1 for sample covariance
 	}
 
 	/**
@@ -2415,7 +2438,7 @@ public class MatrixUtils {
 		for (int t = 0; t < data.length; t++) {
 			c += (data[t][col1] - mean1)*(data[t][col2]-mean2);
 		}
-		return c / (double) data.length;
+		return c / (double) (data.length - 1);
 	}
 	
 	/**
@@ -2441,7 +2464,7 @@ public class MatrixUtils {
 		for (int t = 0; t < data1.length; t++) {
 			c += (data1[t][col1] - mean1)*(data2[t][col2]-mean2);
 		}
-		return c / (double) data1.length;
+		return c / (double) (data1.length - 1);
 	}
 	
 	/**
@@ -2504,12 +2527,12 @@ public class MatrixUtils {
 	 * 
 	 * @param data1 multivariate array of data; first index is time, second is 
 	 *    variable number
-	 * @param data2 a second multivariate array of data, which can be though
+	 * @param data2 a second multivariate array of data, which can be thought
 	 *    of as extensions of rows of the first.
 	 * @param delay compute the lagged covariance of the given delay from
 	 *    data1 to data2 (assumes delay >= 0); i.e. compute correlation
 	 *    between data1[x] and data2[x+delay]. 
-	 * @return covariance matrix, where the columns of dat1 are numbered
+	 * @return covariance matrix, where the columns of data1 are numbered
 	 *   first, and the columns of data2 after that.
 	 */
 	public static double[][] covarianceMatrix(
@@ -2575,6 +2598,110 @@ public class MatrixUtils {
 						covariances[numVariables1 + r][numVariables1 + c];
 			}
 		}		
+		return covariances;
+	}
+
+	/**
+	 * Compute the covariance matrix between all column pairs (variables) in the
+	 *  multivariate data set, which consists of three separate
+	 *  multivariate vectors.
+	 * 
+	 * @param data1 multivariate array of data; first index is time, second is 
+	 *    variable number
+	 * @param data2 a second multivariate array of data, which can be thought
+	 *    of as extensions of rows of the first.
+	 * @param data2 a third multivariate array of data, which can be thought
+	 *    of as extensions of rows of the first and second.
+	 * @return covariance matrix, where the columns of data1 are numbered
+	 *   first, the columns of data2 after that, and finally the columns
+	 *   of data3.
+	 */
+	public static double[][] covarianceMatrix(
+			double[][] data1, double[][] data2, double[][] data3) {
+		int numVariables1 = data1[0].length;
+		int numVariables2 = data2[0].length;
+		int numVariables3 = data3[0].length;
+		int numVariables = numVariables1 + numVariables2 + numVariables3;
+		double[][] covariances = new double[numVariables][numVariables];
+		// Compute means of each variable once up front to save time
+		double[] means1 = new double[numVariables1];
+		double[] means2 = new double[numVariables2];
+		double[] means3 = new double[numVariables3];
+		for (int r = 0; r < numVariables1; r++) {
+			means1[r] = mean(data1, r);
+		}
+		for (int r = 0; r < numVariables2; r++) {
+			means2[r] = mean(data2, r);
+		}
+		for (int r = 0; r < numVariables3; r++) {
+			means3[r] = mean(data3, r);
+		}
+		// Now compute the covariances:
+		for (int r = 0; r < numVariables1; r++) {
+			// Compute the covariances internal to data1:
+			for (int c = r; c < numVariables1; c++) {
+				// Compute the covariance between variable r and c:
+				covariances[r][c] = covarianceTwoColumns(data1, r, c,
+						means1[r], means1[c]);
+				// And of course this is symmetric between c and r:
+				covariances[c][r] = covariances[r][c];
+			}
+			// Compute the covariances between data1 and data2
+			for (int c = 0; c < numVariables2; c++) {
+				// Compute the covariance between variable r and c:
+				covariances[r][numVariables1 + c] =
+						covarianceTwoColumns(data1, data2,
+								r, c, means1[r], means2[c]);
+				// And of course this is symmetric between c and r:
+				covariances[numVariables1 + c][r] =
+						covariances[r][numVariables1 + c];
+			}
+			// Compute the covariances between data1 and data3
+			for (int c = 0; c < numVariables3; c++) {
+				// Compute the covariance between variable r and c:
+				covariances[r][numVariables1 + numVariables2 + c] =
+						covarianceTwoColumns(data1, data3,
+								r, c, means1[r], means3[c]);
+				// And of course this is symmetric between c and r:
+				covariances[numVariables1 + numVariables2 + c][r] =
+						covariances[r][numVariables1 + numVariables2 + c];
+			}
+		}
+		// Compute the other covariances for data2
+		for (int r = 0; r < numVariables2; r++) {
+			// Compute the covariances internal to data2:
+			for (int c = r; c < numVariables2; c++) {
+				// Compute the covariance between variable r and c:
+				covariances[numVariables1 + r][numVariables1 + c] =
+						covarianceTwoColumns(data2, r, c,
+						means2[r], means2[c]);
+				// And of course this is symmetric between c and r:
+				covariances[numVariables1 + c][numVariables1 + r] =
+						covariances[numVariables1 + r][numVariables1 + c];
+			}
+			// Compute the covariances between data2 and data3
+			for (int c = 0; c < numVariables3; c++) {
+				// Compute the covariance between variable r and c:
+				covariances[numVariables1 + r][numVariables1 + numVariables2 + c] =
+						covarianceTwoColumns(data2, data3,
+								r, c, means2[r], means3[c]);
+				// And of course this is symmetric between c and r:
+				covariances[numVariables1 + numVariables2 + c][numVariables1 + r] =
+						covariances[numVariables1 + r][numVariables1 + numVariables2 + c];
+			}
+		}		
+		// Compute the internal covariances for data3
+		for (int r = 0; r < numVariables3; r++) {
+			for (int c = r; c < numVariables3; c++) {
+				// Compute the covariance between variable r and c:
+				covariances[numVariables1 + numVariables2 + r][numVariables1 + numVariables2 + c] =
+						covarianceTwoColumns(data3, r, c,
+						means3[r], means3[c]);
+				// And of course this is symmetric between c and r:
+				covariances[numVariables1 + numVariables2 + c][numVariables1 + numVariables2 + r] =
+						covariances[numVariables1 + numVariables2 + r][numVariables1 + numVariables2 + c];
+			}
+		}
 		return covariances;
 	}
 

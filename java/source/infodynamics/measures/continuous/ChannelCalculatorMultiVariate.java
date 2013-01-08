@@ -7,7 +7,7 @@ package infodynamics.measures.continuous;
  * 
  * 
  * @author Joseph Lizier, <a href="joseph.lizier at gmail.com">email</a>,
- * <a href="http://lizier.me/joseph/">www</a>
+ * <a href="http://lizier.me/joseph/">http://lizier.me/joseph/</a>
  *
  */
 public interface ChannelCalculatorMultiVariate extends ChannelCalculatorCommon {
