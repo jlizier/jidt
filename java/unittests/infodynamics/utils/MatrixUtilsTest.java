@@ -27,6 +27,38 @@ public class MatrixUtilsTest extends TestCase {
 		}
 	}
 	
+	public void testCovariance() throws Exception {
+		// Load a test data file which contains a time series and
+		//  covariance matrix as computed by matlab:
+		// We'll just take the first two columns from this data set
+		OctaveFileReader ofr = new OctaveFileReader(
+			"demos/data/Network-GaussianLinear-N100-T100-p0.04-b0.50-c0.50-dir-disc-repeat1.txt");
+		double[][] data = ofr.getDouble2DMatrix("timeseries");
+		double[][] expectedCovariance = ofr.getDouble2DMatrix("empiricalCovariance");
+		double[][] computedCovariance = MatrixUtils.covarianceMatrix(data);
+		checkMatrix(expectedCovariance, computedCovariance, 0.00001);
+		
+		// And test that it's still correct if we supply the data in 2 separate
+		//  parts:
+		double[][] part1 = MatrixUtils.selectColumns(data,
+				MatrixUtils.range(0, 49));
+		double[][] part2 = MatrixUtils.selectColumns(data,
+				MatrixUtils.range(50, 99));
+		double[][] split2ComputedCovariance = MatrixUtils.covarianceMatrix(
+				part1, part2);
+		checkMatrix(expectedCovariance, split2ComputedCovariance, 0.00001);
+
+		// And test that it's still correct if we supply the data in 3 separate
+		//  parts:
+		double[][] part2a = MatrixUtils.selectColumns(data,
+				MatrixUtils.range(50, 74));
+		double[][] part2b = MatrixUtils.selectColumns(data,
+				MatrixUtils.range(75, 99));
+		double[][] split3ComputedCovariance = MatrixUtils.covarianceMatrix(
+				part1, part2a, part2b);
+		checkMatrix(expectedCovariance, split3ComputedCovariance, 0.00001);
+	}
+	
 	/**
 	 * Test our Cholesky decomposition implementation
 	 * 
