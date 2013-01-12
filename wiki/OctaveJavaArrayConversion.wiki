@@ -34,7 +34,7 @@ The {{{org.octave.Matrix}}} conversion doesn't work for java {{{int[]}}} or {{{i
 
 The reverse conversion is performed using the {{{java_convert_matrix}}} feature (to automatically convert {{{org.octave.Matrix}}} to octave native types).
 
-Note that these scripts will work in either Octave or Matlab. In Matlab however, since the org.octave.Matrix solution is not available, we simple convert element by element (which is very slow). If matlab users have a solution, feel free to share it (I haven't tried looking for one since I'm not running matlab).
+In Matlab, matrices are converted back and forth to java format automatically. To ensure that your code can be used in either Matlab or Octave, you can call our conversion scripts - they will work in either Matlab or Octave: in Matlab, they simply return the matrix that was passed in,
 
 = Links =
 
