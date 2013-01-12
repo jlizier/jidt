@@ -24,16 +24,9 @@ function jDoubleArray = octaveToJavaDoubleArray(octaveArray)
 			jDoubleArray(1) = octaveArray(1);
 		end
 	else
-		% We're in matlab:
+		% We're in matlab: the native matlab array can be passed to java as is:
 		
-		% Presumably there's a quick way to do this in matlab, but since I'm not on matlab, I don't know ...
-		% If someone knows or has tested something, please tell me and I'll include it here.
-		% In the meantime, we copy element by element
-		
-		jDoubleArray = javaArray('java.lang.Double', length(octaveArray));
-		for r = 1:length(octaveMatrix)
-			jDoubleArray(r) = octaveArray(r);
-		end
+		jDoubleArray = octaveArray;
 	end
 
 end

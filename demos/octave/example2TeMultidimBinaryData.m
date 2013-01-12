@@ -25,6 +25,6 @@ teCalc=javaObject('infodynamics.measures.discrete.ApparentTransferEntropyCalcula
 teCalc.initialise();
 % Add observations of transfer across one cell to the right per time step:
 teCalc.addObservations(twoDTimeSeriesJavaInt, 1);
-printf("The result should be close to 1 bit here, since we are executing copy operations of what is effectively a random bit to each cell here: ");
+fprintf('The result should be close to 1 bit here, since we are executing copy operations of what is effectively a random bit to each cell here: ');
 result2D = teCalc.computeAverageLocalOfObservations()
 

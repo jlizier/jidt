@@ -16,10 +16,10 @@ teCalc=javaObject('infodynamics.measures.discrete.ApparentTransferEntropyCalcula
 teCalc.initialise();
 % Since we have simple arrays of doubles, we can directly pass these in:
 teCalc.addObservations(destArray, sourceArray);
-printf("For copied source, result should be close to 1 bit : ");
+fprintf('For copied source, result should be close to 1 bit : ');
 result = teCalc.computeAverageLocalOfObservations()
 teCalc.initialise();
 teCalc.addObservations(destArray, sourceArray2);
-printf("For random source, result should be close to 0 bits: ");
+fprintf('For random source, result should be close to 0 bits: ');
 result2 = teCalc.computeAverageLocalOfObservations()
 
