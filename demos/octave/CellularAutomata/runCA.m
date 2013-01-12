@@ -25,7 +25,7 @@
 % - base - number of discrete states for each cell (for binary states this is 2)
 % - rule - supplied as either:
 %     a. an integer rule number if <= 2^31 - 1 (Wolfram style; e.g. 110, 54 are the complex ECA rules)
-%     b. a HEX string, e.g. phi_par from Mitchell et al. is "0xfeedffdec1aaeec0eef000a0e1a020a0" (note: the leading 0x is not required)
+%     b. a HEX string, e.g. phi_par from Mitchell et al. is '0xfeedffdec1aaeec0eef000a0e1a020a0' (note: the leading 0x is not required)
 % - cells - number of cells in the CA
 % - steps - number of rows to execute the CA for (including the random initial row)
 % - debug - turn on various debug messages
@@ -40,7 +40,7 @@ function [caStates, ruleTable, executedRules] = runCA(neighbourhood, base, rule,
 
 	% Check arguments:
 	if (nargin >= 7)
-		rand("state", seed);
+		rand('state', seed);
 	end
 	if (nargin < 6)
 		debug = false;
@@ -52,20 +52,20 @@ function [caStates, ruleTable, executedRules] = runCA(neighbourhood, base, rule,
 		cells = 100;
 	end
 	if (nargin < 3)
-		error("Arguments neighbourhood, base, rule must be supplied");
+		error('Arguments neighbourhood, base, rule must be supplied');
 	end
 
 	% translate the rule into the appropriate base
 	ruleTable = zeros(base .^ neighbourhood, 1);
 	if (ischar(rule))
 		
-		% First remove the "0x" from the front of the rule name:
-		rule = strrep(rule, "0x", "");
+		% First remove the '0x' from the front of the rule name:
+		rule = strrep(rule, '0x', '');
 		
 		% The rule is specified as a hex string - necessary for larger rule values
 		% Check that the rule length is not larger than it should be:
 		if (length(rule)*4 > length(ruleTable))
-			error(sprintf("Rule specification %s is not within the limits of this base %d and neighbourhood %d (max hex string length is %d)", \
+			error(sprintf('Rule specification %s is not within the limits of this base %d and neighbourhood %d (max hex string length is %d)', ...
 				rule, base, neighbourhood, (base .^ neighbourhood)/4));
 		end
 		
@@ -73,7 +73,7 @@ function [caStates, ruleTable, executedRules] = runCA(neighbourhood, base, rule,
 			% Translate each character in the hex string into the 4 rows in the rule table it specifies,
 			%  starting from the least significant hex digit:
 			hexDigit = rule(x);
-			if (strcmp("x", hexDigit))
+			if (strcmp('x', hexDigit))
 				% (Can't happen since we removed the 0x already ...)
 				% We've reached the end of the hex string
 				break;
@@ -84,48 +84,48 @@ function [caStates, ruleTable, executedRules] = runCA(neighbourhood, base, rule,
 				ruleTable((length(rule)-x)*4 + i) = floor(thisValueRemainder ./ base .^ (i-1));
 				thisValueRemainder = thisValueRemainder - ruleTable((length(rule)-x)*4 + i) * base .^ (i-1);
 				if (debug)
-					printf("Rule digit %d: %d, =local %d, local remainder %d\n", (length(rule)-x)*4 + i, \
-						ruleTable((length(rule)-x)*4 + i), \
+					fprintf('Rule digit %d: %d, =local %d, local remainder %d\n', (length(rule)-x)*4 + i, ...
+						ruleTable((length(rule)-x)*4 + i), ...
 						ruleTable((length(rule)-x)*4 + i) * base .^ (i-1), thisValueRemainder);
 				end
 			end
-			if (thisValueRemainder != 0)
-			 	error("Rule %s parsed incorrectly - remainder from hex digit %d is %d\n", rule, x, ruleRemainder);
+			if (thisValueRemainder ~= 0)
+			 	error('Rule %s parsed incorrectly - remainder from hex digit %d is %d\n', rule, x, ruleRemainder);
 			end
 		end
-		printf("Rule %s is: ", rule);
+		fprintf('Rule %s is: ', rule);
 		for i = base .^ neighbourhood : -1 : 1
-			printf("%d", ruleTable(i));
-		endfor
-		printf("\n");
+			fprintf('%d', ruleTable(i));
+		end
+		fprintf('\n');
 	else
 		% The rule is specified as an integer
 		if (rule > base .^ (base .^ neighbourhood) - 1)
-			error(sprintf("Rule %d is not within the limits of this base %d and neighbourhood %d (max is %d)", \
+			error(sprintf('Rule %d is not within the limits of this base %d and neighbourhood %d (max is %d)', ...
 				rule, base, neighbourhood, base .^ (base .^ neighbourhood) - 1));
-		endif
+		end
 	
 		ruleRemainder = rule;
-		% printf("Getting %d digits\n", base .^ neighbourhood);
+		% fprintf('Getting %d digits\n', base .^ neighbourhood);
 	
 		for i = base .^ neighbourhood : -1 : 1
 			% Work out digit i
 			ruleTable(i) = floor(ruleRemainder ./ base .^ (i-1));
 			ruleRemainder = ruleRemainder - ruleTable(i) .* base .^ (i-1);
 			if (debug)
-				printf("Rule digit %d: %d, =%d, remainder %d\n", i, ruleTable(i), \
+				fprintf('Rule digit %d: %d, =%d, remainder %d\n', i, ruleTable(i), ...
 					ruleTable(i) .* base .^ (i-1), ruleRemainder);
-			endif
-		endfor
-		if (ruleRemainder != 0)
-		 	error("Rule %d parsed incorrectly - remainder is %d\n", rule, ruleRemainder);
-		endif
+			end
+		end
+		if (ruleRemainder ~= 0)
+		 	error('Rule %d parsed incorrectly - remainder is %d\n', rule, ruleRemainder);
+		end
 	
-		printf("Rule %d is: ", rule);
+		fprintf('Rule %d is: ', rule);
 		for i = base .^ neighbourhood : -1 : 1
-			printf("%d", ruleTable(i));
-		endfor
-		printf("\n");
+			fprintf('%d', ruleTable(i));
+		end
+		fprintf('\n');
 	end
 	
 	caStates = zeros(steps, cells);
@@ -143,17 +143,17 @@ function [caStates, ruleTable, executedRules] = runCA(neighbourhood, base, rule,
 	
 	if (debug)
 		ca
-	endif
+	end
 	
 	for s = 2 : steps
 	
 		% Compute which rule to update each cell with by effectively constructing the rule number to execute
-		%  ie to execute "101" we construct 1* 2^2 + 0 * 2^1 + 1 * 2^0
+		%  ie to execute '101' we construct 1* 2^2 + 0 * 2^1 + 1 * 2^0
 		% This works
 		ruleToRun = zeros(1, cells);
 		for i = 1 : neighbourhood
 			ruleToRun = ruleToRun + circshift(ca', ceil(-neighbourhood / 2) + (i-1))' .* (base .^ (i-1));
-		endfor
+		end
 		if (nargout >= 3)
 			% Save these rule executions:
 			executedRules(s - 1, :) = ruleToRun;
@@ -161,7 +161,7 @@ function [caStates, ruleTable, executedRules] = runCA(neighbourhood, base, rule,
 		
 		if (debug)
 			ruleToRun
-		endif
+		end
 		
 		% Translate the rules to be run into the updated CA values.
 		% Need to add 1 to the ruleToRun because of the indexing starting from 1 not 0.
@@ -169,13 +169,14 @@ function [caStates, ruleTable, executedRules] = runCA(neighbourhood, base, rule,
 		
 		if (debug)
 			ca
-		endif
+		end
 		
 		caStates(s,:) = ca;
-	endfor
+	end
 	
 	% CA evolution is done
 	if (debug)
 		caStates
-	endif
-endfunction
+	end
+end
+
