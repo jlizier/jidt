@@ -4,8 +4,7 @@
 = Octave/Matlab code examples =
 
 This page describes a basic set of demonstration scripts for using the toolkit in Octave or Matlab. The .m files can be found at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave demos/octave] in the svn or main distributions. Please note that other more complicated examples are available from the main [Demos] page.
-
-These examples are designed for Octave, but to run the following in Matlab, convert the `javaObject()` calls to `javaObjectEDT()` and they *should* work, though I haven't tested them.
+These examples have been confirmed to work in both Octave and Matlab.
 
 Please see UseInOctaveMatlab for instructions on how to begin using the java toolkit from inside octave or matlab.
 
@@ -17,7 +16,7 @@ This page contains the following code examples:
 
 ==Be aware==
 
- # In octave conversion between native octave array types and java arrays is not straightforward (particularly for multidimensional arrays, or int arrays). Octave often reports that a method is not found. One could directly convert each element in an octave array to a java array first; however we recommend using the supplied scripts described in OctaveJavaArrayConversion (and see example use in [#Example_2_-_Transfer_entropy_on_multidimensional_binary_data Example 2]).
+ # In octave conversion between native octave array types and java arrays is not straightforward (particularly for multidimensional arrays, or int arrays). Octave often reports that a method is not found. One could directly convert each element in an octave array to a java array first; however we recommend using the supplied scripts described in OctaveJavaArrayConversion (and see example use in [#Example_2_-_Transfer_entropy_on_multidimensional_binary_data Example 2]). These scripts are called here so that the code is runnable in Octave or Matlab - inside Matlab they simply return the array that was passed as input.
  # In java arrays are indexed from 0, whereas in octave or Matlab you are used to indexing them from 1. So when you call a method such as [https://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/java/source/infodynamics/utils/MatrixUtils.java MatrixUtils].select(double[] data, int fromIndex, int length), you must be aware that fromIndex will be indexed from 0 inside the toolkit, not 1!!
 
 = Example 1 - Transfer entropy on binary data =
@@ -39,11 +38,11 @@ teCalc=javaObject('infodynamics.measures.discrete.ApparentTransferEntropyCalcula
 teCalc.initialise();
 % Since we have simple arrays of doubles, we can directly pass these in:
 teCalc.addObservations(destArray, sourceArray);
-printf("For copied source, result should be close to 1 bit : ");
+fprintf('For copied source, result should be close to 1 bit : ');
 result = teCalc.computeAverageLocalOfObservations()
 teCalc.initialise();
 teCalc.addObservations(destArray, sourceArray2);
-printf("For random source, result should be close to 0 bits: ");
+fprintf('For random source, result should be close to 0 bits: ');
 result2 = teCalc.computeAverageLocalOfObservations()
 }}}
 
@@ -66,8 +65,9 @@ twoDTimeSeriesOctave(2, :) = [twoDTimeSeriesOctave(1,100), twoDTimeSeriesOctave(
 % Things get a little tricky if we want to pass 2D arrays into Java.
 % Unlike native Octave 1D arrays in Example 1, 
 %  native Octave 2D+ arrays do not seem to get directly converted to java arrays,
-%  so we use the supplied scripts to make the conversion (via org.octave.Matrix class in octave
-%  or element by element in Matlab for the moment).
+%  so we use the supplied scripts to make the conversion (via org.octave.Matrix class in octave)
+% Matlab handles the conversion automatically, so in Matlab this script just returns
+%  the array that was passed in.
 twoDTimeSeriesJavaInt = octaveToJavaIntMatrix(twoDTimeSeriesOctave);
 
 % Create a TE calculator and run it:
@@ -75,7 +75,7 @@ teCalc=javaObject('infodynamics.measures.discrete.ApparentTransferEntropyCalcula
 teCalc.initialise();
 % Add observations of transfer across one cell to the right per time step:
 teCalc.addObservations(twoDTimeSeriesJavaInt, 1);
-printf("The result should be close to 1 bit here, since we are executing copy operations of what is effectively a random bit to each cell here: ");
+fprintf('The result should be close to 1 bit here, since we are executing copy operations of what is effectively a random bit to each cell here: ');
 result2D = teCalc.computeAverageLocalOfObservations()
 }}}
 
@@ -95,18 +95,18 @@ destArray = [0; covariance*sourceArray(1:numObservations-1) + (1-covariance)*nor
 sourceArray2=normrnd(0, 1, numObservations, 1); % Uncorrelated source
 % Create a TE calculator and run it:
 teCalc=javaObject('infodynamics.measures.continuous.kernel.TransferEntropyCalculatorKernel');
-teCalc.setProperty("NORMALISE_PROP_NAME", "true"); % Normalise the individual variables
+teCalc.setProperty('NORMALISE_PROP_NAME', 'true'); % Normalise the individual variables
 teCalc.initialise(1, 0.5); % Use history length 1 (Schreiber k=1), kernel width of 0.5 normalised units
 teCalc.setObservations(sourceArray, destArray);
 % For copied source, should give something close to 1 bit:
 result = teCalc.computeAverageLocalOfObservations();
-printf("TE result %.4f bits; expected to be close to %.4f bits for these correlated Gaussians but biased upwards\n", \
+fprintf('TE result %.4f bits; expected to be close to %.4f bits for these correlated Gaussians but biased upwards\n', ...
     result, log(1/(1-covariance^2))/log(2));
 teCalc.initialise(); % Initialise leaving the parameters the same
 teCalc.setObservations(sourceArray2, destArray);
 % For random source, it should give something close to 0 bits
 result2 = teCalc.computeAverageLocalOfObservations();
-printf("TE result %.4f bits; expected to be close to 0 bits for uncorrelated Gaussians but will be biased upwards\n", \
+fprintf('TE result %.4f bits; expected to be close to 0 bits for uncorrelated Gaussians but will be biased upwards\n', ...
     result2);
 }}}
 
@@ -115,6 +115,7 @@ printf("TE result %.4f bits; expected to be close to 0 bits for uncorrelated Gau
 [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/example4TeContinuousDataKraskov.m example4TeContinuousDataKraskov.m] - Simple transfer entropy (TE) calculation on continuous-valued data using the Kraskov-estimator TE calculator.
 
 {{{
+% Change location of jar to match yours:
 javaaddpath('../../infodynamics.jar');
 
 % Generate some random normalised data.
@@ -126,7 +127,7 @@ sourceArray2=normrnd(0, 1, numObservations, 1); % Uncorrelated source
 % Create a TE calculator and run it:
 teCalc=javaObject('infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov');
 teCalc.initialise(1); % Use history length 1 (Schreiber k=1)
-teCalc.setProperty("k", "4"); % Use Kraskov parameter K=4 for 4 nearest points
+teCalc.setProperty('k', '4'); % Use Kraskov parameter K=4 for 4 nearest points
 % Perform calculation with correlated source:
 teCalc.setObservations(sourceArray, destArray);
 result = teCalc.computeAverageLocalOfObservations();
@@ -134,11 +135,11 @@ result = teCalc.computeAverageLocalOfObservations();
 %  data is a set of random variables) - the result will be of the order
 %  of what we expect, but not exactly equal to it; in fact, there will
 %  be a large variance around it.
-printf("TE result %.4f nats; expected to be close to %.4f nats for these correlated Gaussians\n", \
+fprintf('TE result %.4f nats; expected to be close to %.4f nats for these correlated Gaussians\n', ...
     result, log(1/(1-covariance^2)));
 % Perform calculation with uncorrelated source:
 teCalc.initialise(); % Initialise leaving the parameters the same
 teCalc.setObservations(sourceArray2, destArray);
 result2 = teCalc.computeAverageLocalOfObservations();
-printf("TE result %.4f nats; expected to be close to 0 nats for these uncorrelated Gaussians\n", result2);
+fprintf('TE result %.4f nats; expected to be close to 0 nats for these uncorrelated Gaussians\n', result2);
 }}}
