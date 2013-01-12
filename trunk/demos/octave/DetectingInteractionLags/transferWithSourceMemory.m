@@ -13,6 +13,9 @@
 %  showing that it is not maximised
 %  for the correct delay even in such simple unidirectional coupling.
 %
+% NOTE: You may need to increase the Java heap space in Matlab for this
+%  to work (you will get a "java.lang.OutOfMemoryError: Java heap space"
+%  error if this is a problem).
 %
 % Inputs:
 % - savePlot - true if you want eps files of the plots saved
@@ -22,7 +25,7 @@ function transferWithSourceMemory(savePlot)
 	tic;
 
 	% Add utilities to the path
-	addpath("..");
+	addpath('..');
 
 	% Assumes the jar is two levels up - change this if this is not the case
 	% Octave is happy to have the path added multiple times; I'm unsure if this is true for matlab
@@ -93,7 +96,7 @@ function transferWithSourceMemory(savePlot)
 			0, 1, octaveToJavaIntArray([2]));
 		mitXnminus1ToYnplus1(deltaIndex) = compTeCalc.computeAverageLocalOfObservations();
 		
-		printf("delta=%.3f, TE(X_{n} -> Y_{n+1})=%.3f, TE(X_{n-1} -> Y_{n+1})=%.3f, MIT(X_{n} -> Y_{n+1})=%.3f, MIT(X_{n-1} -> Y_{n+1})=%.3f\n", ...
+		fprintf('delta=%.3f, TE(X_{n} -> Y_{n+1})=%.3f, TE(X_{n-1} -> Y_{n+1})=%.3f, MIT(X_{n} -> Y_{n+1})=%.3f, MIT(X_{n-1} -> Y_{n+1})=%.3f\n', ...
 			delta, teXnToYnplus1(deltaIndex), teXnminus1ToYnplus1(deltaIndex), ...
 			mitXnToYnplus1(deltaIndex), mitXnminus1ToYnplus1(deltaIndex));
 	end	
@@ -109,47 +112,77 @@ function transferWithSourceMemory(savePlot)
 	% plot types: h - open diamonds, d - closed diamonds, s - closed squares, p - open squares
 	markersize = 15;
 	figure;
-	if (savePlot)
-		set(gca, 'fontsize', 32); % do this first to get fontsize right for the key
-	end
-	plot(deltas, teXnToYnplus1, "x1;Empirical: TE_{SPO}(X \rightarrow Y, 1);", "markersize", markersize);
-	hold on;
-	plot(deltas, teXnToYnplus1_an, "p1;Analytic: TE_{SPO}(X \rightarrow Y, 1);", "markersize", markersize); % h plots open diamonds
-	plot(deltas, teXnminus1ToYnplus1, "+2;Empirical: TE_{SPO}(X \rightarrow y, 2);", "markersize", markersize);
-	plot(deltas, teXnminus1ToYnplus1_an, "o2;Analytic: TE_{SPO}(X \rightarrow Y, 2);", "markersize", markersize);
-	hold off;
-	% Make figures ok for plotting:
-	legend('location', 'east');
-	if (savePlot)
-		xlabel('\eta', 'fontsize', 32);
-		ylabel('Information (bits)', 'fontsize', 32);
-		print('te.eps', '-deps', '-color');
+	if (exist ('OCTAVE_VERSION', 'builtin'))
+		% Make the full plots only on octave
+		if (savePlot)
+			set(gca, 'fontsize', 32); % do this first to get fontsize right for the key
+		end
+		plot(deltas, teXnToYnplus1, 'x1;Empirical: TE_{SPO}(X \rightarrow Y, 1);', 'markersize', markersize);
+		hold on;
+		plot(deltas, teXnToYnplus1_an, 'p1;Analytic: TE_{SPO}(X \rightarrow Y, 1);', 'markersize', markersize); % h plots open diamonds
+		plot(deltas, teXnminus1ToYnplus1, '+2;Empirical: TE_{SPO}(X \rightarrow y, 2);', 'markersize', markersize);
+		plot(deltas, teXnminus1ToYnplus1_an, 'o2;Analytic: TE_{SPO}(X \rightarrow Y, 2);', 'markersize', markersize);
+		hold off;
+		% Make figures ok for plotting:
+		legend('location', 'east');
+		if (savePlot)
+			xlabel('\eta', 'fontsize', 32);
+			ylabel('Information (bits)', 'fontsize', 32);
+			print('te.eps', '-deps', '-color');
+		else
+			% do these without fontsize to have more stable displays in octave
+			xlabel('\eta');
+			ylabel('Information (bits)');
+		end
 	else
-		% do these without fontsize to have more stable displays in octave
-		xlabel('\eta');
-		ylabel('Information (bits)');
+		% We're on Matlab - just make a quick plot
+		plot(deltas, teXnToYnplus1, 'rx', 'markersize', markersize); % Empirical: TE_{SPO}(X \rightarrow Y, 1);
+		hold on;
+		plot(deltas, teXnToYnplus1_an, 'rp', 'markersize', markersize); % Analytic: TE_{SPO}(X \rightarrow Y, 1)
+		plot(deltas, teXnminus1ToYnplus1, 'g+', 'markersize', markersize); % Empirical: TE_{SPO}(X \rightarrow y, 2)
+		plot(deltas, teXnminus1ToYnplus1_an, 'go', 'markersize', markersize); % Analytic: TE_{SPO}(X \rightarrow Y, 2)
+		hold off;
+		% Make figures ok for plotting:
+		legend('Empirical: TE_{SPO}(X \rightarrow Y, 1)', 'Analytic: TE_{SPO}(X \rightarrow Y, 1)', ...
+			'Empirical: TE_{SPO}(X \rightarrow y, 2)', 'Analytic: TE_{SPO}(X \rightarrow Y, 2)', ...
+			'Location', 'East');
 	end
 
 	figure;
-	if (savePlot)
-		set(gca, 'fontsize', 32); % do this first to get fontsize right for the key
-	end
-	plot(deltas, mitXnToYnplus1, "x1;Empirical: MIT(X \rightarrow Y, 1);", "markersize", markersize);
-	hold on;
-	plot(deltas, mitXnToYnplus1_an, "p1;Analytic: MIT(X \rightarrow Y, 1);", "markersize", markersize);
-	plot(deltas, mitXnminus1ToYnplus1, "+2;Empirical: MIT(X \rightarrow Y, 2);", "markersize", markersize);
-	plot(deltas, mitXnminus1ToYnplus1_an, "o2;Analytic: MIT(X \rightarrow Y, 2);", "markersize", markersize);
-	hold off;
-	% Make figures ok for plotting:
-	legend('location', 'east')
-	if (savePlot)
-		xlabel('\eta', 'fontsize', 32);
-		ylabel('Information (bits)', 'fontsize', 32);
-		print('mit.eps', '-deps', '-color');
+	if (exist ('OCTAVE_VERSION', 'builtin'))
+		% Make the full plots only on octave
+		if (savePlot)
+			set(gca, 'fontsize', 32); % do this first to get fontsize right for the key
+		end
+		plot(deltas, mitXnToYnplus1, 'x1;Empirical: MIT(X \rightarrow Y, 1);', 'markersize', markersize);
+		hold on;
+		plot(deltas, mitXnToYnplus1_an, 'p1;Analytic: MIT(X \rightarrow Y, 1);', 'markersize', markersize);
+		plot(deltas, mitXnminus1ToYnplus1, '+2;Empirical: MIT(X \rightarrow Y, 2);', 'markersize', markersize);
+		plot(deltas, mitXnminus1ToYnplus1_an, 'o2;Analytic: MIT(X \rightarrow Y, 2);', 'markersize', markersize);
+		hold off;
+		% Make figures ok for plotting:
+		legend('location', 'east')
+		if (savePlot)
+			xlabel('\eta', 'fontsize', 32);
+			ylabel('Information (bits)', 'fontsize', 32);
+			print('mit.eps', '-deps', '-color');
+		else
+			% do these without fontsize to have more stable displays in octave
+			xlabel('\eta');
+			ylabel('Information (bits)');
+		end
 	else
-		% do these without fontsize to have more stable displays in octave
-		xlabel('\eta');
-		ylabel('Information (bits)');
+		% We're on Matlab - just make a quick plot
+		plot(deltas, mitXnToYnplus1, 'rx', 'markersize', markersize); % Empirical: MIT(X \rightarrow Y, 1)
+		hold on;
+		plot(deltas, mitXnToYnplus1_an, 'rp', 'markersize', markersize); % Analytic: MIT(X \rightarrow Y, 1)
+		plot(deltas, mitXnminus1ToYnplus1, 'g+', 'markersize', markersize); % Empirical: MIT(X \rightarrow Y, 2)
+		plot(deltas, mitXnminus1ToYnplus1_an, 'go', 'markersize', markersize); % Analytic: MIT(X \rightarrow Y, 2)
+		hold off;
+		% Make figures ok for plotting:
+		legend('Empirical: MIT(X \rightarrow Y, 1)', 'Analytic: MIT(X \rightarrow Y, 1)', ...
+			'Empirical: MIT(X \rightarrow Y, 2)', 'Analytic: MIT(X \rightarrow Y, 2)', ...
+			'Location', 'East');
 	end
 
 	toc;

@@ -51,7 +51,7 @@ function coupledLogisticMap()
 	cYToX = 0.2;
 	cXToY = 0.5;
 	T = 512;
-	printf('For 1000 repeats, expect the calculations to take ~5 minutes ...\n');
+	fprintf('For 1000 repeats, expect the calculations to take ~5 minutes ...\n');
 	repeats = 1000; % General results visible for 100 repeats if you want to see them faster (~20 sec)
 	k = 1; % history length
 	
@@ -66,7 +66,7 @@ function coupledLogisticMap()
 
 	% The actual values of the results slightly change with the Kraskov K parameter,
 	%  but we note that delay 2 is higher for K=1,2,3,4,10...
-	KraskovK ="4"; % Use Kraskov parameter K=4 for 4 nearest points
+	KraskovK ='4'; % Use Kraskov parameter K=4 for 4 nearest points
 	% For K=2 we get:
 	%TE(X->Y,delay=1) = 0.7773 nats (+/- std 0.0959, stderr 0.0096)
 	%TE(X->Y,delay=2) = 1.8759 nats (+/- std 0.0332, stderr 0.0033)
@@ -75,7 +75,7 @@ function coupledLogisticMap()
 	tic;
 
 	% Add utilities to the path
-	addpath("..");
+	addpath('..');
 
 	% Assumes the jar is two levels up - change this if this is not the case
 	% Octave is happy to have the path added multiple times; I'm unsure if this is true for matlab
@@ -92,8 +92,8 @@ function coupledLogisticMap()
 		if (ts > 1)
 			% We've just been running transients in X and Y, so copy the
 			%  last seedSteps up into the first few rows:
-			X(1:seedSteps,:) = X(rows(X)-seedSteps+1:rows(X),:);
-			Y(1:seedSteps,:) = Y(rows(Y)-seedSteps+1:rows(Y),:);
+			X(1:seedSteps,:) = X(size(X,1)-seedSteps+1:size(X,1),:);
+			Y(1:seedSteps,:) = Y(size(Y,1)-seedSteps+1:size(Y,1),:);
 		end
 		% Now run the process from these initial states
 		for n = 1 : T
@@ -117,24 +117,24 @@ function coupledLogisticMap()
 		teCalc=javaObject('infodynamics.measures.continuous.kraskov.ConditionalMutualInfoCalculatorMultiVariateKraskov2');
 		% Perform calculation for X -> Y (lag 1)
 		teCalc.initialise(1,1,k); % Use history length k (Schreiber k)
-		teCalc.setProperty("k", KraskovK);
-		teCalc.setObservations(octaveToJavaDoubleMatrix(X(seedSteps:rows(X)-1,r)), ...
-					octaveToJavaDoubleMatrix(Y(seedSteps+1:rows(Y),r)), ...
-					octaveToJavaDoubleMatrix(Y(seedSteps:rows(Y)-1,r)));
+		teCalc.setProperty('k', KraskovK);
+		teCalc.setObservations(octaveToJavaDoubleMatrix(X(seedSteps:size(X,1)-1,r)), ...
+					octaveToJavaDoubleMatrix(Y(seedSteps+1:size(Y,1),r)), ...
+					octaveToJavaDoubleMatrix(Y(seedSteps:size(Y,1)-1,r)));
 		resultsLag1(r) = teCalc.computeAverageLocalOfObservations();
 		% Perform calculation for X -> Y (lag 2)
 		teCalc.initialise(1,1,k); % Use history length k (Schreiber k)
-		teCalc.setProperty("k", KraskovK);
-		teCalc.setObservations(octaveToJavaDoubleMatrix(X(seedSteps:rows(X)-2,r)), ...
-					octaveToJavaDoubleMatrix(Y(seedSteps+2:rows(Y),r)), ...
-					octaveToJavaDoubleMatrix(Y(seedSteps+1:rows(X)-1,r)));
+		teCalc.setProperty('k', KraskovK);
+		teCalc.setObservations(octaveToJavaDoubleMatrix(X(seedSteps:size(X,1)-2,r)), ...
+					octaveToJavaDoubleMatrix(Y(seedSteps+2:size(Y,1),r)), ...
+					octaveToJavaDoubleMatrix(Y(seedSteps+1:size(X,1)-1,r)));
 		resultsLag2(r) = teCalc.computeAverageLocalOfObservations();
 		% Perform calculation for X -> Y (lag 2)
 		teCalc.initialise(1,1,k); % Use history length k (Schreiber k)
-		teCalc.setProperty("k", KraskovK);
-		teCalc.setObservations(octaveToJavaDoubleMatrix(X(seedSteps:rows(X)-3,r)), ...
-					octaveToJavaDoubleMatrix(Y(seedSteps+3:rows(Y),r)), ...
-					octaveToJavaDoubleMatrix(Y(seedSteps+2:rows(X)-1,r)));
+		teCalc.setProperty('k', KraskovK);
+		teCalc.setObservations(octaveToJavaDoubleMatrix(X(seedSteps:size(X,1)-3,r)), ...
+					octaveToJavaDoubleMatrix(Y(seedSteps+3:size(Y,1),r)), ...
+					octaveToJavaDoubleMatrix(Y(seedSteps+2:size(X,1)-1,r)));
 		resultsLag3(r) = teCalc.computeAverageLocalOfObservations();
 		
 		%% TransferEntropyCalculatorKraskov uses two MI calculators, so doesn't eliminate all bias.
@@ -142,13 +142,13 @@ function coupledLogisticMap()
 		% teCalc=javaObject('infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov');
 		%% Perform calculation for X -> Y (lag 1)
 		%teCalc.initialise(k); % Use history length k (Schreiber k)
-		%teCalc.setProperty("k", KraskovK);
-		%teCalc.setObservations(X(seedSteps:rows(X),r), Y(seedSteps:rows(Y),r));
+		%teCalc.setProperty('k', KraskovK);
+		%teCalc.setObservations(X(seedSteps:size(X,1),r), Y(seedSteps:size(Y,1),r));
 		%resultsLag1(r) = teCalc.computeAverageLocalOfObservations();
 		%% Perform calculation for X -> Y (lag 2)
 		%teCalc.initialise(k); % Use history length k (Schreiber k)
-		%teCalc.setProperty("k", KraskovK);
-		%teCalc.setObservations(X(seedSteps-1:rows(X)-1,r), Y(seedSteps:rows(Y),r));
+		%teCalc.setProperty('k', KraskovK);
+		%teCalc.setObservations(X(seedSteps-1:size(X,1)-1,r), Y(seedSteps:size(Y,1),r));
 		%resultsLag2(r) = teCalc.computeAverageLocalOfObservations();
 		
 		% Kernel estimator returns the correct ordering of lag 1 and 2 for 
@@ -158,23 +158,23 @@ function coupledLogisticMap()
 		%  we are grouping together, then we start to see the same effect as we did with
 		%  the symbolic coding.
 		%teCalc=javaObject('infodynamics.measures.continuous.kernel.TransferEntropyCalculatorKernel');
-		%kernelWidth = "0.25"; % normalised units
+		%kernelWidth = '0.25'; % normalised units
 		%% Perform calculation for X -> Y (lag 1)
 		%teCalc.initialise(k); % Use history length k (Schreiber k)
-		%teCalc.setProperty("EPSILON", kernelWidth);
-		%teCalc.setObservations(X(seedSteps:rows(X),r), Y(seedSteps:rows(Y),r));
+		%teCalc.setProperty('EPSILON', kernelWidth);
+		%teCalc.setObservations(X(seedSteps:size(X,1),r), Y(seedSteps:size(Y,1),r));
 		%resultsLag1(r) = teCalc.computeAverageLocalOfObservations();
 		%% Perform calculation for X -> Y (lag 2)
 		%teCalc.initialise(k); % Use history length k (Schreiber k)
-		%teCalc.setProperty("EPSILON", kernelWidth);
-		%teCalc.setObservations(X(seedSteps-1:rows(X)-1,r), Y(seedSteps:rows(Y),r));
+		%teCalc.setProperty('EPSILON', kernelWidth);
+		%teCalc.setObservations(X(seedSteps-1:size(X,1)-1,r), Y(seedSteps:size(Y,1),r));
 		%resultsLag2(r) = teCalc.computeAverageLocalOfObservations();
 	end
-	printf("TE(X->Y,delay=1) = %.4f nats (+/- std %.4f, stderr %.4f) or %.4f bits\n", ...
+	fprintf('TE(X->Y,delay=1) = %.4f nats (+/- std %.4f, stderr %.4f) or %.4f bits\n', ...
 		mean(resultsLag1), std(resultsLag1), std(resultsLag1)./sqrt(repeats), mean(resultsLag1)./log(2) );
-	printf("TE(X->Y,delay=2) = %.4f nats (+/- std %.4f, stderr %.4f) or %.4f bits\n", ...
+	fprintf('TE(X->Y,delay=2) = %.4f nats (+/- std %.4f, stderr %.4f) or %.4f bits\n', ...
 		mean(resultsLag2), std(resultsLag2), std(resultsLag2)./sqrt(repeats), mean(resultsLag2) ./log(2));
-	printf("If measured:\nTE(X->Y,delay=3) = %.4f nats (+/- std %.4f, stderr %.4f) or %.4f bits\n", ...
+	fprintf('If measured:\nTE(X->Y,delay=3) = %.4f nats (+/- std %.4f, stderr %.4f) or %.4f bits\n', ...
 		mean(resultsLag3), std(resultsLag3), std(resultsLag3)./sqrt(repeats), mean(resultsLag3) ./log(2));
 	
 	toc;
