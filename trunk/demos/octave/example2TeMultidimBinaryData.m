@@ -16,8 +16,9 @@ twoDTimeSeriesOctave(2, :) = [twoDTimeSeriesOctave(1,100), twoDTimeSeriesOctave(
 % Things get a little tricky if we want to pass 2D arrays into Java.
 % Unlike native Octave 1D arrays in Example 1, 
 %  native Octave 2D+ arrays do not seem to get directly converted to java arrays,
-%  so we use the supplied scripts to make the conversion (via org.octave.Matrix class in octave
-%  or element by element in Matlab for the moment).
+%  so we use the supplied scripts to make the conversion (via org.octave.Matrix class in octave)
+% Matlab handles the conversion automatically, so in Matlab this script just returns
+%  the array that was passed in.
 twoDTimeSeriesJavaInt = octaveToJavaIntMatrix(twoDTimeSeriesOctave);
 
 % Create a TE calculator and run it:
