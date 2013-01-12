@@ -17,24 +17,24 @@ function plotRawCa(states, rule, plotOptions, saveIt)
 	if (nargin < 2)
 		plotOptions = {};
 	end
-	if not(isfield(plotOptions, "plotRows"))
-		plotOptions.plotRows = rows(states);
+	if not(isfield(plotOptions, 'plotRows'))
+		plotOptions.plotRows = size(states, 1);
 	end
-	if not(isfield(plotOptions, "plotCols"))
+	if not(isfield(plotOptions, 'plotCols'))
 		plotOptions.plotCols = columns(states);
 	end
-	if not(isfield(plotOptions, "plotStartRow"))
+	if not(isfield(plotOptions, 'plotStartRow'))
 		plotOptions.plotStartRow = 1;
 	end
-	if not(isfield(plotOptions, "plotStartCol"))
+	if not(isfield(plotOptions, 'plotStartCol'))
 		plotOptions.plotStartCol = 1;
 	end
 	if (plotOptions.plotRows > 1000)
-		printf("*** Limiting number of plotted rows to 1000\n");
+		fprintf('*** Limiting number of plotted rows to 1000\n');
 		plotOptions.plotRows = 1000;
 	end
 	if (plotOptions.plotCols > 1000)
-		printf("*** Limiting number of plotted columns to 1000\n");
+		fprintf('*** Limiting number of plotted columns to 1000\n');
 		plotOptions.plotCols = 1000;
 	end
 	if (nargin < 3)
@@ -47,15 +47,16 @@ function plotRawCa(states, rule, plotOptions, saveIt)
 	imagesc(states(plotOptions.plotStartRow:plotOptions.plotStartRow+plotOptions.plotRows - 1, ...
 		plotOptions.plotStartCol:plotOptions.plotStartCol+plotOptions.plotCols - 1))
 	colorbar
-	printf("Adding colorbar to ensure that the size of the diagram matches that of local info plots\n");
+	fprintf('Adding colorbar to ensure that the size of the diagram matches that of local info plots\n');
 	if (saveIt)
 		set(gca, 'fontsize', 32);
 		colorbar('fontsize', 32);
 		if (ischar(rule))
-			print(sprintf("figures/raw-%s.eps", rule), "-color", "-deps");
+			filename = sprintf('figures/raw-%s.eps', rule);
 		else
-			print(sprintf("figures/raw-%d.eps", rule), "-color", "-deps");
+			filename = sprintf('figures/raw-%d.eps', rule);
 		end
+		print(filename, '-depsc');
 	end
 end
 

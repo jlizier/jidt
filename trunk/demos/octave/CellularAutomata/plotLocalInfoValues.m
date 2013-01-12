@@ -29,39 +29,39 @@ function h = plotLocalInfoValues(localResults, plotOptions)
 	if (nargin < 2)
 		plotOptions = {};
 	end
-	if not(isfield(plotOptions, "plotRows"))
-		plotOptions.plotRows = rows(localResults);
+	if not(isfield(plotOptions, 'plotRows'))
+		plotOptions.plotRows = size(localResults, 1);
 	end
-	if not(isfield(plotOptions, "plotCols"))
-		plotOptions.plotCols = columns(localResults);
+	if not(isfield(plotOptions, 'plotCols'))
+		plotOptions.plotCols = size(localResults, 2);
 	end
-	if not(isfield(plotOptions, "plotStartRow"))
+	if not(isfield(plotOptions, 'plotStartRow'))
 		plotOptions.plotStartRow = 1;
 	end
-	if not(isfield(plotOptions, "plotStartCol"))
+	if not(isfield(plotOptions, 'plotStartCol'))
 		plotOptions.plotStartCol = 1;
 	end
-	if not(isfield(plotOptions, "scaleColoursToSubsetOfPlot"))
+	if not(isfield(plotOptions, 'scaleColoursToSubsetOfPlot'))
 		plotOptions.scaleColoursToSubsetOfPlot = true;
 	end
-	if not(isfield(plotOptions, "scaleColoursToExtremes"))
+	if not(isfield(plotOptions, 'scaleColoursToExtremes'))
 		plotOptions.scaleColoursToExtremes = false;
 	end
-	if not(isfield(plotOptions, "mainSignVectorLength"))
+	if not(isfield(plotOptions, 'mainSignVectorLength'))
 		plotOptions.mainSignVectorLength = 1024;
 	end
-	if not(isfield(plotOptions, "scalingMainComponent"))
+	if not(isfield(plotOptions, 'scalingMainComponent'))
 		plotOptions.scalingMainComponent = .25;
 	end
-	if not(isfield(plotOptions, "scalingScdryComponent"))
+	if not(isfield(plotOptions, 'scalingScdryComponent'))
 		plotOptions.scalingScdryComponent = .4;
 	end
 	if (plotOptions.plotRows > 1000)
-		printf("*** Limiting number of plotted rows to 1000\n");
+		fprintf('*** Limiting number of plotted rows to 1000\n');
 		plotOptions.plotRows = 1000;
 	end
 	if (plotOptions.plotCols > 1000)
-		printf("*** Limiting number of plotted columns to 1000\n");
+		fprintf('*** Limiting number of plotted columns to 1000\n');
 		plotOptions.plotCols = 1000;
 	end
 	% Pull some options out for easier coding here:
@@ -92,8 +92,8 @@ function h = plotLocalInfoValues(localResults, plotOptions)
 	% Max and min for what we're plotting (use these for printing out only):
 	minLocalOfPlot = min(min(localResultsToPlot));
 	maxLocalOfPlot = max(max(localResultsToPlot));
-	printf("[max,min] for all spacetime local info dynamics profile is [%.3f, %.3f]\n", maxLocalEntireProfile, minLocalEntireProfile);
-	printf("[max,min] within this particular plot of the profile is    [%.3f, %.3f]\n", maxLocalOfPlot, minLocalOfPlot);
+	fprintf('[max,min] for all spacetime local info dynamics profile is [%.3f, %.3f]\n', maxLocalEntireProfile, minLocalEntireProfile);
+	fprintf('[max,min] within this particular plot of the profile is    [%.3f, %.3f]\n', maxLocalOfPlot, minLocalOfPlot);
 	
 	if (plotOptions.scaleColoursToSubsetOfPlot)
 		% Scale the colours to the max and min of the points on the plot
@@ -120,7 +120,7 @@ function h = plotLocalInfoValues(localResults, plotOptions)
 			end
 			bluePosmap = prepareColourmap(vPosLength, true, scalingMainComponent, scalingScdryComponent);
 			redNegmap = flipud(prepareColourmap(vNegLength, false, scalingMainComponent, scalingScdryComponent));
-			% printf("Plotting locals with scaling to extreme values (%d distinct colours for positive, %d for negative)\n", \
+			% fprintf('Plotting locals with scaling to extreme values (%d distinct colours for positive, %d for negative)\n', \
 			%	vPosLength, vNegLength);
 		else
 			% Only use the darkest blue/red for which of positive or negative values
@@ -141,7 +141,7 @@ function h = plotLocalInfoValues(localResults, plotOptions)
 				vPosLength = mainSignVectorLength;
 				redNegmap = redNegmap(length(redNegmap)-vNegLength + 1:length(redNegmap),:);
 			end
-			% printf("Plotting locals with minor scaled to major (%d distinct colours for positive, %d for negative)\n", \
+			% fprintf('Plotting locals with minor scaled to major (%d distinct colours for positive, %d for negative)\n', \
 			%	vPosLength, vNegLength);
 		end
 		% Construct the colormap with blue for positive and red for negative
