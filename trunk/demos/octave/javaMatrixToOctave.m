@@ -1,6 +1,6 @@
 % function octaveMatrix = javaMatrixToOctave(javaMatrix)
 %
-% Convert a java matrix (1 or 2D, double or int - but not Integer!!) to an octave matrix
+% Convert a java matrix (1 or 2D, double or int - but not Integer!!) to an octave or matlab matrix
 %
 % Octave-java doesn't seem to handle the conversion natively,
 %  so we either use org.octave.Matrix (built-in) to do it, or
@@ -16,10 +16,10 @@ function octaveMatrix = javaMatrixToOctave(javaMatrix, startRow, startCol, numRo
 		startCol = 1;
 	end
 	if (nargin < 4)
-		numRows = rows(javaMatrix);
+		numRows = size(javaMatrix, 1);
 	end
 	if (nargin < 5)
-		numCols = columns(javaMatrix);
+		numCols = size(javaMatrix, 2);
 	end
 
 	if (exist ('OCTAVE_VERSION', 'builtin'))
@@ -46,11 +46,12 @@ function octaveMatrix = javaMatrixToOctave(javaMatrix, startRow, startCol, numRo
 			end
 			return;
 		end
-		% else fall through to cell by cell conversion, as per for matlab
+	else
+		% Else we're in matlab, in which case the native java type can be handled, so return it directly:
+		octaveMatrix = javaMatrix;
 	end
 
-	% Else, either we encountered an error in the octave resizing,
-	%  or we were in Matlab all along. (If there's a fast way for matlab, tell me)
+	% Else, we encountered an error in the octave resizing, so fall through to element by element conversion:
 	
 	octaveMatrix = zeros(numRows, numCols);
 	for r = startRow:startRow+numRows-1

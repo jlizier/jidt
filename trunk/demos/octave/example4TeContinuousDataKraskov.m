@@ -14,7 +14,7 @@ sourceArray2=normrnd(0, 1, numObservations, 1); % Uncorrelated source
 % Create a TE calculator and run it:
 teCalc=javaObject('infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov');
 teCalc.initialise(1); % Use history length 1 (Schreiber k=1)
-teCalc.setProperty("k", "4"); % Use Kraskov parameter K=4 for 4 nearest points
+teCalc.setProperty('k', '4'); % Use Kraskov parameter K=4 for 4 nearest points
 % Perform calculation with correlated source:
 teCalc.setObservations(sourceArray, destArray);
 result = teCalc.computeAverageLocalOfObservations();
@@ -22,12 +22,12 @@ result = teCalc.computeAverageLocalOfObservations();
 %  data is a set of random variables) - the result will be of the order
 %  of what we expect, but not exactly equal to it; in fact, there will
 %  be a large variance around it.
-printf("TE result %.4f nats; expected to be close to %.4f nats for these correlated Gaussians\n", \
+fprintf('TE result %.4f nats; expected to be close to %.4f nats for these correlated Gaussians\n', ...
     result, log(1/(1-covariance^2)));
 % Perform calculation with uncorrelated source:
 teCalc.initialise(); % Initialise leaving the parameters the same
 teCalc.setObservations(sourceArray2, destArray);
 result2 = teCalc.computeAverageLocalOfObservations();
-printf("TE result %.4f nats; expected to be close to 0 nats for these uncorrelated Gaussians\n", result2);
+fprintf('TE result %.4f nats; expected to be close to 0 nats for these uncorrelated Gaussians\n', result2);
 
 
