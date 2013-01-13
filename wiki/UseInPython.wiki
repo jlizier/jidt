@@ -1,0 +1,17 @@
+#summary How to use the toolkit in Python
+#labels Phase-Deploy,python
+
+= Introduction =
+
+The java code from this toolkit can easily be used in Python.
+First we describe calling java code from Python, then specifically describe the use of this toolkit
+
+= Using Java objects in Python =
+
+There are several alternatives for using Java objects in Python, e.g. [http://jpype.sourceforge.net/ JPype] and [http://www.jython.org Jython].
+
+Here, we focus on using JPype for several reasons, including:
+ * It is run as an import to ordinary python code in the standard interpreter (jython runs as an alternative python interpreter)
+ * It is packaged for ubuntu (which is my platform of choice) as `python-jpype`
+
+FILL ME IN ...
