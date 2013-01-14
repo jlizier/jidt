@@ -28,32 +28,49 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 	 * Compute the average conditional MI from the previously set observations
 	 */
 	public double computeAverageLocalOfObservations() throws Exception {
-		return computeAverageLocalOfObservations(null);
+		return computeAverageLocalOfObservations(1, null);
 	}
 
 	/**
-	 * Compute what the average conditional MI would look like were the second time series reordered
+	 * Compute what the average conditional MI would look like were the given
+	 *  time series reordered
 	 *  as per the array of time indices in reordering.
 	 * The user should ensure that all values 0..N-1 are represented exactly once in the
-	 *  array reordering and that no other values are included here. 
+	 *  array reordering and that no other values are included here.
+	 *   
 	 * If reordering is null, it is assumed there is no reordering of
-	 *  the y variable.
+	 *  the given variable.
 	 * 
-	 * @param reordering the reordered time steps of the y variable
+	 * @param variableToReorder 1 for variable 1, 2 for variable 2
+	 * @param reordering the reordered time steps of the given variable
 	 * @return
 	 * @throws Exception
 	 */
-	public double computeAverageLocalOfObservations(int[] reordering) throws Exception {
+	public double computeAverageLocalOfObservations(int variableToReorder, 
+			int[] reordering) throws Exception {
 		if (!tryKeepAllPairsNorms || (data1.length > MAX_DATA_SIZE_FOR_KEEP_ALL_PAIRS_NORM)) {
-			double[][] originalData2 = data2;
+			double[][] originalData;
+			if (variableToReorder == 1) {
+				originalData = data1;
+			} else {
+				originalData = data2;
+			}
 			if (reordering != null) {
-				// Generate a new re-ordered data2
-				data2 = MatrixUtils.extractSelectedTimePointsReusingArrays(originalData2, reordering);
+				// Generate a new re-ordered data array
+				if (variableToReorder == 1) {
+					data1 = MatrixUtils.extractSelectedTimePointsReusingArrays(originalData, reordering);
+				} else {
+					data2 = MatrixUtils.extractSelectedTimePointsReusingArrays(originalData, reordering);
+				}
 			}
 			// Compute the MI
 			double newMI = computeAverageLocalOfObservationsWhileComputingDistances();
-			// restore data2
-			data2 = originalData2;
+			// restore original data
+			if (variableToReorder == 1) {
+				data1 = originalData;
+			} else {
+				data2 = originalData;
+			}
 			return newMI;
 		}
 		
@@ -76,13 +93,21 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 			//  using x, y and z norms to all neighbours
 			//  (note that norm of point t to itself will be set to infinity).
 			
-			int tForY = (reordering == null) ? t : reordering[t];
+			int tForReorderedVar = (reordering == null) ? t : reordering[t];
 
 			double[] jointNorm = new double[N];
 			for (int t2 = 0; t2 < N; t2++) {
-				int t2ForY = (reordering == null) ? t2 : reordering[t2];
+				int t2ForReorderedVar = (reordering == null) ? t2 : reordering[t2];
 				// Joint norm is the max of all three marginals
-				jointNorm[t2] = Math.max(xNorms[t][t2], Math.max(yNorms[tForY][t2ForY], zNorms[t][t2]));
+				if (variableToReorder == 1) {
+					jointNorm[t2] = Math.max(xNorms[tForReorderedVar][t2ForReorderedVar],
+							Math.max(yNorms[t][t2],
+									zNorms[t][t2]));
+				} else {
+					jointNorm[t2] = Math.max(xNorms[t][t2],
+							Math.max(yNorms[tForReorderedVar][t2ForReorderedVar],
+									zNorms[t][t2]));
+				}
 			}
 			// Then find the kth closest neighbour, using a heuristic to 
 			// select whether to keep the k mins only or to do a sort.
@@ -107,12 +132,21 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 			for (int t2 = 0; t2 < N; t2++) {
 				if (zNorms[t][t2] < epsilon) {
 					n_z++;
-					if (xNorms[t][t2] < epsilon) {
-						n_xz++;
-					}
-					int t2ForY = (reordering == null) ? t2 : reordering[t2];
-					if (yNorms[tForY][t2ForY] < epsilon) {
-						n_yz++;
+					int t2ForReorderedVar = (reordering == null) ? t2 : reordering[t2];
+					if (variableToReorder == 1) {
+						if (xNorms[tForReorderedVar][t2ForReorderedVar] < epsilon) {
+							n_xz++;
+						}
+						if (yNorms[t][t2] < epsilon) {
+							n_yz++;
+						}
+					} else {
+						if (xNorms[t][t2] < epsilon) {
+							n_xz++;
+						}
+						if (yNorms[tForReorderedVar][t2ForReorderedVar] < epsilon) {
+							n_yz++;
+						}
 					}
 				}
 			}
