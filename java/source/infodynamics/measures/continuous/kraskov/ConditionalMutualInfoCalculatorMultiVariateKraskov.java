@@ -1,5 +1,6 @@
 package infodynamics.measures.continuous.kraskov;
 
+import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariate;
 import infodynamics.utils.EuclideanUtils;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
@@ -20,7 +21,8 @@ import infodynamics.utils.RandomGenerator;
  * 
  * @author Joseph Lizier
  */
-public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov {
+public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov 
+	implements ConditionalMutualInfoCalculatorMultiVariate {
 
 	/**
 	 * we compute distances to the kth neighbour in the joint space
@@ -185,44 +187,57 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov {
 	 * The user should ensure that all values 0..N-1 are represented exactly once in the
 	 *  array reordering and that no other values are included here.
 	 * 
+	 * @param variableToReorder 1 for variable 1, 2 for variable 2
 	 * @param reordering
 	 * @return
 	 * @throws Exception
 	 */
-	public abstract double computeAverageLocalOfObservations(int[] reordering) throws Exception;
+	public abstract double computeAverageLocalOfObservations(int variableToReorder,
+			int[] reordering) throws Exception;
 
 	/**
 	 * Compute the significance of the mutual information of the previously supplied observations.
-	 * We destroy the p(x,y,z) correlations, while retaining the p(x,z), p(y) marginals, to check how
+	 * We destroy the p(x,y,z) correlations, by permuting the given variable,
+	 *  while retaining the joint distribution of the other variable
+	 *  and the conditional, and the marginal distribution of the
+	 *  permuted variable. This checks how
 	 *  significant this conditional mutual information actually was.
 	 *  
 	 * This is in the spirit of Chavez et. al., "Statistical assessment of nonlinear causality:
 	 *  application to epileptic EEG signals", Journal of Neuroscience Methods 124 (2003) 113-128
 	 *  which was performed for Transfer entropy.
 	 * 
+	 * @param variableToReorder 1 for variable 1, 2 for variable 2
 	 * @param numPermutationsToCheck
 	 * @return the proportion of MI scores from the distribution which have higher or equal MIs to ours.
 	 */
-	public synchronized EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception {
+	public synchronized EmpiricalMeasurementDistribution computeSignificance(
+			int variableToReorder, int numPermutationsToCheck) throws Exception {
 		// Generate the re-ordered indices:
 		RandomGenerator rg = new RandomGenerator();
 		int[][] newOrderings = rg.generateDistinctRandomPerturbations(data1.length, numPermutationsToCheck);
-		return computeSignificance(newOrderings);
+		return computeSignificance(variableToReorder, newOrderings);
 	}
 	
 	/**
 	 * Compute the significance of the mutual information of the previously supplied observations.
-	 * We destroy the p(x,y,z) correlations, while retaining the p(x,z), p(y) marginals, to check how
-	 *  significant this mutual information actually was.
+	 * We destroy the p(x,y,z) correlations, by permuting the given variable,
+	 *  while retaining the joint distribution of the other variable
+	 *  and the conditional, and the marginal distribution of the
+	 *  permuted variable. This checks how
+	 *  significant this conditional mutual information actually was.
 	 *  
 	 * This is in the spirit of Chavez et. al., "Statistical assessment of nonlinear causality:
 	 *  application to epileptic EEG signals", Journal of Neuroscience Methods 124 (2003) 113-128
 	 *  which was performed for Transfer entropy.
 	 * 
+	 * @param variableToReorder 1 for variable 1, 2 for variable 2
 	 * @param newOrderings the specific new orderings to use
 	 * @return the proportion of conditional MI scores from the distribution which have higher or equal MIs to ours.
 	 */
-	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings) throws Exception {
+	public EmpiricalMeasurementDistribution computeSignificance(
+			int variableToReorder, int[][] newOrderings) throws Exception {
+		
 		int numPermutationsToCheck = newOrderings.length;
 		if (!condMiComputed) {
 			computeAverageLocalOfObservations();
@@ -235,7 +250,8 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov {
 		int countWhereMiIsMoreSignificantThanOriginal = 0;
 		for (int i = 0; i < numPermutationsToCheck; i++) {
 			// Compute the MI under this reordering
-			double newMI = computeAverageLocalOfObservations(newOrderings[i]);
+			double newMI = computeAverageLocalOfObservations(
+					variableToReorder, newOrderings[i]);
 			measDistribution.distribution[i] = newMI;
 			if (debug){
 				System.out.println("New MI was " + newMI);
@@ -256,7 +272,8 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov {
 
 	public abstract double[] computeLocalOfPreviousObservations() throws Exception;
 
-	public double[] computeLocalUsingPreviousObservations(double[][] states1, double[][] states2) throws Exception {
+	public double[] computeLocalUsingPreviousObservations(double[][] states1,
+			double[][] states2, double[][] condStates) throws Exception {
 		// If implemented, will need to incorporate any normalisation here
 		//  (normalising the incoming data the same way the previously
 		//   supplied observations were normalised).

@@ -38,24 +38,40 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 	protected static final double CUTOFF_MULTIPLIER = 1.5;
 	
 	/**
-	 * Compute what the average conditional MI would look like were the second time series reordered
+	 * Compute what the average conditional MI would look like were the given
+	 *  time series reordered
 	 *  as per the array of time indices in reordering.
 	 * The user should ensure that all values 0..N-1 are represented exactly once in the
 	 *  array reordering and that no other values are included here. 
 	 * 
-	 * @param reordering
+	 * @param variableToReorder 1 for variable 1, 2 for variable 2
+	 * @param reordering the reordered time steps of the given variable
 	 * @return
 	 * @throws Exception
 	 */
-	public double computeAverageLocalOfObservations(int[] reordering) throws Exception {
+	public double computeAverageLocalOfObservations(int variableToReorder,
+			int[] reordering) throws Exception {
 		if (!tryKeepAllPairsNorms || (data1.length > MAX_DATA_SIZE_FOR_KEEP_ALL_PAIRS_NORM)) {
-			double[][] originalData2 = data2;
-			// Generate a new re-ordered data2
-			data2 = MatrixUtils.extractSelectedTimePointsReusingArrays(originalData2, reordering);
+			double[][] originalData;
+			if (variableToReorder == 1) {
+				originalData = data1;
+			} else {
+				originalData = data2;
+			}
+			// Generate a new re-ordered data array
+			if (variableToReorder == 1) {
+				data1 = MatrixUtils.extractSelectedTimePointsReusingArrays(originalData, reordering);
+			} else {
+				data2 = MatrixUtils.extractSelectedTimePointsReusingArrays(originalData, reordering);
+			}
 			// Compute the MI
 			double newMI = computeAverageLocalOfObservationsWhileComputingDistances();
-			// restore data2
-			data2 = originalData2;
+			// restore original data
+			if (variableToReorder == 1) {
+				data1 = originalData;
+			} else {
+				data2 = originalData;
+			}
 			return newMI;
 		}
 		
@@ -80,13 +96,19 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 			//  First get x and y and z norms to all neighbours
 			//  (note that norm of point t to itself will be set to infinity).
 
-			int tForY = reordering[t];
+			int tForReorderedVar = reordering[t];
 
 			double[][] jointNorm = new double[N][2];
 			for (int t2 = 0; t2 < N; t2++) {
-				int t2ForY = reordering[t2];
-				jointNorm[t2][JOINT_NORM_VAL_COLUMN] = Math.max(xNorms[t][t2],
-							Math.max(yNorms[tForY][t2ForY], zNorms[t][t2]));
+				int t2ForReorderedVar = reordering[t2];
+				if (variableToReorder == 1) {
+					jointNorm[t2][JOINT_NORM_VAL_COLUMN] = Math.max(
+							xNorms[tForReorderedVar][t2ForReorderedVar],
+							Math.max(yNorms[t][t2], zNorms[t][t2]));
+				} else {
+					jointNorm[t2][JOINT_NORM_VAL_COLUMN] = Math.max(xNorms[t][t2],
+							Math.max(yNorms[tForReorderedVar][t2ForReorderedVar], zNorms[t][t2]));
+				}
 				// And store the time step for back reference after the 
 				//  array is sorted.
 				jointNorm[t2][JOINT_NORM_TIMESTEP_COLUMN] = t2;
@@ -112,11 +134,20 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 			// Find eps_{x,y,z} as the maximum x and y and z norms amongst this set:
 			for (int j = 0; j < k; j++) {
 				int timeStepOfJthPoint = timeStepsOfKthMins[j]; 
-				if (xNorms[t][timeStepOfJthPoint] > eps_x) {
-					eps_x = xNorms[t][timeStepOfJthPoint];
-				}
-				if (yNorms[tForY][reordering[timeStepOfJthPoint]] > eps_y) {
-					eps_y = yNorms[tForY][reordering[timeStepOfJthPoint]];
+				if (variableToReorder == 1) {
+					if (xNorms[tForReorderedVar][reordering[timeStepOfJthPoint]] > eps_x) {
+						eps_x = xNorms[tForReorderedVar][reordering[timeStepOfJthPoint]];
+					}
+					if (yNorms[t][timeStepOfJthPoint] > eps_y) {
+						eps_y = yNorms[t][timeStepOfJthPoint];
+					}
+				} else {
+					if (xNorms[t][timeStepOfJthPoint] > eps_x) {
+						eps_x = xNorms[t][timeStepOfJthPoint];
+					}
+					if (yNorms[tForReorderedVar][reordering[timeStepOfJthPoint]] > eps_y) {
+						eps_y = yNorms[tForReorderedVar][reordering[timeStepOfJthPoint]];
+					}
 				}
 				if (zNorms[t][timeStepOfJthPoint] > eps_z) {
 					eps_z = zNorms[t][timeStepOfJthPoint];
@@ -133,11 +164,20 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 			for (int t2 = 0; t2 < N; t2++) {
 				if (zNorms[t][t2] <= eps_z) {
 					n_z++;
-					if (xNorms[t][t2] <= eps_x) {
-						n_xz++;
-					}
-					if (yNorms[tForY][reordering[t2]] <= eps_y) {
-						n_yz++;
+					if (variableToReorder == 1) {
+						if (xNorms[tForReorderedVar][reordering[t2]] <= eps_x) {
+							n_xz++;
+						}
+						if (yNorms[t][t2] <= eps_y) {
+							n_yz++;
+						}
+					} else {
+						if (xNorms[t][t2] <= eps_x) {
+							n_xz++;
+						}
+						if (yNorms[tForReorderedVar][reordering[t2]] <= eps_y) {
+							n_yz++;
+						}
 					}
 				}
 			}
