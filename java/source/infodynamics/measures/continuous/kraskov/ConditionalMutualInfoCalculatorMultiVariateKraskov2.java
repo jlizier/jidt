@@ -435,7 +435,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 				if (xyzNorms[timeStepOfJthPoint][1] > eps_y) {
 					eps_y = xyzNorms[timeStepOfJthPoint][1];
 				}
-				if (xyzNorms[timeStepOfJthPoint][0] > eps_z) {
+				if (xyzNorms[timeStepOfJthPoint][2] > eps_z) {
 					eps_z = xyzNorms[timeStepOfJthPoint][2];
 				}
 			}
