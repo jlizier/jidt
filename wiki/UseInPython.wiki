@@ -11,7 +11,24 @@ First we describe calling java code from Python, then specifically describe the 
 There are several alternatives for using Java objects in Python, e.g. [http://jpype.sourceforge.net/ JPype] and [http://www.jython.org Jython].
 
 Here, we focus on using JPype for several reasons, including:
- * It is run as an import to ordinary python code in the standard interpreter (jython runs as an alternative python interpreter)
+ * It is run as an import to ordinary python code in the standard interpreter (jython runs as an alternative python interpreter, and so is not always up to date with the main python interpreter)
  * It is packaged for ubuntu (which is my platform of choice) as `python-jpype`
+As such, here we will only describe use via JPype, though of course you could use an alternative method quite easily.
 
-FILL ME IN ...
+= Using JPype =
+
+The first step is to install JPype. On ubuntu, one simply installs `python-jpype` via the package manager. On other platforms, install as you would other python extensions.
+
+You can then run your java code fairly simply in python with JPype:
+ # Import the relevant packages from jPype, e.g.: `from jpype import *`
+ # Start the JVM and tell it where our jar file is, e.g.: `startJVM(getDefaultJVMPath(), "-Djava.class.path=" + jarLocation)`
+ # Create a reference to the package and class that you wish to create an instance of, e.g.: `teCalcClass = JPackage("infodynamics.measures.discrete").ApparentTransferEntropyCalculator`
+ # Create an instance of the class, e.g.: `teCalc = teCalcClass(2,1)`
+ # Use the object, e.g.: `teCalc.initialise()`
+ # Shutdown the JVM when it's no longer required, e.g.: `shutdownJVM()`
+
+Note: array conversion between python and java requires some extra code, but is perfectly do-able - see sections [http://jpype.sourceforge.net/doc/user-guide/userguide.html#arrays 6] and [http://jpype.sourceforge.net/doc/user-guide/userguide.html#conversion 7] of the [http://jpype.sourceforge.net/doc/user-guide/userguide.html JPype user guide].
+
+TODO - Write more about the conversions and implement examples
+
+For static methods, you can call them on the reference to the class itself.
