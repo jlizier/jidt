@@ -335,6 +335,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 			avNxz /= (double)N;
 			avNyz /= (double)N;
 			avNz /= (double)N;
+			averageInverseCountInJointXZ /= (double) N;
 			System.out.printf("<n_xz>=%.3f, <n_yz>=%.3f, <n_z>=%.3f\n",
 					avNxz, avNyz, avNz);
 			System.out.printf("Av = digamma(k)=%.3f + <digammas>=%.3f - 1/k=%.3f + <1/n_yz>=%.3f = %.3f (<1/n_xz>=%.3f)\n",
@@ -459,6 +460,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 			avNxz /= (double)N;
 			avNyz /= (double)N;
 			avNz /= (double)N;
+			averageInverseCountInJointXZ /= (double) N;
 			System.out.printf("<n_xz>=%.3f, <n_yz>=%.3f, <n_z>=%.3f\n",
 					avNxz, avNyz, avNz);
 			System.out.printf("Av = digamma(k)=%.3f + <digammas>=%.3f - 1/k=%.3f + <1/n_yz>=%.3f = %.3f (<1/n_xz>=%.3f)\n",
