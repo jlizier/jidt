@@ -150,9 +150,6 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 					}
 				}
 			}
-			avNxz += n_xz;
-			avNyz += n_yz;
-			avNz += n_z;
 			// And take the digamma before adding into the 
 			//  average:
 			// Note: we're using digamma function which has opposite sign to the harmonic
@@ -160,17 +157,31 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 			//  this cancels out)
 			averageDiGammas += MathsUtils.digamma(n_z+1) - MathsUtils.digamma(n_xz+1)
 							- MathsUtils.digamma(n_yz+1);
+			if (debug) {
+				avNxz += n_xz;
+				avNyz += n_yz;
+				avNz += n_z;
+				double localCondMi = MathsUtils.digamma(k) +
+						MathsUtils.digamma(n_z+1) - MathsUtils.digamma(n_xz+1)
+						- MathsUtils.digamma(n_yz+1);
+				System.out.printf("t=%d, n_xz=%d, n_yz=%d, n_z=%d, local=%.4f\n",
+						t, n_xz, n_yz, n_z, localCondMi);
+			}
 		}
 		averageDiGammas /= (double) N;
+		condMi = MathsUtils.digamma(k) + averageDiGammas;
+		condMiComputed = true;
+		
 		if (debug) {
 			avNxz /= (double)N;
 			avNyz /= (double)N;
 			avNz /= (double)N;
-			System.out.println(String.format("Average n_xz=%.3f, Average n_yz=%.3f, Average n_z=%.3f", avNxz, avNyz, avNz));
+			System.out.printf("<n_xz>=%.3f, <n_yz>=%.3f, <n_z>=%.3f\n",
+					avNxz, avNyz, avNz);
+			System.out.printf("Av = digamma(k)=%.3f + <digammas>=%.3f = %.3f \n",
+					MathsUtils.digamma(k), averageDiGammas, condMi);
 		}
 		
-		condMi = MathsUtils.digamma(k) + averageDiGammas;
-		condMiComputed = true;
 		return condMi;
 	}
 	
@@ -233,24 +244,35 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 					}
 				}
 			}
-			avNxz += n_xz;
-			avNyz += n_yz;
-			avNz += n_z;
 			// And take the digamma before adding into the 
 			//  average:
 			averageDiGammas += MathsUtils.digamma(n_z+1) - MathsUtils.digamma(n_xz+1)
 						- MathsUtils.digamma(n_yz+1);
+			if (debug) {
+				avNxz += n_xz;
+				avNyz += n_yz;
+				avNz += n_z;
+				double localCondMi = MathsUtils.digamma(k) +
+						MathsUtils.digamma(n_z+1) - MathsUtils.digamma(n_xz+1)
+						- MathsUtils.digamma(n_yz+1);
+				System.out.printf("t=%d, n_xz=%d, n_yz=%d, n_z=%d, local=%.4f\n",
+						t, n_xz, n_yz, n_z, localCondMi);
+			}
 		}
 		averageDiGammas /= (double) N;
+		condMi = MathsUtils.digamma(k) + averageDiGammas;
+		condMiComputed = true;
+
 		if (debug) {
 			avNxz /= (double)N;
 			avNyz /= (double)N;
-			System.out.println(String.format("Average n_xz=%.3f, Average n_yz=%.3f, Average n_z=%.3f",
-					avNxz, avNyz, avNz));
+			avNz /= (double)N;
+			System.out.printf("<n_xz>=%.3f, <n_yz>=%.3f, <n_z>=%.3f\n",
+					avNxz, avNyz, avNz);
+			System.out.printf("Av = digamma(k)=%.3f + <digammas>=%.3f = %.3f \n",
+					MathsUtils.digamma(k), averageDiGammas, condMi);
 		}
 		
-		condMi = MathsUtils.digamma(k) + averageDiGammas;
-		condMiComputed = true;
 		return condMi;
 	}
 
@@ -314,23 +336,30 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 			
 			localCondMi[t] = digammaK - digammaNxzPlusOne - digammaNyzPlusOne + digammaNzPlusOne;
 			
-			avNxz += n_xz;
-			avNyz += n_yz;
-			avNz += n_z;
 			// And keep track of the average
 			averageDiGammas += digammaNzPlusOne - digammaNxzPlusOne - digammaNyzPlusOne;
+			if (debug) {
+				avNxz += n_xz;
+				avNyz += n_yz;
+				avNz += n_z;
+				System.out.printf("t=%d, n_xz=%d, n_yz=%d, n_z=%d, local=%.4f\n",
+						t, n_xz, n_yz, n_z, localCondMi[t]);
+			}
 		}
 		averageDiGammas /= (double) N;
+		condMi = digammaK + averageDiGammas;
+		condMiComputed = true;
+		
 		if (debug) {
 			avNxz /= (double)N;
 			avNyz /= (double)N;
 			avNz /= (double)N;
-			System.out.println(String.format("Average n_xz=%.3f, Average n_yz=%.3f, Average n_z=%.3f",
-					avNxz, avNyz, avNz));
+			System.out.printf("<n_xz>=%.3f, <n_yz>=%.3f, <n_z>=%.3f\n",
+					avNxz, avNyz, avNz);
+			System.out.printf("Av = digamma(k)=%.3f + <digammas>=%.3f = %.3f \n",
+					digammaK, averageDiGammas, condMi);
 		}
 		
-		condMi = digammaK + averageDiGammas;
-		condMiComputed = true;
 		return localCondMi;
 	}
 

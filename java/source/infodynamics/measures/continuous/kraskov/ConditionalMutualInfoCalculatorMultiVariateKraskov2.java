@@ -87,6 +87,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 		// Count the average number of points within eps_xz and eps_yz and eps_z
 		double averageDiGammas = 0;
 		double averageInverseCountInJointYZ = 0;
+		double averageInverseCountInJointXZ = 0;
 		double avNxz = 0;
 		double avNyz = 0;
 		double avNz = 0;
@@ -188,21 +189,37 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 			//  average:
 			averageDiGammas += MathsUtils.digamma(n_z) - MathsUtils.digamma(n_xz)
 								- MathsUtils.digamma(n_yz);
-			averageInverseCountInJointYZ += 1.0 / (double) n_yz;
+			double invN_yz = 1.0 / (double) n_yz;
+			averageInverseCountInJointYZ += invN_yz;
+			if (debug) {
+				// Only tracking this for debugging purposes: 
+				double invN_xz = 1.0/(double) n_xz;
+				averageInverseCountInJointXZ += invN_xz;
+				double localCondMi = MathsUtils.digamma(k) - 1.0 / (double) k +
+						invN_yz + MathsUtils.digamma(n_z) - MathsUtils.digamma(n_xz)
+						- MathsUtils.digamma(n_yz);
+				System.out.printf("t=%d, n_xz=%d, n_yz=%d, n_z=%d, 1/n_yz=%.3f, 1/n_xz=%.3f, local=%.4f\n",
+						t, n_xz, n_yz, n_z, invN_yz, invN_xz, localCondMi);
+			}
 		}
 		averageDiGammas /= (double) N;
 		averageInverseCountInJointYZ /= (double) N;
+		condMi = MathsUtils.digamma(k) - 1.0 / (double) k + 
+				+ averageInverseCountInJointYZ + averageDiGammas;
+		condMiComputed = true;
+
 		if (debug) {
 			avNxz /= (double)N;
 			avNyz /= (double)N;
 			avNz /= (double)N;
-			System.out.println(String.format("Average n_xz=%.3f, Average n_yz=%.3f, Average n_z=%.3f",
-						avNxz, avNyz, avNz));
+			averageInverseCountInJointXZ /= (double) N;
+			System.out.printf("<n_xz>=%.3f, <n_yz>=%.3f, <n_z>=%.3f\n",
+					avNxz, avNyz, avNz);
+			System.out.printf("Av = digamma(k)=%.3f + <digammas>=%.3f - 1/k=%.3f + <1/n_yz>=%.3f = %.3f (<1/n_xz>=%.3f)\n",
+					MathsUtils.digamma(k), averageDiGammas, 1.0 / (double) k, averageInverseCountInJointYZ,
+					condMi, averageInverseCountInJointXZ);
 		}
 		
-		condMi = MathsUtils.digamma(k) - 1.0 / (double) k + 
-			+ averageInverseCountInJointYZ + averageDiGammas;
-		condMiComputed = true;
 		return condMi;
 	}
 
@@ -220,6 +237,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 		// Count the average number of points within eps_x and eps_y
 		double averageDiGammas = 0;
 		double averageInverseCountInJointYZ = 0;
+		double averageInverseCountInJointXZ = 0;
 		double avNxz = 0;
 		double avNyz = 0;
 		double avNz = 0;
@@ -294,21 +312,36 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 			//  average:
 			averageDiGammas += MathsUtils.digamma(n_z) - MathsUtils.digamma(n_xz)
 								- MathsUtils.digamma(n_yz);
-			averageInverseCountInJointYZ += 1.0 / (double) n_yz;
+			double invN_yz = 1.0 / (double) n_yz;
+			averageInverseCountInJointYZ += invN_yz;
+			if (debug) {
+				// Only tracking this for debugging purposes: 
+				double invN_xz = 1.0/(double) n_xz;
+				averageInverseCountInJointXZ += invN_xz;
+				double localCondMi = MathsUtils.digamma(k) - 1.0 / (double) k +
+						invN_yz + MathsUtils.digamma(n_z) - MathsUtils.digamma(n_xz)
+						- MathsUtils.digamma(n_yz);
+				System.out.printf("t=%d, n_xz=%d, n_yz=%d, n_z=%d, 1/n_yz=%.3f, 1/n_xz=%.3f, local=%.4f\n",
+						t, n_xz, n_yz, n_z, invN_yz, invN_xz, localCondMi);
+			}
 		}
 		averageDiGammas /= (double) N;
 		averageInverseCountInJointYZ /= (double) N;
+		condMi = MathsUtils.digamma(k) - 1.0 / (double) k +
+				averageInverseCountInJointYZ + averageDiGammas;
+		condMiComputed = true;
+
 		if (debug) {
 			avNxz /= (double)N;
 			avNyz /= (double)N;
 			avNz /= (double)N;
-			System.out.println(String.format("Average n_x=%.3f, Average n_y=%.3f, Average n_y=%.3f",
-					avNxz, avNyz, avNz));
+			System.out.printf("<n_xz>=%.3f, <n_yz>=%.3f, <n_z>=%.3f\n",
+					avNxz, avNyz, avNz);
+			System.out.printf("Av = digamma(k)=%.3f + <digammas>=%.3f - 1/k=%.3f + <1/n_yz>=%.3f = %.3f (<1/n_xz>=%.3f)\n",
+					MathsUtils.digamma(k), averageDiGammas, 1.0 / (double) k, averageInverseCountInJointYZ,
+					condMi, averageInverseCountInJointXZ);
 		}
 		
-		condMi = MathsUtils.digamma(k) - 1.0 / (double) k +
-			averageInverseCountInJointYZ + averageDiGammas;
-		condMiComputed = true;
 		return condMi;
 	}
 
@@ -328,6 +361,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 		// Count the average number of points within eps_x and eps_y
 		double averageDiGammas = 0;
 		double averageInverseCountInJointYZ = 0;
+		double averageInverseCountInJointXZ = 0;
 		double avNxz = 0;
 		double avNyz = 0;
 		double avNz = 0;
@@ -402,21 +436,36 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 			//  average:
 			averageDiGammas += MathsUtils.digamma(n_z) - MathsUtils.digamma(n_xz)
 								- MathsUtils.digamma(n_yz);
-			averageInverseCountInJointYZ += 1.0 / (double) n_yz;
+			double invN_yz = 1.0 / (double) n_yz;
+			averageInverseCountInJointYZ += invN_yz;
+			if (debug) {
+				// Only tracking this for debugging purposes: 
+				double invN_xz = 1.0/(double) n_xz;
+				averageInverseCountInJointXZ += invN_xz;
+				double localCondMi = MathsUtils.digamma(k) - 1.0 / (double) k +
+						invN_yz + MathsUtils.digamma(n_z) - MathsUtils.digamma(n_xz)
+						- MathsUtils.digamma(n_yz);
+				System.out.printf("t=%d, n_xz=%d, n_yz=%d, n_z=%d, 1/n_yz=%.3f, 1/n_xz=%.3f, local=%.4f\n",
+						t, n_xz, n_yz, n_z, invN_yz, invN_xz, localCondMi);
+			}
 		}
 		averageDiGammas /= (double) N;
 		averageInverseCountInJointYZ /= (double) N;
+		condMi = MathsUtils.digamma(k) - 1.0 / (double) k +
+				averageInverseCountInJointYZ + averageDiGammas;
+		condMiComputed = true;
+		
 		if (debug) {
 			avNxz /= (double)N;
 			avNyz /= (double)N;
 			avNz /= (double)N;
-			System.out.println(String.format("Average n_zx=%.3f, Average n_yz=%.3f, Average n_z=%.3f",
-						avNxz, avNyz, avNz));
+			System.out.printf("<n_xz>=%.3f, <n_yz>=%.3f, <n_z>=%.3f\n",
+					avNxz, avNyz, avNz);
+			System.out.printf("Av = digamma(k)=%.3f + <digammas>=%.3f - 1/k=%.3f + <1/n_yz>=%.3f = %.3f (<1/n_xz>=%.3f)\n",
+					MathsUtils.digamma(k), averageDiGammas, 1.0 / (double) k, averageInverseCountInJointYZ,
+					condMi, averageInverseCountInJointXZ);
 		}
 		
-		condMi = MathsUtils.digamma(k) - 1.0 / (double) k +
-				averageInverseCountInJointYZ + averageDiGammas;
-		condMiComputed = true;
 		return condMi;
 	}
 
@@ -427,10 +476,12 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 		
 		// Constants:
 		double digammaK = MathsUtils.digamma(k);
+		double invK = 1.0 / (double) k;
 		
 		// Count the average number of points within eps_x and eps_y
 		double averageDiGammas = 0;
 		double averageInverseCountInJointYZ = 0;
+		double averageInverseCountInJointXZ = 0;
 		double avNxz = 0;
 		double avNyz = 0;
 		double avNz = 0;
@@ -506,25 +557,38 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 			double digammaNyz = MathsUtils.digamma(n_yz);
 			double digammaNz = MathsUtils.digamma(n_z);
 			
+			double invN_yz = 1.0/(double) n_yz;
 			localCondMi[t] = digammaK - digammaNxz - digammaNyz + digammaNz
-						- 1.0 / (double) k + 1.0/(double) n_yz ;
+						- invK + invN_yz;
 
 			averageDiGammas += digammaNz - digammaNxz - digammaNyz;
-			averageInverseCountInJointYZ += 1.0 / (double) n_yz;
+			averageInverseCountInJointYZ += invN_yz;
+			if (debug) {
+				// Only tracking this for debugging purposes: 
+				double invN_xz = 1.0/(double) n_xz;
+				averageInverseCountInJointXZ += invN_xz;
+				System.out.printf("t=%d, n_xz=%d, n_yz=%d, n_z=%d, 1/n_yz=%.3f, 1/n_xz=%.3f, local=%.4f\n",
+						t, n_xz, n_yz, n_z, invN_yz, invN_xz, localCondMi[t]);
+			}
 		}
 		averageDiGammas /= (double) N;
 		averageInverseCountInJointYZ /= (double) N;
+		condMi = digammaK + averageDiGammas - invK +
+				averageInverseCountInJointYZ;
+		condMiComputed = true;
+		
 		if (debug) {
 			avNxz /= (double)N;
 			avNyz /= (double)N;
 			avNz /= (double)N;
-			System.out.println(String.format("Average n_xz=%.3f, Average n_yz=%.3f, Average n_z=%.3f",
-					avNxz, avNyz, avNz));
+			averageInverseCountInJointXZ /= (double) N;
+			System.out.printf("<n_xz>=%.3f, <n_yz>=%.3f, <n_z>=%.3f\n",
+					avNxz, avNyz, avNz);
+			System.out.printf("Av = digamma(k)=%.3f + <digammas>=%.3f - 1/k=%.3f + <1/n_yz>=%.3f = %.3f (<1/n_xz>=%.3f)\n",
+					digammaK, averageDiGammas, invK, averageInverseCountInJointYZ,
+					condMi, averageInverseCountInJointXZ);
 		}
 		
-		condMi = digammaK + averageDiGammas - 1.0 / (double) k +
-			averageInverseCountInJointYZ;
-		condMiComputed = true;
 		return localCondMi;
 	}
 
