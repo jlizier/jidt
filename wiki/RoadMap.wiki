@@ -15,6 +15,7 @@ Release 0.2:
  # Alter !MutualInfoCalculatorMultiVariate significance calculations to specify which variable should be reordered - Issue 4
 
 Low priority / later:
+ # Optimise Kraskov calculators (just using naive comparison algorithm at the moment)
  # `main()` function on as many calculators as possible, taking in file references for data, and the main parameters, and return the value of the calculation to standard output. Have a new `demos/java/calculationScripts/` directory with shell scripts to call these calculations on demo data files.
 
 TODO - evaluate other Issues ...
