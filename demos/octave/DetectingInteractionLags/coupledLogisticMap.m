@@ -114,7 +114,7 @@ function coupledLogisticMap()
 		% Create a TE calculator and run it:
 			
 		% Using a single conditional mutual information calculator is the least biased way to run this:
-		teCalc=javaObject('infodynamics.measures.continuous.kraskov.ConditionalMutualInfoCalculatorMultiVariateKraskov2');
+		teCalc=javaObject('infodynamics.measures.continuous.kraskov.ConditionalMutualInfoCalculatorMultiVariateKraskov1');
 		% Perform calculation for X -> Y (lag 1)
 		teCalc.initialise(1,1,k); % Use history length k (Schreiber k)
 		teCalc.setProperty('k', KraskovK);
