@@ -13,10 +13,11 @@ This page contains the following code examples:
   * [#Example_2_-_Transfer_entropy_on_multidimensional_binary_data Example 2 - Transfer entropy on multidimensional binary data]
   * [#Example_3_-_Transfer_entropy_on_continuous_data_using_kernel_est Example 3 - Transfer entropy on continuous data using kernel estimators]
   * [#Example_4_-_Transfer_entropy_on_continuous_data_using_Kraskov_es Example 4 - Transfer entropy on continuous data using Kraskov estimators]
+  * [#Example_5_-_Multivariate_transfer_entropy_on_binary_data Example 5 - Multivariate transfer entropy on binary data]
 
 ==Be aware==
 
- # In octave conversion between native octave array types and java arrays is not straightforward (particularly for multidimensional arrays, or int arrays). Octave often reports that a method is not found. One could directly convert each element in an octave array to a java array first; however we recommend using the supplied scripts described in OctaveJavaArrayConversion (and see example use in [#Example_2_-_Transfer_entropy_on_multidimensional_binary_data Example 2]). These scripts are called here so that the code is runnable in Octave or Matlab - inside Matlab they simply return the array that was passed as input.
+ # In octave conversion between native octave array types and java arrays is not straightforward (particularly for multidimensional arrays, or int arrays). Octave often reports that a method is not found. One could directly convert each element in an octave array to a java array first; however we recommend using the supplied scripts described in OctaveJavaArrayConversion (and see example use in [#Example_2_-_Transfer_entropy_on_multidimensional_binary_data Example 2] and [#Example_5_-_Multivariate_transfer_entropy_on_binary_data Example 5]). These scripts are called here so that the code is runnable in Octave or Matlab - inside Matlab they simply return the array that was passed as input.
  # In java arrays are indexed from 0, whereas in octave or Matlab you are used to indexing them from 1. So when you call a method such as [https://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/java/source/infodynamics/utils/MatrixUtils.java MatrixUtils].select(double[] data, int fromIndex, int length), you must be aware that fromIndex will be indexed from 0 inside the toolkit, not 1!!
 
 = Example 1 - Transfer entropy on binary data =
@@ -142,4 +143,38 @@ teCalc.initialise(); % Initialise leaving the parameters the same
 teCalc.setObservations(sourceArray2, destArray);
 result2 = teCalc.computeAverageLocalOfObservations();
 fprintf('TE result %.4f nats; expected to be close to 0 nats for these uncorrelated Gaussians\n', result2);
+}}}
+
+= Example 5 - Multivariate transfer entropy on binary data =
+
+[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/example5TeBinaryMultivarTransfer.m example5TeBinaryMultivarTransfer.m] - Multivariate transfer entropy (TE) calculation on binary data using the discrete TE calculator.
+
+{{{
+% Change location of jar to match yours:
+javaaddpath('../../infodynamics.jar');
+
+% Generate some random binary data.
+% Note that we need the *1 to make this a number not a Boolean,
+%  otherwise this will not work (as it cannot match the method signature)
+sourceArray=(rand(1000,2)>0.5)*1;
+sourceArray2=(rand(1000,2)>0.5)*1;
+% Destination variable takes a copy of the first bit of the source in bit 1,
+%  and an XOR of the two bits of the source in bit 2:
+destArray = [0, 0; sourceArray(1:99, 1), xor(sourceArray(1:99, 1), sourceArray(1:99, 2))];
+% Create a TE calculator and run it:
+teCalc=javaObject('infodynamics.measures.discrete.ApparentTransferEntropyCalculator', 4, 1);
+teCalc.initialise();
+% We need to construct the joint values of the dest and source before we pass them in,
+%  and need to use the matrix conversion routine when calling from Matlab/Octave:
+mUtils= javaObject('infodynamics.utils.MatrixUtils');
+teCalc.addObservations(mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(destArray), 2), ...
+		mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(sourceArray), 2));
+fprintf('For source which the 2 bits are determined from, result should be close to 2 bits : ');
+result = teCalc.computeAverageLocalOfObservations()
+teCalc.initialise();
+teCalc.addObservations(mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(destArray), 2), ...
+		mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(sourceArray2), 2));
+fprintf('For random source, result should be close to 0 bits in theory: ');
+result2 = teCalc.computeAverageLocalOfObservations()
+fprintf('\nThe result for random source is inflated towards 0.3 due to finite observation length. One can verify that the answer is consistent with that from a random source by checking: teCalc.computeSignificance(1000); ans.pValue\n');
 }}}
