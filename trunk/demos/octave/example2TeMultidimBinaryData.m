@@ -25,6 +25,8 @@ twoDTimeSeriesJavaInt = octaveToJavaIntMatrix(twoDTimeSeriesOctave);
 teCalc=javaObject('infodynamics.measures.discrete.ApparentTransferEntropyCalculator', 2, 1);
 teCalc.initialise();
 % Add observations of transfer across one cell to the right per time step:
+%  (Note this only looks at column 1->2, we don't wrap around the columns unless
+%   we have previously called setPeriodicBoundaryConditions(true))
 teCalc.addObservations(twoDTimeSeriesJavaInt, 1);
 fprintf('The result should be close to 1 bit here, since we are executing copy operations of what is effectively a random bit to each cell here: ');
 result2D = teCalc.computeAverageLocalOfObservations()
