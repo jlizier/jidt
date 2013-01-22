@@ -69,7 +69,7 @@ public class ConditionalMutualInfoMultiVariateTester
 	/**
 	 * Utility function to run Kraskov conditional MI algorithm 1
 	 *  as transfer entropy for data with known results
-	 *  from TRENTOOL.
+	 *  from TRENTOOL. (with default parameter settings k=1, l=1)
 	 * 
 	 * @param var1 source multivariate data set
 	 * @param var2 dest multivariate data set
@@ -78,8 +78,30 @@ public class ConditionalMutualInfoMultiVariateTester
 	 */
 	protected void checkTEForGivenData(double[][] var1, double[][] var2,
 			int[] kNNs, double[] expectedResults) throws Exception {
+		checkTEForGivenData(var1, var2, 1, 1, kNNs, expectedResults);
+	}
+	
+	/**
+	 * Utility function to run Kraskov conditional MI algorithm 1
+	 *  as transfer entropy for data with known results
+	 *  from TRENTOOL.
+	 * 
+	 * @param var1 source multivariate data set
+	 * @param var2 dest multivariate data set
+	 * @param historyK history length k of destination
+	 * @param historyL history length l of source
+	 * @param kNNs array of Kraskov k nearest neighbours parameter to check
+	 * @param expectedResults array of expected results for each k
+	 */
+	protected void checkTEForGivenData(double[][] var1, double[][] var2,
+			int historyK, int historyL, int[] kNNs, double[] expectedResults) throws Exception {
 				
 		ConditionalMutualInfoCalculatorMultiVariateKraskov condMiCalc = getNewCalc(1);
+		
+		// Which is the first time index for the dest next state?
+		//  It depends on the values of k and l for embedding the past state
+		//  of destination and source.
+		int firstDestTimeIndex = Math.max(historyK, historyL);
 		
 		// Normalise the data ourselves rather than letting the calculator do it -
 		//  this ensures the extra values in the time series (e.g. last value in source)
@@ -100,9 +122,44 @@ public class ConditionalMutualInfoMultiVariateTester
 			// No longer need to set this property as it's set by default:
 			//condMiCalc.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE,
 			//		EuclideanUtils.NORM_MAX_NORM_STRING);
-			condMiCalc.setObservations(MatrixUtils.selectRows(var1, 0, var1.length - 1),
-					MatrixUtils.selectRows(var2, 1, var2.length - 1),
-					MatrixUtils.selectRows(var2, 0, var2.length - 1));
+			condMiCalc.initialise(var1[0].length * historyL,
+					var2[0].length, var2[0].length * historyK);
+			// Construct the joint vectors of the source states
+			double[][] sources = null;
+			if (historyL == 1) {
+				sources = MatrixUtils.selectRows(var1, firstDestTimeIndex - historyL,
+						var1.length - firstDestTimeIndex);
+			} else {
+				// Build the storage for the source states
+				int sourceVars = var1[0].length;
+				sources = new double[var1.length - firstDestTimeIndex][sourceVars * historyL];
+				for (int t = 0; t < historyL; t++) {
+					MatrixUtils.copyIntoMatrix(
+							var1, firstDestTimeIndex - historyL + t, 0,
+							sources, 0, t*sourceVars,
+							var1.length - firstDestTimeIndex, sourceVars);
+				}
+			}
+			// Construct the joint vectors of the conditionals
+			double[][] conditionals = null;
+			if (historyK == 1) {
+				conditionals = MatrixUtils.selectRows(var2, firstDestTimeIndex - historyK,
+						var2.length - firstDestTimeIndex);
+			} else {
+				// Build the storage for the conditional observations
+				int destVars = var2[0].length;
+				conditionals = new double[var2.length - firstDestTimeIndex][destVars * historyK];
+				for (int t = 0; t < historyK; t++) {
+					MatrixUtils.copyIntoMatrix(
+							var2, firstDestTimeIndex - historyK + t, 0,
+							conditionals, 0, t*destVars,
+							var2.length - firstDestTimeIndex, destVars);
+				}
+			}
+			// And set the observations using these
+			condMiCalc.setObservations(sources,
+					MatrixUtils.selectRows(var2, firstDestTimeIndex, var2.length - firstDestTimeIndex),
+					conditionals);
 			double condMi = condMiCalc.computeAverageLocalOfObservations();
 			//miCalc.setDebug(false);
 			
@@ -224,7 +281,7 @@ public class ConditionalMutualInfoMultiVariateTester
 		// Expected values from TRENTOOL:
 		double[] expectedFromTRENTOOL = {-0.0096556};
 		
-		System.out.println("Kraskov Cond MI as TE comparison 1 - univariate random data 1");
+		System.out.println("Kraskov Cond MI as TE comparison 1 - univariate random data 1 (col 0->1)");
 		checkTEForGivenData(MatrixUtils.selectColumns(data, new int[] {0}),
 				MatrixUtils.selectColumns(data, new int[] {1}),
 				kNNs, expectedFromTRENTOOL);
@@ -232,10 +289,113 @@ public class ConditionalMutualInfoMultiVariateTester
 		// And now for other columns
 		expectedFromTRENTOOL = new double[] {0.0175389};
 		
-		System.out.println("  reverse direction:");
+		System.out.println("  (col 1->2):");
 		checkTEForGivenData(MatrixUtils.selectColumns(data, new int[] {1}),
 				MatrixUtils.selectColumns(data, new int[] {2}),
 				kNNs, expectedFromTRENTOOL);
 
+		// And now for other columns
+		expectedFromTRENTOOL = new double[] {0.0026367};
+		
+		System.out.println("  (col 1->0):");
+		checkTEForGivenData(MatrixUtils.selectColumns(data, new int[] {1}),
+				MatrixUtils.selectColumns(data, new int[] {0}),
+				kNNs, expectedFromTRENTOOL);
+
+		// And now for other columns
+		expectedFromTRENTOOL = new double[] {-0.00012474};
+		
+		System.out.println("  (col 0->2):");
+		checkTEForGivenData(MatrixUtils.selectColumns(data, new int[] {0}),
+				MatrixUtils.selectColumns(data, new int[] {2}),
+				kNNs, expectedFromTRENTOOL);
+
+		// And now for other columns
+		expectedFromTRENTOOL = new double[] {-5.4437e-03};
+		
+		System.out.println("  (col 2->0):");
+		checkTEForGivenData(MatrixUtils.selectColumns(data, new int[] {2}),
+				MatrixUtils.selectColumns(data, new int[] {0}),
+				kNNs, expectedFromTRENTOOL);
+	}
+
+	/**
+	 * Test the computed multivariate TE as a conditional MI
+	 * against that calculated by Wibral et al.'s TRENTOOL
+	 * on the same data.
+	 * 
+	 * It's multivariate because we use embedding dimension 2 on both source
+	 *  and destination.
+	 * 
+	 * To run TRENTOOL (http://www.trentool.de/) for this 
+	 * data, run its TEvalues.m matlab script on the multivariate source
+	 * and dest data sets as:
+	 * TEvalues(source, dest, 2, 1, 1, kraskovK, 0)
+	 * with these values ensuring source-dest lag 1, history k=2,
+	 * history embedding dimension l=2 on source as well.
+	 * embedding lag 1, no dynamic correlation exclusion 
+	 * 
+	 * @throws Exception if file not found 
+	 * 
+	 */
+	public void testMultivariateTEforCoupledDataFromFile() throws Exception {
+		
+		// Test set 1:
+		
+		ArrayFileReader afr = new ArrayFileReader("demos/data/4ColsPairedOneStepNoisyDependence-1.txt");
+		double[][] data = afr.getDouble2DMatrix();
+		
+		// Use various Kraskov k nearest neighbours parameter
+		int[] kNNs = {4};
+		// Expected values from TRENTOOL:
+		double[] expectedFromTRENTOOL = {0.1400645};
+		
+		System.out.println("Kraskov Cond MI as TE - multivariate coupled data 1, k=2,l=2");
+		System.out.println("  (0->2)");
+		checkTEForGivenData(MatrixUtils.selectColumns(data, new int[] {0}),
+				MatrixUtils.selectColumns(data, new int[] {2}),
+				2, 2,
+				kNNs, expectedFromTRENTOOL);
+		
+		// And now for reverse direction:
+		expectedFromTRENTOOL = new double[] {-0.0181459};
+		
+		System.out.println("  (2->0):");
+		checkTEForGivenData(MatrixUtils.selectColumns(data, new int[] {2}),
+				MatrixUtils.selectColumns(data, new int[] {0}),
+				2, 2,
+				kNNs, expectedFromTRENTOOL);		
+
+		// And now for other columns:
+		expectedFromTRENTOOL = new double[] {0.1639186};
+		System.out.println("  (1->3):");
+		checkTEForGivenData(MatrixUtils.selectColumns(data, new int[] {1}),
+				MatrixUtils.selectColumns(data, new int[] {3}),
+				2, 2,
+				kNNs, expectedFromTRENTOOL);		
+		// And in reverse:
+		expectedFromTRENTOOL = new double[] {0.0036976};
+		System.out.println("  (3->1):");
+		checkTEForGivenData(MatrixUtils.selectColumns(data, new int[] {3}),
+				MatrixUtils.selectColumns(data, new int[] {1}),
+				2, 2,
+				kNNs, expectedFromTRENTOOL);
+		
+		// -------------
+		// And finally, confirm that we get different results for k=1,l=1,
+		//  which match TRENTOOL
+		expectedFromTRENTOOL = new double[] {0.0072169};
+		System.out.println("  (0->1) but with k=1,l=1:");
+		checkTEForGivenData(MatrixUtils.selectColumns(data, new int[] {0}),
+				MatrixUtils.selectColumns(data, new int[] {1}),
+				1, 1,
+				kNNs, expectedFromTRENTOOL);		
+		// And in reverse
+		expectedFromTRENTOOL = new double[] {0.0011738};
+		System.out.println("  (1->2) but with k=1,l=1:");
+		checkTEForGivenData(MatrixUtils.selectColumns(data, new int[] {1}),
+				MatrixUtils.selectColumns(data, new int[] {2}),
+				1, 1,
+				kNNs, expectedFromTRENTOOL);		
 	}
 }
