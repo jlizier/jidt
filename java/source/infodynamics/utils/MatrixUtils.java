@@ -1268,15 +1268,6 @@ public class MatrixUtils {
 		return newMatrix;
 	}
 	
-	public static void copyIntoMatrix(double[][] source, int fromRow, int fromCol,
-			double[][] dest, int toRow, int toCol, int rows, int cols) {
-		for (int r = 0; r < rows; r++) {
-			for (int c = 0; c < cols; c++) {
-				dest[toRow + r][toCol + c] = source[fromRow + r][fromCol + c];
-			}
-		}
-	}
-	
 	public static double[] extractSelectedTimePoints(double[] data, int[] timePoints) {
 		double[] extracted = new double[timePoints.length];
 		for (int t = 0; t < timePoints.length; t++) {

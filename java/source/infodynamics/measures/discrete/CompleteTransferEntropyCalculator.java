@@ -186,6 +186,125 @@ public class CompleteTransferEntropyCalculator extends InfoMeasureCalculator {
 	}
 	
 	/**
+ 	 * Add observations for a single source-destination-conditionals set
+ 	 *  to our estimates of the pdfs.
+	 *
+	 * @param dest destination time series
+	 * @param source source time series
+	 * @param conditionals conditionals multivariate time series
+	 */
+	public void addObservations(int[] dest, int[] source, int[][] conditionals)
+		throws Exception {
+
+		int rows = dest.length;
+		
+		if ((source.length != rows) || (conditionals.length != rows)) {
+			throw new Exception("Number of observations must match for dest, source and conditionals");
+		}
+		
+		if (rows - startObservationTime <= 0) {
+			return;
+		}
+		
+		// increment the count of observations:
+		observations += (rows - startObservationTime); 
+		
+		if (numOtherInfoContributors != conditionals[0].length) {
+			throw new Exception(String.format("conditionals does not have the expected number of variables (%d)", numOtherInfoContributors));
+		}
+
+		// Initialise and store the current previous value
+		int pastVal = 0;
+		for (int p = 0; p < k; p++) {
+			pastVal *= base;
+			pastVal += dest[p];
+		}
+		
+		// 1. Count the tuples observed
+		int destVal, sourceVal, othersVal;
+		for (int r = startObservationTime; r < rows; r++) {
+			// Add to the count for this particular transition:
+			destVal = dest[r];
+			sourceVal = source[r-1];
+			othersVal = 0;
+			for (int o = 0; o < numOtherInfoContributors; o++) {
+				// Include this other contributor
+				othersVal *= base;
+				othersVal += conditionals[r-1][o];
+			}
+			sourceDestPastOthersCount[sourceVal][destVal][pastVal][othersVal]++;
+			sourcePastOthersCount[sourceVal][pastVal][othersVal]++;
+			destPastOthersCount[destVal][pastVal][othersVal]++;
+			pastOthersCount[pastVal][othersVal]++;
+			// Update the previous value:
+			if (k > 0) {
+				pastVal -= maxShiftedValue[dest[r-k]];
+				pastVal *= base;
+				pastVal += dest[r];
+			}
+		}
+	}
+
+	/**
+ 	 * <p>Add observations for a single source-destination-conditionals set
+ 	 *  to our estimates of the pdfs.</p>
+ 	 *  
+ 	 * <p>This method takes in a univariate conditionals time series - it is assumed
+ 	 * that either numOtherInfoContributors == 1 or the user has combined the 
+ 	 * multivariate tuples into a single value for each observation, e.g. by calling
+ 	 * {@link MatrixUtils#computeCombinedValues(int[][], int)}. This cannot be
+ 	 * checked here however, so use at your own risk!
+ 	 * </p>
+	 *
+	 * @param dest destination time series
+	 * @param source source time series
+	 * @param conditionals conditionals univariate time series - it is assumed
+	 *  that the user has combined the values of the multivariate conditionals time series
+	 */
+	public void addObservations(int[] dest, int[] source, int[] conditionals)
+		throws Exception {
+
+		int rows = dest.length;
+		
+		if ((source.length != rows) || (conditionals.length != rows)) {
+			throw new Exception("Number of observations must match for dest, source and conditionals");
+		}
+		
+		if (rows - startObservationTime <= 0) {
+			return;
+		}
+		
+		// increment the count of observations:
+		observations += (rows - startObservationTime); 
+		
+		// Initialise and store the current previous value
+		int pastVal = 0;
+		for (int p = 0; p < k; p++) {
+			pastVal *= base;
+			pastVal += dest[p];
+		}
+		
+		// 1. Count the tuples observed
+		int destVal, sourceVal, othersVal;
+		for (int r = startObservationTime; r < rows; r++) {
+			// Add to the count for this particular transition:
+			destVal = dest[r];
+			sourceVal = source[r-1];
+			othersVal = conditionals[r-1];
+			sourceDestPastOthersCount[sourceVal][destVal][pastVal][othersVal]++;
+			sourcePastOthersCount[sourceVal][pastVal][othersVal]++;
+			destPastOthersCount[destVal][pastVal][othersVal]++;
+			pastOthersCount[pastVal][othersVal]++;
+			// Update the previous value:
+			if (k > 0) {
+				pastVal -= maxShiftedValue[dest[r-k]];
+				pastVal *= base;
+				pastVal += dest[r];
+			}
+		}
+	}
+
+	/**
  	 * Add observations in to our estimates of the pdfs.
  	 * This call suitable only for homogeneous agents, as all
  	 *  agents will contribute to single pdfs, and all are assumed
