@@ -147,11 +147,14 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	 * matrix of the source observations, C_dd is the covariance matrix
 	 * of the destination observations, and C_sd and C_ds are the covariances
 	 * of source to destination and destination to source observations.
+	 * @param numObservations the number of observations that the covariance
+	 *  was determined from. This is used for later significance calculations
 	 * @throws Exception for covariance matrix not matching the expected dimensions,
 	 *  being non-square, asymmetric or non-positive definite
 	 */
-	public void setCovariance(double[][] covariance) throws Exception {
+	public void setCovariance(double[][] covariance, int numObservations) throws Exception {
 		setCovariance(covariance, false);
+		totalObservations = numObservations;
 	}
 
 	/**
@@ -218,10 +221,13 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	 *  and continue into the destination).
 	 * @param means mean of the source and destination variables (as per
 	 *  covariance)
+	 * @param numObservations the number of observations that the mean and covariance
+	 *  were determined from. This is used for later significance calculations
 	 */
-	public void setCovarianceAndMeans(double[][] covariance, double[] means) throws Exception {
+	public void setCovarianceAndMeans(double[][] covariance, double[] means,
+			int numObservations) throws Exception {
 		this.means = means;
-		setCovariance(covariance);
+		setCovariance(covariance, numObservations);
 	}
 
 	/**

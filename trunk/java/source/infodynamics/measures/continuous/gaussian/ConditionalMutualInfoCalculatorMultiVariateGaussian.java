@@ -4,6 +4,7 @@ import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVari
 import infodynamics.measures.continuous.ConditionalMutualInfoMultiVariateCommon;
 import infodynamics.utils.AnalyticNullDistributionComputer;
 import infodynamics.utils.ChiSquareMeasurementDistribution;
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.MatrixUtils;
 
 /**
@@ -145,11 +146,14 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 	 * 
 	 * @param covariance covariance matrix of var1, var2, conditional
 	 *  variables, considered together.
+	 * @param numObservations the number of observations that the covariance
+	 *  was determined from. This is used for later significance calculations
 	 * @throws Exception for covariance matrix not matching the expected dimensions,
 	 *  being non-square, asymmetric or non-positive definite
 	 */
-	public void setCovariance(double[][] covariance) throws Exception {
+	public void setCovariance(double[][] covariance, int numObservations) throws Exception {
 		setCovariance(covariance, false);
+		totalObservations = numObservations;
 	}
 
 	/**
@@ -222,10 +226,14 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 	 *  variables, considered together.
 	 * @param means mean of var1, var2 and conditional variables (as per
 	 *  covariance)
+	 * @param numObservations the number of observations that the mean and covariance
+	 *  were determined from. This is used for later significance calculations
 	 */
-	public void setCovarianceAndMeans(double[][] covariance, double[] means) throws Exception {
+	public void setCovarianceAndMeans(double[][] covariance, double[] means,
+			int numObservations) throws Exception {
+		
 		this.means = means;
-		setCovariance(covariance);
+		setCovariance(covariance, numObservations);
 	}
 
 	/**
@@ -309,10 +317,40 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 		// Number of extra parameters in the model incorporating the
 		//  extra variable is independent of the number of variables
 		//  in the conditional:
-		return new ChiSquareMeasurementDistribution(2*totalObservations*lastAverage,
+		return new ChiSquareMeasurementDistribution(2.0*((double)totalObservations)*lastAverage,
 				dimensionsVar1 * dimensionsVar2);
 	}
 	
+	
+	
+	/* (non-Javadoc)
+	 * @see infodynamics.measures.continuous.ConditionalMutualInfoMultiVariateCommon#computeSignificance(int, int)
+	 */
+	@Override
+	public EmpiricalMeasurementDistribution computeSignificance(
+			int variableToReorder, int numPermutationsToCheck) throws Exception {
+		if (var2Observations == null) {
+			throw new Exception("Cannot compute empirical statistical significance " +
+					"if user passed in covariance matrix rather than observations.");
+		}
+
+		return super.computeSignificance(variableToReorder, numPermutationsToCheck);
+	}
+
+	/* (non-Javadoc)
+	 * @see infodynamics.measures.continuous.ConditionalMutualInfoMultiVariateCommon#computeSignificance(int, int[][])
+	 */
+	@Override
+	public EmpiricalMeasurementDistribution computeSignificance(
+			int variableToReorder, int[][] newOrderings) throws Exception {
+		if (var2Observations == null) {
+			throw new Exception("Cannot compute empirical statistical significance " +
+					"if user passed in covariance matrix rather than observations.");
+		}
+
+		return super.computeSignificance(variableToReorder, newOrderings);
+	}
+
 	/**
 	 * @return the number of previously supplied observations for which
 	 *  the conditional mutual information will be / was computed.

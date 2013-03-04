@@ -23,6 +23,10 @@ import infodynamics.utils.RandomGenerator;
  */
 public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov 
 	implements ConditionalMutualInfoCalculatorMultiVariate {
+	
+	// TODO - have this class inhereit from ConditionalMutualInfoMultiVariateCommon
+	//  and remove the overlapping code. This will also solve a lot of the 
+	//  "Not implemented yet" exceptions that we're throwing here.
 
 	/**
 	 * we compute distances to the kth neighbour in the joint space
