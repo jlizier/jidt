@@ -1,0 +1,17 @@
+# The name of the data file (relative to this directory)
+datafile = ../data/4ColsPairedNoisyDependence-1.txt
+
+# A comma-separated list of column numbers for variables 1 and 2:
+#  (note1: you can select any columns you wish to be contained in each variable)
+#  (note2: array indices start from 0 in java!)
+variable1Columns = 0,1
+variable2Columns = 2,3
+
+# The name of the concrete implementation of the interface 
+#  infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate
+#  which we wish to use for the calculation.
+# Note that one could use any of the following calculators (try them all!):
+#  implementingClass = infodynamics.measures.continuous.kraskov.MutualInfoCalculatorMultiVariateKraskov1
+#  implementingClass = infodynamics.measures.continuous.kernel.MutualInfoCalculatorMultiVariateKernel
+#  implementingClass = infodynamics.measures.continuous.gaussian.MutualInfoCalculatorMultiVariateGaussian
+implementingClass = infodynamics.measures.continuous.kraskov.MutualInfoCalculatorMultiVariateKraskov1
