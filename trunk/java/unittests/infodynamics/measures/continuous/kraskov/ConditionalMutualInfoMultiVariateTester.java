@@ -134,7 +134,7 @@ public class ConditionalMutualInfoMultiVariateTester
 				int sourceVars = var1[0].length;
 				sources = new double[var1.length - firstDestTimeIndex][sourceVars * historyL];
 				for (int t = 0; t < historyL; t++) {
-					MatrixUtils.copyIntoMatrix(
+					MatrixUtils.arrayCopy(
 							var1, firstDestTimeIndex - historyL + t, 0,
 							sources, 0, t*sourceVars,
 							var1.length - firstDestTimeIndex, sourceVars);
@@ -150,7 +150,7 @@ public class ConditionalMutualInfoMultiVariateTester
 				int destVars = var2[0].length;
 				conditionals = new double[var2.length - firstDestTimeIndex][destVars * historyK];
 				for (int t = 0; t < historyK; t++) {
-					MatrixUtils.copyIntoMatrix(
+					MatrixUtils.arrayCopy(
 							var2, firstDestTimeIndex - historyK + t, 0,
 							conditionals, 0, t*destVars,
 							var2.length - firstDestTimeIndex, destVars);
