@@ -2390,6 +2390,33 @@ public class MatrixUtils {
 	}
 
 	/**
+	 * <p>Returns the covariance between the two arrays of data, with
+	 * a given lag between the first and second.</p>
+	 * <p>See - <a href="http://mathworld.wolfram.com/Covariance.html">Mathworld</a>
+	 * </p>
+	 * 
+	 * @param x time series 1
+	 * @param y time series 2
+	 * @param delay delay >= 0 to compute the covariance across (from first to second time series)
+	 * @return the covariance
+	 */
+	public static double covariance(double[] x, double[] y, int delay) {
+		double meanX = 0, meanY = 0;
+		// No error checking if y is same length as x
+		for (int n = 0; n < x.length - delay; n++) {
+			meanX += x[n];
+			meanY += y[n + delay];
+		}
+		meanX /= (double) (x.length - delay);
+		meanY /= (double) (x.length - delay);
+		double c = 0;
+		for (int t = 0; t < x.length - delay; t++) {
+			c += (x[t] - meanX)*(y[t + delay]-meanY);
+		}
+		return c / (double) (x.length - delay - 1); // -1 for sample covariance
+	}
+
+	/**
 	 * <p>Returns the covariance between the first two columns of data.</p>
 	 * 
 	 * @param data
@@ -3093,6 +3120,7 @@ public class MatrixUtils {
 	 * @see {@link http://mathworld.wolfram.com/CholeskyDecomposition.html}
 	 * @see {@link http://en.wikipedia.org/wiki/Positive-definite_matrix}
 	 * @see {@link http://math.nist.gov/javanumerics/jama/}
+	 * @see {@link http://www2.gsu.edu/~mkteer/npdmatri.html}
 	 */
 	public static double[][] CholeskyDecomposition(double[][] A) throws Exception {
 		int n = A.length;
@@ -3119,7 +3147,11 @@ public class MatrixUtils {
 			d = A[j][j] - d;
 			// Check the positive definite condition:
 			if (d <= 0.0) {
-				throw new Exception("CholeskyDecomposition is only performed on positive-definite matrices");
+				// Throw an error with some suggestions. The last suggestion is from my observations
+				//  from a simple test with Matlab - I should find a reference for this ...
+				throw new Exception("CholeskyDecomposition is only performed on positive-definite matrices. " + 
+						"Some reasons for non-positive-definite matrix are listed at http://www2.gsu.edu/~mkteer/npdmatri.html - " +
+						"note: a correlation matrix is non-positive-definite if you have more variables than observations");
 			}
 			L[j][j] = Math.sqrt(d);
 			// Set the upper triangular part to all zeros:

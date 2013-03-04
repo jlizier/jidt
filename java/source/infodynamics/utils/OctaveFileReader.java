@@ -25,6 +25,7 @@ public class OctaveFileReader {
 	static final String GLOBAL_SCALAR_HEADER = "# type: scalar";
 	static final String MATRIX_HEADER = "# type: matrix";
 	static final String GLOBAL_MATRIX_HEADER = "# type: global matrix";
+	static final String BOOL_MATRIX_HEADER = "# type: bool matrix";
 	static final String OCTAVE_DELIMITER = "[ \t]";
 	
 	public OctaveFileReader(String octaveFilename) throws FileNotFoundException {
@@ -123,7 +124,8 @@ public class OctaveFileReader {
 					// We have the header line for this stored variable
 					// Make sure the next line indicates a matrix
 					line = br.readLine();
-					if (!line.equals(MATRIX_HEADER) && !line.equals(GLOBAL_MATRIX_HEADER)) {
+					if (!line.equals(MATRIX_HEADER) && !line.equals(GLOBAL_MATRIX_HEADER)
+							&& !line.equals(BOOL_MATRIX_HEADER)) {
 						// The variable is not a matrix - it is not compatible with the
 						//  int [] type
 						throw new Exception("Stored Octave variable " + name + " is not of a type compatible with int[] - not a matrix");
@@ -180,7 +182,8 @@ public class OctaveFileReader {
 					// We have the header line for this stored variable
 					// Make sure the next line indicates a matrix
 					line = br.readLine();
-					if (!line.equals(MATRIX_HEADER) && !line.equals(GLOBAL_MATRIX_HEADER)) {
+					if (!line.equals(MATRIX_HEADER) && !line.equals(GLOBAL_MATRIX_HEADER)
+							&& !line.equals(BOOL_MATRIX_HEADER)) {
 						// The variable is not a matrix - it is not compatible with the
 						//  int [] type
 						throw new Exception("Stored Octave variable " + name + " is not of a type compatible with long[] - not a matrix");
@@ -294,7 +297,8 @@ public class OctaveFileReader {
 					// We have the header line for this stored variable
 					// Make sure the next line indicates a matirx
 					line = br.readLine();
-					if (!line.equals(MATRIX_HEADER) && !line.equals(GLOBAL_MATRIX_HEADER)) {
+					if (!line.equals(MATRIX_HEADER) && !line.equals(GLOBAL_MATRIX_HEADER)
+							&& !line.equals(BOOL_MATRIX_HEADER)) {
 						// The variable is not a matrix - it is not compatible with the
 						//  int [][] type
 						throw new Exception("Stored Octave variable " + name + " is not of a type compatible with int[][]");
