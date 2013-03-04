@@ -257,4 +257,16 @@ public class MatrixUtilsTest extends TestCase {
 		}		
 	}
 
+	
+	public static void test2DArrayCopy() {
+		double[][] temp = {{1,2,3,4}, {4,5,6,7}, {7,8,9,10}, {10,11,12,13}};
+		double[][] newMatrix = new double[10][10];
+		
+		MatrixUtils.arrayCopy(temp, 1, 1, newMatrix, 3, 3, 3, 3);
+		for (int r = 0; r < 3; r++) {
+			for (int c = 0; c < 3; c++) {
+				assertEquals(temp[r+1][c+1], newMatrix[r+3][c+3]);
+			}
+		}
+	}
 }

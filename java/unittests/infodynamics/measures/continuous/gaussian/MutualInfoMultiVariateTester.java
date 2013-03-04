@@ -16,7 +16,7 @@ public class MutualInfoMultiVariateTester extends TestCase {
 		// Check that we catch a covariance matrix which doesn't have
 		//  the right number of rows
 		try {
-			miCalc.setCovariance(new double[][] {{2,1,0.5}, {1,2,0.5}, {0.5,0.5,2}});
+			miCalc.setCovariance(new double[][] {{2,1,0.5}, {1,2,0.5}, {0.5,0.5,2}}, 1);
 		} catch (Exception e) {
 			caughtException = true;
 		}
@@ -24,7 +24,7 @@ public class MutualInfoMultiVariateTester extends TestCase {
 		// Check that we catch a covariance matrix which isn't square
 		caughtException = false;
 		try {
-			miCalc.setCovariance(new double[][] {{2,1}, {1,2,0.5}});
+			miCalc.setCovariance(new double[][] {{2,1}, {1,2,0.5}}, 1);
 		} catch (Exception e) {
 			caughtException = true;
 		}
@@ -32,7 +32,7 @@ public class MutualInfoMultiVariateTester extends TestCase {
 		// Check that we catch a covariance matrix which isn't symmetric
 		caughtException = false;
 		try {
-			miCalc.setCovariance(new double[][] {{2,1}, {1.000001,2}});
+			miCalc.setCovariance(new double[][] {{2,1}, {1.000001,2}}, 1);
 		} catch (Exception e) {
 			caughtException = true;
 		}
@@ -41,7 +41,7 @@ public class MutualInfoMultiVariateTester extends TestCase {
 		caughtException = false;
 		double[][] goodCovariance = new double[][] {{2,1}, {1,2}};
 		try {
-			miCalc.setCovariance(goodCovariance);
+			miCalc.setCovariance(goodCovariance, 93);
 		} catch (Exception e) {
 			caughtException = true;
 		}
@@ -64,7 +64,7 @@ public class MutualInfoMultiVariateTester extends TestCase {
 			covarianceMatrix[1][0] = covar;
 
 			miCalc.initialise(1, 1);
-			miCalc.setCovariance(covarianceMatrix);
+			miCalc.setCovariance(covarianceMatrix, 1);
 			assertEquals(-0.5 * Math.log(1.0 - covar*covar),
 					miCalc.computeAverageLocalOfObservations(), 0.00000000001);
 		}
@@ -76,13 +76,13 @@ public class MutualInfoMultiVariateTester extends TestCase {
 
 		double[][] covarianceMatrix = {{5, 3}, {3, 4}}; // det is 11
 		miCalc.initialise(1, 1);
-		miCalc.setCovariance(covarianceMatrix);
+		miCalc.setCovariance(covarianceMatrix, 100);
 		assertEquals(0.5 * Math.log(20.0 / 11.0),
 				miCalc.computeAverageLocalOfObservations(), 0.00000000001);
 		
 		double[][] covarianceMatrix2 = {{5, 3, 1}, {3, 4, 1.5}, {1, 1.5, 2}}; // det is 15.75
 		miCalc.initialise(2, 1);
-		miCalc.setCovariance(covarianceMatrix2);
+		miCalc.setCovariance(covarianceMatrix2, 100);
 		assertEquals(0.5 * Math.log(11.0 * 2.0 / 15.75), // marginal dets are 11 and 2
 				miCalc.computeAverageLocalOfObservations(), 0.00000000001);
 
