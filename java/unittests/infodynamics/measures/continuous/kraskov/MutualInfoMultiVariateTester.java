@@ -90,6 +90,7 @@ public class MutualInfoMultiVariateTester
 			//miCalc.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE,
 			//		EuclideanUtils.NORM_MAX_NORM_STRING);
 			miCalc.setObservations(var1, var2);
+			//miCalc.setDebug(true);
 			double mi = miCalc.computeAverageLocalOfObservations();
 			//miCalc.setDebug(false);
 			
@@ -302,7 +303,7 @@ public class MutualInfoMultiVariateTester
 	 */
 	public void testMultivariateMIforNoisyDependentVariablesFromFile() throws Exception {
 		
-		// Test set 6:
+		// Test set 7:
 		
 		// We'll just take the first two columns from this data set
 		ArrayFileReader afr = new ArrayFileReader("demos/data/4ColsPairedNoisyDependence-1.txt");
@@ -314,11 +315,42 @@ public class MutualInfoMultiVariateTester
 		double[] expectedFromMILCA_2 = {0.33738970, 0.36251531, 0.34708687, 
 				0.36200563, 0.35766125, 0.35007623, 0.35023664, 0.33728287};
 		
-		System.out.println("Kraskov comparison 6 - multivariate dependent data 1");
+		System.out.println("Kraskov comparison 7 - multivariate dependent data 1");
 		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0, 1}),
 				MatrixUtils.selectColumns(data, new int[] {2, 3}),
 				kNNs, expectedFromMILCA_2);
 
 	}
 
+	/**
+	 * Test the computed multivariate MI against that calculated by Kraskov's own MILCA
+	 * tool on the same data.
+	 * 
+	 * To run Kraskov's tool (http://www.klab.caltech.edu/~kraskov/MILCA/) for this 
+	 * data, run:
+	 * ./MIxnyn <dataFile> 5 5 10000 <kNearestNeighbours> 0
+	 * 
+	 * @throws Exception if file not found 
+	 * 
+	 */
+	public void testMultivariateMIforRandomGaussianVariablesFromFile() throws Exception {
+		
+		// Test set 8:
+		
+		// We'll take the columns from this data set
+		ArrayFileReader afr = new ArrayFileReader("demos/data/10ColsRandomGaussian-1.txt");
+		double[][] data = afr.getDouble2DMatrix();
+		
+		// Use various Kraskov k nearest neighbours parameter
+		int[] kNNs = {1, 2, 4, 10, 15};
+		// Expected values from Kraskov's MILCA toolkit:
+		double[] expectedFromMILCA_2 = {0.00815609, 0.00250864, 0.00035825,
+				0.00172174, 0.00033354};
+		
+		System.out.println("Kraskov comparison 8 - multivariate uncorrelated Gaussian data 1");
+		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0, 1, 2, 3, 4}),
+				MatrixUtils.selectColumns(data, new int[] {5, 6, 7, 8, 9}),
+				kNNs, expectedFromMILCA_2);
+
+	}
 }
