@@ -210,16 +210,21 @@ public class MutualInfoCalculatorMultiVariateKraskov2
 			// And take the digamma before adding into the 
 			//  average:
 			averageDiGammas += MathsUtils.digamma(n_x) + MathsUtils.digamma(n_y);
+			// if (debug) {
+			// 	System.out.printf("n=%d, \n");
+			// }
 		}
 		averageDiGammas /= (double) N;
+		mi = MathsUtils.digamma(k) - 1.0/(double)k - averageDiGammas + MathsUtils.digamma(N);
+		miComputed = true;
 		if (debug) {
 			avNx /= (double)N;
 			avNy /= (double)N;
-			System.out.println(String.format("Average n_x=%.3f, Average n_y=%.3f", avNx, avNy));
+			System.out.printf("Average n_x=%.3f, Average n_y=%.3f", avNx, avNy);
+			System.out.printf("psi(k=%d)=%.4f - 1/k=%.4f - averageDiGammas=%.4f -psi(N)=%.4f => %.4f\n",
+					k, MathsUtils.digamma(k), 1.0/(double)k, averageDiGammas, MathsUtils.digamma(N), mi);
 		}
 		
-		mi = MathsUtils.digamma(k) - 1.0/(double)k - averageDiGammas + MathsUtils.digamma(N);
-		miComputed = true;
 		return mi;
 	}
 
@@ -301,14 +306,16 @@ public class MutualInfoCalculatorMultiVariateKraskov2
 			averageDiGammas += MathsUtils.digamma(n_x) + MathsUtils.digamma(n_y);
 		}
 		averageDiGammas /= (double) N;
+		mi = MathsUtils.digamma(k) - 1.0/(double)k - averageDiGammas + MathsUtils.digamma(N);
+		miComputed = true;
 		if (debug) {
 			avNx /= (double)N;
 			avNy /= (double)N;
-			System.out.println(String.format("Average n_x=%.3f, Average n_y=%.3f", avNx, avNy));
+			System.out.printf("Average n_x=%.3f, Average n_y=%.3f\n", avNx, avNy);
+			System.out.printf("psi(k=%d)=%.4f - 1/k=%.4f - averageDiGammas=%.4f + psi(N)=%.4f => %.4f\n",
+					k, MathsUtils.digamma(k), 1.0/(double)k, averageDiGammas, MathsUtils.digamma(N), mi);
 		}
 		
-		mi = MathsUtils.digamma(k) - 1.0/(double)k - averageDiGammas + MathsUtils.digamma(N);
-		miComputed = true;
 		return mi;
 	}
 

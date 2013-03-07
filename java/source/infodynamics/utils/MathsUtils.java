@@ -259,7 +259,7 @@ public class MathsUtils {
 		double result = storedDigammas[highestDigammaArgCalced];
 		for (int n = highestDigammaArgCalced + 1; n <= d; n++) {
 			result += 1.0 / (double) (n-1);
-			if (d < NUM_STORED_DIGAMMAS) {
+			if (n < NUM_STORED_DIGAMMAS) {
 				storedDigammas[n] = result;
 			}
 		}
