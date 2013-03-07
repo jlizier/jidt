@@ -341,4 +341,28 @@ public class MathsUtilsTest extends TestCase {
 				0.000001);
 	}
 	
+	public void testDigamma() throws Exception {
+		assertEquals(-0.577216, MathsUtils.digamma(1), 0.000001);
+		assertEquals(0.42278, MathsUtils.digamma(2), 0.00001);
+		assertEquals(2.2518, MathsUtils.digamma(10), 0.0001);
+		assertEquals(4.6002, MathsUtils.digamma(100), 0.0001);
+		assertEquals(6.9073, MathsUtils.digamma(1000), 0.0001);
+		// Test calling for values above the range that we cache
+		assertEquals(9.2103, MathsUtils.digamma(10000), 0.0001);
+		assertEquals(9.2104, MathsUtils.digamma(10001), 0.0001);
+		// Test retrieving a cached value
+		assertEquals(5.2958, MathsUtils.digamma(200), 0.0001);
+
+		// And test manually calculated digammas:
+		assertEquals(-0.577216, MathsUtils.digammaByDefinition(1), 0.000001);
+		assertEquals(0.42278, MathsUtils.digammaByDefinition(2), 0.00001);
+		assertEquals(2.2518, MathsUtils.digammaByDefinition(10), 0.0001);
+		assertEquals(4.6002, MathsUtils.digammaByDefinition(100), 0.0001);
+		assertEquals(6.9073, MathsUtils.digammaByDefinition(1000), 0.0001);
+		// Test calling for values above the range that we cache
+		assertEquals(9.2103, MathsUtils.digammaByDefinition(10000), 0.0001);
+		assertEquals(9.2104, MathsUtils.digammaByDefinition(10001), 0.0001);
+		// Test retrieving a cached value
+		assertEquals(5.2958, MathsUtils.digammaByDefinition(200), 0.0001);
+	}
 }
