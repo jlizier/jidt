@@ -48,28 +48,28 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 	 */
 	public double computeAverageLocalOfObservations(int variableToReorder, 
 			int[] reordering) throws Exception {
-		if (!tryKeepAllPairsNorms || (data1.length > MAX_DATA_SIZE_FOR_KEEP_ALL_PAIRS_NORM)) {
+		if (!tryKeepAllPairsNorms || (var1Observations.length > MAX_DATA_SIZE_FOR_KEEP_ALL_PAIRS_NORM)) {
 			double[][] originalData;
 			if (variableToReorder == 1) {
-				originalData = data1;
+				originalData = var1Observations;
 			} else {
-				originalData = data2;
+				originalData = var2Observations;
 			}
 			if (reordering != null) {
 				// Generate a new re-ordered data array
 				if (variableToReorder == 1) {
-					data1 = MatrixUtils.extractSelectedTimePointsReusingArrays(originalData, reordering);
+					var1Observations = MatrixUtils.extractSelectedTimePointsReusingArrays(originalData, reordering);
 				} else {
-					data2 = MatrixUtils.extractSelectedTimePointsReusingArrays(originalData, reordering);
+					var2Observations = MatrixUtils.extractSelectedTimePointsReusingArrays(originalData, reordering);
 				}
 			}
 			// Compute the MI
 			double newMI = computeAverageLocalOfObservationsWhileComputingDistances();
 			// restore original data
 			if (variableToReorder == 1) {
-				data1 = originalData;
+				var1Observations = originalData;
 			} else {
-				data2 = originalData;
+				var2Observations = originalData;
 			}
 			return newMI;
 		}
@@ -79,7 +79,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 		if (xNorms == null) {
 			computeNorms();
 		}
-		int N = data1.length; // number of observations
+		int N = var1Observations.length; // number of observations
 		int cutoffForKthMinLinear = (int) (CUTOFF_MULTIPLIER * Math.log(N) / Math.log(2.0));
 		
 		// Count the average number of points within eps_xz and eps_yz and eps_z
@@ -169,7 +169,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 			}
 		}
 		averageDiGammas /= (double) N;
-		condMi = MathsUtils.digamma(k) + averageDiGammas;
+		lastAverage = MathsUtils.digamma(k) + averageDiGammas;
 		condMiComputed = true;
 		
 		if (debug) {
@@ -179,10 +179,10 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 			System.out.printf("<n_xz>=%.3f, <n_yz>=%.3f, <n_z>=%.3f\n",
 					avNxz, avNyz, avNz);
 			System.out.printf("Av = digamma(k)=%.3f + <digammas>=%.3f = %.3f \n",
-					MathsUtils.digamma(k), averageDiGammas, condMi);
+					MathsUtils.digamma(k), averageDiGammas, lastAverage);
 		}
 		
-		return condMi;
+		return lastAverage;
 	}
 	
 	/**
@@ -195,7 +195,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 	 * @throws Exception
 	 */
 	public double computeAverageLocalOfObservationsWhileComputingDistances() throws Exception {
-		int N = data1.length; // number of observations
+		int N = var1Observations.length; // number of observations
 		int cutoffForKthMinLinear = (int) (CUTOFF_MULTIPLIER * Math.log(N) / Math.log(2.0));
 		
 		// Count the average number of points within eps_xz, eps_yz and eps_z
@@ -208,7 +208,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 			// Compute eps for this time step:
 			//  First get x and y norms to all neighbours
 			//  (note that norm of point t to itself will be set to infinity).
-			double[][] xyzNorms = normCalculator.computeNorms(data1, data2, dataCond, t);
+			double[][] xyzNorms = normCalculator.computeNorms(var1Observations, var2Observations, condObservations, t);
 			double[] jointNorm = new double[N];
 			for (int t2 = 0; t2 < N; t2++) {
 				jointNorm[t2] = Math.max(xyzNorms[t2][0], Math.max(xyzNorms[t2][1], xyzNorms[t2][2]));
@@ -260,7 +260,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 			}
 		}
 		averageDiGammas /= (double) N;
-		condMi = MathsUtils.digamma(k) + averageDiGammas;
+		lastAverage = MathsUtils.digamma(k) + averageDiGammas;
 		condMiComputed = true;
 
 		if (debug) {
@@ -270,14 +270,14 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 			System.out.printf("<n_xz>=%.3f, <n_yz>=%.3f, <n_z>=%.3f\n",
 					avNxz, avNyz, avNz);
 			System.out.printf("Av = digamma(k)=%.3f + <digammas>=%.3f = %.3f \n",
-					MathsUtils.digamma(k), averageDiGammas, condMi);
+					MathsUtils.digamma(k), averageDiGammas, lastAverage);
 		}
 		
-		return condMi;
+		return lastAverage;
 	}
 
 	public double[] computeLocalOfPreviousObservations() throws Exception {
-		int N = data1.length; // number of observations
+		int N = var1Observations.length; // number of observations
 		int cutoffForKthMinLinear = (int) (CUTOFF_MULTIPLIER * Math.log(N) / Math.log(2.0));
 		double[] localCondMi = new double[N];
 		
@@ -294,7 +294,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 			// Compute eps for this time step:
 			//  First get x and y and z norms to all neighbours
 			//  (note that norm of point t to itself will be set to infinity.
-			double[][] xyzNorms = normCalculator.computeNorms(data1, data2, dataCond, t);
+			double[][] xyzNorms = normCalculator.computeNorms(var1Observations, var2Observations, condObservations, t);
 			double[] jointNorm = new double[N];
 			for (int t2 = 0; t2 < N; t2++) {
 				jointNorm[t2] = Math.max(xyzNorms[t2][0], Math.max(xyzNorms[t2][1], xyzNorms[t2][2]));
@@ -347,7 +347,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 			}
 		}
 		averageDiGammas /= (double) N;
-		condMi = digammaK + averageDiGammas;
+		lastAverage = digammaK + averageDiGammas;
 		condMiComputed = true;
 		
 		if (debug) {
@@ -357,7 +357,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 			System.out.printf("<n_xz>=%.3f, <n_yz>=%.3f, <n_z>=%.3f\n",
 					avNxz, avNyz, avNz);
 			System.out.printf("Av = digamma(k)=%.3f + <digammas>=%.3f = %.3f \n",
-					digammaK, averageDiGammas, condMi);
+					digammaK, averageDiGammas, lastAverage);
 		}
 		
 		return localCondMi;

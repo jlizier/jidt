@@ -1860,6 +1860,30 @@ public class MatrixUtils {
 	 * 
 	 * @param matrix 2D matrix of doubles
 	 */
+	public static void normalise(double[][] matrix) {
+		double[] means = means(matrix);
+		double[] stds = stdDevs(matrix, means);
+		
+		boolean[] nonZeroStds = new boolean[stds.length];
+		for (int c = 0; c < matrix[0].length; c++) {
+			nonZeroStds[c] = !Double.isInfinite(1.0 /  stds[c]);
+		}
+		
+		for (int r = 0; r < matrix.length; r++) {
+			for (int c = 0; c < matrix[r].length; c++) {
+				matrix[r][c] = matrix[r][c] - means[c];
+				if (nonZeroStds[c]) {
+					matrix[r][c] /= stds[c];
+				} // else we just subtract off the mean
+			}
+		}
+	}
+
+	/**
+	 * Normalises the elements along each column of the matrix
+	 * 
+	 * @param matrix 2D matrix of doubles
+	 */
 	public static double[][] normaliseIntoNewArray(double[][] matrix) {
 		double[] means = means(matrix);
 		double[] stds = stdDevs(matrix, means);
