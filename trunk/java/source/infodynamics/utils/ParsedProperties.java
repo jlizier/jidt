@@ -10,6 +10,13 @@ import java.io.FileOutputStream;
 public class ParsedProperties {
 	private Properties properties;
 	
+	/**
+	 * Construct an empty set of properties
+	 */
+	public ParsedProperties() {
+		properties = new Properties();
+	}
+
 	public ParsedProperties(Properties props) {
 		properties = props;
 	}

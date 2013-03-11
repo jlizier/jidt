@@ -525,13 +525,4 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 		
 		return localValues;
 	}
-
-	/**
-	 * No properties to set for this calculator
-	 */
-	public void setProperty(String propertyName, String propertyValue)
-			throws Exception {
-		
-	}
-
 }

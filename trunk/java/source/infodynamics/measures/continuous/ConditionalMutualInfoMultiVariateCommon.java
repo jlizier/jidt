@@ -90,6 +90,15 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	protected boolean addedMoreThanOneObservationSet;
 
 	/**
+	 * Property (settable via {@link #setProperty(String, String)})
+	 *  controlling whether the data is normalised or not (to mean 0,
+	 *  variance 1, for each of the multiple variables)
+	 *  before the calculation is made.
+	 */
+	public static final String PROP_NORMALISE = "NORMALISE";
+	private boolean normalise = true;
+
+	/**
 	 * Clear any previously supplied probability distributions and prepare
 	 * the calculator to be used again.
 	 * 
@@ -109,7 +118,22 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		condObservations = null;
 	}
 
-	// No properties to set on this abstract calculator
+	/**
+	 * Sets common properties for the calculator.
+	 * Valid properties include:
+	 * <ul>
+	 *  <li>{@link #PROP_NORMALISE} - whether to normalise the individual
+	 *      variables (true by default)</li>
+	 * </ul>
+	 * 
+	 * @param propertyName name of the property to set
+	 * @param propertyValue value to set on that property
+	 */
+	public void setProperty(String propertyName, String propertyValue) {
+		if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
+			normalise = Boolean.parseBoolean(propertyValue);
+		}
+	}
 
 	/**
 	 * Provide the complete set of observations to use to compute the
@@ -249,7 +273,7 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 			double[][] var2 = iteratorVar2.next();
 			double[][] cond = iteratorCond.next();
 			// Copy the data from these given observations into our master 
-			//  array, aligning them incorporating the timeDiff:
+			//  array
 			MatrixUtils.arrayCopy(var1, 0, 0,
 					var1Observations, startObservation, 0,
 					var1.length, dimensionsVar1);
@@ -261,12 +285,36 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 					cond.length, dimensionsCond);
 			startObservation += var2.length;
 		}
+		
+		// Normalise the data if required
+		if (normalise) {
+			MatrixUtils.normalise(var1Observations);
+			MatrixUtils.normalise(var2Observations);
+			MatrixUtils.normalise(condObservations);
+		}
+		
 		// We don't need to keep the vectors of observation sets anymore:
 		vectorOfVar1Observations = null;
 		vectorOfVar2Observations = null;
 		vectorOfCondObservations = null;
 	}
 	
+	/**
+	 * Compute the significance of the conditional mutual information of the previously supplied observations.
+	 * We destroy the p(x,y,z) correlations, by permuting the given variable,
+	 *  while retaining the joint distribution of the other variable
+	 *  and the conditional, and the marginal distribution of the
+	 *  permuted variable. This checks how
+	 *  significant this conditional mutual information actually was.
+	 *  
+	 * This is in the spirit of Chavez et. al., "Statistical assessment of nonlinear causality:
+	 *  application to epileptic EEG signals", Journal of Neuroscience Methods 124 (2003) 113-128
+	 *  which was performed for Transfer entropy.
+	 * 
+	 * @param variableToReorder 1 for variable 1, 2 for variable 2
+	 * @param numPermutationsToCheck
+	 * @return the proportion of cond MI scores from the distribution which have higher or equal MIs to ours.
+	 */
 	public EmpiricalMeasurementDistribution computeSignificance(
 			int variableToReorder, int numPermutationsToCheck) throws Exception {
 		// Generate the re-ordered indices:
@@ -345,7 +393,10 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 
 	/**
 	 * <p>Compute the mutual information if the given variable were
-	 *  ordered as per the ordering specified in newOrdering.</p>
+	 *  ordered as per the ordering specified in newOrdering.
+	 *  The user should ensure that all values 0..N-1 are represented exactly once in the
+	 *  array reordering and that no other values are included here.
+	 *  </p>
 	 * 
 	 * <p>We provide a simple implementation which would be suitable for
 	 *  any child class, though the child class may prefer to make its

@@ -69,6 +69,14 @@ public class ArrayFileWriter {
 		out.close();
 	}
 
+	/**
+	 * Write the matrix to a file.
+	 * Assumes the 2D array is regular - i.e. all rows have the same number of columns as the first
+	 * 
+	 * @param matrix
+	 * @param outputFileName
+	 * @throws IOException
+	 */
 	public static void makeIntMatrixFile(int matrix[][],String outputFileName) throws IOException {
     	int rowSize = matrix.length;
 		int colSize = matrix[0].length;
