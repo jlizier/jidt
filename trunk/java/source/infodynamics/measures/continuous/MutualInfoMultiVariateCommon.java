@@ -114,6 +114,11 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 */
 	public void setProperty(String propertyName, String propertyValue)
 			throws Exception {
+		
+		// TODO Have a NORMALISE property which is true by default,
+		//  except for the linear Gaussian calculator (see conditional
+		//  mutual info calculators)
+		
 		boolean propertySet = true;
 		if (propertyName.equalsIgnoreCase(PROP_TIME_DIFF)) {
 			timeDiff = Integer.parseInt(propertyValue);

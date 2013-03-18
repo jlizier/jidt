@@ -93,11 +93,11 @@ public class RandomGenerator {
 		return data;
 	}
 
-	public double[][] generateNormalData(int length, int dimenions,
+	public double[][] generateNormalData(int length, int dimensions,
 			double mean, double std){
-		double[][] data = new double[length][dimenions];
+		double[][] data = new double[length][dimensions];
 		for (int i = 0; i < length; i++) {
-			for (int j = 0; j < dimenions; j++) {
+			for (int j = 0; j < dimensions; j++) {
 				data[i][j] = random.nextGaussian()*std + mean;
 			}
 		}
