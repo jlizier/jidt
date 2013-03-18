@@ -96,7 +96,7 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	 *  before the calculation is made.
 	 */
 	public static final String PROP_NORMALISE = "NORMALISE";
-	private boolean normalise = true;
+	protected boolean normalise = true;
 
 	/**
 	 * Clear any previously supplied probability distributions and prepare
@@ -123,7 +123,8 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	 * Valid properties include:
 	 * <ul>
 	 *  <li>{@link #PROP_NORMALISE} - whether to normalise the individual
-	 *      variables (true by default)</li>
+	 *      variables (true by default, except for child class
+	 *      {@link infodynamics.measures.continuous.gaussian.ConditionalMutualInfoCalculatorMultiVariateGaussian})</li>
 	 * </ul>
 	 * 
 	 * @param propertyName name of the property to set
