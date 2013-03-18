@@ -1,11 +1,9 @@
 package infodynamics.measures.continuous.kraskov;
 
-import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSource;
+import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSourceCommon;
 import infodynamics.utils.EuclideanUtils;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
-import infodynamics.utils.EmpiricalMeasurementDistribution;
-import infodynamics.utils.RandomGenerator;
 
 /**
  * <p>Compute the Conditional Mutual Information between a discrete variable and a 
@@ -23,7 +21,9 @@ import infodynamics.utils.RandomGenerator;
  * 
  * @author Joseph Lizier
  */
-public class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteKraskov implements ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSource {
+public class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteKraskov
+	extends ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSourceCommon
+	implements Cloneable { // See comments on clonability below
 
 	// Multiplier used in hueristic for determining whether to use a linear search
 	//  for min kth element or a binary search.
@@ -33,14 +33,6 @@ public class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteKraskov impl
 	 * we compute distances to the kth neighbour
 	 */
 	protected int k;
-	protected double[][] continuousDataX;
-	protected double[][] conditionedDataZ;
-	protected int[] discreteDataY;
-	protected int[] counts;
-	protected int base;
-	protected boolean debug;
-	protected double condMi;
-	protected boolean miComputed;
 	
 	protected EuclideanUtils normCalculator;
 	// Storage for the norms from each observation to each other one
@@ -54,8 +46,6 @@ public class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteKraskov impl
 	
 	public final static String PROP_K = "k";
 	public final static String PROP_NORM_TYPE = "NORM_TYPE";	
-	public static final String PROP_NORMALISE = "NORMALISE";
-	private boolean normalise = true;
 
 	public ConditionalMutualInfoCalculatorMultiVariateWithDiscreteKraskov() {
 		super();
@@ -72,13 +62,11 @@ public class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteKraskov impl
 	 *     to condition on
 	 */
 	public void initialise(int dimensions, int base, int dimensionsCond) {
-		condMi = 0.0;
-		miComputed = false;
+		super.initialise(dimensions, base, dimensionsCond);
+
 		xNorms = null;
-		continuousDataX = null;
-		discreteDataY = null;
-		// No need to keep the dimenions for the conditional variables here
-		this.base = base;
+		zNorms = null;
+		xzNorms = null;
 	}
 
 	/**
@@ -90,8 +78,8 @@ public class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteKraskov impl
 	 * 		working out the norms between the points in each marginal space.
 	 * 		Options are defined by {@link EuclideanUtils#setNormToUse(String)} -
 	 * 		default is {@link EuclideanUtils#NORM_MAX_NORM}.
-	 *  <li>{@link #PROP_NORMALISE} - whether to normalise the individual
-	 *      variables (true by default)</li>
+	 *  <li>Any other properties settable in the parent class'
+	 *  {@link ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSourceCommon#setProperty(String, String)}</li>
 	 * </ul>
 	 * 
 	 * @param propertyName
@@ -102,65 +90,15 @@ public class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteKraskov impl
 			k = Integer.parseInt(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_NORM_TYPE)) {
 			normCalculator.setNormToUse(propertyValue);
-		} else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
-			normalise = Boolean.parseBoolean(propertyValue);
+		} else {
+			super.setProperty(propertyName, propertyValue);
 		}
 	}
 
-	public void addObservations(double[][] source, double[][] destination) throws Exception {
-		throw new RuntimeException("Not implemented yet");
-	}
-
-	public void addObservations(double[][] source, double[][] destination, int startTime, int numTimeSteps) throws Exception {
-		throw new RuntimeException("Not implemented yet");
-	}
-
-	public void setObservations(double[][] source, double[][] destination, boolean[] sourceValid, boolean[] destValid) throws Exception {
-		throw new RuntimeException("Not implemented yet");
-	}
-
-	public void setObservations(double[][] source, double[][] destination, boolean[][] sourceValid, boolean[][] destValid) throws Exception {
-		throw new RuntimeException("Not implemented yet");
-	}
-
-	public void startAddObservations() {
-		throw new RuntimeException("Not implemented yet");
-	}
-
-	public void finaliseAddObservations() {
-		throw new RuntimeException("Not implemented yet");
-	}
-
-	public void setObservations(double[][] continuousObservations,
-			int[] discreteObservations, double[][] conditionedObservations)
-			throws Exception {
-		
-		if ((continuousObservations.length != discreteObservations.length) ||
-			(continuousObservations.length != conditionedObservations.length)) {
-			throw new Exception("Time steps for observations2 " +
-					discreteObservations.length + " does not match the length " +
-					"of observations1 " + continuousObservations.length +
-					" and of conditionedObservations " + conditionedObservations.length);
-		}
-		if (continuousObservations[0].length == 0) {
-			throw new Exception("Computing MI with a null set of data");
-		}
-		if (conditionedObservations[0].length == 0) {
-			throw new Exception("Computing MI with a null set of conditioned data");
-		}
-		continuousDataX = continuousObservations;
-		discreteDataY = discreteObservations;
-		conditionedDataZ = conditionedObservations;
-		if (normalise) {
-			// Take a copy since we're going to normalise it
-			continuousDataX = MatrixUtils.normaliseIntoNewArray(continuousObservations);
-			conditionedDataZ = MatrixUtils.normaliseIntoNewArray(conditionedObservations);
-		}
-		// count the discrete states:
-		counts = new int[base];
-		for (int t = 0; t < discreteDataY.length; t++) {
-			counts[discreteDataY[t]]++;
-		}
+	public void finaliseAddObservations() throws Exception {
+		super.finaliseAddObservations();
+		// Now check that we have at least k observations in each discrete bin, 
+		//  or else our Kraskov extension won't make sense:
 		for (int b = 0; b < counts.length; b++) {
 			if (counts[b] < k) {
 				throw new RuntimeException("This implementation assumes there are at least k items in each discrete bin");
@@ -209,18 +147,18 @@ public class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteKraskov impl
 		int N = continuousDataX.length; // number of observations
 		if (!tryKeepAllPairsNorms || (N > MAX_DATA_SIZE_FOR_KEEP_ALL_PAIRS_NORM)) {
 			// Generate a new re-ordered set of discrete data
-			int[] originalDiscreteData = discreteDataY;
-			discreteDataY = MatrixUtils.extractSelectedTimePoints(discreteDataY, reordering);
+			int[] originalDiscreteData = discreteData;
+			discreteData = MatrixUtils.extractSelectedTimePoints(discreteData, reordering);
 			// Compute the MI
 			double newMI = computeAverageLocalOfObservationsWhileComputingDistances();
 			// restore data2
-			discreteDataY = originalDiscreteData;
+			discreteData = originalDiscreteData;
 			return newMI;
 		}
 		
 		// Otherwise we will use the norms we've already computed, and use a "virtual"
 		//  reordered data2.
-		int[] reorderedDiscreteData = MatrixUtils.extractSelectedTimePoints(discreteDataY, reordering);
+		int[] reorderedDiscreteData = MatrixUtils.extractSelectedTimePoints(discreteData, reordering);
 
 		if (xNorms == null) {
 			computeNorms();
@@ -342,7 +280,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteKraskov impl
 			int[] timeStepsOfKthMins = null;
 			// just do a linear search for the minimum epsilon value
 			timeStepsOfKthMins = MatrixUtils.kMinIndicesSubjectTo(
-					jointNorm, 0, k, discreteDataY, discreteDataY[t]);
+					jointNorm, 0, k, discreteData, discreteData[t]);
 			// and now we have the closest k points.
 			// Find eps_{x,y,z} as the maximum x and y and z norms amongst this set:
 			for (int j = 0; j < k; j++) {
@@ -366,7 +304,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteKraskov impl
 					if (xNorms[t][t2] <= eps_x) {
 						n_xz++;
 					}
-					if (discreteDataY[t] == discreteDataY[t2]) {
+					if (discreteData[t] == discreteData[t2]) {
 						n_yz++;
 					}
 				}
@@ -442,7 +380,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteKraskov impl
 			// just do a linear search for the minimum epsilon value
 			//  subject to the discrete variable value
 			timeStepsOfKthMins = MatrixUtils.kMinIndicesSubjectTo(
-					jointNorm, 0, k, discreteDataY, discreteDataY[t]);
+					jointNorm, 0, k, discreteData, discreteData[t]);
 			// and now we have the closest k points.
 			// Find eps_{x,y} as the maximum x and y norms amongst this set:
 			for (int j = 0; j < k; j++) {
@@ -466,7 +404,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteKraskov impl
 					if (xzNorms[t2][0] <= eps_x) {
 						n_xz++;
 					}
-					if (discreteDataY[t] == discreteDataY[t2]) {
+					if (discreteData[t] == discreteData[t2]) {
 						n_yz++;
 					}
 				}
@@ -497,98 +435,31 @@ public class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteKraskov impl
 		return condMi;
 	}
 
-	/**
-	 * Compute the significance of the mutual information of the previously supplied observations.
-	 * We destroy the p(x,y) correlations, while retaining the p(x), p(y) marginals, to check how
-	 *  significant this mutual information actually was.
-	 *  
-	 * This is in the spirit of Chavez et. al., "Statistical assessment of nonlinear causality:
-	 *  application to epileptic EEG signals", Journal of Neuroscience Methods 124 (2003) 113-128
-	 *  which was performed for Transfer entropy.
-	 * 
-	 * @param numPermutationsToCheck
-	 * @return the proportion of MI scores from the distribution which have higher or equal MIs to ours.
-	 */
-	public synchronized EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception {
-		// Generate the re-ordered indices:
-		RandomGenerator rg = new RandomGenerator();
-		int[][] newOrderings = rg.generateDistinctRandomPerturbations(continuousDataX.length, numPermutationsToCheck);
-		return computeSignificance(newOrderings);
-	}
-	
-	/**
-	 * Compute the significance of the mutual information of the previously supplied observations.
-	 * We destroy the p(x,y) correlations, while retaining the p(x), p(y) marginals, to check how
-	 *  significant this mutual information actually was.
-	 *  
-	 * This is in the spirit of Chavez et. al., "Statistical assessment of nonlinear causality:
-	 *  application to epileptic EEG signals", Journal of Neuroscience Methods 124 (2003) 113-128
-	 *  which was performed for Transfer entropy.
-	 * 
-	 * @param newOrderings the specific new orderings to use
-	 * @return the proportion of MI scores from the distribution which have higher or equal MIs to ours.
-	 */
-	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings) throws Exception {
-		
-		int numPermutationsToCheck = newOrderings.length;
-		if (!miComputed) {
-			computeAverageLocalOfObservations();
-		}
-		// Store the real observations and their MI:
-		double actualMI = condMi;
-		
-		EmpiricalMeasurementDistribution measDistribution = new EmpiricalMeasurementDistribution(numPermutationsToCheck);
-		
-		int countWhereMiIsMoreSignificantThanOriginal = 0;
-		for (int i = 0; i < numPermutationsToCheck; i++) {
-			// Compute the MI under this reordering
-			double newMI = computeAverageLocalOfObservations(newOrderings[i]);
-			measDistribution.distribution[i] = newMI;
-			if (debug){
-				System.out.println("New MI was " + newMI);
-			}
-			if (newMI >= actualMI) {
-				countWhereMiIsMoreSignificantThanOriginal++;
-			}
-		}
-		
-		// Restore the actual MI and the observations
-		condMi = actualMI;
-
-		// And return the significance
-		measDistribution.pValue = (double) countWhereMiIsMoreSignificantThanOriginal / (double) numPermutationsToCheck;
-		measDistribution.actualValue = condMi;
-		return measDistribution;
-	}
-
-	public double[] computeLocalUsingPreviousObservations(double[][] continuousStates,
-			int[] discreteStates) throws Exception {
-		// TODO Implement local method.
-		//  Note: will need to keep the means and stds of supplied observations
-		//  if we normalised them (since we'll need to normalise the 
-		//  observations supplied here to match them)
-		throw new Exception("Local method not implemented yet");
-	}
-
-	public void setDebug(boolean debug) {
-		this.debug = debug;
-	}
-
-	public double getLastAverage() {
-		return condMi;
-	}
-	
-	public int getNumObservations() {
-		return continuousDataX.length;
+	public double[] computeLocalOfPreviousObservations() throws Exception {
+		throw new Exception("Not implemented yet");
 	}
 
 	public double[] computeLocalUsingPreviousObservations(
-			double[][] contStates, int[] discreteStates,
-			double[][] conditionedStates) throws Exception {
-		// TODO Auto-generated method stub
-		//  Note: will need to keep the means and stds of supplied observations
-		//  if we normalised them (since we'll need to normalise the 
-		//  observations supplied here to match them)
+			double[][] contNewStates, int[] discreteNewStates,
+			double[][] conditionedNewStates) throws Exception {
+		
+		if (normalise) {
+			contNewStates = MatrixUtils.normaliseIntoNewArray(
+					contNewStates, meansX, stdsX);
+			conditionedNewStates = MatrixUtils.normaliseIntoNewArray(
+					conditionedNewStates, meansZ, stdsZ);
+		}
+		
 		throw new Exception("Not implemented yet");
 	}
+
+	// Note: no extra implementation of clone provided; we're simply
+	//  allowing clone() to produce a shallow copy, which is find
+	//  for the statistical significance calculation (none of the array
+	//  data will be changed there.
+	//
+	// public ConditionalMutualInfoCalculatorMultiVariateKraskov clone() {
+	//	return this;
+	// }
+	
 }
