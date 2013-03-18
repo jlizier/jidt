@@ -57,9 +57,10 @@ public interface ActiveInfoStorageCalculator {
 
 	/**
 	 * Flag that the observations are complete, probability distribution functions can now be built.
+	 * @throws Exception 
 	 *
 	 */
-	public void finaliseAddObservations();
+	public void finaliseAddObservations() throws Exception;
 	
 	/**
 	 * Sets the observations to compute the PDFs from.
@@ -86,5 +87,5 @@ public interface ActiveInfoStorageCalculator {
 	
 	public double getLastAverage();
 
-	public int getNumObservations();
+	public int getNumObservations() throws Exception;
 }

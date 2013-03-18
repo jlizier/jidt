@@ -892,6 +892,30 @@ public class MatrixUtils {
 	}
 
 	/**
+	 * Return a new matrix with the columns of matrix1 joined on the back of matrix2
+	 * 
+	 * @param matrix1
+	 * @param matrix2
+	 * @return
+	 * @throws Exception 
+	 */
+	public static double[][] appendColumns(double[][] matrix1, double[][] matrix2) throws Exception {
+		double[][] data = new double[matrix1.length][];
+		
+		if (matrix1.length != matrix2.length) {
+			throw new Exception("matrix1 and matrix2 have different lengths");
+		}
+		if (matrix1.length == 0) {
+			return data;
+		}
+		for (int r = 0; r < matrix1.length; r++) {
+			data[r] = append(matrix1[r], matrix2[r]);
+		}
+		
+		return data;
+	}
+	
+	/**
 	 * Append the vector u to the vector v and return the result
 	 * 
 	 * @param v vector 1
