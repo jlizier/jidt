@@ -34,7 +34,7 @@
 %    - saveImages - whether to save the plots or not (default false)
 %    - movingFrameSpeed - moving frame of reference's cells/time step, as in Lizier & Mahoney paper (default 0)
 
-function plotLocalInfoMeasureForCA(neighbourhood, base, rule, cells, timeSteps, measureId, measureParams, options)
+function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base, rule, cells, timeSteps, measureId, measureParams, options)
 
 	tic
 
