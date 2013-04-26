@@ -11,7 +11,7 @@ import infodynamics.utils.ParsedProperties;
  *  and dynamically alter the instantiated class at runtime.
  * We demonstrate this using a multivariate mutual information calculation.
  * 
- * @author joseph
+ * @author Joseph Lizier
  *
  */
 public class lateBindingMutualInfo {
