@@ -2,12 +2,11 @@
 
 = My publications =
 
-  * List all here ...
+  * TODO - List all here ...
 
 
 = Publications by other authors =
 
 Publications by other authors using this toolkit:
-<wiki:comment>
-  * It's unclear whether Dasgupta et al. use this toolkit
-</wiki:comment>
+
+  * Sakyasingha Dasgupta, Florentin Woergoetter, Poramate Manoonpong, [http://dx.doi.org/10.1007/s12530-013-9080-y "Information dynamics based self-adaptive reservoir for delay temporal memory tasks"], Evolving Systems, 2013.
