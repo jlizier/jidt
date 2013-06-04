@@ -48,7 +48,7 @@ shutdownJVM()
 
 = Example 3 - Transfer entropy on continuous data using kernel estimators =
 
-[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/example3TeContinuousDataKernel.py example3TeContinuousDataKernel.py] - Simple transfer entropy (TE) calculation on continuous-valued data using the (box) kernel-estimator TE calculator.
+[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/python/example3TeContinuousDataKernel.py example3TeContinuousDataKernel.py] - Simple transfer entropy (TE) calculation on continuous-valued data using the (box) kernel-estimator TE calculator.
 
 {{{
 from jpype import *
