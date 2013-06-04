@@ -30,6 +30,7 @@
 %    - seed - state for the random number generator used to set the initial condition of the CA (use this
 %       for reproducibility of plots, or to produce profiles for several different measures of the same CA raw states).
 %       We set rand('state', options.seed) if options.seed is supplied, and restore the previous seed afterwards.
+%    - initialState - supply the initial state of the CA. If this option exists, no other random initial state is set.
 %    - plotRawCa - default true
 %    - saveImages - whether to save the plots or not (default false)
 %    - movingFrameSpeed - moving frame of reference's cells/time step, as in Lizier & Mahoney paper (default 0)
@@ -59,7 +60,10 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 	javaaddpath('../../../infodynamics.jar');
 
 	% Simulate and plot the CA
-	if (isfield(options, 'seed'))
+	if (isfield(options, 'initialState'))
+		% User has supplied an initial state for the CA
+		caStates = runCA(neighbourhood, base, rule, cells, timeSteps, false, options.initialState);
+	elseif (isfield(options, 'seed'))
 		previousSeed = rand('state');
 		caStates = runCA(neighbourhood, base, rule, cells, timeSteps, false, options.seed);
 		rand('state', previousSeed);

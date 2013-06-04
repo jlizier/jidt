@@ -1,4 +1,4 @@
-% function [caStates, ruleTable, executedRules] = runCA(neighbourhood, base, rule, cells, steps, debug)
+% function [caStates, ruleTable, executedRules] = runCA(neighbourhood, base, rule, cells, steps, debug, seedOrState)
 %
 % Joseph Lizier
 % 2012
@@ -29,18 +29,33 @@
 % - cells - number of cells in the CA
 % - steps - number of rows to execute the CA for (including the random initial row)
 % - debug - turn on various debug messages
-% - seed - state input for the random number generator (so one can repeat CA investigations for the same initial state)
+% - seedOrState - if a scalar, it is the state input for the random number generator (so one can repeat CA investigations for the same initial state).
+%               - if a vector, it is the initial state for the CA (must be of length cells)
 %
 % Outputs:
 % - caStates - a run, from random initial conditions, of a CA of the given parameters.
 % - ruleTable - the lookup table for each neighbourhood configuration, constructed from the rule number
 % - executedRules - which CA rule was executed for every cell update that occurred for the CA.
 
-function [caStates, ruleTable, executedRules] = runCA(neighbourhood, base, rule, cells, steps, debug, seed)
+function [caStates, ruleTable, executedRules] = runCA(neighbourhood, base, rule, cells, steps, debug, seedOrState)
 
 	% Check arguments:
+	ca = [];
 	if (nargin >= 7)
-		rand('state', seed);
+		if (isscalar(seedOrState))
+			% User has supplied seed for the random number generator:
+			fprintf('Generating initial random CA state from seed %d\n', seedOrState);
+			rand('state', seedOrState);
+		else
+			% User has supplied the initial state for the CA:
+			fprintf('User has supplied initial state for CA\n');
+			if (length(seedOrState) != cells)
+				error('Supplied initial ca state vector [seedOrState] is not of length [cells]');
+			end
+			ca = seedOrState;
+		end
+	else
+		fprintf('Generating initial random CA state\n');
 	end
 	if (nargin < 6)
 		debug = false;
@@ -135,10 +150,12 @@ function [caStates, ruleTable, executedRules] = runCA(neighbourhood, base, rule,
 	if (nargout >= 3)
 		executedRules = zeros(steps - 1, cells);
 	end
-
-	% Generate a random start CA
-	ca = floor(rand(1, cells) * base);
 	
+	if (isempty(ca))
+		% User did not specify the initial CA state, so generate a random start CA
+		ca = floor(rand(1, cells) * base);
+	end
+
 	caStates(1,:) = ca;	
 	
 	if (debug)

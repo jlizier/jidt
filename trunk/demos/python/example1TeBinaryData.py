@@ -1,4 +1,4 @@
-# Example 1 - Transfer entropy on binary data =
+# = Example 1 - Transfer entropy on binary data =
 
 # Simple transfer entropy (TE) calculation on binary data using the discrete TE calculator:
 

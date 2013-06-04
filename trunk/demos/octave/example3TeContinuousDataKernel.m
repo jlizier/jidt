@@ -13,7 +13,7 @@ destArray = [0; covariance*sourceArray(1:numObservations-1) + (1-covariance)*nor
 sourceArray2=normrnd(0, 1, numObservations, 1); % Uncorrelated source
 % Create a TE calculator and run it:
 teCalc=javaObject('infodynamics.measures.continuous.kernel.TransferEntropyCalculatorKernel');
-teCalc.setProperty('NORMALISE_PROP_NAME', 'true'); % Normalise the individual variables
+teCalc.setProperty('NORMALISE', 'true'); % Normalise the individual variables
 teCalc.initialise(1, 0.5); % Use history length 1 (Schreiber k=1), kernel width of 0.5 normalised units
 teCalc.setObservations(sourceArray, destArray);
 % For copied source, should give something close to 1 bit:
