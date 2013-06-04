@@ -7,6 +7,8 @@ This page describes a basic set of demonstration scripts for using the toolkit i
 
 Please see UseInPython for instructions on how to begin using the java toolkit from inside python.
 
+Note that these examples use [http://jpype.sourceforge.net/ JPype] -- you will need to alter them if you want to use another Python-Java interface.
+
 This page contains the following code examples:
   * [#Example_1_-_Transfer_entropy_on_binary_data Example 1 - Transfer entropy on binary data]
   * Example 2 - Transfer entropy on multidimensional binary data - _coming soon_
