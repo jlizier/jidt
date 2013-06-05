@@ -7,7 +7,7 @@
 % Change location of jar to match yours:
 javaaddpath('../../infodynamics.jar');
 
-% Create many columns in a multidimensional array,
+% Create many columns in a multidimensional array (2 rows by 100 columns),
 %  where the next time step (row 2) copies the value of the column on the left
 %  from the previous time step (row 1):
 twoDTimeSeriesOctave       = (rand(1, 100)>0.5)*1;
@@ -25,8 +25,6 @@ twoDTimeSeriesJavaInt = octaveToJavaIntMatrix(twoDTimeSeriesOctave);
 teCalc=javaObject('infodynamics.measures.discrete.ApparentTransferEntropyCalculator', 2, 1);
 teCalc.initialise();
 % Add observations of transfer across one cell to the right per time step:
-%  (Note this only looks at column 1->2, we don't wrap around the columns unless
-%   we have previously called setPeriodicBoundaryConditions(true))
 teCalc.addObservations(twoDTimeSeriesJavaInt, 1);
 fprintf('The result should be close to 1 bit here, since we are executing copy operations of what is effectively a random bit to each cell here: ');
 result2D = teCalc.computeAverageLocalOfObservations()
