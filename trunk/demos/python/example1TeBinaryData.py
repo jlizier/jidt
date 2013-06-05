@@ -19,7 +19,7 @@ sourceArray2 = [random.randint(0,1) for r in xrange(100)]
 teCalcClass = JPackage("infodynamics.measures.discrete").ApparentTransferEntropyCalculator
 teCalc = teCalcClass(2,1)
 teCalc.initialise()
-# Since we have simple arrays of doubles, we can directly pass these in:
+# Since we have simple arrays of ints, we can directly pass these in:
 teCalc.addObservations(destArray, sourceArray)
 print("For copied source, result should be close to 1 bit : %.4f" % teCalc.computeAverageLocalOfObservations())
 teCalc.initialise()
