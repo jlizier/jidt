@@ -23,7 +23,7 @@ row2 = [row1[numObservations-1]] + row1[0:numObservations-1] # Copy the previous
 twoDTimeSeriesPython = []
 twoDTimeSeriesPython.append(row1)
 twoDTimeSeriesPython.append(row2)
-twoDTimeSeriesJavaInt = JArray(JInt, 2)(twoDTimeSeriesPython);
+twoDTimeSeriesJavaInt = JArray(JInt, 2)(twoDTimeSeriesPython); # 2 indicating 2D array
 
 # Create a TE calculator and run it:
 teCalcClass = JPackage("infodynamics.measures.discrete").ApparentTransferEntropyCalculator
