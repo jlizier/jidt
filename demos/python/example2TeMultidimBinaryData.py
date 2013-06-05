@@ -32,5 +32,7 @@ teCalc.initialise()
 # Add observations of transfer across one cell to the right per time step:
 teCalc.addObservations(twoDTimeSeriesJavaInt, 1)
 result2D = teCalc.computeAverageLocalOfObservations()
-print('The result should be close to 1 bit here, since we are executing copy operations of what is effectively a random bit to each cell here: %.3f bits from %d observations' % (result2D, teCalc.getNumObservations()))
+print(('The result should be close to 1 bit here, since we are executing copy ' + \
+      'operations of what is effectively a random bit to each cell here: %.3f ' + \
+      'bits from %d observations') % (result2D, teCalc.getNumObservations()))
 
