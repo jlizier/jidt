@@ -13,7 +13,7 @@ jarLocation = "../../infodynamics.jar"
 startJVM(getDefaultJVMPath(), "-ea", "-Djava.class.path=" + jarLocation)
 
 # Create many columns in a multidimensional array, e.g. for fully random values:
-# twoDTimeSeriesOctave = [[random.randint(0,1)]*2 for x in xrange(10)] # for 10 rows (time-steps) for 2 variables
+# twoDTimeSeriesOctave = [[random.randint(0,1) for y in xrange(2)] for x in xrange(10)] # for 10 rows (time-steps) for 2 variables
 
 # However here we want 2 rows by 100 columns where the next time step (row 2) is to copy the
 # value of the column on the left from the previous time step (row 1):

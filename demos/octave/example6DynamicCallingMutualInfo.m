@@ -25,7 +25,7 @@ variable2Columns = [3,4];
 %  infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate
 %  which we wish to use for the calculation.
 % Note that one could use any of the following calculators (try them all!):
-%  implementingClass = "infodynamics.measures.continuous.kraskov.MutualInfoCalculatorMultiVariateKraskov1";
+%  implementingClass = "infodynamics.measures.continuous.kraskov.MutualInfoCalculatorMultiVariateKraskov1"; % MI([1,2], [3,4]) = 0.35507
 %  implementingClass = "infodynamics.measures.continuous.kernel.MutualInfoCalculatorMultiVariateKernel";
 %  implementingClass = "infodynamics.measures.continuous.gaussian.MutualInfoCalculatorMultiVariateGaussian";
 implementingClass = "infodynamics.measures.continuous.kraskov.MutualInfoCalculatorMultiVariateKraskov1";
