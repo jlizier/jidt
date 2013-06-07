@@ -29,8 +29,8 @@ You can then run your java code fairly simply in python with JPype:
  # Use the object, e.g.: `teCalc.initialise()`
  # Shutdown the JVM when it's no longer required, e.g.: `shutdownJVM()`
 
-Note: *array conversion* between python and java requires some extra code, but is perfectly do-able - see sections [http://jpype.sourceforge.net/doc/user-guide/userguide.html#arrays 6] and [http://jpype.sourceforge.net/doc/user-guide/userguide.html#conversion 7] of the [http://jpype.sourceforge.net/doc/user-guide/userguide.html JPype user guide].
-_For example_, to convert a one-dimensional python array `myArray` to a java one dimensional array of doubles, use `JArray(JDouble, 1)(myArray)` -- see e.g. Example 3 in PythonExamples.
+*Array conversion* between python and java requires some extra code, but is perfectly do-able - see sections [http://jpype.sourceforge.net/doc/user-guide/userguide.html#arrays 6] and [http://jpype.sourceforge.net/doc/user-guide/userguide.html#conversion 7] of the [http://jpype.sourceforge.net/doc/user-guide/userguide.html JPype user guide].
+_For example_, to convert a one-dimensional python array `myArray` to a java one dimensional array of doubles, use `JArray(JDouble, 1)(myArray)` -- see e.g. Example 3 in PythonExamples; alternatively, if you use [http://www.numpy.org/ numpy].array objects these seem to be directly accepted by the java methods -- see e.g. Example 6 in PythonExamples.
 
 For static methods, you can call them on the reference to the class itself.
 
