@@ -10,7 +10,7 @@ This page contains the following code examples:
   * [#Example_1_-_Transfer_entropy_on_binary_data Example 1 - Transfer entropy on binary data]
   * [#Example_2_-_Transfer_entropy_on_multidimensional_binary_data Example 2 - Transfer entropy on multidimensional binary data]
   * [#Example_3_-_Transfer_entropy_on_continuous_data_using_kernel_est Example 3 - Transfer entropy on continuous data using kernel estimators]
-  * Example 4 - Transfer entropy on continuous data using Kraskov estimators - _coming soon_
+  * [#Example_4_-_Transfer_entropy_on_continuous_data_using_Kraskov_es Example 4 - Transfer entropy on continuous data using Kraskov estimators]
   * Example 5 - Multivariate transfer entropy on binary data - _coming soon_
 
 = Example 1 - Transfer entropy on binary data =
@@ -86,7 +86,7 @@ System.out.printf("The result should be close to 1 bit here, " +
 
 = Example 3 - Transfer entropy on continuous data using kernel estimators =
 
-[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/java/infodynamics/demos/example3TeContinuousDataKernel.java example3TeContinuousDataKernel.java] - Simple transfer entropy (TE) calculation on continuous-valued data using the (box) kernel-estimator TE calculator.
+[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/java/infodynamics/demos/Example3TeContinuousDataKernel.java Example3TeContinuousDataKernel.java] - Simple transfer entropy (TE) calculation on continuous-valued data using the (box) kernel-estimator TE calculator.
 
 {{{
 // Requires the following imports before the class definition:
@@ -126,4 +126,53 @@ double result2 = teCalc.computeAverageLocalOfObservations();
 System.out.printf("TE result %.4f bits; expected to be close to " +
 		"0 bits for uncorrelated Gaussians but will be biased upwards\n",
 		result2);
+}}}
+
+= Example 4 - Transfer entropy on continuous data using Kraskov estimators =
+
+[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/java/infodynamics/demos/Example4TeContinuousDataKraskov.java Example4TeContinuousDataKraskov.java] - Simple transfer entropy (TE) calculation on continuous-valued data using the Kraskov-estimator TE calculator.
+
+{{{
+// Requires the following imports before the class definition:
+// import infodynamics.utils.RandomGenerator;
+// import infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov;
+
+// Generate some random normalised data.
+int numObservations = 1000;
+double covariance = 0.4;
+
+// Create destArray correlated to previous value of sourceArray:
+RandomGenerator rg = new RandomGenerator();
+double[] sourceArray = rg.generateNormalData(numObservations, 0, 1);
+double[] destArray = rg.generateNormalData(numObservations, 0, 1-covariance);
+for (int t = 1; t < numObservations; t++) {
+	destArray[t] += covariance * sourceArray[t-1];
+}
+// And an uncorrelated second source
+double[] sourceArray2 = rg.generateNormalData(numObservations, 0, 1);
+
+// Create a TE calculator and run it:
+TransferEntropyCalculatorKraskov teCalc =
+		new TransferEntropyCalculatorKraskov();
+teCalc.setProperty("k", "4"); // Use Kraskov parameter K=4 for 4 nearest neighbours
+teCalc.initialise(1); // Use history length 1 (Schreiber k=1)
+
+// Perform calculation with correlated source:
+teCalc.setObservations(sourceArray, destArray);
+double result = teCalc.computeAverageLocalOfObservations();
+// Note that the calculation is a random variable (because the generated
+//  data is a set of random variables) - the result will be of the order
+//  of what we expect, but not exactly equal to it; in fact, there will
+//  be a large variance around it.
+System.out.printf("TE result %.4f nats; expected to be close to " +
+		"%.4f nats for these correlated Gaussians\n",
+		result, Math.log(1.0/(1-Math.pow(covariance,2))));
+
+//  Perform calculation with uncorrelated source:
+teCalc.initialise(); // Initialise leaving the parameters the same
+teCalc.setObservations(sourceArray2, destArray);
+// For random source, it should give something close to 0 bits
+double result2 = teCalc.computeAverageLocalOfObservations();
+System.out.printf("TE result %.4f nats; expected to be close to " +
+		"0 nats for these uncorrelated Gaussians\n", result2);
 }}}
