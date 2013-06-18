@@ -11,13 +11,18 @@ import infodynamics.utils.ParsedProperties;
  *  and dynamically alter the instantiated class at runtime.
  * We demonstrate this using a multivariate mutual information calculation.
  * 
+ * This example also demonstrates how to read simple files of arrays of data
+ *  with the toolkit, as well as how to dynamically load properties from a 
+ *  java properties file. 
+ * 
  * @author Joseph Lizier
  *
  */
 public class Example6LateBindingMutualInfo {
 
 	/**
-	 * @param args
+	 * @param args One command line argument taken, specifying location of 
+	 *  the properties file.
 	 */
 	public static void main(String[] args) throws Exception {
 		
