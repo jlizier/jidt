@@ -16,7 +16,7 @@ teCalc=javaObject('infodynamics.measures.continuous.kernel.TransferEntropyCalcul
 teCalc.setProperty('NORMALISE', 'true'); % Normalise the individual variables
 teCalc.initialise(1, 0.5); % Use history length 1 (Schreiber k=1), kernel width of 0.5 normalised units
 teCalc.setObservations(sourceArray, destArray);
-% For copied source, should give something close to 1 bit:
+% For copied source, should give something close to expected value for correlated Gaussians:
 result = teCalc.computeAverageLocalOfObservations();
 fprintf('TE result %.4f bits; expected to be close to %.4f bits for these correlated Gaussians but biased upwards\n', ...
     result, log(1/(1-covariance^2))/log(2));
