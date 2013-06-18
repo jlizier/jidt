@@ -1,4 +1,4 @@
-% Example 5 - Multivariate transfer entropy on binary data =
+% = Example 5 - Multivariate transfer entropy on binary data =
 
 % Multivariate transfer entropy (TE) calculation on binary data using the discrete TE calculator:
 
