@@ -7,7 +7,7 @@
 #  made to the demo source code. The demo as written should be compiled once
 #  then one can make dynamic changes to the props file and simply
 #  run the class file without recompiling.
-javac -classpath "../../infodynamics.jar" "infodynamics/demos/lateBindingMutualInfo.java"
+javac -classpath "../../infodynamics.jar" "infodynamics/demos/Example6LateBindingMutualInfo.java"
 
-# Run the example:
-java -classpath ".:../../infodynamics.jar" infodynamics.demos.lateBindingMutualInfo lateBindingDemo.props
+# Run the example, feeding in the properties file as the command line argument
+java -classpath ".:../../infodynamics.jar" infodynamics.demos.Example6LateBindingMutualInfo example6LateBindingMutualInfo.props
