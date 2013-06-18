@@ -14,7 +14,7 @@ import infodynamics.utils.ParsedProperties;
  * @author Joseph Lizier
  *
  */
-public class lateBindingMutualInfo {
+public class Example6LateBindingMutualInfo {
 
 	/**
 	 * @param args
