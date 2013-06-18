@@ -1,6 +1,7 @@
 package infodynamics.measures.continuous.gaussian;
 
 import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSourceCommon;
+import infodynamics.measures.continuous.ConditionalMutualInfoMultiVariateCommon;
 import infodynamics.utils.MatrixUtils;
 
 /**
@@ -45,6 +46,13 @@ import infodynamics.utils.MatrixUtils;
  * 	</ol>
  * </p>
  * 
+ * <p>
+ * Alters behaviour slightly from parent class {@link ConditionalMutualInfoMultiVariateCommon}
+ * in that property {@link ConditionalMutualInfoMultiVariateCommon#PROP_NORMALISE}
+ * is set to false by default here (since this makes more sense for
+ * linear-Gaussian analysis). 
+ * </p>
+ * 
  * @see <a href="http://mathworld.wolfram.com/DifferentialEntropy.html">Differential entropy for Gaussian random variables at Mathworld</a>
  * @see <a href="http://en.wikipedia.org/wiki/Differential_entropy">Differential entropy for Gaussian random variables at Wikipedia</a>
  * @see <a href="http://en.wikipedia.org/wiki/Multivariate_normal_distribution">Multivariate normal distribution on Wikipedia</a>
@@ -79,6 +87,9 @@ public class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSourceGaussi
 
 	public ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSourceGaussian() {
 		super();
+		// Normalising data makes less sense for linear-Gaussian estimation,
+		//  so we turn this off by default.
+		normalise = false;
 		entCalcZ = new EntropyCalculatorMultiVariateGaussian();
 		entCalcZForEachDiscrete = null;
 		entCalcCZ = new EntropyCalculatorMultiVariateGaussian();

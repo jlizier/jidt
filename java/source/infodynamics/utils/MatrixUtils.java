@@ -881,6 +881,30 @@ public class MatrixUtils {
 	 * @param column
 	 * @param source
 	 */
+	public static void copyIntoColumn(int[][] destination, int column, 
+			int destFromRowNumber, int[] source, int sourceFromRowNumber,
+			int rows) throws Exception {
+		if (sourceFromRowNumber + rows > source.length) {
+			throw new Exception("Attempting to copy too many rows " + rows +
+					" after the start row " + sourceFromRowNumber +
+					" from the source of length " + source.length);
+		}
+		if (destFromRowNumber + rows > destination.length) {
+			throw new Exception("Attempting to copy too many rows " + rows +
+					" after the start row " + destFromRowNumber +
+					" from the destination of length " + destination.length);
+		}
+		for (int r = 0; r < rows; r++) {
+			destination[r + destFromRowNumber][column] = source[r + sourceFromRowNumber];
+		}
+	}
+
+	/**
+	 * Copies the given source array into the required column number of the destination
+	 * @param destination
+	 * @param column
+	 * @param source
+	 */
 	public static void copyIntoColumn(double[][] destination, int column, double[] source) throws Exception {
 		if (source.length != destination.length) {
 			throw new Exception("Destination column is not of the same length as the source (" +
