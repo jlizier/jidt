@@ -192,6 +192,24 @@ public class RandomGenerator {
 	}
 	
 	/**
+	 * Generate a multidimensional array of random integers in the range 0 .. cap-1.
+	 * 
+	 * @param rows rows of array to return
+	 * @param columns columns of array to return
+	 * @param cap number of distinct values to choose from (0..cap-1)
+	 * @return array of random integers
+	 */
+	public int[][] generateRandomInts(int rows, int columns, int cap) {
+		int[][] data = new int[rows][columns];
+		for (int r = 0; r < rows; r++) {
+			for (int c = 0; c < columns; c++) {
+				data[r][c] = random.nextInt(cap);
+			}
+		}
+		return data;
+	}
+	
+	/**
 	 * Generate (up to) numSets distinct sets of p distinct values in [0..n-1] 
 	 * Done using random guesses as this is designed for high dimension n
 	 *  where its highly unlikely we repeat a set (though this is checked)

@@ -813,11 +813,7 @@ public class ApparentTransferEntropyCalculator extends ContextOfPastMeasureCalcu
 			}
 		}		
 
-		if (periodicBoundaryConditions) {
-			average = average/(double) (timeSteps - startObservationTime);
-		} else {
-			average = average/(double) (timeSteps - startObservationTime);
-		}
+		average = average/(double) (timeSteps - startObservationTime);
 		
 		return localTE;
 	}
