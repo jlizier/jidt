@@ -44,6 +44,19 @@ public class MatrixUtils {
 		return array;
 	}
 	
+	/**
+	 * Return an array with the given value at every index
+	 * 
+	 * @param length length of array
+	 * @param value value for every element of the arry
+	 * @return
+	 */
+	public static double[] constantArray(int length, double value) {
+		double[] array = new double[length];
+		Arrays.fill(array, value);
+		return array;
+	}
+	
 	public static double sum(double[] input) {
 		double total = 0;
 		for (int i = 0; i < input.length; i++) {
@@ -600,6 +613,21 @@ public class MatrixUtils {
 	}
 
 	/**
+	 * Subtracts a constant value from all items in an array
+	 * 
+	 * @param array
+	 * @param value
+	 * @return array - constant value
+	 */
+	public static double[] subtract(double[] array, double value) throws Exception {
+		double[] returnValues = new double[array.length];
+		for (int i = 0; i < returnValues.length; i++) {
+			returnValues[i] = array[i] - value;
+		}
+		return returnValues;
+	}
+
+	/**
 	 * Subtracts second array from the first, overwriting the
 	 *  values in first
 	 * 
@@ -637,6 +665,21 @@ public class MatrixUtils {
 			for (int c = 0; c < columns; c++) {
 				returnValues[r][c] = input1[r][c] - input2[r][c];
 			}
+		}
+		return returnValues;
+	}
+
+	/**
+	 * Subtracts a constant value from all items in an array
+	 * 
+	 * @param array
+	 * @param value
+	 * @return array - constant value
+	 */
+	public static int[] subtract(int[] array, int value) throws Exception {
+		int[] returnValues = new int[array.length];
+		for (int i = 0; i < returnValues.length; i++) {
+			returnValues[i] = array[i] - value;
 		}
 		return returnValues;
 	}
@@ -1154,6 +1197,21 @@ public class MatrixUtils {
 	 * Select out part of an array.
 	 * 
 	 * @param data
+	 * @param indices which array indices to pull out
+	 * @return
+	 */
+	public static double[] select(double[] data, int[] indices) {
+		double[] returnData = new double[indices.length];
+		for (int i = 0; i < indices.length; i++) {
+			returnData[i] = data[indices[i]];
+		}
+		return returnData;
+	}
+	
+	/**
+	 * Select out part of an array.
+	 * 
+	 * @param data
 	 * @param fromIndex
 	 * @param length
 	 * @return
@@ -1164,6 +1222,21 @@ public class MatrixUtils {
 		return returnData;
 	}
 	
+	/**
+	 * Select out part of an array.
+	 * 
+	 * @param data
+	 * @param indices which array indices to pull out
+	 * @return
+	 */
+	public static int[] select(int[] data, int[] indices) {
+		int[] returnData = new int[indices.length];
+		for (int i = 0; i < indices.length; i++) {
+			returnData[i] = data[indices[i]];
+		}
+		return returnData;
+	}
+
 	public static int[] selectColumn(int matrix[][], int columnNo) {
 		int[] column = new int[matrix.length];
 		for (int r = 0; r < matrix.length; r++) {
