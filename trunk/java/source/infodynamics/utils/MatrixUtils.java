@@ -3166,7 +3166,7 @@ public class MatrixUtils {
 
 		return result; 
 	}
-	
+		
 	/**
 	 * <p>Make the Cholesky decomposition L of a given input matrix A,
 	 * where:
@@ -3221,7 +3221,7 @@ public class MatrixUtils {
 			if (d <= 0.0) {
 				// Throw an error with some suggestions. The last suggestion is from my observations
 				//  from a simple test with Matlab - I should find a reference for this ...
-				throw new Exception("CholeskyDecomposition is only performed on positive-definite matrices. " + 
+				throw new NonPositiveDefiniteMatrixException("CholeskyDecomposition is only performed on positive-definite matrices. " + 
 						"Some reasons for non-positive-definite matrix are listed at http://www2.gsu.edu/~mkteer/npdmatri.html - " +
 						"note: a correlation matrix is non-positive-definite if you have more variables than observations");
 			}

@@ -6,6 +6,7 @@ import infodynamics.utils.AnalyticNullDistributionComputer;
 import infodynamics.utils.ChiSquareMeasurementDistribution;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.MatrixUtils;
+import infodynamics.utils.NonPositiveDefiniteMatrixException;
 
 /**
  * <p>Computes the differential conditional mutual information of two given multivariate sets of
@@ -90,6 +91,14 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 	protected double det2cCovariance;
 	protected double detccCovariance;
 	
+	/**
+	 * Cache which sub-variables for each variable are a linearly-independent set
+	 *  and are used in the covariances
+	 */
+	protected int[] condIndicesInCovariance;
+	protected int[] var1IndicesInCovariance;
+	protected int[] var2IndicesInCovariance;
+	
 	public ConditionalMutualInfoCalculatorMultiVariateGaussian() {
 		// Normalising data makes less sense for linear-Gaussian estimation,
 		//  so we turn this off by default.
@@ -107,6 +116,9 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 		det1cCovariance = 0;
 		det2cCovariance = 0;
 		detccCovariance = 0;
+		condIndicesInCovariance = null;
+		var1IndicesInCovariance = null;
+		var2IndicesInCovariance = null;
 	}
 
 	/**
@@ -194,34 +206,126 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 		if (rows != dimensionsVar1 + dimensionsVar2 + dimensionsCond) {
 			throw new Exception("Supplied covariance matrix does not match initialised number of dimensions");
 		}
-
-		// Make sure the matrix is symmetric and positive definite, by taking the 
-		//  Cholesky decomposition (which we need for the determinant later anyway):
-		//  (this will check and throw Exceptions for non-square,
-		//   asymmetric, non-positive definite A)
-		L = MatrixUtils.CholeskyDecomposition(covariance);
 		
-		// Store the Cholesky decompositions for the conditional variable:
-		int[] condIndicesInCovariance = MatrixUtils.range(dimensionsVar1 + dimensionsVar2,
-				dimensionsVar1 + dimensionsVar2 + dimensionsCond - 1);
-		double[][] condCovariance =
-			MatrixUtils.selectRowsAndColumns(covariance, 
-					condIndicesInCovariance, condIndicesInCovariance);
-		L_cc = MatrixUtils.CholeskyDecomposition(condCovariance);
-		// And store the Cholesky decompositions for var1 with
+		// Now store the Cholesky decompositions for computing the cond MI later.
+		// Start with the conditional variable:
+		//  In case there are linear redundancies amongst the conditional variable,
+		//  remove some of its components until the linear redundancy is gone.
+		//  This allows a conditional MI computation to still take place.
+		boolean redundanciesRemoved = false;
+		condIndicesInCovariance = null;
+		for (int v = dimensionsCond; v >= 1; v--) {
+			// Select the first v variables in the conditional joint variable:
+			condIndicesInCovariance = MatrixUtils.range(dimensionsVar1 + dimensionsVar2,
+					dimensionsVar1 + dimensionsVar2 + v - 1);
+			double[][] condCovariance =
+				MatrixUtils.selectRowsAndColumns(covariance, 
+						condIndicesInCovariance, condIndicesInCovariance);
+			try {
+				L_cc = MatrixUtils.CholeskyDecomposition(condCovariance);
+			} catch (NonPositiveDefiniteMatrixException e) {
+				// There is a linear redundancy between the variables - so allow
+				//  one to be removed in the next loop iteration
+				continue;
+			}
+			// Allow exceptions indicating asymmetric and non-square to be propagated
+			// Otherwise, we've found a linearly independent subset of the conditioned variable
+			redundanciesRemoved = true;
+			break;
+		}
+		if (!redundanciesRemoved) {
+			// This should not happen, because a univariate conditional should
+			//  be positive definite
+			throw new Exception("Conditional variables are linearly redundant, even " +
+					"apparently when using only one of them (this should not happen)");
+		}
+		
+		// And next store the Cholesky decompositions for var1 with
 		//  the conditional variable:
-		int[] var1IndicesInCovariance = MatrixUtils.range(0, dimensionsVar1 - 1);
-		int[] var2IndicesInCovariance = MatrixUtils.range(dimensionsVar1, dimensionsVar1 + dimensionsVar2 - 1);
-		int[] var1AndCondIndicesInCovariance = MatrixUtils.append(var1IndicesInCovariance, condIndicesInCovariance);
-		int[] var2AndCondIndicesInCovariance = MatrixUtils.append(var2IndicesInCovariance, condIndicesInCovariance);
-		double[][] var1AndCondCovariance =
-			MatrixUtils.selectRowsAndColumns(covariance, 
-					var1AndCondIndicesInCovariance, var1AndCondIndicesInCovariance);
-		L_1c = MatrixUtils.CholeskyDecomposition(var1AndCondCovariance);
-		double[][] var2AndCondCovariance =
+		//  In case there are linear redundancies amongst the conditional variable
+		//  with variable 1, remove some of the components of variable 1
+		//  until the linear redundancy is gone.
+		//  This allows a conditional MI computation to still take place.
+		var1IndicesInCovariance = null;
+		redundanciesRemoved = false;
+		for (int v = dimensionsVar1; v >= 1; v--) {
+			var1IndicesInCovariance = MatrixUtils.range(0, v - 1);
+			int[] var1AndCondIndicesInCovariance = MatrixUtils.append(var1IndicesInCovariance, condIndicesInCovariance);
+			double[][] var1AndCondCovariance =
+					MatrixUtils.selectRowsAndColumns(covariance, 
+							var1AndCondIndicesInCovariance, var1AndCondIndicesInCovariance);
+			try {
+				L_1c = MatrixUtils.CholeskyDecomposition(var1AndCondCovariance);
+			} catch (NonPositiveDefiniteMatrixException e) {
+				// There is a linear redundancy between the variables - so allow
+				//  one to be removed in the next loop iteration
+				continue;
+			}
+			// Allow exceptions indicating asymmetric and non-square to be propagated
+			// Otherwise, we've found a linearly independent subset of the conditioned variable
+			redundanciesRemoved = true;
+			break;
+		}
+		if (!redundanciesRemoved) {
+			// This means that variable 1 is *fully* linearly dependent on the conditioned
+			//  variable (i.e. not even cutting it down to just one variable helped).
+			// Flag this by setting:
+			L_1c = null;
+		}
+		
+		// And next store the Cholesky decompositions for var2 with
+		//  the conditional variable:
+		//  In case there are linear redundancies amongst the conditional variable
+		//  with variable 2, remove some of the components of variable 2
+		//  until the linear redundancy is gone.
+		//  This allows a conditional MI computation to still take place.
+		var2IndicesInCovariance = null;
+		int[] var2AndCondIndicesInCovariance = null;
+		redundanciesRemoved = false;
+		for (int v = dimensionsVar2; v >= 1; v--) {
+			var2IndicesInCovariance = MatrixUtils.range(dimensionsVar1, dimensionsVar1 + v - 1);
+			var2AndCondIndicesInCovariance = MatrixUtils.append(var2IndicesInCovariance, condIndicesInCovariance);
+			double[][] var2AndCondCovariance =
 				MatrixUtils.selectRowsAndColumns(covariance, 
 						var2AndCondIndicesInCovariance, var2AndCondIndicesInCovariance);
-		L_2c = MatrixUtils.CholeskyDecomposition(var2AndCondCovariance);
+			try {
+				L_2c = MatrixUtils.CholeskyDecomposition(var2AndCondCovariance);
+			} catch (NonPositiveDefiniteMatrixException e) {
+				// There is a linear redundancy between the variables - so allow
+				//  one to be removed in the next loop iteration
+				continue;
+			}
+			// Allow exceptions indicating asymmetric and non-square to be propagated
+			// Otherwise, we've found a linearly independent subset of the conditioned variable
+			redundanciesRemoved = true;
+			break;
+		}
+		if (!redundanciesRemoved) {
+			// This means that variable 2 is *fully* linearly dependent on the conditioned
+			//  variable (i.e. not even cutting it down to just one variable helped).
+			// Flag this by setting:
+			L_2c = null;
+		}
+
+		// Finally, store the Cholesky decomposition for the whole covariance matrix:
+		//  first prune the covariance in line with the variable removed
+		//  from variable 1, 2 and the conditional:
+		int[] prunedIndicesInCovariance = MatrixUtils.append(var1IndicesInCovariance, var2AndCondIndicesInCovariance);
+		double[][] prunedCovariance =
+				MatrixUtils.selectRowsAndColumns(covariance, 
+						prunedIndicesInCovariance, prunedIndicesInCovariance);
+		try {
+			L = MatrixUtils.CholeskyDecomposition(prunedCovariance);
+		} catch (NonPositiveDefiniteMatrixException e) {
+			// There is a linear redundancy between the variables - 
+			// Flag this by setting:
+			L = null;
+		}
+		// Allow exceptions indicating asymmetric and non-square to be propagated
+
+		// Postcondition: L's contain Cholesky decompositions of covariance
+		//  matrices with linearly dependent variables removed (except for 
+		//  the whole covariance matrix), using null to flag where this was not possible
 	}
 
 	/**
@@ -267,14 +371,38 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 		// Simple way:
 		// detCovariance = MatrixUtils.determinantSymmPosDefMatrix(covariance);
 		// Using cached Cholesky decomposition:
-		detCovariance = MatrixUtils.determinantViaCholeskyResult(L);
-		det1cCovariance = MatrixUtils.determinantViaCholeskyResult(L_1c);
-		det2cCovariance = MatrixUtils.determinantViaCholeskyResult(L_2c);
+		// And also with extended checks for linear redundancies:
+		
+		// Should always have a valid L_cc (since we can reduce it down to one variable:
 		detccCovariance = MatrixUtils.determinantViaCholeskyResult(L_cc);
+		if (L_1c == null) {
+			// Variable 1 is fully linearly redundant with conditional, so
+			//  we will have zero conditional MI:
+			lastAverage = 0;
+		} else {
+			det1cCovariance = MatrixUtils.determinantViaCholeskyResult(L_1c);
+			if (L_2c == null) {
+				// Variable 2 is fully linearly redundant with conditional, so
+				//  we will have zero conditional MI:
+				lastAverage = 0;
+			} else {
+				det2cCovariance = MatrixUtils.determinantViaCholeskyResult(L_2c);
+				if (L == null) {
+					// There is a linear dependence amongst variables 1 and 2 given the
+					//  conditional which did not exist for either with the conditional alone,
+					//  so conditional MI diverges:
+					lastAverage = Double.POSITIVE_INFINITY;
+				} else {
+					detCovariance = MatrixUtils.determinantViaCholeskyResult(L);
 
-		lastAverage = 0.5 * Math.log(Math.abs(
-				det1cCovariance * det2cCovariance /
-						(detCovariance * detccCovariance)));
+					// Else all the covariance matrices were ok, so compute as normal:
+					lastAverage = 0.5 * Math.log(Math.abs(
+							det1cCovariance * det2cCovariance /
+									(detCovariance * detccCovariance)));
+				}
+			}
+		}
+		
 		condMiComputed = true;
 		return lastAverage;
 	}
@@ -326,8 +454,12 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 		// Number of extra parameters in the model incorporating the
 		//  extra variable is independent of the number of variables
 		//  in the conditional:
+		// (Assuming that all variables went into the calculation:)
+		// return new ChiSquareMeasurementDistribution(2.0*((double)totalObservations)*lastAverage,
+		//		dimensionsVar1 * dimensionsVar2);
+		// Taking the subsets into account:
 		return new ChiSquareMeasurementDistribution(2.0*((double)totalObservations)*lastAverage,
-				dimensionsVar1 * dimensionsVar2);
+				var1IndicesInCovariance.length * var2IndicesInCovariance.length);
 	}
 	
 	
@@ -428,6 +560,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 	 * @see <a href="http://en.wikipedia.org/wiki/Positive-definite_matrix>"Positive definite matrix in Wikipedia"</a>
 	 * @throws Exception if means were not defined by {@link #setObservations(double[][], double[][])} etc
 	 *  or {@link #setCovarianceAndMeans(double[][], double[])}
+	 * TODO Need to rewrite this to handle the subset of linearly independent variables only
 	 */
 	protected double[] computeLocalUsingPreviousObservations(double[][] newVar1Obs,
 			double[][] newVar2Obs, double[][] newCondObs, boolean isPreviousObservations) throws Exception {
