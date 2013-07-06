@@ -116,4 +116,27 @@ public class ConditionalMutualInfoMultiVariateTester extends
 
 	}
 	
+	/**
+	 * Test whether, if the conditional variable has zero covariance,
+	 *  that the method just returns the MI
+	 *  
+	 * @throws Exception
+	 */
+	public void testZeroCovarianceConditional() throws Exception {
+		ConditionalMutualInfoCalculatorMultiVariateGaussian condMiCalc =
+				new ConditionalMutualInfoCalculatorMultiVariateGaussian();
+		condMiCalc.initialise(1, 1, 1);
+		double covar1 = 1;
+		double covar2 = 0.8;
+		double crossCovar = 0.6;
+		double[][] covariance = new double[][] {
+				{covar1, crossCovar, 0.0},
+				{crossCovar, covar2, 0.0},
+				{0.0, 0.0, 0.0}};
+		condMiCalc.setCovariance(covariance, false);
+		double condMi = condMiCalc.computeAverageLocalOfObservations();
+		assertEquals(0.5 * Math.log(covar1 * covar2 / (covar1 * covar2 - crossCovar*crossCovar)),
+				condMi, 0.0000000001);
+	}
+	
 }
