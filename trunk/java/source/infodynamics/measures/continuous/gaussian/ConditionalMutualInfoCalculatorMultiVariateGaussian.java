@@ -577,13 +577,31 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 			// Simple way:
 			// detCovariance = MatrixUtils.determinantSymmPosDefMatrix(covariance);
 			// Using cached Cholesky decomposition:
-			detCovariance = MatrixUtils.determinantViaCholeskyResult(L);
-			if (detCovariance == 0) {
-				throw new Exception("Covariance matrix is not positive definite");
-			}
-			det1cCovariance = MatrixUtils.determinantViaCholeskyResult(L_1c);
-			det2cCovariance = MatrixUtils.determinantViaCholeskyResult(L_2c);
+
+			// Should always have a valid L_cc (since we can reduce it down to one variable:
 			detccCovariance = MatrixUtils.determinantViaCholeskyResult(L_cc);
+			if (L_1c == null) {
+				// Variable 1 is fully linearly redundant with conditional, so
+				//  we will have zero conditional MI:
+				return MatrixUtils.constantArray(newVar2Obs.length, 0);
+			} else {
+				det1cCovariance = MatrixUtils.determinantViaCholeskyResult(L_1c);
+				if (L_2c == null) {
+					// Variable 2 is fully linearly redundant with conditional, so
+					//  we will have zero conditional MI:
+					return MatrixUtils.constantArray(newVar2Obs.length, 0);
+				} else {
+					det2cCovariance = MatrixUtils.determinantViaCholeskyResult(L_2c);
+					if (L == null) {
+						// There is a linear dependence amongst variables 1 and 2 given the
+						//  conditional which did not exist for either with the conditional alone,
+						//  so conditional MI diverges:
+						return MatrixUtils.constantArray(newVar2Obs.length, Double.POSITIVE_INFINITY);
+					} else {
+						detCovariance = MatrixUtils.determinantViaCholeskyResult(L);
+					}
+				}
+			}
 		}
 
 		// Now we are clear to take the matrix inverse (via Cholesky decomposition,
@@ -597,23 +615,34 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 		double[][] invCondCovariance = MatrixUtils.solveViaCholeskyResult(L_cc,
 				MatrixUtils.identityMatrix(L_cc.length));
 			
-		double[] var1Means = MatrixUtils.select(means, 0, dimensionsVar1);
-		double[] var2Means = MatrixUtils.select(means, dimensionsVar1, dimensionsVar2);
-		double[] condMeans = MatrixUtils.select(means, dimensionsVar1 + dimensionsVar2, dimensionsCond);
+		// Now, only use the means from the subsets of linearly independent variables:
+		// double[] var1Means = MatrixUtils.select(means, 0, dimensionsVar1);
+		double[] var1Means = MatrixUtils.select(means, var1IndicesInCovariance);
+		// double[] var2Means = MatrixUtils.select(means, dimensionsVar1, dimensionsVar2);
+		double[] var2Means = MatrixUtils.select(means, var2IndicesInCovariance);
+		// double[] condMeans = MatrixUtils.select(means, dimensionsVar1 + dimensionsVar2, dimensionsCond);
+		double[] condMeans = MatrixUtils.select(means, condIndicesInCovariance);
 		
 		int lengthOfReturnArray;
 		lengthOfReturnArray = newVar2Obs.length;
 
 		double[] localValues = new double[lengthOfReturnArray];
+		int[] var2IndicesSelected = MatrixUtils.subtract(var2IndicesInCovariance, dimensionsVar1);
+		int[] condIndicesSelected = MatrixUtils.subtract(condIndicesInCovariance, dimensionsVar1 + dimensionsVar2);
 		for (int t = 0; t < newVar2Obs.length; t++) {
 			
 			double[] var1DeviationsFromMean =
-					MatrixUtils.subtract(newVar1Obs[t],
+					MatrixUtils.subtract(
+							MatrixUtils.select(newVar1Obs[t], var1IndicesInCovariance),
 							var1Means);
 			double[] var2DeviationsFromMean =
-					MatrixUtils.subtract(newVar2Obs[t], var2Means);
+					MatrixUtils.subtract(
+							MatrixUtils.select(newVar2Obs[t], var2IndicesSelected),
+							var2Means);
 			double[] condDeviationsFromMean =
-					MatrixUtils.subtract(newCondObs[t], condMeans);
+					MatrixUtils.subtract(
+							MatrixUtils.select(newCondObs[t], condIndicesSelected),
+							condMeans);
 			double[] var1CondDeviationsFromMean =
 					MatrixUtils.append(var1DeviationsFromMean,
 							condDeviationsFromMean);
