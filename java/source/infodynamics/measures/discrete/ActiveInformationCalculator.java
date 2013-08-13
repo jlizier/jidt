@@ -21,8 +21,8 @@ public class ActiveInformationCalculator {
 	private double max = 0.0;
 	private double min = 0.0;
 	private int observations = 0;
-	private int k = 0; // history length k. Need initialised to 0 for changedSizes
-	private int base = 0; // number of individual states. Need initialised to 0 for changedSizes
+	private int k = 0; // history length k.
+	private int base = 0; // number of individual states.
 	private int[][]	jointCount = null; // Count for (i[t+1], i[t]) tuples
 	private int[] prevCount = null; // Count for i[t]		
 	private int[] nextCount = null; // Count for i[t+1]
@@ -53,7 +53,7 @@ public class ActiveInformationCalculator {
 		log_base = Math.log(base);
 		
 		if (history < 1) {
-			throw new RuntimeException("History k " + history + " is not >= 1 for Entropy rate Calculator");
+			throw new RuntimeException("History k " + history + " is not >= 1 for Active info storage Calculator");
 		}
 		if (k > Math.log(Integer.MAX_VALUE) / log_base) {
 			throw new RuntimeException("Base and history combination too large");
@@ -308,7 +308,7 @@ public class ActiveInformationCalculator {
 				// compute p(prev, next)
 				double p_joint = (double) jointCount[nextVal][prevVal] / (double) observations;
 				// Compute MI contribution:
-				if (p_joint * p_next * p_prev > 0.0) {
+				if (p_joint > 0.0) {
 					double logTerm = p_joint / (p_next * p_prev);
 					double localValue = Math.log(logTerm) / log_base;
 					miCont = p_joint * localValue;
