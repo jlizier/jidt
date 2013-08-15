@@ -6,6 +6,8 @@ import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.ParsedProperties;
 
 /**
+ * = Example 6 - Late binding Mutual info calculator =
+ *
  * This class is used to demonstrate the manner in which a user
  *  can code to the interfaces defined in infodynamics.measures.continuous,
  *  and dynamically alter the instantiated class at runtime.
@@ -22,7 +24,8 @@ public class Example6LateBindingMutualInfo {
 
 	/**
 	 * @param args One command line argument taken, specifying location of 
-	 *  the properties file.
+	 *  the properties file. This should be example6LateBindingMutualInfo.props
+	 *  in the demos/java directory.
 	 */
 	public static void main(String[] args) throws Exception {
 		
