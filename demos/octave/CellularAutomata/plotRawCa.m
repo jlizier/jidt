@@ -10,9 +10,10 @@
 %   - plotCols - how many columns to plot (default is all)
 %   - plotStartRow - which row to start plotting from (default is 1)
 %   - plotStartCol - which column to start plotting from (default is 1)
-% - saveIt - whether to save an eps file of the image (default false)
+% - saveIt - whether to save a file of the image (default false)
+% - saveFormat - what file format to save the image in - 'eps' or 'pdf' (default 'eps')
 
-function plotRawCa(states, rule, plotOptions, saveIt)
+function plotRawCa(states, rule, plotOptions, saveIt, saveFormat)
 
 	if (nargin < 2)
 		plotOptions = {};
@@ -40,23 +41,34 @@ function plotRawCa(states, rule, plotOptions, saveIt)
 	if (nargin < 3)
 		saveIt = false;
 	end
+	if (nargin < 4)
+		saveFormat = 'eps';
+	end
 
 	figure(1);
 	% set the colormap for black = 1, white = 0
 	colormap(1 - gray(2))
 	imagesc(states(plotOptions.plotStartRow:plotOptions.plotStartRow+plotOptions.plotRows - 1, ...
 		plotOptions.plotStartCol:plotOptions.plotStartCol+plotOptions.plotCols - 1))
+	axis([0.5 (plotOptions.plotCols+0.5) 0.5 (plotOptions.plotRows+0.5)]);
 	colorbar
 	fprintf('Adding colorbar to ensure that the size of the diagram matches that of local info plots\n');
 	if (saveIt)
-		set(gca, 'fontsize', 32);
-		colorbar('fontsize', 32);
-		if (ischar(rule))
-			filename = sprintf('figures/raw-%s.eps', rule);
+		if (strcmp(saveFormat, 'eps'))
+			printDriver = 'epsc'; % to force colour
+			fontSize = 32;
 		else
-			filename = sprintf('figures/raw-%d.eps', rule);
+			printDriver = saveFormat;
+			fontSize = 13;
 		end
-		print(filename, '-depsc');
+		set(gca, 'fontsize', fontSize);
+		colorbar('fontsize', fontSize);
+		if (ischar(rule))
+			filename = sprintf('figures/%s-raw.%s', rule, saveFormat);
+		else
+			filename = sprintf('figures/%d-raw.%s', rule, saveFormat);
+		end
+		print(filename, sprintf('-d%s', printDriver));
 	end
 end
 

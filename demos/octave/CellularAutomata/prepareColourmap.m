@@ -14,10 +14,14 @@
 % - primaryIsBlue - whether we're making a blue or red colourmap
 % - fracPrim - what proportion to make the darkest shade of the primary colour (default .25)
 % - fracSecondary - what proportion to make the lighter shades with green added (default .4)
+% - gammaPower - scale the colours non-linearly with this exponent. I think this might be a gamma correction but am unsure.
 %
 % vLength is the length of the colormap
-function rgbmap = prepareColourmap(vLength, primaryIsBlue, fracPrim, fracWithSecondary)
+function rgbmap = prepareColourmap(vLength, primaryIsBlue, fracPrim, fracWithSecondary, gammaPower)
 
+	if (nargin < 5)
+		gammaPower = 1;
+	end
 	if (nargin < 4)
 		fracWithSecondary = .4;
 	end
@@ -36,11 +40,11 @@ function rgbmap = prepareColourmap(vLength, primaryIsBlue, fracPrim, fracWithSec
 	blueOnlyLength = floor(vLength .* fracPrim);
 	greenAndBlueLength = floor(vLength .* fracWithSecondary);
 	redOnLength = vLength - blueOnlyLength - greenAndBlueLength;
-	bluevector = (2.*blueOnlyLength:-1:blueOnlyLength+1)' ./ 2 ./ blueOnlyLength; % Countdown from 1 to 0.5
+	bluevector = ((2.*blueOnlyLength:-1:blueOnlyLength+1)' ./ 2 ./ blueOnlyLength).^gammaPower; % Countdown from (1 to 0.5).^gammaPower
 	bluevector = [ones(vLength - blueOnlyLength, 1); bluevector];
-	greenvector = (greenAndBlueLength:-1:1)' ./ greenAndBlueLength; % Count down from 1 to 0
+	greenvector = ((greenAndBlueLength:-1:1)' ./ greenAndBlueLength).^gammaPower; % Count down from (1 to 0).^gammaPower
 	greenvector = [ones(redOnLength, 1); greenvector; zeros(blueOnlyLength, 1)];
-	redvector = (redOnLength:-1:1)' ./ redOnLength; % Count down from 1 to 0
+	redvector = ((redOnLength:-1:1)' ./ redOnLength).^gammaPower; % Count down from (1 to 0).^gammaPower
 	redvector = [redvector; zeros(vLength - redOnLength, 1)];
 
 	if (primaryIsBlue)

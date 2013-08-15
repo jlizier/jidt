@@ -18,6 +18,7 @@
 %   - mainSignVectorLength - length of the longest component (positive or negative values) for the colourmap (default 1024)
 %   - scalingMainComponent - what proportion to make the darkest shade of the primary colour (default .25)
 %   - scalingScdryComponent - what proportion to make the lighter shades with green added (default .4)
+%   - gammaPower - scale the colours non-linearly with this exponent (default 1 - linear scaling)
 %
 % Outputs:
 % - h - return value of imagesc
@@ -56,6 +57,9 @@ function h = plotLocalInfoValues(localResults, plotOptions)
 	if not(isfield(plotOptions, 'scalingScdryComponent'))
 		plotOptions.scalingScdryComponent = .4;
 	end
+	if not(isfield(plotOptions, 'gammaPower'))
+		plotOptions.gammaPower = 1;
+	end
 	if (plotOptions.plotRows > 1000)
 		fprintf('*** Limiting number of plotted rows to 1000\n');
 		plotOptions.plotRows = 1000;
@@ -68,6 +72,7 @@ function h = plotLocalInfoValues(localResults, plotOptions)
 	scalingMainComponent = plotOptions.scalingMainComponent;
 	mainSignVectorLength = plotOptions.mainSignVectorLength;
 	scalingScdryComponent = plotOptions.scalingScdryComponent;
+	gammaPower = plotOptions.gammaPower;
 
 	if (not(ismatrix(localResults)))
 		% localResults must be a java matrix
@@ -118,8 +123,8 @@ function h = plotLocalInfoValues(localResults, plotOptions)
 				vPosLength = mainSignVectorLength;
 				vNegLength = floor(mainSignVectorLength .* abs(minLocal) ./ maxLocal);
 			end
-			bluePosmap = prepareColourmap(vPosLength, true, scalingMainComponent, scalingScdryComponent);
-			redNegmap = flipud(prepareColourmap(vNegLength, false, scalingMainComponent, scalingScdryComponent));
+			bluePosmap = prepareColourmap(vPosLength, true, scalingMainComponent, scalingScdryComponent, gammaPower);
+			redNegmap = flipud(prepareColourmap(vNegLength, false, scalingMainComponent, scalingScdryComponent, gammaPower));
 			% fprintf('Plotting locals with scaling to extreme values (%d distinct colours for positive, %d for negative)\n', \
 			%	vPosLength, vNegLength);
 		else
@@ -127,8 +132,8 @@ function h = plotLocalInfoValues(localResults, plotOptions)
 			%  had the largest absolute value. For the other, scale the colours
 			%  correspondingly.
 			% Initialise the full spectrum
-			bluePosmap = prepareColourmap(mainSignVectorLength, true, scalingMainComponent, scalingScdryComponent);
-			redNegmap = flipud(prepareColourmap(mainSignVectorLength, false, scalingMainComponent, scalingScdryComponent));
+			bluePosmap = prepareColourmap(mainSignVectorLength, true, scalingMainComponent, scalingScdryComponent, gammaPower);
+			redNegmap = flipud(prepareColourmap(mainSignVectorLength, false, scalingMainComponent, scalingScdryComponent, gammaPower));
 			% Then cut down the non-dominant sign's part:
 			if (abs(minLocal) > maxLocal)
 				% Use a longer length for the red vector than blue; chop blue down
@@ -150,11 +155,12 @@ function h = plotLocalInfoValues(localResults, plotOptions)
 		h = imagesc(localResultsToPlot, [minLocal, maxLocal]);
 	else
 		% We need to pin the minimum value of the blue-only plot to zero.
-		bluemap = prepareColourmap(mainSignVectorLength, true, scalingMainComponent, scalingScdryComponent);
+		bluemap = prepareColourmap(mainSignVectorLength, true, scalingMainComponent, scalingScdryComponent, gammaPower);
 		colormap(bluemap);
 		% Now, plot the local values with the pre-prepared colormap
 		h = imagesc(localResultsToPlot, [0, maxLocal]);
 	end
+	axis([0.5 (plotOptions.plotCols+0.5) 0.5 (plotOptions.plotRows+0.5)]);
 	colorbar
 end
 

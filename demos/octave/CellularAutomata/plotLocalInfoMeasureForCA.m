@@ -33,6 +33,7 @@
 %    - initialState - supply the initial state of the CA. If this option exists, no other random initial state is set.
 %    - plotRawCa - default true
 %    - saveImages - whether to save the plots or not (default false)
+%    - saveImagesFormat - 'eps' or 'pdf' (Default eps)
 %    - movingFrameSpeed - moving frame of reference's cells/time step, as in Lizier & Mahoney paper (default 0)
 
 function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base, rule, cells, timeSteps, measureId, measureParams, options)
@@ -47,6 +48,9 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 	end
 	if not(isfield(options, 'saveImages'))
 		options.saveImages = false;
+	end
+	if not(isfield(options, 'saveImagesFormat'))
+		options.saveImagesFormat = 'eps';
 	end
 	if not(isfield(options, 'plotRawCa'))
 		options.plotRawCa = true;
@@ -71,7 +75,19 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 		caStates = runCA(neighbourhood, base, rule, cells, timeSteps, false);
 	end
 	if (options.plotRawCa)
-		plotRawCa(caStates, rule, options.plotOptions, options.saveImages);
+		plotRawCa(caStates, rule, options.plotOptions, options.saveImages, options.saveImagesFormat);
+	end
+	if (ischar(rule))
+		ruleString = rule;
+	else
+		ruleString = sprintf('%d', rule);
+	end
+	if (strcmp(options.saveImagesFormat, 'eps'))
+		printDriver = 'epsc'; % to force colour
+		fontSize = 32;
+	else
+		printDriver = options.saveImagesFormat;
+		fontSize = 13;
 	end
 	figNum = 2;
 	toc
@@ -123,9 +139,9 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 		figNum = figNum + 1;
 		plotLocalInfoValues(localValues, options.plotOptions);
 		if (options.saveImages)
-			set(gca, 'fontsize', 32);
-			colorbar('fontsize', 32);
-			print(sprintf('figures/active-k%d.eps', measureParams.k), '-depsc');
+			set(gca, 'fontsize', fontSize);
+			colorbar('fontsize', fontSize);
+			print(sprintf('figures/%s-active-k%d.%s', ruleString, measureParams.k, options.saveImagesFormat), sprintf('-d%s', printDriver));
 		end
 		plottedOne = true;
 	end
@@ -156,9 +172,9 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 		figNum = figNum + 1;
 		plotLocalInfoValues(localValues, options.plotOptions);
 		if (options.saveImages)
-			set(gca, 'fontsize', 32);
-			colorbar('fontsize', 32);
-			print(sprintf('figures/transfer-k%d-j%d.eps', measureParams.k, measureParams.j), '-depsc');
+			set(gca, 'fontsize', fontSize);
+			colorbar('fontsize', fontSize);
+			print(sprintf('figures/%s-transfer-k%d-j%d.%s', ruleString, measureParams.k, measureParams.j, options.saveImagesFormat), sprintf('-d%s', printDriver));
 		end
 		plottedOne = true;
 	end
@@ -192,9 +208,9 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 		figNum = figNum + 1;
 		plotLocalInfoValues(localValues, options.plotOptions);
 		if (options.saveImages)
-			set(gca, 'fontsize', 32);
-			colorbar('fontsize', 32);
-			print(sprintf('figures/transferComp-k%d-j%d.eps', measureParams.k, measureParams.j), '-depsc');
+			set(gca, 'fontsize', fontSize);
+			colorbar('fontsize', fontSize);
+			print(sprintf('figures/%s-transferComp-k%d-j%d.%s', ruleString, measureParams.k, measureParams.j, options.saveImagesFormat), sprintf('-d%s', printDriver));
 		end
 		plottedOne = true;
 	end
@@ -225,9 +241,9 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 		figNum = figNum + 1;
 		plotLocalInfoValues(localValues, options.plotOptions);
 		if (options.saveImages)
-			set(gca, 'fontsize', 32);
-			colorbar('fontsize', 32);
-			print(sprintf('figures/separable-k%d.eps', measureParams.k), '-depsc');
+			set(gca, 'fontsize', fontSize);
+			colorbar('fontsize', fontSize);
+			print(sprintf('figures/%s-separable-k%d.%s', ruleString, measureParams.k, options.saveImagesFormat), sprintf('-d%s', printDriver));
 		end
 		plottedOne = true;
 	end
@@ -257,9 +273,9 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 		figNum = figNum + 1;
 		plotLocalInfoValues(localValues, options.plotOptions);
 		if (options.saveImages)
-			set(gca, 'fontsize', 32);
-			colorbar('fontsize', 32);
-			print('figures/entropy.eps', '-depsc');
+			set(gca, 'fontsize', fontSize);
+			colorbar('fontsize', fontSize);
+			print(sprintf('figures/%s-entropy.%s', ruleString, options.saveImagesFormat), sprintf('-d%s', printDriver));
 		end
 		plottedOne = true;
 	end
@@ -287,9 +303,9 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 		figNum = figNum + 1;
 		plotLocalInfoValues(localValues, options.plotOptions);
 		if (options.saveImages)
-			set(gca, 'fontsize', 32);
-			colorbar('fontsize', 32);
-			print(sprintf('figures/entrate-k%d.eps', measureParams.k), '-depsc');
+			set(gca, 'fontsize', fontSize);
+			colorbar('fontsize', fontSize);
+			print(sprintf('figures/%s-entrate-k%d.%s', ruleString, measureParams.k, options.saveImagesFormat), sprintf('-d%s', printDriver));
 		end
 		plottedOne = true;
 	end
@@ -299,10 +315,7 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 	if ((ischar(measureId) && (strcmpi('excess', measureId) || strcmpi('all', measureId))) || ...
 	    ((measureId == 6) || (measureId == -1)))
 		% Compute excess entropy
-		
-		error('infodynamics.measures.discrete.ExcessEntropyCalculator is not yet implemented');
-		
-		excessEntropyCalc = javaObject('infodynamics.measures.discrete.ExcessEntropyCalculator', base, measureParams.k);
+		excessEntropyCalc = javaObject('infodynamics.measures.discrete.PredictiveInformationCalculator', base, measureParams.k);
 		excessEntropyCalc.initialise();
 		excessEntropyCalc.addObservations(caStatesJInts);
 		avExcessEnt = excessEntropyCalc.computeAverageLocalOfObservations();
@@ -320,9 +333,9 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 		figNum = figNum + 1;
 		plotLocalInfoValues(localValues, options.plotOptions);
 		if (options.saveImages)
-			set(gca, 'fontsize', 32);
-			colorbar('fontsize', 32);
-			print(sprintf('figures/excessentropy-k%d.eps', measureParams.k), '-depsc');
+			set(gca, 'fontsize', fontSize);
+			colorbar('fontsize', fontSize);
+			print(sprintf('figures/%s-excessentropy-k%d.%s', ruleString, measureParams.k, options.saveImagesFormat), sprintf('-d%s', printDriver));
 		end
 		plottedOne = true;
 	end
