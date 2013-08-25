@@ -23,32 +23,6 @@ options.plotOptions.scalingScdryComponent = 0.30;
 options.plotOptions.gammaPower = 0.5;
 
 %%%%%%%%%
-% Examining rule 18: (50, 50, 20, 900 is not too bad)
-options.plotRawCa = true;
-options.plotOptions.plotRows = 50;
-options.plotOptions.plotCols = 50;
-options.plotOptions.plotStartRow = 20;
-options.plotOptions.plotStartCol = 900;
-options.seed = 3; % Set up the random number generator to give reproducible initial states for all measurements
-printf('\nStarting rule 18 ...\n');
-printf('\nPlotting active info storage ...\n');
-options.plotOptions.scalingScdryComponent = 0.45; % Make the moderately strong values easier to see:
-plotLocalInfoMeasureForCA(neighbourhood, caStates, 18, cells, timeSteps, 'active', measureParams, options);
-printf('\nPress any key when ready for apparent transfer entropy j = -1 ...\n');
-pause
-% Use the full red scale for transfer and separable info, since we need to see the extreme negative values properly
-options.plotOptions.scaleColoursToExtremes = true;
-measureParams.j = -1;
-plotLocalInfoMeasureForCA(neighbourhood, caStates, 18, cells, timeSteps, 'transfer', measureParams, options);
-printf('\nPress any key when ready for complete transfer entropy j = -1 ...\n');
-pause
-plotLocalInfoMeasureForCA(neighbourhood, caStates, 18, cells, timeSteps, 'transfercomplete', measureParams, options);
-options.plotOptions.scaleColoursToExtremes = scaleColoursToExtremesDefault; % return to default value 
-options.plotOptions.scalingScdryComponent = 0.30; % return to previous value
-printf('\nAll done, press any key to continue ...\n');
-pause
-
-%%%%%%%%%
 % Examining rule 54:
 options.plotOptions.plotRows = 35;
 options.plotOptions.plotCols = 35;
@@ -76,4 +50,30 @@ pause
 options.plotOptions.scaleColoursToExtremes = scaleColoursToExtremesDefault; % return to default value 
 options.plotOptions.scalingScdryComponent = 0.30; % return to previous value
 
+%%%%%%%%%
+% Examining rule 18: (50, 50, 20, 900 is not too bad)
+options.plotRawCa = true;
+options.plotOptions.plotRows = 50;
+options.plotOptions.plotCols = 50;
+options.plotOptions.plotStartRow = 20;
+options.plotOptions.plotStartCol = 900;
+options.seed = 3; % Set up the random number generator to give reproducible initial states for all measurements
+printf('\nStarting rule 18 ...\n');
+printf('\nPlotting active info storage ...\n');
+options.plotOptions.scalingScdryComponent = 0.45; % Make the moderately strong values easier to see:
+plotLocalInfoMeasureForCA(neighbourhood, caStates, 18, cells, timeSteps, 'active', measureParams, options);
+options.plotRawCa = false;
+printf('\nPress any key when ready for apparent transfer entropy j = -1 ...\n');
+pause
+% Use the full red scale for transfer and separable info, since we need to see the extreme negative values properly
+options.plotOptions.scaleColoursToExtremes = true;
+measureParams.j = -1;
+plotLocalInfoMeasureForCA(neighbourhood, caStates, 18, cells, timeSteps, 'transfer', measureParams, options);
+printf('\nPress any key when ready for complete transfer entropy j = -1 ...\n');
+pause
+plotLocalInfoMeasureForCA(neighbourhood, caStates, 18, cells, timeSteps, 'transfercomplete', measureParams, options);
+options.plotOptions.scaleColoursToExtremes = scaleColoursToExtremesDefault; % return to default value 
+options.plotOptions.scalingScdryComponent = 0.30; % return to previous value
+printf('\nAll done, press any key to continue ...\n');
+pause
 
