@@ -8,9 +8,9 @@ javaaddpath('../../infodynamics.jar');
 % Generate some random normalised data.
 numObservations = 1000;
 covariance=0.4;
-sourceArray=normrnd(0, 1, numObservations, 1);
-destArray = [0; covariance*sourceArray(1:numObservations-1) + (1-covariance)*normrnd(0, 1, numObservations - 1, 1)];
-sourceArray2=normrnd(0, 1, numObservations, 1); % Uncorrelated source
+sourceArray=randn(numObservations, 1);
+destArray = [0; covariance*sourceArray(1:numObservations-1) + (1-covariance)*randn(numObservations - 1, 1)];
+sourceArray2=randn(numObservations, 1); % Uncorrelated source
 % Create a TE calculator and run it:
 teCalc=javaObject('infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov');
 teCalc.initialise(1); % Use history length 1 (Schreiber k=1)

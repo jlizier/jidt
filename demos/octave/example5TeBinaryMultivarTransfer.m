@@ -29,5 +29,5 @@ teCalc.addObservations(mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(des
 		mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(sourceArray2), 2));
 fprintf('For random source, result should be close to 0 bits in theory: ');
 result2 = teCalc.computeAverageLocalOfObservations()
-fprintf('\nThe result for random source is inflated towards 0.3 due to finite observation length (%d). One can verify that the answer is consistent with that from a random source by checking: teCalc.computeSignificance(1000); ans.pValue\n', teCalc.getNumObservations());
+fprintf('\nThe result for random source is inflated towards 0.3 due to finite observation length (%d).\nOne can verify that the answer is consistent with that from a\nrandom source by checking: teCalc.computeSignificance(1000); ans.pValue\n', teCalc.getNumObservations());
 
