@@ -25,10 +25,10 @@ variable2Columns = [3,4];
 %  infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate
 %  which we wish to use for the calculation.
 % Note that one could use any of the following calculators (try them all!):
-%  implementingClass = "infodynamics.measures.continuous.kraskov.MutualInfoCalculatorMultiVariateKraskov1"; % MI([1,2], [3,4]) = 0.35507
-%  implementingClass = "infodynamics.measures.continuous.kernel.MutualInfoCalculatorMultiVariateKernel";
-%  implementingClass = "infodynamics.measures.continuous.gaussian.MutualInfoCalculatorMultiVariateGaussian";
-implementingClass = "infodynamics.measures.continuous.kraskov.MutualInfoCalculatorMultiVariateKraskov1";
+%  implementingClass = 'infodynamics.measures.continuous.kraskov.MutualInfoCalculatorMultiVariateKraskov1'; % MI([1,2], [3,4]) = 0.35507
+%  implementingClass = 'infodynamics.measures.continuous.kernel.MutualInfoCalculatorMultiVariateKernel';
+%  implementingClass = 'infodynamics.measures.continuous.gaussian.MutualInfoCalculatorMultiVariateGaussian';
+implementingClass = 'infodynamics.measures.continuous.kraskov.MutualInfoCalculatorMultiVariateKraskov1';
 
 %---------------------
 % 2. Load in the data
@@ -57,6 +57,6 @@ miCalc.setObservations(octaveToJavaDoubleMatrix(variable1), octaveToJavaDoubleMa
 % c. Make the MI calculation:
 miValue = miCalc.computeAverageLocalOfObservations();
 
-fprintf("MI calculator %s computed the joint MI as %.5f\n",
+fprintf('MI calculator %s\ncomputed the joint MI as %.5f\n', ...
 		implementingClass, miValue);
 
