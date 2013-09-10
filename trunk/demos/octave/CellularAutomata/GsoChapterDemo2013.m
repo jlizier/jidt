@@ -139,7 +139,7 @@ phi_par_timeSteps = 200;
 measureParams.k=10; % Shorter for phi_par
 fprintf('\nStarting rule phi_par ...\n');
 fprintf('\nPlotting active info storage ...\n');
-phiparInitialState = plotLocalInfoMeasureForCA(phi_par_neighbourhood, caStates, phi_par, phi_par_cells, phi_par_timeSteps, 'active', measureParams, options);
+plotLocalInfoMeasureForCA(phi_par_neighbourhood, caStates, phi_par, phi_par_cells, phi_par_timeSteps, 'active', measureParams, options);
 options.plotRawCa = false;
 fprintf('\nPress any key when ready for apparent transfer entropy j = -1 ...\n');
 pause

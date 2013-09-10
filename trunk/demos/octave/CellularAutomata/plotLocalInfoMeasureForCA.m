@@ -351,7 +351,7 @@ end
 % the second by shiftPerRow, the third by 2*shiftPerRow, and so on
 function shiftedMatrix = accumulateShift(matrix, shiftPerRow)
 	% Allocate required space up front (makes this much faster):
-	shiftedMatrix = zeros(size(matrix,1), columns(matrix));
+	shiftedMatrix = zeros(size(matrix,1), size(matrix, 2));
 	shiftedMatrix(1,:) = matrix(1,:);
 	for r = 2 : size(matrix,1)
 		% circshift operates on shifting rows, so we transpose the input and output to it:
