@@ -123,9 +123,8 @@ public class ApparentTransferEntropyCalculator extends ContextOfPastMeasureCalcu
 	}
 	
 	/**
- 	 * Add observations for a single source-destination pair of the multi-agent system
+ 	 * Add observations for a single source-destination pair 
  	 *  to our estimates of the pdfs.
- 	 * This call is for time series not part of the same 2D array
 	 *
 	 * @param states
 	 */
