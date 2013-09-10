@@ -119,7 +119,7 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 	%============================
 	% Active information storage
 	if ((ischar(measureId) && (strcmpi('active', measureId) || strcmpi('all', measureId))) || ...
-	    ((measureId == 0) || (measureId == -1)))
+	    (not(ischar(measureId)) && ((measureId == 0) || (measureId == -1))))
 		% Compute active information storage
 		activeCalc = javaObject('infodynamics.measures.discrete.ActiveInformationCalculator', base, measureParams.k);
 		activeCalc.initialise();
@@ -149,7 +149,7 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 	%============================
 	% Apparent transfer entropy
 	if ((ischar(measureId) && (strcmpi('transfer', measureId) || strcmpi('all', measureId) || strcmpi('apparenttransfer', measureId))) || ...
-	    ((measureId == 1) || (measureId == -1)))
+	    (not(ischar(measureId)) && ((measureId == 1) || (measureId == -1))))
 		% Compute apparent transfer entropy
 		if (measureParams.j == 0)
 			error('Cannot compute transfer entropy from a cell to itself (setting measureParams.j == 0)');
@@ -182,7 +182,7 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 	%============================
 	% Complete transfer entropy
 	if ((ischar(measureId) && (strcmpi('transfercomplete', measureId) || strcmpi('completetransfer', measureId) || strcmpi('all', measureId))) || ...
-	    ((measureId == 2) || (measureId == -1)))
+	    (not(ischar(measureId)) && ((measureId == 2) || (measureId == -1))))
 		% Compute complete transfer entropy
 		if (measureParams.j == 0)
 			error('Cannot compute transfer entropy from a cell to itself (setting measureParams.j == 0)');
@@ -218,7 +218,7 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 	%============================
 	% Separable information
 	if ((ischar(measureId) && (strcmpi('separable', measureId) || strcmpi('all', measureId))) || ...
-	    ((measureId == 3) || (measureId == -1)))
+	    (not(ischar(measureId)) && ((measureId == 3) || (measureId == -1))))
 		% Compute separable information
 		separableCalc = javaObject('infodynamics.measures.discrete.SeparableInfoCalculator', ...
 			base, measureParams.k, neighbourhood - 1);
@@ -251,7 +251,7 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 	%============================
 	% Entropy
 	if ((ischar(measureId) && (strcmpi('entropy', measureId) || strcmpi('all', measureId))) || ...
-	    ((measureId == 4) || (measureId == -1)))
+	    (not(ischar(measureId)) && ((measureId == 4) || (measureId == -1))))
 		% Compute entropy
 		entropyCalc = javaObject('infodynamics.measures.discrete.EntropyCalculator', ...
 			base);
@@ -283,7 +283,7 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 	%============================
 	% Entropy rate
 	if ((ischar(measureId) && (strcmpi('entropyrate', measureId) || strcmpi('all', measureId))) || ...
-	    ((measureId == 5) || (measureId == -1)))
+	    (not(ischar(measureId)) && ((measureId == 5) || (measureId == -1))))
 		% Compute entropy rate
 		entRateCalc = javaObject('infodynamics.measures.discrete.EntropyRateCalculator', base, measureParams.k);
 		entRateCalc.initialise();
@@ -313,7 +313,7 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 	%============================
 	% Excess entropy
 	if ((ischar(measureId) && (strcmpi('excess', measureId) || strcmpi('all', measureId))) || ...
-	    ((measureId == 6) || (measureId == -1)))
+	    (not(ischar(measureId)) && ((measureId == 6) || (measureId == -1))))
 		% Compute excess entropy
 		excessEntropyCalc = javaObject('infodynamics.measures.discrete.PredictiveInformationCalculator', base, measureParams.k);
 		excessEntropyCalc.initialise();

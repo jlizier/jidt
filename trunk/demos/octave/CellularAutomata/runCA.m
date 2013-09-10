@@ -49,7 +49,7 @@ function [caStates, ruleTable, executedRules] = runCA(neighbourhood, base, rule,
 		else
 			% User has supplied the initial state for the CA:
 			fprintf('User has supplied initial state for CA\n');
-			if (length(seedOrState) != cells)
+			if (length(seedOrState) ~= cells)
 				error('Supplied initial ca state vector [seedOrState] is not of length [cells]');
 			end
 			ca = seedOrState;
