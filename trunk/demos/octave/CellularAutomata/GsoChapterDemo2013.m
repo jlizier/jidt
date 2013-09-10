@@ -29,15 +29,24 @@ options.plotOptions.plotCols = 35;
 options.plotOptions.plotStartRow = 150;
 options.plotOptions.plotStartCol = 175;
 options.seed = 2;
-printf('\nStarting rule 54 ...\n');
-printf('\nPlotting active info storage ...\n');
+if (exist('initialStates/GsoChapterDemo2013-initialState.txt', 'file'))
+	% A file specifying the initial state exists -- this
+	%  ensures that Matlab and Octave use the same initial state
+	%  (otherwise only Octave recreates the same initial state used in our chapter).
+	%  (You can delete/move the initial state file if you want them generated from scratch.)
+	options.initialState = load('initialStates/GsoChapterDemo2013-initialState.txt');
+elseif (isfield(options, 'initialState'))
+	options = rmfield(options, 'initialState');
+end
+fprintf('\nStarting rule 54 ...\n');
+fprintf('\nPlotting active info storage ...\n');
 plotLocalInfoMeasureForCA(neighbourhood, caStates, 54, cells, timeSteps, 'active', measureParams, options);
-printf('\nPress any key when ready for excess entropy ...\n');
+fprintf('\nPress any key when ready for excess entropy ...\n');
 pause
 options.plotRawCa = false;
 measureParams.k=8; % just for excess entropy
 plotLocalInfoMeasureForCA(neighbourhood, caStates, 54, cells, timeSteps, 'excess', measureParams, options);
-printf('\nPress any key when ready for apparent transfer entropy j = 1 ...\n');
+fprintf('\nPress any key when ready for apparent transfer entropy j = 1 ...\n');
 pause
 % Use the full red scale for transfer and separable info, since we need to see the extreme negative values properly
 options.plotOptions.scaleColoursToExtremes = true;
@@ -46,16 +55,16 @@ options.plotOptions.scalingMainComponent = 0.35;
 measureParams.k=16; % back to default
 measureParams.j = 1;
 plotLocalInfoMeasureForCA(neighbourhood, caStates, 54, cells, timeSteps, 'transfer', measureParams, options);
-printf('\nPress any key when ready for apparent transfer entropy j = -1 ...\n');
+fprintf('\nPress any key when ready for apparent transfer entropy j = -1 ...\n');
 pause
 measureParams.j = -1;
 plotLocalInfoMeasureForCA(neighbourhood, caStates, 54, cells, timeSteps, 'transfer', measureParams, options);
-printf('\nPress any key when ready for the separable information ...\n');
+fprintf('\nPress any key when ready for the separable information ...\n');
 pause
 options.plotOptions.scalingMainComponent = 0.15; % Return to previous value
 options.plotOptions.scalingScdryComponent = 0.35;
 plotLocalInfoMeasureForCA(neighbourhood, caStates, 54, cells, timeSteps, 'separable', measureParams, options);
-printf('\nPress any key when ready to apply to the next rule\n')
+fprintf('\nPress any key when ready to apply to the next rule\n')
 pause
 options.plotOptions.scaleColoursToExtremes = scaleColoursToExtremesDefault; % return to default value 
 options.plotOptions.scalingScdryComponent = 0.30; % return to previous value
@@ -68,29 +77,38 @@ options.plotOptions.plotCols = 50;
 options.plotOptions.plotStartRow = 50+20;
 options.plotOptions.plotStartCol = 800+60;
 options.seed = 2;
-printf('\nStarting rule 110 ...\n');
-printf('\nPlotting active info storage ...\n');
+if (exist('initialStates/GsoChapterDemo2013-initialState.txt', 'file'))
+	% A file specifying the initial state exists -- this
+	%  ensures that Matlab and Octave use the same initial state
+	%  (otherwise only Octave recreates the same initial state used in our chapter).
+	%  (You can delete/move the initial state file if you want them generated from scratch.)
+	options.initialState = load('initialStates/GsoChapterDemo2013-initialState.txt');
+elseif (isfield(options, 'initialState'))
+	options = rmfield(options, 'initialState');
+end
+fprintf('\nStarting rule 110 ...\n');
+fprintf('\nPlotting active info storage ...\n');
 plotLocalInfoMeasureForCA(neighbourhood, caStates, 110, cells, timeSteps, 'active', measureParams, options);
-printf('\nPress any key when ready for excess entropy ...\n');
+fprintf('\nPress any key when ready for excess entropy ...\n');
 pause
 options.plotRawCa = false;
 measureParams.k=8; % just for excess entropy
 plotLocalInfoMeasureForCA(neighbourhood, caStates, 110, cells, timeSteps, 'excess', measureParams, options);
-printf('\nPress any key when ready for entropy rate ...\n');
+fprintf('\nPress any key when ready for entropy rate ...\n');
 pause
 measureParams.k=16; % back to default
 plotLocalInfoMeasureForCA(neighbourhood, caStates, 110, cells, timeSteps, 'entropyrate', measureParams, options);
-printf('\nPress any key when ready for apparent transfer entropy j = -1 ...\n');
+fprintf('\nPress any key when ready for apparent transfer entropy j = -1 ...\n');
 pause
 % Use the full red scale for transfer and separable info, since we need to see the extreme negative values properly
 options.plotOptions.scaleColoursToExtremes = true;
 measureParams.j = -1;
 plotLocalInfoMeasureForCA(neighbourhood, caStates, 110, cells, timeSteps, 'transfer', measureParams, options);
-printf('\nPress any key when ready for the separable information ...\n');
+fprintf('\nPress any key when ready for the separable information ...\n');
 pause
 options.plotOptions.scalingScdryComponent = 0.35;
 plotLocalInfoMeasureForCA(neighbourhood, caStates, 110, cells, timeSteps, 'separable', measureParams, options);
-printf('\nPress any key when ready to apply to the next rule\n')
+fprintf('\nPress any key when ready to apply to the next rule\n')
 pause
 options.plotOptions.scaleColoursToExtremes = scaleColoursToExtremesDefault; % return to default value 
 options.plotOptions.scalingScdryComponent = 0.30; % return to previous value
@@ -105,34 +123,43 @@ options.plotOptions.plotCols = 70;
 options.plotOptions.plotStartRow = 17;
 options.plotOptions.plotStartCol = 585;
 options.seed = 2;
+if (exist('initialStates/GsoChapterDemo2013-initialState-phipar.txt', 'file'))
+	% A file specifying the initial state exists -- this
+	%  ensures that Matlab and Octave use the same initial state
+	%  (otherwise only Octave recreates the same initial state used in our chapter).
+	%  (You can delete/move the initial state file if you want them generated from scratch.)
+	options.initialState = load('initialStates/GsoChapterDemo2013-initialState-phipar.txt');
+elseif (isfield(options, 'initialState'))
+	options = rmfield(options, 'initialState');
+end
 phi_par = 'feedffdec1aaeec0eef000a0e1a020a0';
 phi_par_neighbourhood = 7;
 phi_par_cells = 30000;
 phi_par_timeSteps = 200;
 measureParams.k=10; % Shorter for phi_par
-printf('\nStarting rule phi_par ...\n');
-printf('\nPlotting active info storage ...\n');
-plotLocalInfoMeasureForCA(phi_par_neighbourhood, caStates, phi_par, phi_par_cells, phi_par_timeSteps, 'active', measureParams, options);
+fprintf('\nStarting rule phi_par ...\n');
+fprintf('\nPlotting active info storage ...\n');
+phiparInitialState = plotLocalInfoMeasureForCA(phi_par_neighbourhood, caStates, phi_par, phi_par_cells, phi_par_timeSteps, 'active', measureParams, options);
 options.plotRawCa = false;
-printf('\nPress any key when ready for apparent transfer entropy j = -1 ...\n');
+fprintf('\nPress any key when ready for apparent transfer entropy j = -1 ...\n');
 pause
 % Use the full red scale for transfer and separable info, since we need to see the extreme negative values properly
 options.plotOptions.scaleColoursToExtremes = true;
 measureParams.j = -1;
 plotLocalInfoMeasureForCA(phi_par_neighbourhood, caStates, phi_par, phi_par_cells, phi_par_timeSteps, 'transfer', measureParams, options);
-printf('\nPress any key when ready for complete transfer entropy j = -1 ...\n');
+fprintf('\nPress any key when ready for complete transfer entropy j = -1 ...\n');
 pause
 plotLocalInfoMeasureForCA(phi_par_neighbourhood, caStates, phi_par, phi_par_cells, phi_par_timeSteps, 'transfercomplete', measureParams, options);
-printf('\nPress any key when ready for apparent transfer entropy j = -3 ...\n');
+fprintf('\nPress any key when ready for apparent transfer entropy j = -3 ...\n');
 pause
 measureParams.j = -3;
 plotLocalInfoMeasureForCA(phi_par_neighbourhood, caStates, phi_par, phi_par_cells, phi_par_timeSteps, 'transfer', measureParams, options);
-printf('\nPress any key when ready for the separable information ...\n');
+fprintf('\nPress any key when ready for the separable information ...\n');
 pause
 options.plotOptions.scalingMainComponent = 0.35; % Make it easier to see stronger negatives
 options.plotOptions.scalingScdryComponent = 0.45;
 plotLocalInfoMeasureForCA(phi_par_neighbourhood, caStates, phi_par, phi_par_cells, phi_par_timeSteps, 'separable', measureParams, options);
-printf('\nPress any key when ready to apply to the next rule\n')
+fprintf('\nPress any key when ready to apply to the next rule\n')
 pause
 options.plotOptions.scaleColoursToExtremes = scaleColoursToExtremesDefault; % return to default value 
 options.plotOptions.scalingScdryComponent = 0.30; % return to previous value
@@ -146,30 +173,39 @@ options.plotOptions.plotCols = 50;
 options.plotOptions.plotStartRow = 150;
 options.plotOptions.plotStartCol = 175;
 options.seed = 2;
-printf('\nStarting rule 22 ...\n');
-printf('\nPlotting active info storage ...\n');
+if (exist('initialStates/GsoChapterDemo2013-initialState.txt', 'file'))
+	% A file specifying the initial state exists -- this
+	%  ensures that Matlab and Octave use the same initial state
+	%  (otherwise only Octave recreates the same initial state used in our chapter).
+	%  (You can delete/move the initial state file if you want them generated from scratch.)
+	options.initialState = load('initialStates/GsoChapterDemo2013-initialState.txt');
+elseif (isfield(options, 'initialState'))
+	options = rmfield(options, 'initialState');
+end
+fprintf('\nStarting rule 22 ...\n');
+fprintf('\nPlotting active info storage ...\n');
 options.plotRawCa = true;
 plotLocalInfoMeasureForCA(neighbourhood, caStates, 22, cells, timeSteps, 'active', measureParams, options);
-printf('\nPress any key when ready for excess entropy ...\n');
+fprintf('\nPress any key when ready for excess entropy ...\n');
 pause
 options.plotRawCa = false;
 measureParams.k=8; % just for excess entropy
 plotLocalInfoMeasureForCA(neighbourhood, caStates, 22, cells, timeSteps, 'excess', measureParams, options);
-printf('\nPress any key when ready for entropy rate ...\n');
+fprintf('\nPress any key when ready for entropy rate ...\n');
 pause
 measureParams.k=16; % back to default
 plotLocalInfoMeasureForCA(neighbourhood, caStates, 22, cells, timeSteps, 'entropyrate', measureParams, options);
-printf('\nPress any key when ready for apparent transfer entropy j = 1 ...\n');
+fprintf('\nPress any key when ready for apparent transfer entropy j = 1 ...\n');
 pause
 % Use the full red scale for transfer and separable info, since we need to see the extreme negative values properly
 options.plotOptions.scaleColoursToExtremes = true;
 measureParams.j = 1;
 plotLocalInfoMeasureForCA(neighbourhood, caStates, 22, cells, timeSteps, 'transfer', measureParams, options);
-printf('\nPress any key when ready for the separable information ...\n');
+fprintf('\nPress any key when ready for the separable information ...\n');
 pause
 options.plotOptions.scalingScdryComponent = 0.35;
 plotLocalInfoMeasureForCA(neighbourhood, caStates, 22, cells, timeSteps, 'separable', measureParams, options);
-printf('\nPress any key when ready to apply to the next rule\n')
+fprintf('\nPress any key when ready to apply to the next rule\n')
 pause
 options.plotOptions.scaleColoursToExtremes = scaleColoursToExtremesDefault; % return to default value 
 options.plotOptions.scalingScdryComponent = 0.30; % return to previous value
