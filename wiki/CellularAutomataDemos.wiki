@@ -46,6 +46,14 @@ This demonstration set is found at [http://code.google.com/p/information-dynamic
 
 = Running =
 
+Several scripts are available demonstrating how to call {{{plotLocalInfoMeasureForCA.m}}} to generate the desired figures; see:
+ * {{{DirectedMeasuresChapterDemo2013.m}}} to generate figures for: J.T. Lizier, M. Prokopenko and A.Y. Zomaya, "A framework for the local information dynamics of distributed computation in complex systems", in "Guided Self-Organization: Inception", ed. M. Prokopenko, Springer, to be published, 2013;
+ * {{{GsoChapterDemo2013.m}}} to generate figures for J.T. Lizier,"Measuring the dynamics of information processing on a local scale in time and space", in "Directed Information Measures in Neuroscience", ed. M. Wibral, R. Vicente, J.T. Lizier, Springer, to be published, 2013;
+ * {{{TeBook2013.m}}} to generate figures for chapter 5 of T. Bossomaier, L. Barnett, M. Harr&eacute; and J.T. Lizier, "An Introduction to Transfer Entropy: Information Flow in Complex Systems", Springer, to be published, 2013.
+ * {{{movingFrame.m}}} to generate figures for: J.T. Lizier, J.R. Mahoney, "Moving frames of reference, relativity and invariance in transfer entropy and information dynamics", Entropy, vol. *15*, no. 1, p. 177-197, 2013; doi: [http://dx.doi.org/10.3390/e15010177 10.3390/e15010177]
+
+In brief, the steps that these scripts demonstrate are as follows:
+
 Make sure that the jar location is entered correctly in {{{plotLocalInfoMeasureForCA.m}}}
 
 Set up the {{{measureParams}}} and {{{options}}} structures, e.g.:
@@ -83,7 +91,7 @@ To make several local information profiles for the one CA run (with the same ini
 
 = References =
 
-The code can be used to reproduce results from the following papers:
+The code can also be used to reproduce results from the following papers (these were originally produced with an earlier toolkit):
  * J.T. Lizier, M. Prokopenko and A.Y. Zomaya, "Local information transfer as a spatiotemporal filter for complex systems", _Physical Review E_, vol. *77*, 026110, 2008. doi: [http://dx.doi.org/10.1103/PhysRevE.77.026110 10.1103/PhysRevE.77.026110]
  * J.T. Lizier, M. Prokopenko and A.Y. Zomaya, "Information modification and particle collisions in distributed computation", _Chaos_, vol. *20*, no. 3, 037109, 2010; doi: [http://dx.doi.org/10.1063/1.3486801 10.1063/1.3486801]
  * J.T. Lizier, M. Prokopenko and A.Y. Zomaya, "Local measures of information storage in complex distributed computation", _Information Sciences_, vol. *208*, pp. 39-54, 2012; doi: [http://dx.doi.org/10.1016/j.ins.2012.04.016 10.1016/j.ins.2012.04.016]
