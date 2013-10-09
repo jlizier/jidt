@@ -7,6 +7,10 @@
 
 = Publications by other authors =
 
-Publications by other authors using this toolkit:
+Publications by other authors using this toolkit to produce results:
 
   * Sakyasingha Dasgupta, Florentin Woergoetter, Poramate Manoonpong, [http://dx.doi.org/10.1007/s12530-013-9080-y "Information dynamics based self-adaptive reservoir for delay temporal memory tasks"], Evolving Systems, 2013.
+
+Publications by other authors mentioning this toolkit:
+
+  * Felix Eenberger, [http://arxiv.org/abs/1304.2333 "A primer on information theory, with applications to neuroscience"], arXiv:1304.2333, 2013.
