@@ -259,7 +259,7 @@ public class ConditionalMutualInformationCalculator extends InfoMeasureCalculato
 	/**
 	 * Compute the significance of obtaining the given average from the given observations,
 	 * assuming that the temporal relationship between variable1 and variable2-conditional
-	 * was detroyed, while variable2-conditional relationship was retained.
+	 * was destroyed, while variable2-conditional relationship was retained.
 	 * 
 	 * @param numPermutationsToCheck number of new orderings of the variable1 to compare against
 	 * @return
@@ -274,6 +274,10 @@ public class ConditionalMutualInformationCalculator extends InfoMeasureCalculato
 	 * Compute the significance of obtaining the given average from the given observations,
 	 * assuming that the temporal relationship between variable1 and variable2-conditional
 	 * was detroyed, while variable2-conditional relationship was retained.
+	 * 
+	 * TODO Need to alter the method signature to allow callers to specify
+	 * which variable is shuffled. (Note to self: when doing this, will
+	 * need to update machine learning code to the new method signature)
 	 * 
 	 * @param newOrderings the reorderings for variable1 to use
 	 * @return
@@ -291,7 +295,7 @@ public class ConditionalMutualInformationCalculator extends InfoMeasureCalculato
 		int t_s = 0;
 		for (int val1 = 0; val1 < base1; val1++) {
 			for (int val2 = 0; val2 < base2; val2++) {
-				for (int condVal = 0; condVal < condBase; condBase++) {
+				for (int condVal = 0; condVal < condBase; condVal++) {
 					int numberOfSamples = firstSecondCondCount[val1][val2][condVal];
 					MatrixUtils.fill(var1Values, val1, t_s, numberOfSamples);
 					MatrixUtils.fill(var2Values, val2, t_s, numberOfSamples);
