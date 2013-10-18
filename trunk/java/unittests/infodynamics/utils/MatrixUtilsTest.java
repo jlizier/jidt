@@ -241,6 +241,17 @@ public class MatrixUtilsTest extends TestCase {
 		assertTrue(flaggedException);
 	}
 	
+	public void testSortIndices() {
+		double[] array1 = {0.1, 0.2, 0.3, 0.4, 0.5};
+		checkArray(new int[] {0, 1, 2, 3, 4}, MatrixUtils.sortIndices(array1));
+
+		double[] array2 = {0.5, 0.4, 0.3, 0.2, 0.1};
+		checkArray(new int[] {4, 3, 2, 1, 0}, MatrixUtils.sortIndices(array2));
+
+		double[] array3 = {0.3, 0.1, 0.5, 0.4, 0.2};
+		checkArray(new int[] {1, 4, 0, 3, 2}, MatrixUtils.sortIndices(array3));
+	}
+	
 	/**
 	 * Check that all entries in the given matrix match those of the expected
 	 *  matrix
@@ -257,6 +268,18 @@ public class MatrixUtilsTest extends TestCase {
 		}		
 	}
 
+	/**
+	 * Check that all entries in the given array match those of the expected
+	 *  array
+	 * 
+	 * @param expected
+	 * @param actual
+	 */
+	public static void checkArray(int[] expected, int[] actual) {
+		for (int r = 0; r < expected.length; r++) {
+			assertEquals(expected[r], actual[r]);
+		}		
+	}
 	
 	public static void test2DArrayCopy() {
 		double[][] temp = {{1,2,3,4}, {4,5,6,7}, {7,8,9,10}, {10,11,12,13}};
@@ -269,4 +292,5 @@ public class MatrixUtilsTest extends TestCase {
 			}
 		}
 	}
+	
 }

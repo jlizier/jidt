@@ -8,9 +8,10 @@ public class ConditionalMutualInformationTester extends TestCase {
 
 	protected RandomGenerator rand = new RandomGenerator();
 	
-	protected int numObservations = 100;
+	protected int numObservations = 1000;
 	
 	public void testComputeSignificanceInt() {
+		// Just making sure that no exception is thrown
 		ConditionalMutualInformationCalculator condMiCalc = new ConditionalMutualInformationCalculator(2, 2, 2);
 		int[] x1 = rand.generateRandomInts(numObservations, 2);
 		int[] x2 = rand.generateRandomInts(numObservations, 2);
