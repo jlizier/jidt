@@ -637,6 +637,30 @@ public class RandomGenerator {
 		return setNumber;
 	}
 
+	/**
+	 * Generate numberOfPerturbations perturbations of [0..n-1],
+	 * which are not necessarily distinct.
+	 * Could have double-ups even where the caller has asked for less
+	 * than the number of distinct perturbations that exist.
+	 * 
+	 * @param n
+	 * @param numberOfPerturbations
+	 * @return an array of dimensions [numberOfPerturbations][n], with each row
+	 *  being one perturbation of the elements
+	 */
+	public int[][] generateRandomPerturbations(int n, int numberOfPerturbations) {
+		
+		int[][] sets = new int[numberOfPerturbations][n];
+		
+		for (int s = 0; s < numberOfPerturbations; s++) {
+			// Generate a list of n random numbers:
+			double[] randomList = generateRandomData(n);
+			int[] sortedIndices = MatrixUtils.sortIndices(randomList);
+			sets[s] = sortedIndices;
+		}
+		return sets;
+	}
+
 	public static void main(String[] args) throws Exception {
 		// This code demonstrates that the Hashtable is hashing the 
 		//  pointer rather than the array values -

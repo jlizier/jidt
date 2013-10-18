@@ -335,7 +335,8 @@ public abstract class MutualInfoMultiVariateCommon implements
 	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception {
 		// Generate the re-ordered indices:
 		RandomGenerator rg = new RandomGenerator();
-		int[][] newOrderings = rg.generateDistinctRandomPerturbations(
+		// (Not necessary to check for distinct random perturbations)
+		int[][] newOrderings = rg.generateRandomPerturbations(
 				sourceObservations.length, numPermutationsToCheck);
 		return computeSignificance(newOrderings);
 	}

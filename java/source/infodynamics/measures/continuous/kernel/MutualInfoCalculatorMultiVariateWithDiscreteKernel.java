@@ -210,7 +210,8 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKernel implements
 	public synchronized EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception {
 		// Generate the re-ordered indices:
 		RandomGenerator rg = new RandomGenerator();
-		int[][] newOrderings = rg.generateDistinctRandomPerturbations(contObservations.length, numPermutationsToCheck);
+		// (Not necessary to check for distinct random perturbations)
+		int[][] newOrderings = rg.generateRandomPerturbations(contObservations.length, numPermutationsToCheck);
 		return computeSignificance(newOrderings);
 	}
 

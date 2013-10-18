@@ -2,6 +2,7 @@ package infodynamics.utils;
 
 import java.io.PrintStream;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Vector;
 
 /**
@@ -2452,6 +2453,71 @@ public class MatrixUtils {
 		return minIndices;
 	}
 
+	/**
+	 * Sort array and return the original indices of each item in the
+	 * sorted list, such that array[returnValue[k]] is the kth item in the
+	 * sorted list.
+	 * 
+	 * @param array array of doubles to sort
+	 * @return list of original indices, in the sorted order of the array
+	 */
+	public static int[] sortIndices(double[] array) {
+		// Need an instance of MatrixUtils to get to member classes:
+		MatrixUtils mUtils = new MatrixUtils();
+		
+		// First create the array of DoubleWithIndexForSort objects:
+		DoubleWithIndexForSort[] objectArray = new DoubleWithIndexForSort[array.length];
+		for (int i = 0; i < array.length; i++) {
+			objectArray[i] = mUtils.new DoubleWithIndexForSort(array[i], i);
+		}
+		// Sort the array with original indices in place:
+		Arrays.sort(objectArray, mUtils.new DoubleWithIndexForSortComparator());
+		// Pull out the original indices:
+		int[] arrayOfOriginalIndices = new int[array.length];
+		for (int i = 0; i < array.length; i++) {
+			arrayOfOriginalIndices[i] = objectArray[i].originalIndex;
+		}
+		return arrayOfOriginalIndices;
+	}
+	
+	/**
+	 * Structure used by {@link MatrixUtils#sortIndices(double[])}
+	 * 
+	 * @author Joseph Lizier
+	 *
+	 */
+	private class DoubleWithIndexForSort {
+		double value;
+		int originalIndex;
+		
+		public DoubleWithIndexForSort(double value, int originalIndex) {
+			this.value = value;
+			this.originalIndex = originalIndex;
+		}
+	}
+	
+	/**
+	 * Comparator for {@link DoubleWithIndexForSort}
+	 * 
+	 * @author Joseph Lizier
+	 *
+	 */
+	private class DoubleWithIndexForSortComparator implements Comparator<DoubleWithIndexForSort> {
+
+		public int compare(DoubleWithIndexForSort arg0,
+				DoubleWithIndexForSort arg1) {
+			if (arg0.value < arg1.value) {
+				return -1;
+			}
+			if (arg0.value > arg1.value) {
+				return 1;
+			}
+			// values are equal:
+			return 0;
+		}
+		
+	}
+	
 	/**
 	 * Mirrors the matrix in both coordinates
 	 * 

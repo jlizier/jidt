@@ -438,7 +438,8 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 	public synchronized EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception {
 		// Generate the re-ordered indices:
 		RandomGenerator rg = new RandomGenerator();
-		int[][] newOrderings = rg.generateDistinctRandomPerturbations(continuousData.length, numPermutationsToCheck);
+		// (Not necessary to check for distinct random perturbations)
+		int[][] newOrderings = rg.generateRandomPerturbations(continuousData.length, numPermutationsToCheck);
 		return computeSignificance(newOrderings);
 	}
 	

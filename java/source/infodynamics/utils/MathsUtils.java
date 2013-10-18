@@ -72,6 +72,7 @@ public class MathsUtils {
 	 * @throws Exception when the result exceeds {@link Integer#MAX_VALUE}
 	 */
 	public static int factorialCheckBounds(int n) throws Exception {
+		// TODO I'm not convinced this is safe. Should just hard-code the limit.
 		long result = 1;
 		for (int i = 1; i <= n; i++) {
 			result *= (long) i;
