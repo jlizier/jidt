@@ -322,7 +322,8 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		RandomGenerator rg = new RandomGenerator();
 		// Use var1 length (all variables have same length) even though
 		//  we may be randomising the other variable:
-		int[][] newOrderings = rg.generateDistinctRandomPerturbations(
+		// (Not necessary to check for distinct random perturbations)
+		int[][] newOrderings = rg.generateRandomPerturbations(
 				var1Observations.length, numPermutationsToCheck);
 		return computeSignificance(variableToReorder, newOrderings);
 	}

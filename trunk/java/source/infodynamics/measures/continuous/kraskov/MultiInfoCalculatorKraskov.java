@@ -207,7 +207,8 @@ public abstract class MultiInfoCalculatorKraskov implements
 		int[][][] newOrderings = new int[numPermutationsToCheck][][];
 		// Generate numPermutationsToCheck * V permutations of 0 .. data.length-1
 		for (int n = 0; n < numPermutationsToCheck; n++) {
-			newOrderings[n] = rg.generateDistinctRandomPerturbations(data.length, V-1);
+			// (Not necessary to check for distinct random perturbations)
+			newOrderings[n] = rg.generateRandomPerturbations(data.length, V-1);
 		}
 		return computeSignificance(newOrderings);
 	}

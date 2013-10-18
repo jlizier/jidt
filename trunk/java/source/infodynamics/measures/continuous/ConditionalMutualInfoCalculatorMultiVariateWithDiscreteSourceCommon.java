@@ -151,7 +151,8 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSou
 		RandomGenerator rg = new RandomGenerator();
 		// Use continuousDataX length (all variables have same length) even though
 		//  we may be randomising the other variable:
-		int[][] newOrderings = rg.generateDistinctRandomPerturbations(
+		// (Not necessary to check for distinct random perturbations)
+		int[][] newOrderings = rg.generateRandomPerturbations(
 				continuousDataX.length, numPermutationsToCheck);
 		return computeSignificance(reorderDiscreteVariable, newOrderings);
 	}

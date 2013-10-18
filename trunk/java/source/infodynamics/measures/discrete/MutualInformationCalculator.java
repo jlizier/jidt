@@ -151,7 +151,8 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 	 */
 	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) {
 		RandomGenerator rg = new RandomGenerator();
-		int[][] newOrderings = rg.generateDistinctRandomPerturbations(observations, numPermutationsToCheck);
+		// (Not necessary to check for distinct random perturbations)
+		int[][] newOrderings = rg.generateRandomPerturbations(observations, numPermutationsToCheck);
 		return computeSignificance(newOrderings);
 	}
 	

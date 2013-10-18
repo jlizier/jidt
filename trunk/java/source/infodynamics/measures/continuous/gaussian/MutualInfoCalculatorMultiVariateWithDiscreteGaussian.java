@@ -254,7 +254,8 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteGaussian implements
 		}
 		// Generate the re-ordered indices:
 		RandomGenerator rg = new RandomGenerator();
-		int[][] newOrderings = rg.generateDistinctRandomPerturbations(totalObservations, numPermutationsToCheck);
+		// (Not necessary to check for distinct random perturbations)
+		int[][] newOrderings = rg.generateRandomPerturbations(totalObservations, numPermutationsToCheck);
 		return computeSignificance(newOrderings);
 	}
 

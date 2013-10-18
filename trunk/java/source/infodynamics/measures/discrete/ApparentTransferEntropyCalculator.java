@@ -716,7 +716,8 @@ public class ApparentTransferEntropyCalculator extends ContextOfPastMeasureCalcu
 		// Construct new source orderings based on the source probabilities only
 		// Generate the re-ordered indices:
 		RandomGenerator rg = new RandomGenerator();
-		int[][] newOrderings = rg.generateDistinctRandomPerturbations(observations, numPermutationsToCheck);
+		// (Not necessary to check for distinct random perturbations)
+		int[][] newOrderings = rg.generateRandomPerturbations(observations, numPermutationsToCheck);
 
 		ApparentTransferEntropyCalculator ate2 = newInstance(base, k);
 		ate2.initialise();
