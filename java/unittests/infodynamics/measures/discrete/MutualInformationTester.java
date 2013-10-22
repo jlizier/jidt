@@ -4,7 +4,7 @@ import junit.framework.TestCase;
 
 public class MutualInformationTester extends TestCase {
 
-	public void testFullyDependent() {
+	public void testFullyDependent() throws Exception {
 		MutualInformationCalculator miCalc = new MutualInformationCalculator(2, 0);
 		
 		// X2 is a copy of X1 - MI should be 1 bit
@@ -22,7 +22,7 @@ public class MutualInformationTester extends TestCase {
 		}
 	}
 	
-	public void testIndependent() {
+	public void testIndependent() throws Exception {
 		MutualInformationCalculator miCalc = new MutualInformationCalculator(2, 0);
 		
 		// X2 is unrelated to X1 - MI should be 0 bits
@@ -32,7 +32,7 @@ public class MutualInformationTester extends TestCase {
 		assertEquals(0.0, miRand, 0.000001);
 	}
 
-	public void testXor() {
+	public void testXor() throws Exception {
 		MutualInformationCalculator miCalc = new MutualInformationCalculator(2, 0);
 		
 		int[] X1 = new int[] {0, 0, 1, 1};
@@ -61,7 +61,7 @@ public class MutualInformationTester extends TestCase {
 		assertEquals(1.0, miX12Y, 0.000001);
 	}
 	
-	public void test3Xor() {
+	public void test3Xor() throws Exception {
 		MutualInformationCalculator miCalc = new MutualInformationCalculator(2, 0);
 		
 		int[] X1 = new int[] {0, 1, 0, 1, 0, 1, 0, 1};

@@ -10,8 +10,8 @@ public class RandomGeneratorTest extends TestCase {
 		// (this should be ok)
 		checkGenerateRandomPerturbations(5, 200);
 		// Now test perturbations of a long set of digits
-		//  to check timing (takes a few seconds)
-		// checkGenerateRandomPerturbations(60000, 1000);
+		//  to check timing (should be ~ 1 sec)
+		checkGenerateRandomPerturbations(60000, 1000);
 	}
 	
 	public void checkGenerateRandomPerturbations(int N, int p) {
