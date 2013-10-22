@@ -434,6 +434,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 	 * 
 	 * @param numPermutationsToCheck
 	 * @return the proportion of MI scores from the distribution which have higher or equal MIs to ours.
+	 *  (i.e. 1 - CDF of our score)
 	 */
 	public synchronized EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception {
 		// Generate the re-ordered indices:

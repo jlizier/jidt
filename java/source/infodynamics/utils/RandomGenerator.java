@@ -1,5 +1,7 @@
 package infodynamics.utils;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Vector;
@@ -652,11 +654,32 @@ public class RandomGenerator {
 		
 		int[][] sets = new int[numberOfPerturbations][n];
 		
+		/* Manual implementation:
 		for (int s = 0; s < numberOfPerturbations; s++) {
 			// Generate a list of n random numbers:
 			double[] randomList = generateRandomData(n);
 			int[] sortedIndices = MatrixUtils.sortIndices(randomList);
 			sets[s] = sortedIndices;
+		}
+		return sets;
+		*/
+		
+		// Better implementation: using native classes, supplying
+		// our Random object to ensure repeatability with the seed:
+		
+		// Use an array list because it gives RandomAccess to
+		//  the Collections.shuffle method:
+		ArrayList<Integer> list = new ArrayList<Integer>();
+		for (int i = 0; i < n; i++) {
+			list.add(i);
+		}
+		for (int s = 0; s < numberOfPerturbations; s++) {
+			// Perform linear time shuffles (of what was already shuffled),
+			//  Note: the shuffles are all equal likelihood
+			Collections.shuffle(list, random);
+			for (int j = 0; j < n; j++) {
+				sets[s][j] = list.get(j);
+			}
 		}
 		return sets;
 	}

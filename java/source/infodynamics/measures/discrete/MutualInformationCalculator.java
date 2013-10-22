@@ -25,8 +25,11 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 	private int[] iCount = null; // Count for i[t-timeDiff]		
 	private int[] jCount = null; // Count for j[t]
 
-	public MutualInformationCalculator(int base, int timeDiff) {
+	public MutualInformationCalculator(int base, int timeDiff) throws Exception {
 		super(base);
+		if (timeDiff < 0) {
+			throw new Exception("timeDiff must be >= 0");
+		}
 		this.timeDiff = timeDiff;
 		jointCount = new int[base][base];
 		iCount = new int[base];
@@ -180,8 +183,15 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 			MatrixUtils.fill(jValues, iVal, t_j, numberOfSamplesJ);
 			t_j += numberOfSamplesJ;
 		}
-				
-		MutualInformationCalculator mi2 = new MutualInformationCalculator(base, timeDiff);
+		
+		MutualInformationCalculator mi2;
+		try {
+			mi2 = new MutualInformationCalculator(base, timeDiff);
+		} catch (Exception e) {
+			// The only possible exception is if timeDiff < 0, which 
+			// it cannot be. Shut down the JVM
+			throw new Error("timeDiff parameter took on value < 0 after being checked at construction");
+		}
 		mi2.initialise();
 		mi2.observations = observations;
 		mi2.iCount = iCount;
@@ -216,10 +226,54 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 	 *  for the given states, using pdfs built up from observations previously
 	 *  sent in via the addObservations method 
 	 *  
+	 * @param var1 new states of variable 1
+	 * @param var2 new states of variable 2. Should be same length as var1
+	 * @return array of local mutual information values for each
+	 *  observation of (var1, var2). Note - if timeDiff > 0, then the
+	 *  return length will be var1.length - timeDiff. 
+	 * @throws Exception 
+	 */
+	public double[] computeLocalFromPreviousObservations(int[] var1, int[] var2) throws Exception{
+		
+		if (var1.length != var2.length) {
+			throw new Exception("var1 and var2 must have the same number of observations");
+		}
+		double[] localMI = new double[var1.length - timeDiff];
+		
+		double logTerm = 0.0;
+		for (int r = timeDiff; r < var1.length; r++) {
+			int iVal = var1[r-timeDiff];
+			int jVal = var2[r];
+			logTerm = ( (double) jointCount[iVal][jVal] ) /
+			  		  ( (double) jCount[jVal] *
+			  			(double) iCount[iVal] );
+			// Now account for the fact that we've
+			//  just used counts rather than probabilities,
+			//  and we've got two counts on the bottom
+			//  but one count on the top:
+			logTerm *= (double) observations;
+			localMI[r] = Math.log(logTerm) / log_2;
+			average += localMI[r];
+			if (localMI[r] > max) {
+				max = localMI[r];
+			} else if (localMI[r] < min) {
+				min = localMI[r];
+			}
+		}
+		average = average/(double) observations;
+		
+		return localMI;
+	}
+	
+	/**
+	 * Computes local mutual information (or pointwise mutual information)
+	 *  for the given states, using pdfs built up from observations previously
+	 *  sent in via the addObservations method 
+	 *  
 	 * @param states
 	 * @return
 	 */
-	double[] computeLocalFromPreviousObservations(int states[][], int iCol, int jCol){
+	public double[] computeLocalFromPreviousObservations(int states[][], int iCol, int jCol){
 		int rows = states.length;
 		//int columns = states[0].length;
 
