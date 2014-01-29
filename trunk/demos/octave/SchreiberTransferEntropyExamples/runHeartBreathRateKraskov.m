@@ -8,7 +8,6 @@
 % Used to explore information transfer in the heart rate / breath rate example of Schreiber --
 %  but estimates TE using Kraskov-Grassberger estimation.
 %
-% Runtime is ~3 minutes per knn value (as there is no fast nearest neighbour search implemented yet in the toolkit)
 %
 % Inputs
 % - knns - a scalar specifying a single, or vector specifying multiple, value of K nearest neighbours to evaluate TE (Kraskov) with
@@ -19,7 +18,7 @@
 
 function [teHeartToBreath, teBreathToHeart] = runHeartBreathRate(knns)
 
-	starttime = time;
+	starttime = tic;
 	
 	% Add utilities to the path
 	addpath('..');
@@ -28,12 +27,10 @@ function [teHeartToBreath, teBreathToHeart] = runHeartBreathRate(knns)
 	% Octave is happy to have the path added multiple times; I'm unsure if this is true for matlab
 	javaaddpath('../../../infodynamics.jar');
 
-	fprintf('TE for heart rate <-> breath rate for Kraskov estimation:\n');
-
 	data = load('../../data/SFI-heartRate_breathVol_bloodOx.txt');
 	
 	% Restrict to the samples that Schreiber mentions:
-	heartRate = data(2350:3550,:);
+	data = data(2350:3550,:);
 	
 	% Separate the data from each column:
 	heart = data(:,1);
@@ -41,6 +38,8 @@ function [teHeartToBreath, teBreathToHeart] = runHeartBreathRate(knns)
 	bloodOx = data(:,3);
 	timeSteps = length(heart);
 	
+	fprintf('TE for heart rate <-> breath rate for Kraskov estimation with %d samples:\n', timeSteps);
+
 	% Using a single conditional mutual information calculator is the least biased way to run this:
 	teCalc=javaObject('infodynamics.measures.continuous.kraskov.ConditionalMutualInfoCalculatorMultiVariateKraskov1');
 
@@ -67,7 +66,7 @@ function [teHeartToBreath, teBreathToHeart] = runHeartBreathRate(knns)
 		fprintf('TE(k=%d): heart->breath = %.3f, breath->heart = %.3f\n', knn, teHeartToBreath(knnIndex), teBreathToHeart(knnIndex));
 	end
 		
-	endtime = time;
-	printf("Total runtime was %.1f sec\n", endtime - starttime);
+	endtime = toc;
+	fprintf('Total runtime was %.1f sec\n', endtime - starttime);
 end
 
