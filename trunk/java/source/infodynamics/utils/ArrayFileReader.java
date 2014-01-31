@@ -6,6 +6,16 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
+/**
+ * Reads basic files with one or two dimensional arrays of integers.,
+ *  delimited by space, tab or comma.
+ * One dimensional arrays should have a single number on each line.
+ * Files can have comment lines, which start with # or % characters.
+ * Empty lines are allowed.
+ * 
+ * @author Joseph Lizier
+ *
+ */
 public class ArrayFileReader {
 	private String filename;
 	private BufferedReader br;
@@ -41,7 +51,7 @@ public class ArrayFileReader {
 		for (String line = br.readLine(); line != null; line = br.readLine()) {
 			// Strip leading whitespace
 			line = line.replaceFirst("^[ \t]*", "");
-			if (line.startsWith("#")) {
+			if (line.startsWith("#") || line.startsWith("%")) {
 				// comment line
 				continue;
 			}
@@ -98,7 +108,7 @@ public class ArrayFileReader {
 		for (String line = br.readLine(); line != null; line = br.readLine()) {
 			// Strip leading whitespace
 			line = line.replaceFirst("^[ \t]*", "");
-			if (line.startsWith("#")) {
+			if (line.startsWith("#") || line.startsWith("%")) {
 				// comment line
 				continue;
 			}
@@ -157,7 +167,7 @@ public class ArrayFileReader {
 			for (String line = br.readLine(); line != null; line = br.readLine()) {
 				// Strip leading whitespace
 				line = line.replaceFirst("^[ \t]*", "");
-				if (line.startsWith("#")) {
+				if (line.startsWith("#") || line.startsWith("%")) {
 					// comment line
 					continue;
 				}
@@ -193,7 +203,7 @@ public class ArrayFileReader {
 			for (String line = br.readLine(); line != null; line = br.readLine()) {
 				// Strip leading whitespace
 				line = line.replaceFirst("^[ \t]*", "");
-				if (line.startsWith("#")) {
+				if (line.startsWith("#") || line.startsWith("%")) {
 					// comment line
 					continue;
 				}
@@ -244,7 +254,7 @@ public class ArrayFileReader {
 		for (String line = br.readLine(); line != null; line = br.readLine()) {
 			// Strip leading whitespace
 			line = line.replaceFirst("^[ \t]*", "");
-			if (line.startsWith("#")) {
+			if (line.startsWith("#") || line.startsWith("%")) {
 				// comment line
 				continue;
 			}
@@ -303,7 +313,7 @@ public class ArrayFileReader {
 			for (String line = br.readLine(); line != null; line = br.readLine()) {
 				// Strip leading whitespace
 				line = line.replaceFirst("^[ \t]*", "");
-				if (line.startsWith("#")) {
+				if (line.startsWith("#") || line.startsWith("%")) {
 					// comment line
 					continue;
 				}
@@ -339,7 +349,7 @@ public class ArrayFileReader {
 			for (String line = br.readLine(); line != null; line = br.readLine()) {
 				// Strip leading whitespace
 				line = line.replaceFirst("^[ \t]*", "");
-				if (line.startsWith("#")) {
+				if (line.startsWith("#") || line.startsWith("%")) {
 					// comment line
 					continue;
 				}
