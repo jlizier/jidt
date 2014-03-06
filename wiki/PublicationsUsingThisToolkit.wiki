@@ -1,16 +1,31 @@
 #summary List of publications including results which were produced using this toolkit
+#labels examples
 
 = My publications =
 
-  * TODO - List all here ...
+  * X. R. Wang, J. T. Lizier, T. Nowotny, A. Z. Berna, M. Prokopenko, S. C. Trowell, [http://dx.doi.org/10.1371/journal.pone.0089840 "Feature Selection for Chemical Sensor Arrays Using Mutual Information"], PLoS ONE 9(3): e89840.
+  * C. Gomez, J.T. Lizier, M. Schaum, P. Wollstadt, C. Gruetzner, P. Uhlhaas, C. Freitag, S. Schlitt, S. Boelte, R. Hornero and M. Wibral, [http://dx.doi.org/10.3389/fninf.2014.00009 "Reduced predictable information in brain signals in autism spectrum disorder"], Frontiers in Neuroinformatics, vol. 8, no. 9, 2014.
+  * M. Wibral, J. T. Lizier, S. Voegler, V. Priesemann and R. Galuske, [http://dx.doi.org/10.3389/fninf.2014.00001 "Local active information storage as a tool to understand distributed neural information processing"], in Frontiers in Neuroinformatics, vol. 8, no. 1, 2014.
+  * J. T. Lizier, M. Prokopenko and A.Y. Zomaya, [http://dx.doi.org/10.1007/978-3-642-53734-9_5 "A framework for the local information dynamics of distributed computation in complex systems"], in Guided Self-Organization: Inception, edited by M. Prokopenko, pp. 115-158, Springer, Berlin/Heidelberg, 2014. -- See example code at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave%2FCellularAutomata/GsoChapterDemo2013.m demos/octave/CellularAutomata/GsoChapterDemo2013.m]
+  * M. Wibral, N. Pampu, V. Priesemann, F. Siebenhuehner, H. Seiwert, M. Lindner, J.T. Lizier and R. Vicente, [http://dx.doi.org/10.1371/journal.pone.0055809 "Measuring information-transfer delays"], PLOS ONE, vol. 8, no. 2, e55809, 2013. -- See example code at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave%2FDetectingInteractionLags demos/octave/DetectingInteractionLags]
+  * J.T. Lizier and J.R. Mahoney, [http://dx.doi.org/10.3390/e15010177 "Moving frames of reference, relativity and invariance in transfer entropy and information dynamics"], Entropy, vol. 15, no. 1, pp. 177-197, 2013. -- See example code at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave%2FCellularAutomata/movingFrame.m demos/octave/CellularAutomata/movingFrame.m]
 
+<wiki:comment>
+Other articles where we used the toolkit but didn't cite it (usually because the articles were out before this practise started:
+- Cliff 2013
+- Lizier IEEE ALife 2013
+- Miller 2014
+- Wang 2012
+- etc
+</wiki:comment>
 
 = Publications by other authors =
 
 Publications by other authors using this toolkit to produce results:
 
-  * Sakyasingha Dasgupta, Florentin Woergoetter, Poramate Manoonpong, [http://dx.doi.org/10.1007/s12530-013-9080-y "Information dynamics based self-adaptive reservoir for delay temporal memory tasks"], Evolving Systems, 2013.
+  * S. Dasgupta, F. Woergoetter, P. Manoonpong, [http://dx.doi.org/10.1007/s12530-013-9080-y "Information dynamics based self-adaptive reservoir for delay temporal memory tasks"], Evolving Systems, 4(4), pp 235-249, 2013.
+  * J. Boedecker, A. Lazar, O. Obst, A. Zeman, [http://prokopenko.net/abstracts/Boedecker-etal.pdf "Effects of STDP and Intrinsic Plasticity on Information Dynamics in a Self-Organising Recurrent Neural Network"], Sixth International Workshop on Guided Self-Organizationl, 2013. (abstract)
 
 Publications by other authors mentioning this toolkit:
 
-  * Felix Eenberger, [http://arxiv.org/abs/1304.2333 "A primer on information theory, with applications to neuroscience"], arXiv:1304.2333, 2013.
+  * F. Effenberger, [http://arxiv.org/abs/1304.2333 "A primer on information theory, with applications to neuroscience"], arXiv:1304.2333, 2013.
