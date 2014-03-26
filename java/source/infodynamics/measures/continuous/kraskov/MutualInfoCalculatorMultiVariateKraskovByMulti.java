@@ -57,6 +57,8 @@ public abstract class MutualInfoCalculatorMultiVariateKraskovByMulti implements
 	protected double mi;
 	protected boolean miComputed;
 	
+	protected boolean addedMoreThanOneObservationSet = false;
+	
 	public MutualInfoCalculatorMultiVariateKraskovByMulti() {
 		super();
 		props = new Hashtable<String,String>();
@@ -352,4 +354,8 @@ public abstract class MutualInfoCalculatorMultiVariateKraskovByMulti implements
 	public int getNumObservations() {
 		return numObservations;
 	}
+
+	public boolean getAddedMoreThanOneObservationSet() {
+		return addedMoreThanOneObservationSet;
+	}	
 }

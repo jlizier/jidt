@@ -44,6 +44,8 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov implements
 	private boolean normalise = true;
 	private int timeDiff = 0;
 
+	protected boolean addedMoreThanOneObservationSet = false;
+
 	public MutualInfoCalculatorMultiVariateKraskov() {
 		super();
 		k = 1; // by default
@@ -267,5 +269,9 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov implements
 	
 	public int getNumObservations() {
 		return data1.length;
+	}
+
+	public boolean getAddedMoreThanOneObservationSet() {
+		return addedMoreThanOneObservationSet;
 	}
 }

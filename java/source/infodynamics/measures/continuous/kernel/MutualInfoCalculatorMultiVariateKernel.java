@@ -31,6 +31,11 @@ import infodynamics.measures.continuous.MutualInfoMultiVariateCommon;
  * 	</ol>
  * </p>
  * 
+ * <p>
+ * TODO Use only a single kernel estimator class for the joint space, and compute other
+ *  probabilities from this. This will save much time.
+ * </p>
+ * 
  * @see "H. Kantz and T. Schreiber, 'Nonlinear Time Series Analysis'.
  *   Cambridge, MA: Cambridge University Press, 1997"
  * @author Joseph Lizier, <a href="mailto:joseph.lizier at gmail.com">joseph.lizier at gmail.com</>
@@ -614,6 +619,10 @@ public class MutualInfoCalculatorMultiVariateKernel
 		return totalObservations;
 	}
 
+	public double getKernelWidth() {
+		return kernelWidth;
+	}
+	
 	/**
 	 * Clone the object - note: while it does create new cloned instances of
 	 *  the {@link KernelEstimatorMultiVariate} objects, I think these only
@@ -636,4 +645,5 @@ public class MutualInfoCalculatorMultiVariateKernel
 				(KernelEstimatorMultiVariate) mvkeJoint.clone();
 		return theClone;
 	}
+
 }

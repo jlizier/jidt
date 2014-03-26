@@ -462,6 +462,14 @@ public abstract class MutualInfoMultiVariateCommon implements
 	}
 
 	/**
+	 * @return whether the user has added multiple observation sets via the 
+	 * {@link #addObservations(double[][], double[][])} methods
+	 */
+	public boolean getAddedMoreThanOneObservationSet() {
+		return addedMoreThanOneObservationSet;
+	}
+
+	/**
 	 * Compute a vector of start and end pairs of time points, between which we have
 	 *  valid series of both source and destinations.
 	 * 

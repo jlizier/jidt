@@ -337,4 +337,8 @@ public abstract class TransferEntropyCommon implements
 	public void setDebug(boolean debug) {
 		this.debug = debug;
 	}
+
+	public boolean getAddedMoreThanOneObservationSet() {
+		return addedMoreThanOneObservationSet;
+	}
 }

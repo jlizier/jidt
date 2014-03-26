@@ -25,5 +25,4 @@ public class MutualInfoCalculatorMultiVariateKraskovByMulti1 extends
 		multiInfo2 =  new MultiInfoCalculatorKraskov1();
 	
 	}
-	
 }
