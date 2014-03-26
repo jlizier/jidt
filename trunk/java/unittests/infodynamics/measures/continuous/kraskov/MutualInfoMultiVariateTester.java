@@ -25,6 +25,9 @@ public class MutualInfoMultiVariateTester
 	/**
 	 * Confirm that the local values average correctly back to the average value
 	 * 
+	 * TODO Add a test with say 10000 time steps, after we introduce fast nearest 
+	 *  neighbour searching.
+	 * 
 	 */
 	public void checkLocalsAverageCorrectly(int algNumber) throws Exception {
 		
