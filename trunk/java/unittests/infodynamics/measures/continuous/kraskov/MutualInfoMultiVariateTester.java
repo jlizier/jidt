@@ -13,7 +13,7 @@ public class MutualInfoMultiVariateTester
 	 * @return
 	 */
 	public MutualInfoCalculatorMultiVariateKraskov getNewCalc(int algNumber) {
-		MutualInfoCalculatorMultiVariateKraskov miCalc = null;;
+		MutualInfoCalculatorMultiVariateKraskov miCalc = null;
 		if (algNumber == 1) {
 			miCalc = new MutualInfoCalculatorMultiVariateKraskov1();
 		} else if (algNumber == 2) {
@@ -92,6 +92,7 @@ public class MutualInfoMultiVariateTester
 			// No longer need to set this property as it's set by default:
 			//miCalc.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE,
 			//		EuclideanUtils.NORM_MAX_NORM_STRING);
+			miCalc.initialise(var1[0].length, var2[0].length);
 			miCalc.setObservations(var1, var2);
 			//miCalc.setDebug(true);
 			double mi = miCalc.computeAverageLocalOfObservations();
