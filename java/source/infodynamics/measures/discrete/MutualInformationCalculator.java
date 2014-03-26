@@ -223,6 +223,32 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 
 	/**
 	 * Computes local mutual information (or pointwise mutual information)
+	 *  for the given (single) specific values, using pdfs built up from observations previously
+	 *  sent in via the addObservations method.
+	 *  
+	 * @param val1 single specific value of variable 1
+	 * @param val2 single specific value of variable 2
+	 * @return a local mutual information value for this pair of observations
+	 * @throws Exception if this pair were not observed together in the
+	 *  previously supplied observations
+	 */
+	public double computeLocalFromPreviousObservations(int val1, int val2) throws Exception{
+		
+		double logTerm = ( (double) jointCount[val1][val2] ) /
+			  		  ( (double) jCount[val2] *
+			  			(double) iCount[val1] );
+		// Now account for the fact that we've
+		//  just used counts rather than probabilities,
+		//  and we've got two counts on the bottom
+		//  but one count on the top:
+		logTerm *= (double) observations;
+		double localMI = Math.log(logTerm) / log_2;
+		
+		return localMI;
+	}
+	
+	/**
+	 * Computes local mutual information (or pointwise mutual information)
 	 *  for the given states, using pdfs built up from observations previously
 	 *  sent in via the addObservations method 
 	 *  

@@ -25,7 +25,6 @@ import infodynamics.utils.MatrixUtils;
  *   </li>
  * </ol></p>
  * 
- * TODO Add method calls for single dimensional arrays
  * 
  * @author Joseph Lizier
  */
@@ -78,6 +77,23 @@ public class EntropyCalculator extends InfoMeasureCalculator
 	}
 		
 	
+	/**
+ 	 * Add observations in to our estimates of the pdfs.
+	 *
+	 * @param states 1st index is time
+	 */
+	public void addObservations(int states[]) {
+		int rows = states.length;
+		// increment the count of observations:
+		observations += rows; 
+		
+		// 1. Count the tuples observed
+		for (int r = 0; r < rows; r++) {
+			// Add to the count for this particular state:
+			stateCount[states[r]]++;
+		}		
+	}
+
 	/**
  	 * Add observations in to our estimates of the pdfs.
  	 * This call suitable only for homogeneous agents, as all
@@ -230,6 +246,38 @@ public class EntropyCalculator extends InfoMeasureCalculator
 	 * Computes local entropy for the given
 	 *  states, using pdfs built up from observations previously
 	 *  sent in via the addObservations method 
+	 *  
+	 * @param states index is time
+	 * @return
+	 */
+	public double[] computeLocalFromPreviousObservations(int states[]){
+		int rows = states.length;
+		
+		double[] localEntropy = new double[rows];
+		average = 0;
+		max = 0;
+		min = 0;
+		for (int r = 0; r < rows; r++) {
+			double p_state = (double) stateCount[states[r]] / (double) observations;
+			// Entropy takes the negative log:
+			localEntropy[r] = - Math.log(p_state) / log_2;
+			average += localEntropy[r];
+			if (localEntropy[r] > max) {
+				max = localEntropy[r];
+			} else if (localEntropy[r] < min) {
+				min = localEntropy[r];
+			}
+		}
+		average = average/(double) rows;
+		
+		return localEntropy;
+		
+	}
+	
+	/**
+	 * Computes local entropy for the given
+	 *  states, using pdfs built up from observations previously
+	 *  sent in via the addObservations method 
 	 * This method to be used for homogeneous agents only
 	 *  
 	 * @param states 1st index is time, 2nd index is agent number
@@ -239,7 +287,6 @@ public class EntropyCalculator extends InfoMeasureCalculator
 		int rows = states.length;
 		int columns = states[0].length;
 		
-		// Allocate for all rows even though we may not be assigning all of them
 		double[][] localEntropy = new double[rows][columns];
 		average = 0;
 		max = 0;
@@ -287,7 +334,6 @@ public class EntropyCalculator extends InfoMeasureCalculator
 			}
 		}
 
-		// Allocate for all rows even though we may not be assigning all of them
 		double[][][] localEntropy = new double[timeSteps][agentRows][agentColumns];
 		average = 0;
 		max = 0;
@@ -327,7 +373,6 @@ public class EntropyCalculator extends InfoMeasureCalculator
 		int rows = states.length;
 		//int columns = states[0].length;
 
-		// Allocate for all rows even though we'll leave the first ones as zeros
 		double[] localEntropy = new double[rows];
 		average = 0;
 		max = 0;
@@ -388,6 +433,23 @@ public class EntropyCalculator extends InfoMeasureCalculator
 
 	/**
 	 * Standalone routine to 
+	 * compute local information theoretic measure across a 1D temporal
+	 *  array of the states of homogeneous agents
+	 * Return a 1D temporal array of local values.
+	 * First history rows are zeros
+	 * 
+	 * @param states - 1D array of states
+	 * @return
+	 */
+	public final double[] computeLocal(int states[]) {
+		
+		initialise();
+		addObservations(states);
+		return computeLocalFromPreviousObservations(states);
+	}
+
+	/**
+	 * Standalone routine to 
 	 * compute local information theoretic measure across a 2D spatiotemporal
 	 *  array of the states of homogeneous agents
 	 * Return a 2D spatiotemporal array of local values.
@@ -418,6 +480,22 @@ public class EntropyCalculator extends InfoMeasureCalculator
 		initialise();
 		addObservations(states);
 		return computeLocalFromPreviousObservations(states);
+	}
+
+	/**
+	 * Standalone routine to 
+	 * compute average local information theoretic measure across a 1D temporal
+	 *  array of the states of homogeneous agents
+	 * Return the average
+	 * 
+	 * @param states - 1D array of states
+	 * @return
+	 */
+	public final double computeAverageLocal(int states[]) {
+		
+		initialise();
+		addObservations(states);
+		return computeAverageLocalOfObservations();
 	}
 
 	/**
