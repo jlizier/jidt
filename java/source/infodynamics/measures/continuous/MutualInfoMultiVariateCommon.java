@@ -71,7 +71,7 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 * (Note that our internal sourceObservations and destObservations
 	 *  are adjusted so that there is no timeDiff between them).
 	 */
-	protected int timeDiff;
+	protected int timeDiff = 0;
 
 	/**
 	 * Storage for source observations for addObservsations
@@ -327,7 +327,7 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 *  (though in theory this doesn't matter for this function call).
 	 * </p>
 	 * 
-	 * @param numPermutationsToCheck
+	 * @param numPermutationsToCheck number of surrogate permutations to compute the distribution from
 	 * @return the proportion of MI scores from the distribution which have higher or equal MIs to ours.
 	 * @see "Chavez et. al., 'Statistical assessment of nonlinear causality:
 	 *  application to epileptic EEG signals', Journal of Neuroscience Methods 124 (2003) 113-128"
@@ -373,26 +373,12 @@ public abstract class MutualInfoMultiVariateCommon implements
 			computeAverageLocalOfObservations();
 		}
 		
-		// Take a clone of the object to compute the MI of the surrogates:
-		// (this is a shallow copy, it doesn't make new copies of all
-		//  the arrays)
-		MutualInfoMultiVariateCommon miSurrogateCalculator =
-				(MutualInfoMultiVariateCommon) this.clone();
-		
 		double[] surrogateMeasurements = new double[numPermutationsToCheck];
 		
 		// Now compute the MI for each set of shuffled data:
 		for (int i = 0; i < numPermutationsToCheck; i++) {
-			// Generate a new re-ordered source data
-			double[][] shuffledSourceData = 
-					MatrixUtils.extractSelectedTimePointsReusingArrays(
-							sourceObservations, newOrderings[i]);
-			// Perform new initialisations
-			miSurrogateCalculator.initialise(dimensionsSource, dimensionsDest);
-			// Set new observations
-			miSurrogateCalculator.setObservations(shuffledSourceData, destObservations);
-			// Compute the MI
-			surrogateMeasurements[i] = miSurrogateCalculator.computeAverageLocalOfObservations();
+			// Compute a new surrogate MI
+			surrogateMeasurements[i] = computeAverageLocalOfObservations(newOrderings[i]);
 			if (debug){
 				System.out.println("New MI was " + surrogateMeasurements[i]);
 			}
@@ -413,12 +399,20 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 *  the clone() method in a way that protects their structure
 	 *  from alteration by surrogate data being supplied to it.</p>
 	 *  
-	 * @param newOrdering array of time indices with which to reorder the data
+	 * <p>Child implementations must only over-write lastAverage if newOrdering is null</p>
+	 *  
+	 * @param newOrdering array of time indices with which to reorder the data. If null, then
+	 *   return the MI for the original ordering.
 	 * @return a surrogate MI evaluated for the given ordering of the source variable
 	 * @throws Exception
 	 */
 	public double computeAverageLocalOfObservations(int[] newOrdering)
 			throws Exception {
+		
+		if (newOrdering == null) {
+			return computeAverageLocalOfObservations();
+		}
+		
 		// Take a clone of the object to compute the MI of the surrogates:
 		// (this is a shallow copy, it doesn't make new copies of all
 		//  the arrays)

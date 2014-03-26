@@ -42,23 +42,23 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 	 * @throws Exception
 	 */
 	public double computeAverageLocalOfObservations(int[] reordering) throws Exception {
-		if (!tryKeepAllPairsNorms || (data1.length > MAX_DATA_SIZE_FOR_KEEP_ALL_PAIRS_NORM)) {
-			double[][] originalData2 = data2;
+		if (!tryKeepAllPairsNorms || (sourceObservations.length > MAX_DATA_SIZE_FOR_KEEP_ALL_PAIRS_NORM)) {
+			double[][] originalData2 = destObservations;
 			if (reordering != null) {
 				// Generate a new re-ordered data2
-				data2 = MatrixUtils.extractSelectedTimePointsReusingArrays(originalData2, reordering);
+				destObservations = MatrixUtils.extractSelectedTimePointsReusingArrays(originalData2, reordering);
 			}
 			// Compute the MI
 			double newMI = computeAverageLocalOfObservationsWhileComputingDistances();
 			// restore data2
-			data2 = originalData2;
+			destObservations = originalData2;
 			return newMI;
 		}
 		
 		if (xNorms == null) {
 			computeNorms();
 		}
-		int N = data1.length; // number of observations
+		int N = sourceObservations.length; // number of observations
 		int cutoffForKthMinLinear = (int) (CUTOFF_MULTIPLIER * Math.log(N) / Math.log(2.0));
 		
 		// Count the average number of points within eps_x and eps_y
@@ -118,9 +118,12 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 			System.out.println(String.format("Average n_x=%.3f, Average n_y=%.3f", avNx, avNy));
 		}
 		
-		mi = MathsUtils.digamma(k) - averageDiGammas + MathsUtils.digamma(N);
+		double average = MathsUtils.digamma(k) - averageDiGammas + MathsUtils.digamma(N);
 		miComputed = true;
-		return mi;
+		if (reordering == null) {
+			lastAverage = average;
+		}
+		return average;
 	}
 	
 	/**
@@ -133,7 +136,7 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 	 * @throws Exception
 	 */
 	public double computeAverageLocalOfObservationsWhileComputingDistances() throws Exception {
-		int N = data1.length; // number of observations
+		int N = sourceObservations.length; // number of observations
 		int cutoffForKthMinLinear = (int) (CUTOFF_MULTIPLIER * Math.log(N) / Math.log(2.0));
 		
 		// Count the average number of points within eps_x and eps_y
@@ -145,7 +148,7 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 			// Compute eps for this time step:
 			//  First get x and y norms to all neighbours
 			//  (note that norm of point t to itself will be set to infinity).
-			double[][] xyNorms = normCalculator.computeNorms(data1, data2, t);
+			double[][] xyNorms = normCalculator.computeNorms(sourceObservations, destObservations, t);
 			double[] jointNorm = new double[N];
 			for (int t2 = 0; t2 < N; t2++) {
 				jointNorm[t2] = Math.max(xyNorms[t2][0], xyNorms[t2][1]);
@@ -189,13 +192,13 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 			System.out.println(String.format("Average n_x=%.3f, Average n_y=%.3f", avNx, avNy));
 		}
 		
-		mi = MathsUtils.digamma(k) - averageDiGammas + MathsUtils.digamma(N);
+		lastAverage = MathsUtils.digamma(k) - averageDiGammas + MathsUtils.digamma(N);
 		miComputed = true;
-		return mi;
+		return lastAverage;
 	}
 
 	public double[] computeLocalOfPreviousObservations() throws Exception {
-		int N = data1.length; // number of observations
+		int N = sourceObservations.length; // number of observations
 		int cutoffForKthMinLinear = (int) (CUTOFF_MULTIPLIER * Math.log(N) / Math.log(2.0));
 		double[] localMi = new double[N];
 		
@@ -212,7 +215,7 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 			// Compute eps for this time step:
 			//  First get x and y norms to all neighbours
 			//  (note that norm of point t to itself will be set to infinity.
-			double[][] xyNorms = normCalculator.computeNorms(data1, data2, t);
+			double[][] xyNorms = normCalculator.computeNorms(sourceObservations, destObservations, t);
 			double[] jointNorm = new double[N];
 			for (int t2 = 0; t2 < N; t2++) {
 				jointNorm[t2] = Math.max(xyNorms[t2][0], xyNorms[t2][1]);
@@ -261,7 +264,7 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 			System.out.println(String.format("Average n_x=%.3f, Average n_y=%.3f", avNx, avNy));
 		}
 		
-		mi = digammaK - averageDiGammas + digammaN;
+		lastAverage = digammaK - averageDiGammas + digammaN;
 		miComputed = true;
 		return localMi;
 	}

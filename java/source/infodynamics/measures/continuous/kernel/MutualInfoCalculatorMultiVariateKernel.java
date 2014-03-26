@@ -17,8 +17,7 @@ import infodynamics.measures.continuous.MutualInfoMultiVariateCommon;
  * 		<li>Set properties using {@link #setProperty(String, String)}</li>
  *		<li>{@link #initialise(int, int)} or {@link #initialise(int, int, double)}</li>
  * 		<li>Provide the observations to the calculator using:
- * 			{@link #setObservations(double[][], double[][])}, or
- * 			{@link #setCovariance(double[][])}, or
+ * 			{@link #setObservations(double[][], double[][])}
  * 			a sequence of:
  * 			{@link #startAddObservations()},
  *          multiple calls to either {@link #addObservations(double[][], double[][])}
@@ -553,7 +552,7 @@ public class MutualInfoCalculatorMultiVariateKernel
 	}
 
 	/**
-	 * <p>Set properties for the mutual information calculator.
+	 * <p>Set properties for the kernel mutual information calculator.
 	 * These can include:
 	 * <ul>
 	 * 		<li>{@link #KERNEL_WIDTH_PROP_NAME} (legacy value is {@link #EPSILON_PROP_NAME})</li>
