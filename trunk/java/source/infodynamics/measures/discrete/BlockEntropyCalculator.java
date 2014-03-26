@@ -84,6 +84,39 @@ public class BlockEntropyCalculator extends EntropyCalculator {
 	
 	/**
  	 * Add observations in to our estimates of the pdfs.
+	 *
+	 * @param states index is time
+	 */
+	public void addObservations(int states[]) {
+		int rows = states.length;
+		// increment the count of observations:
+		observations += (rows - blocksize + 1); 
+		
+		// Initialise and store the current previous value
+		int stateVal = 0; 
+		for (int p = 0; p < blocksize - 1; p++) {
+			// Add the contribution from this observation
+			stateVal += states[p];
+			// And shift up
+			stateVal *= base;
+		}
+
+		// 1. Now count the tuples observed from the next row onwards
+		for (int r = blocksize - 1; r < rows; r++) {
+			// Add the contribution from this observation
+			stateVal += states[r];
+
+			// Add to the count for this particular state:
+			stateCount[stateVal]++;
+			
+			// Remove the oldest observation from the state value
+			stateVal -= maxShiftedValue[states[r-blocksize+1]];
+			stateVal *= base;
+		}		
+	}
+	
+	/**
+ 	 * Add observations in to our estimates of the pdfs.
  	 * This call suitable only for homogeneous agents, as all
  	 *  agents will contribute to single pdfs.
 	 *

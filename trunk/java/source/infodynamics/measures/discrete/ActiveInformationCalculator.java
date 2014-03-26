@@ -1,7 +1,9 @@
 package infodynamics.measures.discrete;
 
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
+import infodynamics.utils.RandomGenerator;
 
 /**
  * Usage:
@@ -361,7 +363,8 @@ public class ActiveInformationCalculator {
 	}
 	
 	/**
-	 * Computes local active info storage for the given values
+	 * Computes local active info storage for the given (single)
+	 *  specific values
 	 *  
 	 * @param destNext
 	 * @param destPast
@@ -861,6 +864,77 @@ public class ActiveInformationCalculator {
 		initialise();
 		addObservations(states, agentIndex1, agentIndex2);
 		return computeAverageLocalOfObservations();
+	}
+
+	/**
+	 * Compute the significance of obtaining the given average from the given observations
+	 * 
+	 * @param numPermutationsToCheck number of new orderings of the source values to compare against
+	 * @return
+	 */
+	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) {
+		RandomGenerator rg = new RandomGenerator();
+		// (Not necessary to check for distinct random perturbations)
+		int[][] newOrderings = rg.generateRandomPerturbations(observations, numPermutationsToCheck);
+		return computeSignificance(newOrderings);
+	}
+	
+	/**
+	 * Compute the significance of obtaining the given average from the given observations
+	 * 
+	 * @param newOrderings the reorderings to use
+	 * @return
+	 */
+	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings) {
+		double actualMI = computeAverageLocalOfObservations();
+		
+		int numPermutationsToCheck = newOrderings.length;
+		
+		// Reconstruct the values of the previous and next variables (not necessarily in order)
+		int[] prevValues = new int[observations];
+		int[] nextValues = new int[observations];
+		int t_prev = 0;
+		int t_next = 0;
+		for (int prevVal = 0; prevVal < prevCount.length; prevVal++) {
+			int numberOfSamplesPrev = prevCount[prevVal];
+			MatrixUtils.fill(prevValues, prevVal, t_prev, numberOfSamplesPrev);
+			t_prev += numberOfSamplesPrev;
+		}
+		for (int nextVal = 0; nextVal < base; nextVal++) {
+			int numberOfSamplesNext = nextCount[nextVal];
+			MatrixUtils.fill(nextValues, nextVal, t_next, numberOfSamplesNext);
+			t_next += numberOfSamplesNext;
+		}
+		
+		ActiveInformationCalculator ais2;
+		ais2 = new ActiveInformationCalculator(base, k);
+		ais2.initialise();
+		ais2.observations = observations;
+		ais2.prevCount = prevCount;
+		ais2.nextCount = nextCount;
+		int countWhereMIIsMoreSignificantThanOriginal = 0;
+		EmpiricalMeasurementDistribution measDistribution = new EmpiricalMeasurementDistribution(numPermutationsToCheck);
+		for (int p = 0; p < numPermutationsToCheck; p++) {
+			// Generate a new re-ordered data set for the next variable
+			int[] newDataNext = MatrixUtils.extractSelectedTimePoints(nextValues, newOrderings[p]);
+			// compute the joint probability distribution
+			MatrixUtils.fill(ais2.jointCount, 0);
+			for (int t = 0; t < observations; t++) {
+				ais2.jointCount[newDataNext[t]][prevValues[t]]++;
+			}
+			// And get an MI value for this realisation:
+			double newMI = ais2.computeAverageLocalOfObservations();
+			measDistribution.distribution[p] = newMI;
+			if (newMI >= actualMI) {
+				countWhereMIIsMoreSignificantThanOriginal++;
+			}
+
+		}
+		
+		// And return the significance
+		measDistribution.pValue = (double) countWhereMIIsMoreSignificantThanOriginal / (double) numPermutationsToCheck;
+		measDistribution.actualValue = actualMI;
+		return measDistribution;
 	}
 
 	public double getLastAverage() {
