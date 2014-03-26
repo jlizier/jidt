@@ -252,6 +252,42 @@ public class MatrixUtilsTest extends TestCase {
 		checkArray(new int[] {1, 4, 0, 3, 2}, MatrixUtils.sortIndices(array3));
 	}
 	
+	public void testDelayEmbeddings() throws Exception {
+		double[] array1 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+		
+		// Do a standard delay embedding with tau 1
+		checkMatrix(new double[][] { {4, 3, 2, 1, 0}, {5, 4, 3, 2, 1}, 
+				{6, 5, 4, 3, 2}, {7, 6, 5, 4, 3}, 
+				{8, 7, 6, 5, 4}, {9, 8, 7, 6, 5} },
+				MatrixUtils.makeDelayEmbeddingVector(array1, 5, 4, 6),
+				0.00001);
+		// Now specify tau explicitly
+		checkMatrix(new double[][] { {4, 3, 2, 1, 0}, {5, 4, 3, 2, 1}, 
+				{6, 5, 4, 3, 2}, {7, 6, 5, 4, 3}, 
+				{8, 7, 6, 5, 4}, {9, 8, 7, 6, 5} },
+				MatrixUtils.makeDelayEmbeddingVector(array1, 5, 1, 4, 6),
+				0.00001);
+		
+		// Do same standard delay embedding but starting at an offset
+		checkMatrix(new double[][] { {8, 7, 6, 5, 4}, {9, 8, 7, 6, 5} },
+				MatrixUtils.makeDelayEmbeddingVector(array1, 5, 8, 2),
+				0.00001);
+		// Now specify tau explicitly
+		checkMatrix(new double[][] { {8, 7, 6, 5, 4}, {9, 8, 7, 6, 5} },
+				MatrixUtils.makeDelayEmbeddingVector(array1, 5, 1, 8, 2),
+				0.00001);
+
+		// Try with tau 2
+		checkMatrix(new double[][] { {8, 6, 4, 2, 0}, {9, 7, 5, 3, 1} },
+				MatrixUtils.makeDelayEmbeddingVector(array1, 5, 2, 8, 2),
+				0.00001);
+		
+		// Try with tau 3
+		checkMatrix(new double[][] { {6, 3, 0}, {7, 4, 1}, {8, 5, 2}, {9, 6, 3} },
+				MatrixUtils.makeDelayEmbeddingVector(array1, 3, 3, 6, 4),
+				0.00001);
+	}
+	
 	/**
 	 * Check that all entries in the given matrix match those of the expected
 	 *  matrix
