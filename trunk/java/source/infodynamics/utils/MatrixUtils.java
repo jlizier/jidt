@@ -1662,6 +1662,38 @@ public class MatrixUtils {
 	}
 
 	/**
+	 * Constructs numEmbeddingVectors embedding vectors of size k for the data,
+	 *  with embedding delay tau between each element of the vectors,
+	 *  with the first embedding vector having it's last time point at t=startKthPoint
+	 * 
+	 * @param data
+	 * @param k
+	 * @param tau
+	 * @param startKthPoint
+	 * @param numEmbeddingVectors
+	 * @return
+	 */
+	public static double[][] makeDelayEmbeddingVector(double[] data, int k, int tau,
+			int startKthPoint, int numEmbeddingVectors) throws Exception {
+		if (startKthPoint < (k - 1)*tau) {
+			throw new Exception("Start point t=" + startKthPoint + " is too early for a " +
+					k + " length embedding vector with delay " + tau);
+		}
+		if (numEmbeddingVectors + startKthPoint > data.length) {
+			throw new Exception("Too many embedding vectors " + numEmbeddingVectors +
+					" requested for the given startPoint " + startKthPoint +
+					" and time series length " + data.length);
+		}
+		double[][] embeddingVectors = new double[numEmbeddingVectors][k];
+		for (int t = startKthPoint; t < numEmbeddingVectors + startKthPoint; t++) {
+			for (int i = 0; i < k; i++) {
+				embeddingVectors[t - startKthPoint][i] = data[t - i*tau];
+			}
+		}
+		return embeddingVectors;
+	}
+
+	/**
 	 * Constructs all embedding vectors of size k for the data.
 	 * Will be data.length - k + 1 of these
 	 * 
@@ -1706,6 +1738,41 @@ public class MatrixUtils {
 			for (int i = 0; i < k; i++) {
 				for (int c = 0; c < columns; c++) {
 					embeddingVectors[t - startKthPoint][i*columns + c] = data[t - i][c];
+				}
+			}
+		}
+		return embeddingVectors;
+	}
+
+	/**
+	 * Constructs numEmbeddingVectors embedding vectors of size k for the data,
+	 *  with embedding delay tau between each element of the vectors,
+	 *  with the first embedding vector having it's last time point at t=startKthPoint
+	 * 
+	 * @param data
+	 * @param k
+	 * @param tau
+	 * @param startKthPoint
+	 * @param numEmbeddingVectors
+	 * @return
+	 */
+	public static double[][] makeDelayEmbeddingVector(double[][] data, int k, int tau,
+			int startKthPoint, int numEmbeddingVectors) throws Exception {
+		if (startKthPoint < (k - 1)*tau) {
+			throw new Exception("Start point t=" + startKthPoint + " is too early for a " +
+					k + " length embedding vector with delay " + tau);
+		}
+		if (numEmbeddingVectors + startKthPoint > data.length) {
+			throw new Exception("Too many embedding vectors " + numEmbeddingVectors +
+					" requested for the given startPoint " + startKthPoint +
+					" and time series length " + data.length);
+		}
+		int columns = data[0].length;
+		double[][] embeddingVectors = new double[numEmbeddingVectors][k * columns];
+		for (int t = startKthPoint; t < numEmbeddingVectors + startKthPoint; t++) {
+			for (int i = 0; i < k; i++) {
+				for (int c = 0; c < columns; c++) {
+					embeddingVectors[t - startKthPoint][i*columns + c] = data[t - i*tau][c];
 				}
 			}
 		}

@@ -40,6 +40,14 @@ public abstract interface ChannelCalculatorCommon {
 	public void finaliseAddObservations() throws Exception;
 	
 	/**
+	 * Return whether the user has added more than a single observation set via the
+	 *  startAddObservations, addObservations, finaliseAddObservations sequence.
+	 * 
+	 * @return
+	 */
+	public boolean getAddedMoreThanOneObservationSet();
+	
+	/**
 	 * 
 	 * @return the average value of the implemented channel measure,
 	 *  computed using all of the previously supplied observation sets.

@@ -4,7 +4,14 @@ import infodynamics.utils.EmpiricalMeasurementDistribution;
 
 public interface ActiveInfoStorageCalculator {
 
+	/**
+	 * Embedding length for the past history vector
+	 */
 	public static final String K_PROP_NAME = "k_HISTORY";
+	/**
+	 * Embedding delay for the past history vector
+	 */
+	public static final String TAU_PROP_NAME = "TAU";
 
 	/**
 	 * Initialise the calculator using the existing or default value of k
@@ -77,6 +84,8 @@ public interface ActiveInfoStorageCalculator {
 	public double computeAverageLocalOfObservations() throws Exception;
 
 	public double[] computeLocalOfPreviousObservations() throws Exception;
+
+	public double[] computeLocalUsingPreviousObservations(double[] newObservations) throws Exception;
 
 	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception;
 	
