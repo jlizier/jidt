@@ -287,4 +287,15 @@ public interface ConditionalMutualInfoCalculatorMultiVariate {
 	 * @throws Exception
 	 */
 	public int getNumObservations() throws Exception;
+	
+	/**
+	 * Get whether the user has added more than one observation set
+	 *  via the {@link #addObservations(double[][], double[][], double[][])}
+	 *  and {@link #addObservations(double[][], double[][], double[][], int, int)}
+	 *  methods.
+	 * 
+	 * @return whether the user has added more than one observation set.
+	 */
+	public boolean getAddedMoreThanOneObservationSet();
+
 }
