@@ -2,6 +2,19 @@ package infodynamics.measures.continuous;
 
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 
+/**
+ * Interface for calculators of the active information storage, as defined by
+ * Lizier et al., 2012 (see below) 
+ * 
+ * @see J.T. Lizier, M. Prokopenko and A.Y. Zomaya, "Local measures of
+ * information storage in complex distributed computation",
+ * Information Sciences, vol. 208, pp. 39-54, 2012.
+ * @see {@link http://dx.doi.org/10.1016/j.ins.2012.04.016}
+ *
+ * @author Joseph Lizier, <a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>
+ *
+ */
 public interface ActiveInfoStorageCalculator {
 
 	/**

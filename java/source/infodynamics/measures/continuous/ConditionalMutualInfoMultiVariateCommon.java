@@ -533,5 +533,13 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 			}
 		}
 		return startAndEndTimePairs;
+	}
+
+	/* (non-Javadoc)
+	 * @see infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariate#getAddedMoreThanOneObservationSet()
+	 */
+	public boolean getAddedMoreThanOneObservationSet() {
+		return addedMoreThanOneObservationSet;
 	}	
+
 }
