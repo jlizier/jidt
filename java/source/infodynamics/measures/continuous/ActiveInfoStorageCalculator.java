@@ -22,7 +22,10 @@ public interface ActiveInfoStorageCalculator {
 	 */
 	public static final String K_PROP_NAME = "k_HISTORY";
 	/**
-	 * Embedding delay for the past history vector
+	 * Embedding delay for the past history vector.
+	 * The delay exists between points in the past k-vector
+	 *  but there is always only one time step between the
+	 *  past k-vector and the next observation.  
 	 */
 	public static final String TAU_PROP_NAME = "TAU";
 
@@ -39,6 +42,14 @@ public interface ActiveInfoStorageCalculator {
 	 */
 	public void initialise(int k) throws Exception;
 	
+	/**
+	 * Initialise the calculator
+	 * 
+	 * @param k Length of past history to consider
+	 * @param tau embedding delay to consider
+	 */
+	public void initialise(int k, int tau) throws Exception;
+
 	/**
 	 * Allows the user to set properties for the underlying calculator implementation
 	 * 
@@ -86,7 +97,10 @@ public interface ActiveInfoStorageCalculator {
 	 * Sets the observations to compute the PDFs from.
 	 * Cannot be called in conjunction with start/add/finaliseAddObservations.
 	 * valid is a time series (with time indices the same as destination)
-	 *  indicating whether the observation at that point is valid.
+	 *  indicating whether the observation at that point is valid; 
+	 *  we only take tuples to add to the observation set where
+	 *  all points in the time series (even between points in 
+	 *  the embedded k-vector with embedding delays) are valid.
 	 * 
 	 * @param source observations for the source variable
 	 * @param destValid

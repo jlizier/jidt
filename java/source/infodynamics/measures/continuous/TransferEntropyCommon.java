@@ -273,7 +273,17 @@ public abstract class TransferEntropyCommon implements
 					startAndEndTimePairs.add(timePair);
 					// System.out.printf("t_s=%d, t_e=%d\n", startTime, endTime);
 					lookingForStart = true;
-					startTime = t + 1;
+					if (!destValid[t]) {
+						// The current destination observation broke our chain;
+						//  so we need to start looking all over again:
+						startTime = t + 1;
+					} else {
+						// The current source broke our chain (or we're at the
+						//  end of the series anyway, so this doesn't matter);
+						//  so we can keep the good destination history
+						//  that we've built up here:
+						startTime = t - k + 1;
+					}
 				}
 			}
 		}

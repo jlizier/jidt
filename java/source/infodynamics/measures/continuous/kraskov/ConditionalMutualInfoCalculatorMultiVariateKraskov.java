@@ -36,7 +36,14 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	public static boolean tryKeepAllPairsNorms = true;
 	public static int MAX_DATA_SIZE_FOR_KEEP_ALL_PAIRS_NORM = 2000;
 	
+	/**
+	 * Property name for the number of nearest neighbours k to use in the Kraskov algorithm in
+	 *  the full joint space.
+	 */
 	public final static String PROP_K = "k";
+	/**
+	 * Normalisation to apply to the marginal spaces.
+	 */
 	public final static String PROP_NORM_TYPE = "NORM_TYPE";
 
 	public ConditionalMutualInfoCalculatorMultiVariateKraskov() {

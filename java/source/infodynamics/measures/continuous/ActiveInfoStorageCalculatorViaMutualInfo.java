@@ -260,7 +260,7 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	 */
 	public double[] computeLocalOfPreviousObservations() throws Exception {
 		double[] local = miCalc.computeLocalOfPreviousObservations();
-		if (miCalc.getAddedMoreThanOneObservationSet()) {
+		if (!miCalc.getAddedMoreThanOneObservationSet()) {
 			double[] localsToReturn = new double[local.length + (k-1)*tau + 1];
 			System.arraycopy(local, 0, localsToReturn, (k-1)*tau + 1, local.length);
 			return localsToReturn;
