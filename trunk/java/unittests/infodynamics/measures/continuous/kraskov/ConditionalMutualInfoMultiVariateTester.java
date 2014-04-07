@@ -271,7 +271,7 @@ public class ConditionalMutualInfoMultiVariateTester
 	 */
 	public void testUnivariateTEforRandomDataFromFile() throws Exception {
 		
-		// Test set 1:
+		// Test set 2:
 		
 		ArrayFileReader afr = new ArrayFileReader("demos/data/4randomCols-1.txt");
 		double[][] data = afr.getDouble2DMatrix();
@@ -281,7 +281,7 @@ public class ConditionalMutualInfoMultiVariateTester
 		// Expected values from TRENTOOL:
 		double[] expectedFromTRENTOOL = {-0.0096556};
 		
-		System.out.println("Kraskov Cond MI as TE comparison 1 - univariate random data 1 (col 0->1)");
+		System.out.println("Kraskov Cond MI as TE comparison 2 - univariate random data 1 (col 0->1)");
 		checkTEForGivenData(MatrixUtils.selectColumns(data, new int[] {0}),
 				MatrixUtils.selectColumns(data, new int[] {1}),
 				kNNs, expectedFromTRENTOOL);
@@ -330,7 +330,7 @@ public class ConditionalMutualInfoMultiVariateTester
 	 * To run TRENTOOL (http://www.trentool.de/) for this 
 	 * data, run its TEvalues.m matlab script on the multivariate source
 	 * and dest data sets as:
-	 * TEvalues(source, dest, 2, 1, 1, kraskovK, 0)
+	 * TEvalues(source, dest, 2, 2, 1, kraskovK, 0)
 	 * with these values ensuring source-dest lag 1, history k=2,
 	 * history embedding dimension l=2 on source as well.
 	 * embedding lag 1, no dynamic correlation exclusion 
@@ -340,7 +340,7 @@ public class ConditionalMutualInfoMultiVariateTester
 	 */
 	public void testMultivariateTEforCoupledDataFromFile() throws Exception {
 		
-		// Test set 1:
+		// Test set 3:
 		
 		ArrayFileReader afr = new ArrayFileReader("demos/data/4ColsPairedOneStepNoisyDependence-1.txt");
 		double[][] data = afr.getDouble2DMatrix();
