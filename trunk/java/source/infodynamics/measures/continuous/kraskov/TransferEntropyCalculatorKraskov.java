@@ -34,7 +34,8 @@ import infodynamics.measures.continuous.gaussian.ConditionalMutualInfoCalculator
  * 	</ol>
  * </p>
  * 
- * @author Joseph Lizier
+ * @author Joseph Lizier, <a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>
  * @see "Kraskov, A., Stoegbauer, H., Grassberger, P., Physical Review E 69, (2004) 066138;
  *  <a href='http://dx.doi.org/10.1103/PhysRevE.69.066138'>download</a>
  *  (for introduction of Kraskov-Grassberger method for MI)"
