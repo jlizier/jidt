@@ -62,6 +62,8 @@
 				<fileset dir="${unittestsbin}">
 					<include name="**/*.class"/>
 					<exclude name="**/*AbstractTester.class"/>
+					<exclude name="**/ActiveInfoStorageCalculatorCorrelationIntegrals.class"/>
+					<exclude name="**/ActiveInfoStorageCalculatorKernelDirect.class"/>
 				</fileset>
 			</batchtest>
 		</junit>
