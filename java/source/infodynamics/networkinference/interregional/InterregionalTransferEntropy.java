@@ -1,7 +1,7 @@
 package infodynamics.networkinference.interregional;
 
 import infodynamics.measures.continuous.TransferEntropyCalculatorMultiVariate;
-import infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorMultiVariateKraskovByMulti;
+import infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorMultiVariateKraskov;
 import infodynamics.utils.ParsedProperties;
 
 import java.util.Vector;
@@ -56,8 +56,8 @@ public class InterregionalTransferEntropy extends InterregionalChannelMeasure {
 		} else if (!validityForIndividualElements) {
 			int numObs = computeNumberOfObservations(jointValidity1, jointValidity2);
 			localtimeIndices = new int[numObs];
-			TransferEntropyCalculatorMultiVariateKraskovByMulti tecmvKras =
-				new TransferEntropyCalculatorMultiVariateKraskovByMulti();
+			TransferEntropyCalculatorMultiVariateKraskov tecmvKras =
+				new TransferEntropyCalculatorMultiVariateKraskov();
 			tecmvKras.initialise(k);
 			Vector<int[]> startAndEndTimePairs = tecmvKras.computeStartAndEndTimePairs(
 					jointValidity1, jointValidity2);
@@ -109,8 +109,8 @@ public class InterregionalTransferEntropy extends InterregionalChannelMeasure {
 	 * @throws Exception
 	 */
 	private int computeNumberOfObservations(boolean[] sourceValid, boolean[] destValid) throws Exception {
-		TransferEntropyCalculatorMultiVariateKraskovByMulti tecmvKras =
-			new TransferEntropyCalculatorMultiVariateKraskovByMulti();
+		TransferEntropyCalculatorMultiVariateKraskov tecmvKras =
+			new TransferEntropyCalculatorMultiVariateKraskov();
 		
 		tecmvKras.initialise(k);
 		Vector<int[]> startAndEndTimePairs = tecmvKras.computeStartAndEndTimePairs(

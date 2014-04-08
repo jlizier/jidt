@@ -1323,11 +1323,12 @@ public class MatrixUtils {
 	}
 
 	/**
-	 * Extract the required columns from the matrix
+	 * Extract the required rows from the matrix
 	 * 
-	 * @param matrix
-	 * @param columns
-	 * @return
+	 * @param matrix 2D data array
+	 * @param fromRow index of the first row to return
+	 * @param rows number of rows (including the first) to return
+	 * @return a 2D data array of the selected rows
 	 */
 	public static double[][] selectRows(double matrix[][], int fromRow, int rows) {
 		double[][] data = new double[rows][];
@@ -1338,11 +1339,12 @@ public class MatrixUtils {
 	}
 
 	/**
-	 * Extract the required columns from the matrix
+	 * Extract the required rows and columns from the matrix
 	 * 
-	 * @param matrix
-	 * @param columns
-	 * @return
+	 * @param matrix 2D data array
+	 * @param rows indices of the rows to select
+	 * @param columns indices of the columns to select
+	 * @return a 2D data array of the selected rows and columns
 	 */
 	public static double[][] selectRowsAndColumns(double matrix[][], int rows[], int columns[]) {
 		double[][] data = new double[rows.length][columns.length];

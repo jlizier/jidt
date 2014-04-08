@@ -124,14 +124,6 @@ public abstract class TransferEntropyCalculatorViaCondMutualInfo implements
 		initialise(k, k_tau, l, l_tau, delay);
 	}
 	
-	public void initialise(int k, int l) throws Exception {
-		initialise(k, k_tau, l, l_tau, delay);
-	}
-
-	public void initialise(int k, int l, int delay) throws Exception {
-		initialise(k, k_tau, l, l_tau, delay);
-	}
-
 	/**
 	 * Initialise the calculator
 	 * 
@@ -397,7 +389,7 @@ public abstract class TransferEntropyCalculatorViaCondMutualInfo implements
 
 	/**
 	 * Returns a time series of local TE values.
-	 * Pads the first (k-1)*tau + 1 elements with zeros (since AIS is undefined here)
+	 * Pads the first startTimeForFirstDestEmbedding elements with zeros (since local TE is undefined here)
 	 *  if only one time series of observations was used.
 	 * Otherwise, local values for all separate series are concatenated, and without
 	 *  padding of zeros at the start.

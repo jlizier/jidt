@@ -33,6 +33,15 @@ package infodynamics.measures.continuous;
 public interface TransferEntropyCalculatorMultiVariate extends ChannelCalculatorMultiVariate {
 
 	/**
+	 * Property name to specify the history length k.
+	 * For calculators which implement both this and
+	 *  {@link TransferEntropyCalculator}, they will need
+	 *  to explicitly disambiguate between {@link #K_PROP_NAME}
+	 *  and {@link TransferEntropyCalculator#K_PROP_NAME}
+	 */
+	public static final String K_PROP_NAME = "k_HISTORY";
+	
+	/**
 	 * Initialise the calculator for re-use with new observations.
 	 * History length k, source and destination dimensions are
 	 * specified here; all other parameters remain unchanged. 
