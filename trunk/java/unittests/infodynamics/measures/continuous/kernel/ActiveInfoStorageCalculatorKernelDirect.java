@@ -73,6 +73,12 @@ public class ActiveInfoStorageCalculatorKernelDirect
 		initialise(k, epsilon);
 	}
 
+	public void initialise(int k, int tau) throws Exception {
+		if (tau != 1) {
+			throw new Exception("Not implemented yet for tau != 1");
+		}
+		initialise(k);
+	}
 	/**
 	 * Initialises the calculator with the existing value for epsilon
 	 * 
@@ -241,7 +247,6 @@ public class ActiveInfoStorageCalculatorKernelDirect
 
 	public double[] computeLocalUsingPreviousObservations(
 			double[] newObservations) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		throw new Exception("Not yet implemented");
 	}
 }
