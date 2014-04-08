@@ -83,4 +83,43 @@ public abstract class TransferEntropyMultiVariateAbstractTester extends TestCase
 		}
 	}
 
+	/**
+	 * Confirm that a calculation for univariate data using univariate method signatures
+	 *  matches that with multivariate signatures.
+	 * 
+	 * @param teCalc a pre-constructed TransferEntropyCalculatorMultiVariate object
+	 * @param timeSteps number of time steps for the random data
+	 * @param k history length for the TE calculator to use
+	 */
+	public void testUnivariateMatchesMultivariateRoute(TransferEntropyCalculatorMultiVariate teCalc,
+			int timeSteps, int k)
+			throws Exception {
+				
+		if (!(teCalc instanceof TransferEntropyCalculator)) {
+			throw new Exception("The given calculator does not implement univariate TE");
+		}
+		
+		// generate some random data
+		RandomGenerator rg = new RandomGenerator();
+		double[][] sourceData = rg.generateNormalData(timeSteps, 1,
+				0, 1);
+		double[][] destData = rg.generateNormalData(timeSteps, 1,
+				0, 1);
+		
+		// Compute via univariate signatures:
+		TransferEntropyCalculator teCalcUni = (TransferEntropyCalculator) teCalc;
+		teCalc.initialise(k, 1, 1);
+		teCalcUni.setObservations(MatrixUtils.selectColumn(sourceData, 0),
+				MatrixUtils.selectColumn(destData, 0));
+		double teUnivariate = teCalc.computeAverageLocalOfObservations();
+
+		// compute via multivariate signatures:
+		teCalc.initialise(k, 1, 1);
+		teCalc.setObservations(sourceData, destData);
+		//teCalc.setDebug(true);
+		double teMultivariate = teCalc.computeAverageLocalOfObservations();
+		//teCalc.setDebug(false);
+		
+		assertEquals(teUnivariate, teMultivariate, 0.00001);
+	}
 }

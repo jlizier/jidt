@@ -47,4 +47,24 @@ public class TransferEntropyMultiVariateTester
 		super.testComputeSignificanceDoesntAlterAverage(teCalc, 2, 100, 1);
 	}
 
+	/**
+	 * Confirm that the local values average correctly back to the average value
+	 * 
+	 */
+	public void testUnivariateSignatureMatchesMultivariate() throws Exception {
+		
+		TransferEntropyCalculatorMultiVariateKraskov teCalc =
+				new TransferEntropyCalculatorMultiVariateKraskov();
+		
+		String kraskov_K = "4";
+		
+		teCalc.setProperty(
+				TransferEntropyCalculatorMultiVariateKraskov.PROP_KRASKOV_ALG_NUM,
+				"1");
+		teCalc.setProperty(
+				MutualInfoCalculatorMultiVariateKraskov.PROP_K,
+				kraskov_K);
+
+		super.testUnivariateMatchesMultivariateRoute(teCalc, 100, 1);
+	}
 }

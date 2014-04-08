@@ -89,12 +89,12 @@ public class TransferEntropyTester
 		//  normalisation without taking the extra values in to account if we did it
 		teCalc.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NORMALISE, "false");
 		
-		teCalc.initialise(1, 1);
+		teCalc.initialise(1);
 		teCalc.setObservations(col0, col1);
 		double result = teCalc.computeAverageLocalOfObservations();
 		assertEquals(expectedFromTRENTOOL0to1, result, 0.000001);
 		
-		teCalc.initialise(1, 1);
+		teCalc.initialise(1);
 		teCalc.setObservations(col1, col0);
 		result = teCalc.computeAverageLocalOfObservations();
 		assertEquals(expectedFromTRENTOOL1to0, result, 0.000001);
@@ -150,35 +150,35 @@ public class TransferEntropyTester
 		teCalc.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NORMALISE, "false");
 
 		System.out.printf("Kraskov TE comparison 2 to TRENTOOL - univariate random data 1 (col 0->1)");
-		teCalc.initialise(1, 1);
+		teCalc.initialise(1);
 		teCalc.setObservations(col0, col1);
 		double result = teCalc.computeAverageLocalOfObservations();
 		System.out.printf(" %.5f\n", result);
 		assertEquals(expectedFromTRENTOOL0to1, result, 0.000001);
 				
 		System.out.printf("  (col 1->2):");
-		teCalc.initialise(1, 1);
+		teCalc.initialise(1);
 		teCalc.setObservations(col1, col2);
 		result = teCalc.computeAverageLocalOfObservations();
 		System.out.printf(" %.5f\n", result);
 		assertEquals(expectedFromTRENTOOL1to2, result, 0.000001);
 
 		System.out.printf("  (col 1->0):");
-		teCalc.initialise(1, 1);
+		teCalc.initialise(1);
 		teCalc.setObservations(col1, col0);
 		result = teCalc.computeAverageLocalOfObservations();
 		System.out.printf(" %.5f\n", result);
 		assertEquals(expectedFromTRENTOOL1to0, result, 0.000001);
 
 		System.out.printf("  (col 0->2):");
-		teCalc.initialise(1, 1);
+		teCalc.initialise(1);
 		teCalc.setObservations(col0, col2);
 		result = teCalc.computeAverageLocalOfObservations();
 		System.out.printf(" %.5f\n", result);
 		assertEquals(expectedFromTRENTOOL0to2, result, 0.000001);
 
 		System.out.printf("  (col 2->0):");
-		teCalc.initialise(1, 1);
+		teCalc.initialise(1);
 		teCalc.setObservations(col2, col0);
 		result = teCalc.computeAverageLocalOfObservations();
 		System.out.printf(" %.5f\n", result);
@@ -239,28 +239,28 @@ public class TransferEntropyTester
 
 		System.out.println("Kraskov Cond MI as TE - multivariate coupled data 1, k=2,l=2");
 		System.out.println("  (0->2)");
-		teCalc.initialise(2, 2);
+		teCalc.initialise(2, 1, 2, 1, 1);
 		teCalc.setObservations(col0, col2);
 		double result = teCalc.computeAverageLocalOfObservations();
 		System.out.printf(" %.5f\n", result);
 		assertEquals(expectedFromTRENTOOL0to2, result, 0.000001);
 
 		System.out.println("  (2->0):");
-		teCalc.initialise(2, 2);
+		teCalc.initialise(2, 1, 2, 1, 1);
 		teCalc.setObservations(col2, col0);
 		result = teCalc.computeAverageLocalOfObservations();
 		System.out.printf(" %.5f\n", result);
 		assertEquals(expectedFromTRENTOOL2to0, result, 0.000001);
 
 		System.out.println("  (1->3):");
-		teCalc.initialise(2, 2);
+		teCalc.initialise(2, 1, 2, 1, 1);
 		teCalc.setObservations(col1, col3);
 		result = teCalc.computeAverageLocalOfObservations();
 		System.out.printf(" %.5f\n", result);
 		assertEquals(expectedFromTRENTOOL1to3, result, 0.000001);
 
 		System.out.println("  (3->1):");
-		teCalc.initialise(2, 2);
+		teCalc.initialise(2, 1, 2, 1, 1);
 		teCalc.setObservations(col3, col1);
 		result = teCalc.computeAverageLocalOfObservations();
 		System.out.printf(" %.5f\n", result);
@@ -273,7 +273,7 @@ public class TransferEntropyTester
 		double expectedFromTRENTOOL1to2_k1l1 = 0.0011738;
 		
 		System.out.println("  (0->1) but with k=1,l=1:");
-		teCalc.initialise(1, 1);
+		teCalc.initialise(1, 1, 1, 1, 1);
 		teCalc.setObservations(col0, col1);
 		result = teCalc.computeAverageLocalOfObservations();
 		System.out.printf(" %.5f\n", result);
@@ -281,7 +281,7 @@ public class TransferEntropyTester
 
 		// And in reverse
 		System.out.println("  (1->2) but with k=1,l=1:");
-		teCalc.initialise(1, 1);
+		teCalc.initialise(1, 1, 1, 1, 1);
 		teCalc.setObservations(col1, col2);
 		result = teCalc.computeAverageLocalOfObservations();
 		System.out.printf(" %.5f\n", result);
