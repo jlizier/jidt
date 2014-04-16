@@ -1,16 +1,11 @@
-#summary Frequently asked questions
-#labels Phase-Support
+#summary Frequently asked questions about the toolkit
 
-= Frequently asked questions =
+On this page, we list several frequently asked questions about the toolkit (these are mostly excerpts from emails):
+ * [#How_fast_is_the_toolkit,_e.g._for_transfer_entropy_estimation?]
 
-Here we discuss FAQs about the toolkit:
+== How fast is the toolkit, e.g. for transfer entropy estimation? ==
 
- # [#1._How_can_I_perform_multivariate_calculations_on_discrete_data Q1] How can I perform multivariate calculations on discrete data sets (i.e. with int[][] data sets)?
-
-== 1. How can I perform multivariate calculations on discrete data sets (i.e. with int[][] data sets)? ==
-
-Use the ordinary univariate calculator, but:
- # create it for a larger base (where the new base is the base of each single discrete variable, raised to the power of the number of joint variables that you have in the marginal), and 
- # Combine the joint vectors for the source and destination time series into single dimensional arrays before passing the observations in. I.e. if you have 2 binary values b1 and b2 as a joint vector to combine, then combine them as `b = 2*b1 * b2`, giving you a unique value for any b1,b2 combination. This can be done in one line for your multidimensional arrays by calling `combinedValues = MatrixUtils.computeCombinedValues(int separateValues[][], int base)` for each of the source and destination time series, where combinedValues is just a single dimensional time series of the combined values, separateValues is the input multivariate time series, and base is the number of discrete states for each variable in the multivariate time series (i.e. 2 for binary variables).
-
-See code example 5 at OctaveMatlabExamples
+I've had some enquiries regarding how long the toolkit will take to compute transfer entropy on large data sets, say 100 000 samples.
+The answer depends mostly on the type of data that you are calculating transfer entropy on:
+ # *Is it discrete or discretized data?* [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/java/source/infodynamics/measures/discrete/ApparentTransferEntropyCalculator.java infodynamics.discrete.ApparentTransferEntropyCalculator] is very fast, on the order of 1 sec or less for this sized data.
+ # *Is it continuous data (that you would prefer not to discretize)?* This is slower, using techniques such as a Kraskov-Grassberger estimator (this is the best of breed for continuous valued data), i.e. [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/java/source/infodynamics/measures/continuous/kraskov/TransferEntropyCalculatorKraskov.java infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov]. At the moment, a 100 000 time step calculation will take almost an hour.  This will be sped up significantly in the future once I implement a fast-neighbour search algorithm. In the meantime, if you want the calculation to run faster than that, then you could discretize your data (at the expense of accuracy), or subsample (say into 10 data sets of 10 000 time steps, which will each take ~30 secs, and average over these. This will be a little less accurate, but I'm guessing there won't be much in it, and you will get a standard error measurement from this approach as well). You can test out how long the code takes to run e.g. with [SimpleJavaExamples#Example_4_-_Transfer_entropy_on_continuous_data_using_Kraskov_es example4] in the simple java demos (mirrored in the simple octave/matlab demos [OctaveMatlabExamples#Example_4_-_Transfer_entropy_on_continuous_data_using_Kraskov_es here] and the python demos [PythonExamples#Example_4_-_Transfer_entropy_on_continuous_data_using_Kraskov_es here]), by altering the length of the random data that is used.
