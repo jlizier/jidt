@@ -25,7 +25,7 @@ There are only dependencies if:
 
 = Install =
 
-If you have one of the distributions, you already have the{{{infodynamics.jar}}} file.
+If you have one of the distributions, you already have the {{{infodynamics.jar}}} file.
 
 Otherwise, if you are running with the source code via an SVN checkout, run {{{ant}}} to generate {{{infodynamics.jar}}}.
 
