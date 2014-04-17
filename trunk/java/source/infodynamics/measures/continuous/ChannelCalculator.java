@@ -12,8 +12,6 @@ package infodynamics.measures.continuous;
  */
 public interface ChannelCalculator extends ChannelCalculatorCommon {
 
-	public void initialise() throws Exception;
-
 	/**
 	 * <p>Sets the single set of observations to compute the PDFs from.
 	 * Cannot be called in conjunction with 

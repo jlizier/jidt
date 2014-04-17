@@ -3,13 +3,13 @@ package infodynamics.measures.continuous.kraskov;
 import java.util.Hashtable;
 
 import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariate;
-import infodynamics.measures.continuous.TransferEntropyCalculator;
-import infodynamics.measures.continuous.TransferEntropyCalculatorViaCondMutualInfo;
+import infodynamics.measures.continuous.ConditionalTransferEntropyCalculator;
+import infodynamics.measures.continuous.ConditionalTransferEntropyCalculatorViaCondMutualInfo;
 
 /**
  * 
  * <p>
- * Implements a transfer entropy calculator using a conditional MI calculator
+ * Implements a conditional transfer entropy calculator using a conditional MI calculator
  * implementing the Kraskov-Grassberger estimator.
  * This is achieved by plugging in a {@link ConditionalMutualInfoCalculatorMultiVariateKraskov}
  * as the calculator into {@link TransferEntropyCalculatorViaCondMutualInfo}.
@@ -18,12 +18,13 @@ import infodynamics.measures.continuous.TransferEntropyCalculatorViaCondMutualIn
  * <p>
  * Usage:
  * 	<ol>
- * 		<li>Construct: {@link #TransferEntropyCalculatorKraskov()}</li>
+ * 		<li>Construct: {@link #ConditionalTransferEntropyCalculatorKraskov()}</li>
  * 		<li>Set properties: {@link #setProperty(String, String)} for each relevant property, including those
- * 			of either {@link TransferEntropyCalculatorViaCondMutualInfo#setProperty(String, String)}
+ * 			of either {@link ConditionalTransferEntropyCalculatorViaCondMutualInfo#setProperty(String, String)}
  * 			or {@link ConditionalMutualInfoCalculatorMultiVariateKraskov#setProperty(String, String)}.</li>
  *		<li>Initialise: by calling one of {@link #initialise()} etc.</li>
- * 		<li>Add observations to construct the PDFs: {@link #setObservations(double[])}, or [{@link #startAddObservations()},
+ * 		<li>Add observations to construct the PDFs: {@link #setObservations(double[], double[], double[][])},
+ * 			or [{@link #startAddObservations()},
  * 			{@link #addObservations(double[])}*, {@link #finaliseAddObservations()}]
  *   		Note: If not using setObservations(), the results from computeLocal
  *   		will be concatenated directly, and getSignificance will mix up observations 
@@ -35,6 +36,19 @@ import infodynamics.measures.continuous.TransferEntropyCalculatorViaCondMutualIn
  * 
  * @author Joseph Lizier, <a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>
+ * 
+ * @see "Schreiber, Physical Review Letters 85 (2) pp.461-464 (2000);
+ *  <a href='http://dx.doi.org/10.1103/PhysRevLett.85.461'>download</a>
+ *  (for definition of transfer entropy)"
+ * @see "Lizier, Prokopenko and Zomaya, Physical Review E 77, 026110 (2008);
+ * <a href='http://dx.doi.org/10.1103/PhysRevE.77.026110'>download</a>
+ *  (for the extension to <i>conditional</i> transfer entropy 
+ *  or <i>complete</i> where all other causal sources are conditioned on,
+ *  and <i>local</i> transfer entropy)"
+ * @see "Lizier, Prokopenko and Zomaya, Chaos 20, 3, 037109 (2010);
+ * <a href='http://dx.doi.org/10.1063/1.3486801'>download</a>
+ *  (for further clarification on <i>conditional</i> transfer entropy 
+ *  or <i>complete</i> where all other causal sources are conditioned on)"
  * @see "Kraskov, A., Stoegbauer, H., Grassberger, P., Physical Review E 69, (2004) 066138;
  *  <a href='http://dx.doi.org/10.1103/PhysRevE.69.066138'>download</a>
  *  (for introduction of Kraskov-Grassberger method for MI)"
@@ -42,11 +56,11 @@ import infodynamics.measures.continuous.TransferEntropyCalculatorViaCondMutualIn
  *    arXiv:1008.0539, 2010;
  *  <a href='http://arxiv.org/abs/1008.0539'>download</a>
  *  (for introduction of Kraskov-Grassberger technique to transfer entropy)"
- * @see TransferEntropyCalculator
+ * @see ConditionalTransferEntropyCalculator
  *
  */
-public class TransferEntropyCalculatorKraskov
-	extends TransferEntropyCalculatorViaCondMutualInfo {
+public class ConditionalTransferEntropyCalculatorKraskov
+	extends ConditionalTransferEntropyCalculatorViaCondMutualInfo {
 
 	public static final String COND_MI_CALCULATOR_KRASKOV1 = ConditionalMutualInfoCalculatorMultiVariateKraskov1.class.getName();
 	public static final String COND_MI_CALCULATOR_KRASKOV2 = ConditionalMutualInfoCalculatorMultiVariateKraskov2.class.getName();
@@ -65,7 +79,7 @@ public class TransferEntropyCalculatorKraskov
 	protected Hashtable<String,String> props;
 
 	/**
-	 * Creates a new instance of the Kraskov-estimate style transfer entropy calculator
+	 * Creates a new instance of the Kraskov-estimate style conditional transfer entropy calculator
 	 * 
 	 * Uses algorithm 1 by default, as per Gomez-Herro et al.
 	 * 
@@ -74,14 +88,14 @@ public class TransferEntropyCalculatorKraskov
 	 * @throws InstantiationException 
 	 *
 	 */
-	public TransferEntropyCalculatorKraskov() throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+	public ConditionalTransferEntropyCalculatorKraskov() throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		super(COND_MI_CALCULATOR_KRASKOV1);
 		kraskovAlgorithmNumber = 1;
 		props = new Hashtable<String,String>();
 	}
 
 	/**
-	 * Creates a new instance of the Kraskov-Grassberger style transfer entropy calculator,
+	 * Creates a new instance of the Kraskov-Grassberger style conditional transfer entropy calculator,
 	 *  with the supplied conditional MI calculator name
 	 * 
 	 * @param calculatorName fully qualified name of the underlying MI class.
@@ -91,7 +105,7 @@ public class TransferEntropyCalculatorKraskov
 	 * @throws InstantiationException 
 	 *
 	 */
-	public TransferEntropyCalculatorKraskov(String calculatorName) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+	public ConditionalTransferEntropyCalculatorKraskov(String calculatorName) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		super(calculatorName);
 		// Now check that it was one of our Kraskov-Grassberger calculators:
 		if (calculatorName.equalsIgnoreCase(COND_MI_CALCULATOR_KRASKOV1)) {
@@ -108,7 +122,8 @@ public class TransferEntropyCalculatorKraskov
 	 * @see infodynamics.measures.continuous.TransferEntropyCalculatorViaCondMutualInfo#initialise(int, int, int, int, int)
 	 */
 	@Override
-	public void initialise(int k, int k_tau, int l, int l_tau, int delay)
+	public void initialise(int k, int k_tau, int l, int l_tau, int delay,
+			int[] condEmbedDims, int[] cond_taus, int[] condDelays)
 			throws Exception {
 		if (algChanged) {
 			// The algorithm number was changed in a setProperties call:
@@ -129,7 +144,7 @@ public class TransferEntropyCalculatorKraskov
 			algChanged = false;
 		}
 		
-		super.initialise(k, k_tau, l, l_tau, delay);
+		super.initialise(k, k_tau, l, l_tau, delay, condEmbedDims, cond_taus, condDelays);
 	}
 
 	/**
@@ -137,7 +152,7 @@ public class TransferEntropyCalculatorKraskov
 	 * Valid properties include:
 	 * <ul>
 	 * 	<li>{@link #PROP_KRASKOV_ALG_NUM} - which Kraskov algorithm number to use (1 or 2). Will only be applied at the next initialisation.</li>
-	 *  <li>Any valid properties for {@link TransferEntropyCalculatorViaCondMutualInfo#setProperty(String, String)}</li>
+	 *  <li>Any valid properties for {@link ConditionalTransferEntropyCalculatorViaCondMutualInfo#setProperty(String, String)}</li>
 	 * 	<li>Any valid properties for {@link ConditionalMutualInfoCalculatorMultiVariateKraskov#setProperty(String, String)}</li>
 	 * </ul>
 	 * One should set {@link ConditionalMutualInfoCalculatorMultiVariateKraskov#PROP_K} here, the number

@@ -52,6 +52,14 @@ public class EntropyCalculatorMultiVariateKozachenko
 		isComputed = false;
 		lastLocalEntropy = null;
 	}
+	
+	/* (non-Javadoc)
+	 * @see infodynamics.measures.continuous.EntropyCalculatorMultiVariate#setProperty(java.lang.String, java.lang.String)
+	 */
+	public void setProperty(String propertyName, String propertyValue)
+			throws Exception {
+		// No properties here to set
+	}
 
 	public void setObservations(double[][] observations) {
 		rawData = observations;

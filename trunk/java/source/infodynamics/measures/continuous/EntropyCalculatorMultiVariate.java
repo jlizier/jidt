@@ -13,6 +13,17 @@ public interface EntropyCalculatorMultiVariate {
 	public void initialise(int dimensions);
 	
 	/**
+	 * Allows the user to set properties for the underlying calculator implementation
+	 * New property values are not guaranteed to take effect until the next call
+	 *  to an initialise method. 
+	 * 
+	 * @param propertyName
+	 * @param propertyValue
+	 * @throws Exception
+	 */
+	public void setProperty(String propertyName, String propertyValue) throws Exception;
+
+	/**
 	 * Supply the observations for which to compute the PDFs for the entropy
 	 * 
 	 * @param observations multivariate time series of observations; first index

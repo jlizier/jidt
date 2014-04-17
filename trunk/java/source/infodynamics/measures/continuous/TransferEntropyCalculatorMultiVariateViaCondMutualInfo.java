@@ -35,11 +35,16 @@ import infodynamics.utils.MatrixUtils;
  * <a href='http://dx.doi.org/10.1007/s10827-010-0271-2'>download</a>
  * (for definition of <i>multivariate</i> transfer entropy"
  *  
+ * @see {@link TransferEntropyCalculatorViaCondMutualInfo}
+ * @see {@link TransferEntropyCalculatorMultiVariate}
+ * @see {@link TransferEntropyCalculator}
+ * 
  * @author Joseph Lizier, <a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>
  */
 public abstract class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
 		extends TransferEntropyCalculatorViaCondMutualInfo
+		// which means we implement TransferEntropyCalculator 
 		implements TransferEntropyCalculatorMultiVariate {
 
 	/**
@@ -66,8 +71,9 @@ public abstract class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
 	 * underlying Conditional Mutual information calculator.
 	 * 
 	 * @param condMiCalc
+	 * @throws Exception 
 	 */
-	public TransferEntropyCalculatorMultiVariateViaCondMutualInfo(ConditionalMutualInfoCalculatorMultiVariate condMiCalc) {
+	public TransferEntropyCalculatorMultiVariateViaCondMutualInfo(ConditionalMutualInfoCalculatorMultiVariate condMiCalc) throws Exception {
 		super(condMiCalc);
 	}
 	

@@ -120,6 +120,8 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 
 	/**
 	 * Sets common properties for the calculator.
+	 * New property values are not guaranteed to take effect until the next call
+	 *  to an initialise method. 
 	 * Valid properties include:
 	 * <ul>
 	 *  <li>{@link #PROP_NORMALISE} - whether to normalise the individual

@@ -6,7 +6,8 @@ import java.util.Comparator;
 import java.util.Vector;
 
 /**
- * Utilities for computations on matrices, represented as two-dimensional
+ * Utilities for computations on arrays and matrices of data.
+ * Matrices are represented as two-dimensional
  *  arrays of doubles (double[][] matrix) - it is assumed that all
  *  multidimensional matrices have consistent lengths in each dimension
  *  matrix[i].
@@ -1617,11 +1618,11 @@ public class MatrixUtils {
 	
 	/**
 	 * Constructs all embedding vectors of size k for the data.
-	 * Will be data.length - k + 1 of these
+	 * There will be (data.length - k + 1) of these vectors returned.
 	 * 
-	 * @param data
-	 * @param k
-	 * @return
+	 * @param data time series data
+	 * @param k embedding length
+	 * @return An array of k-length embedding vectors
 	 */
 	public static double[][] makeDelayEmbeddingVector(double[] data, int k) {
 		try {
@@ -1637,11 +1638,14 @@ public class MatrixUtils {
 	 * Constructs numEmbeddingVectors embedding vectors of size k for the data,
 	 * with the first embedding vector having it's last time point at t=startKthPoint
 	 * 
-	 * @param data
-	 * @param k
-	 * @param startKthPoint
-	 * @param numEmbeddingVectors
-	 * @return
+	 * @param data time series data
+	 * @param k embedding length
+	 * @param startKthPoint last time point of the first embedding vector
+	 *   (i.e. use k-1 if you want to go from the start)
+	 * @param numEmbeddingVectors the number of embedding vectors to return
+	 *   (i.e. use data.length-k+1 if you go from the start and want all
+	 *   of them extracted)
+	 * @return a 2D array of k-length embedding vectors.
 	 */
 	public static double[][] makeDelayEmbeddingVector(double[] data, int k,
 			int startKthPoint, int numEmbeddingVectors) throws Exception {
@@ -1665,15 +1669,19 @@ public class MatrixUtils {
 
 	/**
 	 * Constructs numEmbeddingVectors embedding vectors of size k for the data,
-	 *  with embedding delay tau between each element of the vectors,
+	 *  with embedding delay tau between each time sample for the vectors,
 	 *  with the first embedding vector having it's last time point at t=startKthPoint
 	 * 
-	 * @param data
-	 * @param k
-	 * @param tau
-	 * @param startKthPoint
-	 * @param numEmbeddingVectors
-	 * @return
+	 * @param data time series data
+	 * @param k embedding length
+	 * @param tau embedding delay between each point in the original time series
+	 * 		selected into each embedding vector
+	 * @param startKthPoint last time point of the first embedding vector
+	 *   (i.e. use k-1 if you want to go from the start)
+	 * @param numEmbeddingVectors the number of embedding vectors to return
+	 *   (i.e. use data.length-k+1 if you go from the start and want all
+	 *   of them extracted)
+	 * @return  a 2D array of k-length embedding vectors.
 	 */
 	public static double[][] makeDelayEmbeddingVector(double[] data, int k, int tau,
 			int startKthPoint, int numEmbeddingVectors) throws Exception {
@@ -1696,12 +1704,15 @@ public class MatrixUtils {
 	}
 
 	/**
-	 * Constructs all embedding vectors of size k for the data.
-	 * Will be data.length - k + 1 of these
+	 * Constructs all embedding vectors of k time points for the data, including
+	 *  all multivariate values at each time point.
+	 * Will be data.length - k + 1 of these vectors returned
 	 * 
-	 * @param data
-	 * @param k
-	 * @return
+	 * @param data 2D time series data (time is first second, second is variable number),
+	 *   all of which is embedded
+	 * @param k embedding length (i.e. number of time extractions for each vector)
+	 * @return a 2D array of embedding vectors, which are of length
+	 *   k x data[0].length.
 	 */
 	public static double[][] makeDelayEmbeddingVector(double[][] data, int k) {
 		try {
@@ -1714,14 +1725,20 @@ public class MatrixUtils {
 	}
 
 	/**
-	 * Constructs numEmbeddingVectors embedding vectors of size k for the data,
-	 * with the first embedding vector having it's last time point at t=startKthPoint
+	 * Constructs numEmbeddingVectors embedding vectors of k time points for the data, including
+	 *  all multivariate values at each time point.
+	 * Return only a subset, with the first embedding vector having it's last time point at t=startKthPoint
 	 * 
-	 * @param data
-	 * @param k
-	 * @param startKthPoint
-	 * @param numEmbeddingVectors
-	 * @return
+	 * @param data 2D time series data (time is first second, second is variable number),
+	 *   all of which is embedded
+	 * @param k embedding length (i.e. number of time extractions for each vector)
+	 * @param startKthPoint last time point of the first embedding vector
+	 *   (i.e. use k-1 if you want to go from the start)
+	 * @param numEmbeddingVectors the number of embedding vectors to return
+	 *   (i.e. use data.length-k+1 if you go from the start and want all
+	 *   of them extracted)
+	 * @return a 2D array of embedding vectors, which are each of length
+	 *   k x data[0].length.
 	 */
 	public static double[][] makeDelayEmbeddingVector(double[][] data, int k,
 			int startKthPoint, int numEmbeddingVectors) throws Exception {
@@ -1747,16 +1764,23 @@ public class MatrixUtils {
 	}
 
 	/**
-	 * Constructs numEmbeddingVectors embedding vectors of size k for the data,
-	 *  with embedding delay tau between each element of the vectors,
+	 * Constructs numEmbeddingVectors embedding vectors of k time points for the data, including
+	 *  all multivariate values at each time point,
+	 *  with embedding delay tau between each time sample for the vectors,
 	 *  with the first embedding vector having it's last time point at t=startKthPoint
 	 * 
-	 * @param data
-	 * @param k
-	 * @param tau
-	 * @param startKthPoint
-	 * @param numEmbeddingVectors
-	 * @return
+	 * @param data 2D time series data (time is first second, second is variable number),
+	 *   all of which is embedded
+	 * @param k embedding length (i.e. number of time extractions for each vector)
+	 * @param tau embedding delay between each point in the original time series
+	 * 		selected into each embedding vector
+	 * @param startKthPoint last time point of the first embedding vector
+	 *   (i.e. use k-1 if you want to go from the start)
+	 * @param numEmbeddingVectors the number of embedding vectors to return
+	 *   (i.e. use data.length-k+1 if you go from the start and want all
+	 *   of them extracted)
+	 * @return a 2D array of numEmbeddingVectors embedding vectors, which are each of length
+	 *   k x data[0].length.
 	 */
 	public static double[][] makeDelayEmbeddingVector(double[][] data, int k, int tau,
 			int startKthPoint, int numEmbeddingVectors) throws Exception {
@@ -1781,14 +1805,45 @@ public class MatrixUtils {
 		return embeddingVectors;
 	}
 
-	public static int[] subArray(int[] array, int startIndex, int theLength) {
-		int[] sub = new int[theLength];
-		for (int r = 0; r < theLength; r++) {
-			sub[r] = array[startIndex + r];
+	/**
+	 * Constructs numEmbeddingVectors embedding vectors of k time points for a single column of
+	 *  the data,
+	 *  with embedding delay tau between each time sample for the vectors,
+	 *  with the first embedding vector having it's last time point at t=startKthPoint
+	 * 
+	 * @param data 2D time series data (time is first second, second is variable number),
+	 *   only one particular column of which is embedded
+	 * @param column the column index to embed
+	 * @param k embedding length (i.e. number of time extractions for each vector)
+	 * @param tau embedding delay between each point in the original time series
+	 * 		selected into each embedding vector
+	 * @param startKthPoint last time point of the first embedding vector
+	 *   (i.e. use k-1 if you want to go from the start)
+	 * @param numEmbeddingVectors the number of embedding vectors to return
+	 *   (i.e. use data.length-k+1 if you go from the start and want all
+	 *   of them extracted)
+	 * @return a 2D array of numEmbeddingVectors embedding vectors, which are each of length k.
+	 */
+	public static double[][] makeDelayEmbeddingVector(double[][] data, int column, int k, int tau,
+			int startKthPoint, int numEmbeddingVectors) throws Exception {
+		if (startKthPoint < (k - 1)*tau) {
+			throw new Exception("Start point t=" + startKthPoint + " is too early for a " +
+					k + " length embedding vector with delay " + tau);
 		}
-		return sub;
+		if (numEmbeddingVectors + startKthPoint > data.length) {
+			throw new Exception("Too many embedding vectors " + numEmbeddingVectors +
+					" requested for the given startPoint " + startKthPoint +
+					" and time series length " + data.length);
+		}
+		double[][] embeddingVectors = new double[numEmbeddingVectors][k];
+		for (int t = startKthPoint; t < numEmbeddingVectors + startKthPoint; t++) {
+			for (int i = 0; i < k; i++) {
+				embeddingVectors[t - startKthPoint][i] = data[t - i*tau][column];
+			}
+		}
+		return embeddingVectors;
 	}
-	
+
 	public static double stdDev(double[] array) {
 		double mean = 0.0;
 		double total = 0.0;

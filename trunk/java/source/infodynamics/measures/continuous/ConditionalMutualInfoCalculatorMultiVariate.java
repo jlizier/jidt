@@ -45,6 +45,8 @@ public interface ConditionalMutualInfoCalculatorMultiVariate {
 
 	/**
 	 * Allows the user to set properties for the underlying calculator implementation
+	 * New property values are not guaranteed to take effect until the next call
+	 *  to an initialise method. 
 	 * 
 	 * @param propertyName
 	 * @param propertyValue

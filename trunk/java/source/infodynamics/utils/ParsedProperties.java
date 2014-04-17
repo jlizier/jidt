@@ -62,15 +62,28 @@ public class ParsedProperties {
 	/**
 	 * Return an integer array for a comma separated integer list,
 	 * or a specification of "startIndex:endIndex"
-	 * @param name
-	 * @return Integer array for the property
+	 * 
+	 * @param name property name which contains the string as
+	 *  its value.
+	 * @return int array for the property
 	 */
 	public int[] getIntArrayProperty(String name) {
-		int[] returnValues;
 		String repeatString = properties.getProperty(name);
-		if (repeatString.indexOf(':') >= 0) {
+		return parseStringArrayOfInts(repeatString);
+	}
+	
+	/**
+	 * Return an integer array for a comma separated integer list argument,
+	 * or a specification of "startIndex:endIndex"
+	 * 
+	 * @param stringOfInts the string contained the integers
+	 * @return an int array
+	 */
+	public static int[] parseStringArrayOfInts(String stringOfInts) {
+		int[] returnValues;
+		if (stringOfInts.indexOf(':') >= 0) {
 			// The repeats are of the format "startIndex:endIndex"
-			String[] indices = repeatString.split(":");
+			String[] indices = stringOfInts.split(":");
 			int startIndex = Integer.parseInt(indices[0]);
 			int endIndex = Integer.parseInt(indices[1]);
 			returnValues = new int[endIndex - startIndex + 1];
@@ -79,7 +92,7 @@ public class ParsedProperties {
 			}
 		} else {
 			// The repeats are in a comma separated format
-			String[] repeatStrings = repeatString.split(",");
+			String[] repeatStrings = stringOfInts.split(",");
 			returnValues = new int[repeatStrings.length];
 			for (int i = 0; i < returnValues.length; i++) {
 				returnValues[i] = Integer.parseInt(repeatStrings[i]);
