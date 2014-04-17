@@ -1,6 +1,6 @@
-package infodynamics.measures.continuous.symbolic;
+package infodynamics.measures.mixed.symbolic;
 
-import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariateWithDiscrete;
+import infodynamics.measures.mixed.ConditionalMutualInfoCalculatorMultiVariateWithDiscrete;
 import infodynamics.measures.discrete.ConditionalMutualInformationCalculator;
 import infodynamics.utils.FirstIndexComparatorDouble;
 import infodynamics.utils.MathsUtils;

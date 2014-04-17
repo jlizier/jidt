@@ -1,6 +1,6 @@
-package infodynamics.measures.continuous.kraskov;
+package infodynamics.measures.mixed.kraskov;
 
-import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariateWithDiscrete;
+import infodynamics.measures.mixed.MutualInfoCalculatorMultiVariateWithDiscrete;
 import infodynamics.utils.EuclideanUtils;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;

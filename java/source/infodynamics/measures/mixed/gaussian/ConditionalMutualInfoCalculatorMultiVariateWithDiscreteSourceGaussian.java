@@ -1,7 +1,8 @@
-package infodynamics.measures.continuous.gaussian;
+package infodynamics.measures.mixed.gaussian;
 
-import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSourceCommon;
+import infodynamics.measures.mixed.ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSourceCommon;
 import infodynamics.measures.continuous.ConditionalMutualInfoMultiVariateCommon;
+import infodynamics.measures.continuous.gaussian.EntropyCalculatorMultiVariateGaussian;
 import infodynamics.utils.MatrixUtils;
 
 /**

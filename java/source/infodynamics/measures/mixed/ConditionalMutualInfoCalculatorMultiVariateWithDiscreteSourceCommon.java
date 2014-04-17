@@ -1,6 +1,6 @@
-package infodynamics.measures.continuous;
+package infodynamics.measures.mixed;
 
-import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSource;
+import infodynamics.measures.mixed.ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSource;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.RandomGenerator;

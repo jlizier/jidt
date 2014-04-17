@@ -45,4 +45,5 @@ public interface EntropyCalculatorMultiVariate {
 	
 	public void setDebug(boolean debug);
 	
+	public int getNumObservations() throws Exception;
 }
