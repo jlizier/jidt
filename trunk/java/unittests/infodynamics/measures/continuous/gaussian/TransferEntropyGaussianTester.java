@@ -2,12 +2,22 @@ package infodynamics.measures.continuous.gaussian;
 
 import java.util.Vector;
 
+import infodynamics.measures.continuous.TransferEntropyAbstractTester;
 import infodynamics.utils.ArrayFileReader;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.RandomGenerator;
-import junit.framework.TestCase;
 
-public class TransferEntropyGaussianTester extends TestCase {
+public class TransferEntropyGaussianTester extends TransferEntropyAbstractTester {
+
+	public void testLocalsAverageCorrectly() throws Exception {
+		TransferEntropyCalculatorGaussian teCalc = new TransferEntropyCalculatorGaussian();
+		super.testLocalsAverageCorrectly(teCalc, 100, 2);
+	}
+
+	public void testComputeSignificanceDoesntAlterAverage() throws Exception {
+		TransferEntropyCalculatorGaussian teCalc = new TransferEntropyCalculatorGaussian();
+		super.testComputeSignificanceDoesntAlterAverage(teCalc, 100, 2);
+	}
 
 	public void testEmbedding() throws Exception {
 		ArrayFileReader afr = new ArrayFileReader("demos/data/2coupledRandomCols-1.txt");
