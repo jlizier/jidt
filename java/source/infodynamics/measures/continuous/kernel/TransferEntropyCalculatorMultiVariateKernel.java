@@ -15,7 +15,7 @@ import java.util.Vector;
 /**
  * 
  * <p>
- * Implements a transfer entropy calculator using kernel estimation.
+ * Implements a multivariate transfer entropy calculator using kernel estimation.
  * (see Schreiber, PRL 85 (2) pp.461-464, 2000)</p> 
  * 
  * <p>

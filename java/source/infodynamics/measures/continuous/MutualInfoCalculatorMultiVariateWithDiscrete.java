@@ -42,7 +42,10 @@ public interface MutualInfoCalculatorMultiVariateWithDiscrete {
 	public void initialise(int dimensions, int base) throws Exception;
 	
 	/**
-	 * <p>Set the required property of the calculator to the given value.</p>
+	 * <p>Set the required property of the calculator to the given value.
+	 * New property values are not guaranteed to take effect until the next call
+	 *  to an initialise method. 
+	 * </p>
 	 * 
 	 * <p>There are no general properties settable on all child classes;
 	 * each child class may define their own properties.</p>

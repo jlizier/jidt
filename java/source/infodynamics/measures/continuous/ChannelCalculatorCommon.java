@@ -18,7 +18,17 @@ import infodynamics.utils.EmpiricalMeasurementDistribution;
 public abstract interface ChannelCalculatorCommon {
 
 	/**
-	 * Allows the user to set properties for the underlying calculator implementation
+	 * Initialise the calculator for re-use with new observations.
+	 * All parameters remain unchanged.
+	 * 
+	 * @throws Exception
+	 */
+	public void initialise() throws Exception;
+
+	/**
+	 * Allows the user to set properties for the underlying calculator implementation.
+	 * New property values are not guaranteed to take effect until the next call
+	 *  to an initialise method. 
 	 * 
 	 * @param propertyName
 	 * @param propertyValue

@@ -74,7 +74,7 @@ public abstract class TransferEntropyCalculatorViaCondMutualInfo implements
 	 */
 	public static final String K_TAU_PROP_NAME = "k_TAU";
 	/**
-	 * Embedding delay for the destination past history vector
+	 * Embedding length for the source past history vector
 	 */
 	public static final String L_PROP_NAME = "l_HISTORY";
 	/**
@@ -85,8 +85,18 @@ public abstract class TransferEntropyCalculatorViaCondMutualInfo implements
 	 * Source-destination delay
 	 */
 	public static final String DELAY_PROP_NAME = "DELAY";
-
 	
+	/**
+	 * Construct a transfer entropy calculator using an instance of
+	 * condMiCalculatorClassName as the underlying conditional mutual information calculator.
+	 * 
+	 * @param condMiCalculatorClassName name of the class which must implement
+	 * 	{@link ConditionalMutualInfoCalculatorMultiVariate}
+	 * @throws InstantiationException if the given class cannot be instantiated
+	 * @throws IllegalAccessException if illegal access occurs while trying to create an instance
+	 *   of the class
+	 * @throws ClassNotFoundException if the given class is not found
+	 */
 	public TransferEntropyCalculatorViaCondMutualInfo(String condMiCalculatorClassName)
 			throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		@SuppressWarnings("unchecked")
@@ -96,6 +106,17 @@ public abstract class TransferEntropyCalculatorViaCondMutualInfo implements
 		construct(condMiCalc);
 	}
 
+	/**
+	 * Construct a transfer entropy calculator using an instance of
+	 * condMiCalcClass as the underlying conditional mutual information calculator.
+	 * 
+	 * @param condMiCalcClass the class which must implement
+	 * 	{@link ConditionalMutualInfoCalculatorMultiVariate}
+	 * @throws InstantiationException if the given class cannot be instantiated
+	 * @throws IllegalAccessException if illegal access occurs while trying to create an instance
+	 *   of the class
+	 * @throws ClassNotFoundException if the given class is not found
+	 */
 	public TransferEntropyCalculatorViaCondMutualInfo(Class<ConditionalMutualInfoCalculatorMultiVariate> condMiCalcClass)
 			throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		ConditionalMutualInfoCalculatorMultiVariate condMiCalc = condMiCalcClass.newInstance();
@@ -106,16 +127,30 @@ public abstract class TransferEntropyCalculatorViaCondMutualInfo implements
 	 * Construct this calculator by passing in a constructed but not initialised
 	 * underlying Conditional Mutual information calculator.
 	 * 
-	 * @param condMiCalc
+	 * @param condMiCalc An instantiated conditional mutual information calculator.
+	 * @throws Exception if the supplied calculator has not yet been instantiated.
 	 */
-	public TransferEntropyCalculatorViaCondMutualInfo(ConditionalMutualInfoCalculatorMultiVariate condMiCalc) {
+	public TransferEntropyCalculatorViaCondMutualInfo(ConditionalMutualInfoCalculatorMultiVariate condMiCalc) throws Exception {
+		if (condMiCalc == null) {
+			throw new Exception("Conditional MI calculator used to construct ConditionalTransferEntropyCalculatorViaCondMutualInfo " +
+					" must have already been instantiated.");
+		}
 		construct(condMiCalc);
 	}
 	
+	/**
+	 * Internal method to set the conditional mutual information calculator.
+	 * Can be overridden if anything else needs to be done with it by the child classes.
+	 * 
+	 * @param condMiCalc
+	 */
 	protected void construct(ConditionalMutualInfoCalculatorMultiVariate condMiCalc) {
 		this.condMiCalc = condMiCalc;
 	}
 	
+	/* (non-Javadoc)
+	 * @see infodynamics.measures.continuous.ChannelCalculatorCommon#initialise()
+	 */
 	public void initialise() throws Exception {
 		initialise(k, k_tau, l, l_tau, delay);
 	}
@@ -158,10 +193,13 @@ public abstract class TransferEntropyCalculatorViaCondMutualInfo implements
 
 	/**
 	 * <p>Set the given property to the given value.
+	 * New property values are not guaranteed to take effect until the next call
+	 *  to an initialise method. 
 	 * These can include:
 	 * <ul>
 	 * 		<li>{@link #K_PROP_NAME}</li>
 	 * 		<li>{@link #K_TAU_PROP_NAME}</li>
+	 * 		<li>{@link #L_PROP_NAME}</li>
 	 * 		<li>{@link #L_TAU_PROP_NAME}</li>
 	 * 		<li>{@link #DELAY_PROP_NAME}</li>
 	 * </ul>
@@ -296,7 +334,9 @@ public abstract class TransferEntropyCalculatorViaCondMutualInfo implements
 
 	/**
 	 * Compute a vector of start and end pairs of time points, between which we have
-	 *  valid series of both source and destinations.
+	 *  valid series of both source and destinations. (i.e. all points within the
+	 *  embedding vectors must be valid, even if the invalid points won't be included
+	 *  in any tuples)
 	 * 
 	 * Made public so it can be used if one wants to compute the number of
 	 *  observations prior to setting the observations.

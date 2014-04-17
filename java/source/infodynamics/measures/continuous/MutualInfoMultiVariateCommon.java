@@ -84,6 +84,13 @@ public abstract class MutualInfoMultiVariateCommon implements
 	
 	protected boolean addedMoreThanOneObservationSet;
 
+	/* (non-Javadoc)
+	 * @see infodynamics.measures.continuous.ChannelCalculatorCommon#initialise()
+	 */
+	public void initialise() throws Exception {
+		initialise(dimensionsSource, dimensionsDest);
+	}
+
 	/**
 	 * Clear any previously supplied probability distributions and prepare
 	 * the calculator to be used again.
@@ -103,6 +110,8 @@ public abstract class MutualInfoMultiVariateCommon implements
 
 	/**
 	 * <p>Set the given property to the given value.
+	 * 	New property values are not guaranteed to take effect until the next call
+	 *  to an initialise method. 
 	 * These can include:
 	 * <ul>
 	 * 		<li>{@link MutualInfoCalculatorMultiVariate#PROP_TIME_DIFF}</li>
