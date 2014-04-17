@@ -10,13 +10,15 @@
 %
 %
 % Inputs
+% - kHistory - destination embedding length
+% - lHistory - source embedding length
 % - knns - a scalar specifying a single, or vector specifying multiple, value of K nearest neighbours to evaluate TE (Kraskov) with
 % Outputs
 % - teHeartToBreath - TE (heart -> breath) for each value of k nearest neighbours
 % - teBreathToHeart - TE (breath -> heart) for each value of k nearest neighbours
 
 
-function [teHeartToBreath, teBreathToHeart] = runHeartBreathRate(knns)
+function [teHeartToBreath, teBreathToHeart] = runHeartBreathRateKraskov(kHistory, lHistory, knns)
 
 	starttime = tic;
 	
@@ -41,32 +43,36 @@ function [teHeartToBreath, teBreathToHeart] = runHeartBreathRate(knns)
 	fprintf('TE for heart rate <-> breath rate for Kraskov estimation with %d samples:\n', timeSteps);
 
 	% Using a single conditional mutual information calculator is the least biased way to run this:
-	teCalc=javaObject('infodynamics.measures.continuous.kraskov.ConditionalMutualInfoCalculatorMultiVariateKraskov1');
+	teCalc=javaObject('infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov');
 
 	for knnIndex = 1:length(knns)
 		knn = knns(knnIndex);
 		% Compute a TE value for knn nearest neighbours
 				
 		% Perform calculation for heart -> breath (lag 1)
-		teCalc.initialise(1,1,1); % Use history length 1 (Schreiber k)
+		teCalc.initialise(kHistory,1,lHistory,1,1);
 		teCalc.setProperty('k', sprintf('%d',knn));
-		teCalc.setObservations(octaveToJavaDoubleMatrix(heart(1:timeSteps-1)), ...
-					octaveToJavaDoubleMatrix(chestVol(2:timeSteps)), ...
-					octaveToJavaDoubleMatrix(chestVol(1:timeSteps-1)));
+		teCalc.setObservations(octaveToJavaDoubleMatrix(heart), ...
+					octaveToJavaDoubleMatrix(chestVol));
 		teHeartToBreath(knnIndex) = teCalc.computeAverageLocalOfObservations();
 		
 		% Perform calculation for breath -> heart (lag 1)
-		teCalc.initialise(1,1,1); % Use history length 1 (Schreiber k)
+		teCalc.initialise(kHistory,1,lHistory,1,1);
 		teCalc.setProperty('k', sprintf('%d',knn));
-		teCalc.setObservations(octaveToJavaDoubleMatrix(chestVol(1:timeSteps-1)), ...
-					octaveToJavaDoubleMatrix(heart(2:timeSteps)), ...
-					octaveToJavaDoubleMatrix(heart(1:timeSteps-1)));
+		teCalc.setObservations(octaveToJavaDoubleMatrix(chestVol), ...
+					octaveToJavaDoubleMatrix(heart));
 		teBreathToHeart(knnIndex) = teCalc.computeAverageLocalOfObservations();
 		
 		fprintf('TE(k=%d): heart->breath = %.3f, breath->heart = %.3f\n', knn, teHeartToBreath(knnIndex), teBreathToHeart(knnIndex));
 	end
 		
-	endtime = toc;
-	fprintf('Total runtime was %.1f sec\n', endtime - starttime);
+	tElapsed = toc(starttime);
+	fprintf('Total runtime was %.1f sec\n', tElapsed);
+	
+	plot(knns, teHeartToBreath, 'rx');
+	hold on;
+	plot(knns, teBreathToHeart, 'mo');
+	hold off;
+	legend(['TE(heart->breath)'; 'TE(breath->heart)']);
 end
 
