@@ -1,6 +1,7 @@
-package infodynamics.measures.continuous.gaussian;
+package infodynamics.measures.mixed.gaussian;
 
-import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariateWithDiscrete;
+import infodynamics.measures.continuous.gaussian.EntropyCalculatorMultiVariateGaussian;
+import infodynamics.measures.mixed.MutualInfoCalculatorMultiVariateWithDiscrete;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.RandomGenerator;
@@ -61,10 +62,15 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteGaussian implements
 	
 	/**
 	 * Keep a copy of the discrete observations, to enable us to compute the
-	 * statistical significance later. We don't need to keep a copy of 
-	 * the continuous observations, since they're kept intact by entCalc.
+	 * statistical significance later.
 	 */
 	protected int[] discreteObservations;
+	
+	/**
+	 * Keep a copy of the continuous observations, to enable us to compute the
+	 * statistical significance later.
+	 */
+	protected double[][] continuousObservations;
 	
 	/**
 	 * Number of supplied observations
@@ -127,6 +133,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteGaussian implements
 		//  (this will pick up any errors in the dimensions of the continuous
 		//   observations)
 		entCalc.setObservations(continuousObservations);
+		this.continuousObservations = continuousObservations;
 		// Set the observations corresponding to each discrete value:
 		setDiscreteData(continuousObservations, discreteObservations);
 		totalObservations = continuousObservations.length;
@@ -176,11 +183,12 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteGaussian implements
 	 * the discrete data (averaged over all discrete values)
 	 * 
 	 * @return average conditional entropy
+	 * @throws Exception 
 	 */
-	protected double computeAverageLocalConditionalEntropyOfObservations() {
+	protected double computeAverageLocalConditionalEntropyOfObservations() throws Exception {
 		double meanConditionalEntropy = 0;
 		for (int b = 0; b < base; b++) {
-			double pOfB = (double) entCalcForEachDiscrete[b].observations.length /
+			double pOfB = (double) entCalcForEachDiscrete[b].getNumObservations() /
 							(double) totalObservations;
 			meanConditionalEntropy += pOfB *
 					entCalcForEachDiscrete[b].computeAverageLocalOfObservations();
@@ -288,7 +296,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteGaussian implements
 			//  inside this calculator, and avoid recomputing covariances etc
 			//  on the continuous data set)
 			miSurrogateCalculator.setDiscreteData(
-					entCalc.observations, shuffledDiscreteData);
+					continuousObservations, shuffledDiscreteData);
 			// Compute the MI:
 			surrogateMeasurements[i] = miSurrogateCalculator.entCalc.computeAverageLocalOfObservations() -
 					miSurrogateCalculator.computeAverageLocalConditionalEntropyOfObservations();

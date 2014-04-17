@@ -261,6 +261,19 @@ public class EntropyCalculatorMultiVariateGaussian
 	}
 
 	/**
+	 * @return the number of previously supplied observations for which
+	 *  the mutual information will be / was computed.
+	 */
+	public int getNumObservations() throws Exception {
+		if (observations == null) {
+			throw new Exception("Cannot return number of observations because either " +
+					"this calculator has not had observations supplied or " +
+					"the user supplied the covariance matrix instead of observations");
+		}
+		return observations.length;
+	}
+
+	/**
 	 * Provide an implementation of the clone() method.
 	 * This does not deeply copy all of the underlying data, just providing
 	 *  a copy of the references to it all.
@@ -271,7 +284,7 @@ public class EntropyCalculatorMultiVariateGaussian
 	 * @see java.lang.Object#clone()
 	 */
 	@Override
-	protected Object clone() throws CloneNotSupportedException {
+	public Object clone() throws CloneNotSupportedException {
 		return super.clone();
 	}
 }

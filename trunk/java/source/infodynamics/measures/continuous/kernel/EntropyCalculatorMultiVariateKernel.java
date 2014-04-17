@@ -143,4 +143,8 @@ public class EntropyCalculatorMultiVariateKernel implements EntropyCalculatorMul
 		}
 	}
 
+	public int getNumObservations() throws Exception {
+		return totalObservations;
+	}
+
 }

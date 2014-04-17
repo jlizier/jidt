@@ -1,4 +1,4 @@
-package infodynamics.measures.continuous;
+package infodynamics.measures.mixed;
 
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 

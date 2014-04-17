@@ -930,6 +930,16 @@ public class KernelEstimatorMultiVariate implements Cloneable {
 		return 1;
 	}
 
+	/**
+	 * Return the kernel widths that are actually in use in the
+	 * calculator (i.e. those after any normalisation is applied)
+	 * 
+	 * @return the kernelWidthsInUse
+	 */
+	public double[] getKernelWidthsInUse() {
+		return kernelWidthsInUse;
+	}
+
 	public void setNormalise(boolean normalise) {
 		this.normalise = normalise;
 	}

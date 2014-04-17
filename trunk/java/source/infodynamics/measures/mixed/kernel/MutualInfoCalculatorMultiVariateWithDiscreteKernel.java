@@ -1,8 +1,9 @@
-package infodynamics.measures.continuous.kernel;
+package infodynamics.measures.mixed.kernel;
 
 import java.util.Arrays;
 
-import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariateWithDiscrete;
+import infodynamics.measures.continuous.kernel.KernelEstimatorMultiVariate;
+import infodynamics.measures.mixed.MutualInfoCalculatorMultiVariateWithDiscrete;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.RandomGenerator;
@@ -143,7 +144,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKernel implements
 			double[][] obsForThisDiscValue = MatrixUtils.extractSelectedPointsMatchingCondition(
 					continuousObservations, discreteObservations, i, discCounts[i]);
 			// Set the kernel width for the relevant kernel estimator:
-			mvkeForEachDiscrete[i].initialise(mvke.kernelWidthsInUse);
+			mvkeForEachDiscrete[i].initialise(mvke.getKernelWidthsInUse());
 			// Set these observations for the relevant kernel estimator:
 			mvkeForEachDiscrete[i].setObservations(obsForThisDiscValue);
 		}
@@ -577,6 +578,6 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKernel implements
 	 */
 	public double[] getKernelWidthsInUse() {
 		// Return a copy so that the user can't mess with it
-		return Arrays.copyOf(mvke.kernelWidthsInUse, mvke.kernelWidthsInUse.length);
+		return Arrays.copyOf(mvke.getKernelWidthsInUse(), mvke.getKernelWidthsInUse().length);
 	}
 }
