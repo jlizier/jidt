@@ -1,4 +1,4 @@
-package infodynamics.measures.continuous.gaussian;
+package infodynamics.measures.mixed.gaussian;
 
 import junit.framework.TestCase;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
