@@ -12,7 +12,7 @@ Download the latest distribution; either (note: these distributions are suitable
  # [http://code.google.com/p/information-dynamics-toolkit/downloads/detail?name=infodynamics-jar-0.1.4.zip jar file] alone (better only if you don't need much guidance on how to use the toolkit);
  # full source code via SVN - see http://code.google.com/p/information-dynamics-toolkit/source/checkout
 
-See all distributions and brief descriptions at Downloads.
+See all distributions and brief descriptions at [Downloads].
 
 = Dependencies =
 
