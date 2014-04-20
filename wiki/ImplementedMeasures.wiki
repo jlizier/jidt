@@ -9,11 +9,11 @@ The measures (and estimation techniques) implemented by this toolkit are as foll
 || *Entropy* || yes || (box) kernel estimation`*`, Kozachenko`*`, Gaussian`*` ||
 || *Entropy rate* || yes || _Use two multivariate entropy calculators_ ||
 || *Mutual information* || yes || (box) kernel estimation`*`+, Kozachenko, Kraskov`*`+, Symbolic`*`+, Gaussian`*`+||
-|| *Conditional mutual information* || yes || Kraskov`*`+, Symbolic`*`+ ||
+|| *Conditional mutual information* || yes || Kraskov`*`+, Symbolic`*`+, Gaussian`*` ||
 || *Multi-information / Integration* || yes || (box) kernel estimation`*`, Kraskov`*` ||
-|| *Transfer Entropy* || yes || (box) kernel estimation`*`, Kraskov estimation`*`, Symbolic ||
-|| *Conditional/Complete Transfer Entropy* || yes || _Use multivariate conditional MI calculators_ ||
-|| *Active information storage* || yes || (box) kernel estimation ||
+|| *Transfer Entropy* || yes || (box) kernel estimation`*`, Kraskov estimation`*`, Symbolic, Gaussian`*` ||
+|| *Conditional/Complete Transfer Entropy* || yes || Kraskov estimation`*`, Gaussian`*` ||
+|| *Active information storage* || yes || (box) kernel estimation, Kraskov estimation, Gaussian ||
 || *Excess entropy / predictive information* || yes || _Use multivariate MI calculators_ ||
 || *Separable information* || yes ||  ||
 
