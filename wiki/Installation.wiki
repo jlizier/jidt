@@ -8,8 +8,8 @@ Here we describe how to install and start using the toolkit (it's pretty simple!
 = Download =
 
 Download the latest distribution; either (note: these distributions are suitable for all platforms):
- # [http://code.google.com/p/information-dynamics-toolkit/downloads/detail?name=infodynamics-dist-0.1.4.zip full distribution] (includes jar file, javadocs, demonstrations, unit tests and build scripts); or
- # [http://code.google.com/p/information-dynamics-toolkit/downloads/detail?name=infodynamics-jar-0.1.4.zip jar file] alone (better only if you don't need much guidance on how to use the toolkit);
+ # [http://lizier.me/joseph/software/jidt/download.php?file=infodynamics-dist-0.2.0.zip full distribution] (includes jar file, javadocs, demonstrations, unit tests and build scripts); or
+ # [http://lizier.me/joseph/software/jidt/download.php?file=infodynamics-jar-0.2.0.zip jar file] alone (better only if you don't need much guidance on how to use the toolkit);
  # full source code via SVN - see http://code.google.com/p/information-dynamics-toolkit/source/checkout
 
 See all distributions and brief descriptions at [Downloads].
