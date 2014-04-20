@@ -34,3 +34,8 @@ See more details on the distributions below at [#Release_History].
  * v0.1.2 ([http://lizier.me/joseph/software/jidt/download.php?file=infodynamics-dist-0.1.2.zip full], [http://lizier.me/joseph/software/jidt/download.php?file=infodynamics-jar-0.1.2.zip jar]) - 19/11/2012 - [http://code.google.com/p/information-dynamics-toolkit/source/detail?r=116 svn 116] - updated to include demo code for "Moving frames of reference ..." and "Measuring information-transfer delays" paper
  * v0.1.1 ([http://lizier.me/joseph/software/jidt/download.php?file=infodynamics-dist-0.1.1.zip full], [http://lizier.me/joseph/software/jidt/download.php?file=infodynamics-jar-0.1.1.zip jar]) - 30/10/2012 - [http://code.google.com/p/information-dynamics-toolkit/source/detail?r=104 svn 104] - first full distribution with ant file, javadocs, jar, junit tests.
  * v0.1 ([http://lizier.me/joseph/software/jidt/download.php?file=infodynamics-jar-0.1.zip jar]) - 24/10/2012 - first jar distribution
+
+= Legacy link =
+
+Prior to Google Code disabling the ability for distribution downloads to be hosted on this site, we previously distributed downloads through the following 
+[http://code.google.com/p/information-dynamics-toolkit/downloads/list old downloads page]
