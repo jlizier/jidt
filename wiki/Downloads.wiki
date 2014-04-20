@@ -1,0 +1,15 @@
+#summary List of distributions for download
+
+The following is a list of distribution zip files of the project for download.
+
+There are two types of files here:
+ * *Full* distributions of the project, including: jar file, source files, unit tests, javadocs and demos. Most users should take this option.
+ * *Jar-only* distributions of the project, including: jar file. This option only for experienced users who wish to update their jar.
+
+Some more details on the distributions are available at ReleaseHistory.
+
+= Distributions =
+
+|| *Filename* || *Summary* || *Release date* || *Up to* || *Size* || *Download count* || *SHA1 Checksum* ||
+|| [http://lizier.me/joseph/software/jidt/download.php?file=infodynamics-dist-0.2.0.zip infodynamics-dist-0.2.0.zip] || Full distribution V0.2.0 (*latest full*) || April 2014 || [http://code.google.com/p/information-dynamics-toolkit/source/detail?r=270 svn 270] || 2.9 MB || Coming soon || ec19cabcf5d13fde0965b0edb7daef53b6c8fff0 ||
+|| [http://lizier.me/joseph/software/jidt/download.php?file=infodynamics-jar-0.2.0.zip infodynamics-jar-0.2.0.zip] || Jar only distribution V0.2.0 (*latest jar*)  || April 2014 || [http://code.google.com/p/information-dynamics-toolkit/source/detail?r=270 svn 270] || 235 KB || Coming soon || b15f4871c3f383740b476f27c05a440bb6f90a37 ||
