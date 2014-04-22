@@ -6,7 +6,7 @@
 The following is a list of distribution zip files of the project for download.
 
 There are two types of files here:
- * *Full* distributions of the project, including: jar file, source files, unit tests, javadocs and demos. Most users should take this option.
+ * *Full* distributions of the project, including: jar file, source files, unit tests, javadocs and demos. Most users should take this option. Get the latest [http://lizier.me/joseph/software/jidt/download.php?file=infodynamics-dist-0.2.0.zip here].
  * *Jar-only* distributions of the project, including: jar file. This option only for experienced users who wish to update their jar.
 
 See more details on the distributions below at [#Release_History].
