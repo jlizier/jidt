@@ -1,6 +1,8 @@
 package infodynamics.measures.continuous.gaussian;
 
 import infodynamics.measures.continuous.TransferEntropyCalculatorMultiVariateViaCondMutualInfo;
+import infodynamics.utils.AnalyticNullDistributionComputer;
+import infodynamics.utils.ChiSquareMeasurementDistribution;
 
 /**
  * 
@@ -45,7 +47,8 @@ import infodynamics.measures.continuous.TransferEntropyCalculatorMultiVariateVia
  *
  */
 public class TransferEntropyCalculatorMultiVariateGaussian
-	extends TransferEntropyCalculatorMultiVariateViaCondMutualInfo {
+	extends TransferEntropyCalculatorMultiVariateViaCondMutualInfo
+	implements AnalyticNullDistributionComputer {
 	
 	public static final String COND_MI_CALCULATOR_GAUSSIAN = ConditionalMutualInfoCalculatorMultiVariateGaussian.class.getName();
 	
@@ -58,5 +61,45 @@ public class TransferEntropyCalculatorMultiVariateGaussian
 	 */
 	public TransferEntropyCalculatorMultiVariateGaussian() throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		super(COND_MI_CALCULATOR_GAUSSIAN);
+	}
+
+	/**
+	 * <p>Set the joint covariance of the distribution for which we will compute the
+	 *  transfer entropy.</p>
+	 *  
+	 * <p>Note that without setting any observations, you cannot later
+	 *  call {@link #computeLocalOfPreviousObservations()}, and without
+	 *  providing the means of the variables, you cannot later call
+	 *  {@link #computeLocalUsingPreviousObservations(double[][], double[][])}.</p>
+	 * 
+	 * @param covariance joint covariance matrix of the multivariate
+	 *  source, dest, dest history
+	 *  variables, considered together.
+	 * @param numObservations the number of observations that the covariance
+	 *  was determined from. This is used for later significance calculations
+	 * @throws Exception for covariance matrix not matching the expected dimensions,
+	 *  being non-square, asymmetric or non-positive definite
+	 */
+	public void setCovariance(double[][] covariance, int numObservations) throws Exception {
+		((ConditionalMutualInfoCalculatorMultiVariateGaussian) condMiCalc).
+				setCovariance(covariance, numObservations);
+	}
+
+	/**
+	 * <p>Compute the statistical significance of the TE 
+	 *  result analytically, without creating a distribution
+	 *  under the null hypothesis by bootstrapping.
+	 *  Computed using the corresponding method of the
+	 *  underlying 
+	 *  {@link ConditionalMutualInfoCalculatorMultiVariateGaussian}</p>
+	 *  
+	 * @see {@link ConditionalMutualInfoCalculatorMultiVariateGaussian#computeSignificance()}
+	 * @return ChiSquareMeasurementDistribution object 
+	 *  This object contains the proportion of TE scores from the distribution
+	 *  which have higher or equal TEs to ours.
+	 */
+	public ChiSquareMeasurementDistribution computeSignificance()
+			throws Exception {
+		return ((ConditionalMutualInfoCalculatorMultiVariateGaussian) condMiCalc).computeSignificance();
 	}
 }
