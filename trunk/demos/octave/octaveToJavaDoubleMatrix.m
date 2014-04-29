@@ -2,6 +2,9 @@
 %
 % Convert a native octave/matlab matrix to a java double 2D array
 %
+% Assumes the JIDT jar is already on the java classpath - you will get a 
+% java classpath error if this is not the case.
+%
 
 function jDoubleMatrix = octaveToJavaDoubleMatrix(octaveMatrix)
 
@@ -10,7 +13,8 @@ function jDoubleMatrix = octaveToJavaDoubleMatrix(octaveMatrix)
 		% Using 'org.octave.Matrix' is much faster than conversion cell by cell
 		if ((rows(octaveMatrix)*columns(octaveMatrix)) > 1)
 			% Do this the normal way
-			tmp = javaObject('org.octave.Matrix',reshape(octaveMatrix,1,rows(octaveMatrix)*columns(octaveMatrix)),[rows(octaveMatrix), columns(octaveMatrix)]);
+			tmp = javaObject('infodynamics.utils.OctaveMatrix');
+			tmp.loadDoubleData(reshape(octaveMatrix,1,rows(octaveMatrix)*columns(octaveMatrix)),[rows(octaveMatrix), columns(octaveMatrix)]);
 			jDoubleMatrix = tmp.asDoubleMatrix();
 		else
 			% For length 1 arrays, we need to perform a hack here or else

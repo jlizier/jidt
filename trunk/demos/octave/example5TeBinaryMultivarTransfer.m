@@ -20,13 +20,13 @@ teCalc.initialise();
 % We need to construct the joint values of the dest and source before we pass them in,
 %  and need to use the matrix conversion routine when calling from Matlab/Octave:
 mUtils= javaObject('infodynamics.utils.MatrixUtils');
-teCalc.addObservations(mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(destArray), 2), ...
-		mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(sourceArray), 2));
+teCalc.addObservations(mUtils.computeCombinedValues(octaveToJavaIntMatrix(destArray), 2), ...
+		mUtils.computeCombinedValues(octaveToJavaIntMatrix(sourceArray), 2));
 fprintf('For source which the 2 bits are determined from, result should be close to 2 bits : ');
 result = teCalc.computeAverageLocalOfObservations()
 teCalc.initialise();
-teCalc.addObservations(mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(destArray), 2), ...
-		mUtils.computeCombinedValues(octaveToJavaDoubleMatrix(sourceArray2), 2));
+teCalc.addObservations(mUtils.computeCombinedValues(octaveToJavaIntMatrix(destArray), 2), ...
+		mUtils.computeCombinedValues(octaveToJavaIntMatrix(sourceArray2), 2));
 fprintf('For random source, result should be close to 0 bits in theory: ');
 result2 = teCalc.computeAverageLocalOfObservations()
 fprintf('\nThe result for random source is inflated towards 0.3 due to finite observation length (%d).\nOne can verify that the answer is consistent with that from a\nrandom source by checking: teCalc.computeSignificance(1000); ans.pValue\n', teCalc.getNumObservations());
