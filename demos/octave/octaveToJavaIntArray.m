@@ -5,17 +5,33 @@
 % Assumes the JIDT jar is already on the java classpath - you will get a 
 % java classpath error if this is not the case.
 %
-% Unfortunately octave-java doesn't seem to handle the conversion properly,
-%  and we must convert the array from a double array first.
 
 function jIntArray = octaveToJavaIntArray(octaveArray)
 
-	% Convert to a java Double array first - it doesn't seem to work converting elements to integers directly
-	jDoubleArray = octaveToJavaDoubleArray(octaveArray);
-
-	% Then convert this double matrix to an integer matrix
-	mUtils = javaObject('infodynamics.utils.MatrixUtils');
-	jIntArray = mUtils.doubleToIntArray(jDoubleArray);
+	if (exist ('OCTAVE_VERSION', 'builtin'))
+		% We're in octave:
+		% Using 'org.octave.Matrix' is much faster than conversion cell by cell
+		if (length(octaveArray) > 1)
+			% Do this the normal way
+			tmp = javaObject('infodynamics.utils.OctaveMatrix');
+			tmp.loadIntData(octaveArray,[1, length(octaveArray)]);
+			jIntArray = tmp.asIntVector();
+		else
+			% For length 1 arrays, we need to perform a hack here or else
+			%  java thinks the length-one array is a scalar.
+			% I thought I had this work once:
+			%  tmp = javaObject('org.octave.Matrix',[octaveArray,octaveArray] ,[1, 1]);
+			%  jDoubleArray = tmp.asDoubleVector();
+			% but now can't get that to repeat.
+			% So instead we'll do this the slow way (doesn't matter for one element only)
+			jIntArray = javaArray('java.lang.Integer', 1);
+			jIntArray(1) = octaveArray(1);
+		end
+	else
+		% We're in matlab: the native matlab array can be passed to java as is:
+		
+		jIntArray = octaveArray;
+	end
 
 end
 
