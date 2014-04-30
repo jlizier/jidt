@@ -194,12 +194,12 @@ public abstract class MutualInfoMultiVariateCommon implements
 			return;
 		}
 		if (source[0].length != dimensionsSource) {
-			throw new Exception("Number of joint variables in source data " +
-					"does not match the initialised value");
+			throw new Exception(String.format("Number of joint variables in source data %d " +
+					"does not match the initialised value %d", source[0].length, dimensionsSource));
 		}
 		if (destination[0].length != dimensionsDest) {
-			throw new Exception("Number of joint variables in destination data " +
-					"does not match the initialised value");
+			throw new Exception(String.format("Number of joint variables in destination data %d " +
+					"does not match the initialised value %d", destination[0].length, dimensionsDest));
 		}
 		vectorOfSourceObservations.add(source);
 		vectorOfDestinationObservations.add(destination);
