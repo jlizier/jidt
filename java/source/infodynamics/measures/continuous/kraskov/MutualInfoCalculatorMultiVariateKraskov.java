@@ -1,5 +1,7 @@
 package infodynamics.measures.continuous.kraskov;
 
+import java.util.Random;
+
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.measures.continuous.MutualInfoMultiVariateCommon;
 import infodynamics.utils.EuclideanUtils;
@@ -62,7 +64,15 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	public final static String PROP_K = "k";
 	public final static String PROP_NORM_TYPE = "NORM_TYPE";
 	public static final String PROP_NORMALISE = "NORMALISE";
-	private boolean normalise = true;
+	/**
+	 * Property for an amount of random Gaussian noise to be
+	 *  added to the data.
+	 */
+	public static final String PROP_ADD_NOISE = "NOISE_LEVEL_TO_ADD";
+	
+	protected boolean normalise = true;
+	protected boolean addNoise = false;
+	protected double noiseLevel = 0.0;
 
 	public MutualInfoCalculatorMultiVariateKraskov() {
 		super();
@@ -87,6 +97,11 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	 * 		default is {@link EuclideanUtils#NORM_MAX_NORM}.
 	 *  <li>{@link #PROP_NORMALISE} - whether to normalise the individual
 	 *      variables (true by default)</li>
+	 *  <li>{@link #PROP_ADD_NOISE} - an amount of random noise to add to
+	 *       each variable, to avoid having neighbourhoods with artificially
+	 *       large counts. The amount is added in before any normalisation. 
+	 *       (Recommended by Kraskov. MILCA uses 1e-8; but adds in
+	 *       a random amount of noise in [0,noiseLevel) ). Default 0.</li>
 	 * </ul>
 	 * or any properties set in {@link MutualInfoMultiVariateCommon#setProperty(String, String)}.
 	 * 
@@ -101,6 +116,9 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 			normCalculator.setNormToUse(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
 			normalise = Boolean.parseBoolean(propertyValue);
+		} else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
+			addNoise = true;
+			noiseLevel = Double.parseDouble(propertyValue);
 		} else {
 			// No property was set here
 			propertySet = false;
@@ -120,6 +138,21 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	public void finaliseAddObservations() throws Exception {
 		// Allow the parent to generate the data for us first
 		super.finaliseAddObservations();
+		
+		if (addNoise) {
+			Random random = new Random();
+			// Add Gaussian noise of std dev noiseLevel to the data
+			for (int r = 0; r < sourceObservations.length; r++) {
+				for (int c = 0; c < dimensionsSource; c++) {
+					sourceObservations[r][c] +=
+							random.nextGaussian()*noiseLevel;
+				}
+				for (int c = 0; c < dimensionsDest; c++) {
+					destObservations[r][c] +=
+							random.nextGaussian()*noiseLevel;
+				}
+			}
+		}
 		
 		// Then normalise the data if required
 		if (normalise) {
