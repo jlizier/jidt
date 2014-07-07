@@ -19,7 +19,7 @@ As such, here we will only describe use via JPype, though of course you could us
 
 = Using JPype =
 
-The first step is to install JPype. On ubuntu, one simply installs `python-jpype` via the package manager. On other platforms, install as you would other python extensions.
+The first step is to install JPype. On ubuntu, one simply installs `python-jpype` via the ubuntu package manager. On other platforms, install as you would other python extensions.
 
 You can then run your java code fairly simply in python with JPype:
  # Import the relevant packages from jPype, e.g.: `from jpype import *`
