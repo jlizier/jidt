@@ -5,6 +5,8 @@
 
 This demonstration set shows how to compute local information dynamics profiles in (1D) [http://en.wikipedia.org/wiki/Cellular_automaton cellular automata] (CAs).
 
+It is written for Matlab or Octave.
+
 This demonstration set is found at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave%2FCellularAutomata demos/octave/CellularAutomata/] in the svn or full distribution.
 
 = Code design =
