@@ -19,6 +19,70 @@ public class TransferEntropyGaussianTester extends TransferEntropyAbstractTester
 		super.testComputeSignificanceDoesntAlterAverage(teCalc, 100, 2);
 	}
 
+	/**
+	 * Compare to Granger causality values for 2coupledRandomCols-1.txt
+	 *  as computed by modifications to computeGranger.m from 
+	 *  ChaLearn Connectomics Challenge Sample Code
+ 	 *   (http://connectomics.chalearn.org).
+ 	 * The modifications returned log(RSS0/RSS1) in that code to match
+ 	 *  Barnett and Seth's Granger definition which is 2 x TE. 
+	 * 
+	 * @throws Exception
+	 */
+	public void testGConTestData() throws Exception {
+		System.out.println("Testing linear-Gaussian TE against values from " +
+				"(modified) ChaLearn Connectomics Challenge Sample Code");
+		
+		ArrayFileReader afr = new ArrayFileReader("demos/data/2coupledRandomCols-1.txt");
+		double[][] data = afr.getDouble2DMatrix();
+		
+		TransferEntropyCalculatorGaussian teCalc = new TransferEntropyCalculatorGaussian();
+		
+		// Check TE(column 0 -> column 1) against Granger causality result (k,l=1):
+		teCalc.initialise(1);
+		teCalc.setObservations(MatrixUtils.selectColumn(data, 0),
+				MatrixUtils.selectColumn(data, 1));
+		double te = teCalc.computeAverageLocalOfObservations();
+		assertEquals(0.71693/2, te, 0.0001);
+
+		// Check TE(column 1 -> column 0) against Granger causality result  (k,l=1):
+		teCalc.initialise(1);
+		teCalc.setObservations(MatrixUtils.selectColumn(data, 1),
+				MatrixUtils.selectColumn(data, 0));
+		te = teCalc.computeAverageLocalOfObservations();
+		assertEquals(0.01702/2, te, 0.0001);
+
+		// Check TE(column 0 -> column 1) against Granger causality result (k,l=2):
+		teCalc.initialise(2, 1, 2, 1, 1);
+		teCalc.setObservations(MatrixUtils.selectColumn(data, 0),
+				MatrixUtils.selectColumn(data, 1));
+		te = teCalc.computeAverageLocalOfObservations();
+		assertEquals(0.77806/2, te, 0.0001);
+
+		// Check TE(column 1 -> column 0) against Granger causality result (k,l=2):
+		teCalc.initialise(2, 1, 2, 1, 1);
+		teCalc.setObservations(MatrixUtils.selectColumn(data, 1),
+				MatrixUtils.selectColumn(data, 0));
+		te = teCalc.computeAverageLocalOfObservations();
+		assertEquals(0.02407/2, te, 0.0001);
+
+		// Check TE(column 0 -> column 1) against Granger causality result (k,l=3):
+		teCalc.initialise(3, 1, 3, 1, 1);
+		teCalc.setObservations(MatrixUtils.selectColumn(data, 0),
+				MatrixUtils.selectColumn(data, 1));
+		te = teCalc.computeAverageLocalOfObservations();
+		assertEquals(0.79468/2, te, 0.0001);
+
+		// Check TE(column 1 -> column 0) against Granger causality result (k,l=3):
+		teCalc.initialise(3, 1, 3, 1, 1);
+		teCalc.setObservations(MatrixUtils.selectColumn(data, 1),
+				MatrixUtils.selectColumn(data, 0));
+		te = teCalc.computeAverageLocalOfObservations();
+		assertEquals(0.02180/2, te, 0.0001);
+
+		System.out.println("Linear-Gaussian TE validated");
+	}
+	
 	public void testEmbedding() throws Exception {
 		ArrayFileReader afr = new ArrayFileReader("demos/data/2coupledRandomCols-1.txt");
 		double[][] data = afr.getDouble2DMatrix();
