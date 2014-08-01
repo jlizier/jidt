@@ -1264,6 +1264,24 @@ public class MatrixUtils {
 		return column;
 	}
 
+	public static int[] selectColumn(int matrix[][], int columnNo,
+			int startRow, int rows) {
+		int[] column = new int[rows];
+		for (int r = 0; r < rows; r++) {
+			column[r] = matrix[startRow + r][columnNo];
+		}
+		return column;
+	}
+
+	public static byte[] selectColumn(byte matrix[][], int columnNo,
+			int startRow, int rows) {
+		byte[] column = new byte[rows];
+		for (int r = 0; r < rows; r++) {
+			column[r] = matrix[startRow + r][columnNo];
+		}
+		return column;
+	}
+
 	/**
 	 * Extract the required columns from the matrix
 	 * 
@@ -2188,11 +2206,26 @@ public class MatrixUtils {
 		// double max = 0.0;
 		double max = array[startFromIndex];
 		for (int i = startFromIndex; i < array.length; i++) {
+			// TODO Check where we used this and if it's still
+			//  the approach we want to take
 			if (Double.isNaN(max) || (array[i] > max)) {
 				max = array[i];
 			}
 		}
 		return max;
+	}
+
+	public static int maxIndex(double[] array) {
+		// double max = 0.0;
+		double max = array[0];
+		int maxIndex = 0;
+		for (int i = 1; i < array.length; i++) {
+			if (array[i] > max) {
+				max = array[i];
+				maxIndex = i;
+			}
+		}
+		return maxIndex;
 	}
 
 	public static int max(int[] array) {
@@ -2581,6 +2614,7 @@ public class MatrixUtils {
 	 * Sort array and return the original indices of each item in the
 	 * sorted list, such that array[returnValue[k]] is the kth item in the
 	 * sorted list.
+	 * Sorting is done from smallest to largest.
 	 * 
 	 * @param array array of doubles to sort
 	 * @return list of original indices, in the sorted order of the array
@@ -3639,18 +3673,18 @@ public class MatrixUtils {
 	 * Discretizes using even bin sizes
 	 * 
 	 * @param data
-	 * @param base
+	 * @param numBins
 	 * @return
 	 */
-	public static int[] discretise(double data[], int base) {
+	public static int[] discretise(double data[], int numBins) {
 		int[] discretised = new int[data.length];
 		double min = min(data);
 		double max = max(data);
-		double binInterval = (max - min) / base;
+		double binInterval = (max - min) / numBins;
 		
 		for (int t = 0; t < data.length; t++) {
 			discretised[t] = (int) ((data[t] - min) / binInterval);
-			if (discretised[t] == base) {
+			if (discretised[t] == numBins) {
 				// This occurs for the maximum value; put it in the largest bin (base - 1)
 				discretised[t]--;
 			}
@@ -3659,14 +3693,46 @@ public class MatrixUtils {
 	}
 	
 	/**
+	 * Discretizes using a maximum entropy partitioning
+	 * 
+	 * @param data
+	 * @param numBins
+	 * @return
+	 */
+	public static int[] discretiseMaxEntropy(double data[], int numBins){
+		int[] newData = new int[data.length];
+		
+		double[] tempData =  new double[data.length];
+		System.arraycopy(data, 0, tempData, 0, data.length);
+		Arrays.sort(tempData);
+		int compartmentSize;
+		double[] cutOffValues = new double[numBins]; 
+		for(int i=0;i<numBins;i++){
+			compartmentSize = (int)((double)(i+1)*(double)(data.length)/(double)numBins)-1;
+			// System.out.println(compartmentSize);
+			cutOffValues[i]=tempData[compartmentSize];
+		}
+		
+		for (int i=0;i<data.length;i++){				
+			for(int m=0;m<numBins;m++){
+				if (data[i] <= cutOffValues[m]){
+					newData[i] = m;
+					break;
+				}
+			}
+		}
+		return newData;
+	}
+
+	/**
 	 * Discretizes each column of the data independently,
 	 * using a maximum entropy partitioning
 	 * 
 	 * @param data
-	 * @param base
+	 * @param numBins
 	 * @return
 	 */
-	public static int[][] discretiseMaxEntropy(double data[][], int base){
+	public static int[][] discretiseMaxEntropy(double data[][], int numBins){
 		int lastCol = data[0].length;	
 		int lastRow = data.length;
 		int[][] newData = new int[lastRow][lastCol];
@@ -3679,18 +3745,18 @@ public class MatrixUtils {
 			Arrays.sort(tempData);
 
 			int compartmentSize;
-			double[] cutOffValues = new double[base]; 
-			for(int i=0;i<base;i++){
-				compartmentSize = (int)((double)(i+1)*(double)(lastRow)/(double)base)-1;
+			double[] cutOffValues = new double[numBins]; 
+			for(int i=0;i<numBins;i++){
+				compartmentSize = (int)((double)(i+1)*(double)(lastRow)/(double)numBins)-1;
 //				System.out.println(compartmentSize);
 				cutOffValues[i]=tempData[compartmentSize];
 			}
 			
 			for (int i=0;i<lastRow;i++){				
-				for(int m=0;m<base;m++){
+				for(int m=0;m<numBins;m++){
 					if (data[i][j] <= cutOffValues[m]){
 						newData[i][j] = m;
-						m = base;
+						m = numBins;
 					}
 				}
 			}
