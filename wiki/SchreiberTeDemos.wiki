@@ -20,10 +20,12 @@ It is run simply as follows:
 {{{
 teValues = runTentMap();
 }}}
-The script takes 2 - 5 minutes to run (for all coupling strengths and 10 repeat runs).
+The script takes 15 - 30 minutes to run (for all coupling strengths and 10 repeat runs), though you can edit the number of iterates etc to make it run faster.
 
 This script runs the Tent Map, with all parameters as described in the paper, then computes the TE from a discretization of the data.
 
 The script finally plots the TE as a function of the coupling parameter of the Tent Map, as shown here:
 
 <img src="http://lizier.me/joseph/images/jidt/tentMapResultsForWebMatlab.png" height="437"/> 
+
+Note that the line was Schreiber's line of best fit, which may not necessarily be quite the line of best fit from our run.
