@@ -1,4 +1,5 @@
 #summary Demos to recreate Schreiber's original transfer entropy examples
+#labels octave,matlab
 
 WORK IN PROGRESS !!!
 
@@ -12,8 +13,17 @@ It is written for MATLAB or Octave.
 
 This demonstration set is found at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave%2FSchreiberTransferEntropyExamples demos/octave/SchreiberTransferEntropyExamples/] in the svn or full distribution.
 
-== Running it ==
+== 1. Tent Map ==
 
-Individual scripts are available for each separate example:
-  * Blah
-  * Blah 
+The script [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave%2FSchreiberTransferEntropyExamples/runTentMap.m runTentMap.m] recreates Figure 1 from Schreiber's TE paper.
+It is run simply as follows:
+{{{
+teValues = runTentMap();
+}}}
+The script takes 2 - 5 minutes to run (for all coupling strengths and 10 repeat runs).
+
+This script runs the Tent Map, with all parameters as described in the paper, then computes the TE from a discretization of the data.
+
+The script finally plots the TE as a function of the coupling parameter of the Tent Map, as shown here:
+
+<img src="http://lizier.me/joseph/images/jidt/tentMapResultsForWebMatlab.png" height="437"/> 
