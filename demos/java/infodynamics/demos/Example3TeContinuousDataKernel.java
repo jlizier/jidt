@@ -1,5 +1,6 @@
 package infodynamics.demos;
 
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.RandomGenerator;
 import infodynamics.measures.continuous.kernel.TransferEntropyCalculatorKernel;
 
@@ -52,5 +53,11 @@ public class Example3TeContinuousDataKernel {
 		System.out.printf("TE result %.4f bits; expected to be close to " +
 				"0 bits for uncorrelated Gaussians but will be biased upwards\n",
 				result2);
+		
+		// We can get insight into the bias by examining the null distribution:
+		EmpiricalMeasurementDistribution nullDist = teCalc.computeSignificance(100);
+		System.out.printf("Null distribution for unrelated source and destination " +
+				"(i.e. the bias) has mean %.4f and standard deviation %.4f\n",
+				nullDist.getMeanOfDistribution(), nullDist.getStdOfDistribution());
 	}
 }
