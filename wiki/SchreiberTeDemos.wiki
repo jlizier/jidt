@@ -52,4 +52,4 @@ However, if we change the kernel width to 0.3, then we get results which are unc
 
 I have exchanged correspondence with Thomas Schreiber on this, establishing that he in fact added bias correction (as stated in the 2002 Kaiser and Schreiber Physica D paper, though not stated in this paper), though I've found this makes no difference for the 10000 iterates here.
 
-Since we found no other discrepancy, and the match for kernel width of 0.3 is so good, then we conclude that Schreiber in fact used a kernel width of 0.3 for this example. As such, our script sets the kernel width to 0.3.
+Since we found no other discrepancy, and the match for kernel width of 0.3 is so good, then we conclude that Schreiber seems to have used a kernel width of 0.3 for this example. As such, our script sets the kernel width to 0.3.
