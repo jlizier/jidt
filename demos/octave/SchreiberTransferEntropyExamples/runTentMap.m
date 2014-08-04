@@ -7,7 +7,7 @@
 % Used to explore information transfer in the testMap example of Schreiber's paper,
 %  recreating figure 1 in that paper.
 % 
-% The code should take ~5 minutes run time for all repeats and couplings.
+% The code should take 15-30 minutes run time for all repeats and couplings.
 
 function teValues = runTentMap()
 
@@ -20,8 +20,8 @@ function teValues = runTentMap()
 	% Number of cells (M), transients, iterates and number of runs
 	%  used by Schreiber:
 	M = 100;
-	transientLength = 10000;
-	iterates = 10000;
+	transientLength = 100000;
+	iterates = 100000;
 	numberOfRuns = 10;
 	couplings = 0:0.002:0.05;
 
@@ -60,7 +60,7 @@ function teValues = runTentMap()
 			% Add observations for TE across 1 column per time step:
 			teCalc.addObservations(octaveToJavaIntMatrix(binaryValues), 1);
 			teValues(r, couplingIndex) = teCalc.computeAverageLocalOfObservations();
-			% fprintf('teValues(r=%d, coupling=%.3f)=%.4f\n', r, coupling, teValues(r, couplingIndex));
+			fprintf('teValues(r=%d, coupling=%.3f)=%.4f\n', r, coupling, teValues(r, couplingIndex));
 		end
 	end
 
