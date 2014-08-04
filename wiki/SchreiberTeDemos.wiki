@@ -13,6 +13,11 @@ It is written for MATLAB or Octave.
 
 This demonstration set is found at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave%2FSchreiberTransferEntropyExamples demos/octave/SchreiberTransferEntropyExamples/] in the svn or full distribution.
 
+The examples included are:
+ # [#1._Tent_Map Tent Map]
+ # [#2._Ulam_Map Ulam Map]
+ # [#3._Heart-breath_interaction Heart-breath interaction]
+
 == 1. Tent Map ==
 
 The script [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave%2FSchreiberTransferEntropyExamples/runTentMap.m runTentMap.m] recreates Figure 1 from Schreiber's TE paper.
@@ -52,4 +57,26 @@ However, if we change the kernel width to 0.3, then we get results which are unc
 
 I have exchanged correspondence with Thomas Schreiber on this, establishing that he in fact added bias correction (as stated in the 2002 Kaiser and Schreiber Physica D paper, though not stated in this paper), though I've found this makes no difference for the 10000 iterates here.
 
-Since we found no other discrepancy, and the match for kernel width of 0.3 is so good, then we conclude that Schreiber seems to have used a kernel width of 0.3 for this example. As such, our script sets the kernel width to 0.3.
+Since we found no other discrepancy (and our kernel estimator is clearly working as per example 3 below), and the match for kernel width of 0.3 is so good, then we conclude that Schreiber seems to have used a kernel width of 0.3 for this example. As such, our script sets the kernel width to 0.3.
+
+== 3. Heart-breath interaction ==
+
+The script [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave%2FSchreiberTransferEntropyExamples/runHeartBreathRateKernel.m runHeartBreathRateKernel.m] recreates Figure 4 from Schreiber's TE paper.
+It is run simply as follows:
+{{{
+[teHeartToBreath, teBreathToHeart] = runHeartBreathRateKernel();
+}}}
+This script loads the heart-breath data, then computes TE using box-kernel estimation for a range of kernel widths.
+
+A number of crucial details were not made explicit in Schreiber's original paper:
+ # The individual variables were *normalised* to mean 0 and unit variance. Schreiber doesn't explicitly say this is done for TE, but it is done for the raw data plots in Figure 3. We do this by setting the TE calculator's property `'NORMALISE'` to `true`.
+ # *Dynamic correlation exclusion* within 100 time points was used; although Schreiber does not state this for example 3, it is stated for example 2 that "Neighbors closer in time than 100 iterates were excluded from the kernel estimation" and we validate that this is the case here also. We do this by setting the TE calculator's property `'DYN_CORR_EXCL'` to `'100'`.
+ # The estimates were *bias corrected* using the approximation log_e(x) ~ digamma(x). Again, this is not stated in the paper, but in correspondence with Schreiber he confirmed that it was done for example 2, and we validate that it is the case here also. We do this by calling the method `computeAverageLocalOfObservationsWithCorrection()` intead of `computeAverageLocalOfObservations()`. Note that we implement bias correction via a separate method rather than by setting a property since we do not wish to make it a proper option here. This is because it is not recommended to use the bias corrected method, since it is not clear how the corrections cancel (see Kaiser and Schreiber, 2002, section 5.2.3.1. It is done properly by the later Kraskov estimator.
+
+The script as it is take a couple of seconds to run.
+
+The script plots the TE as a function of the kernel width, as shown here:
+
+[https://information-dynamics-toolkit.googlecode.com/svn/trunk/demos/octave/SchreiberTransferEntropyExamples/sampleResults/heartBreathResults-kernel.png] 
+
+Note the strong match to Schreiber's figure 3 (which we have recreated here by extraction from his plot, see file SchreiberExample3.txt).
