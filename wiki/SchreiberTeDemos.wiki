@@ -20,12 +20,36 @@ It is run simply as follows:
 {{{
 teValues = runTentMap();
 }}}
-The script takes 15 - 30 minutes to run (for all coupling strengths and 10 repeat runs), though you can edit the number of iterates etc to make it run faster.
-
 This script runs the Tent Map, with all parameters as described in the paper, then computes the TE from a discretization of the data.
+The script as it is takes 15 - 30 minutes to run (for all coupling strengths and 10 repeat runs), though you can edit the number of iterates etc to make it run faster (e.g. using 10000 iterates instead of 100000 runs ~10x faster and gives comparable results).
 
 The script finally plots the TE as a function of the coupling parameter of the Tent Map, as shown here:
 
-<img src="http://lizier.me/joseph/images/jidt/tentMapResultsForWebMatlab.png" height="437"/> 
+[https://information-dynamics-toolkit.googlecode.com/svn/trunk/demos/octave/SchreiberTransferEntropyExamples/sampleResults/tentMapResultsForWebMatlab.png] 
 
 Note that the line was Schreiber's line of best fit, which may not necessarily be quite the line of best fit from our run.
+
+== 2. Ulam Map ==
+
+The script [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave%2FSchreiberTransferEntropyExamples/runUlamMap.m runUlamMap.m] recreates Figure 2 from Schreiber's TE paper.
+It is run simply as follows:
+{{{
+[teValues1to2, teValues2to1] = runUlamMap();
+}}}
+This script runs the Ulam Map, with all parameters as described in the paper (subject to comments below), then computes the TE using a kernel estimator.
+The script as it is takes 5-10 minutes to run (for all coupling strengths), though you can edit the number of iterates or coupling strength step to make it run faster.
+The script finally plots the TE as a function of the coupling parameter of the Ulam Map.
+
+Now, if we use the parameters exactly as stated in Schreiber's paper (with kernel width of 0.2) then we get the following result:
+
+[https://information-dynamics-toolkit.googlecode.com/svn/trunk/demos/octave/SchreiberTransferEntropyExamples/sampleResults/ulamMapResults-noNorm-dynExc100-r0.2.png]
+
+where the TE(1->2) is clearly larger than Schreiber's results (which we have recreated here by extraction from his plot, see file [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave%2FSchreiberTransferEntropyExamples/SchreiberExample2.txt SchreiberExample2.txt]).
+
+However, if we change the kernel width to 0.3, then we get results which are uncannily similar to Schreiber's:
+
+[https://information-dynamics-toolkit.googlecode.com/svn/trunk/demos/octave/SchreiberTransferEntropyExamples/sampleResults/ulamMapResults-noNorm-dynExc100-r0.3.png]
+
+I have exchanged correspondence with Thomas Schreiber on this, establishing that he in fact added bias correction (as stated in the 2002 Kaiser and Schreiber Physica D paper, though not stated in this paper), though I've found this makes no difference for the 10000 iterates here.
+
+Since we found no other discrepancy, and the match for kernel width of 0.3 is so good, then we conclude that Schreiber in fact used a kernel width of 0.3 for this example. As such, our script sets the kernel width to 0.3.
