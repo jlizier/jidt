@@ -7,24 +7,24 @@ import infodynamics.utils.RandomGenerator;
 
 
 /**
- * <p>Implements <i>complete</i> transfer entropy,
- * and <i>local complete</i> transfer entropy (see Lizier et al, PRE, 2008).
- * Complete transfer entropy is the transfer entropy <i>conditioned</i> on <i>all</i> causal information
- *  contributors to the destination.
- * This class can of course be used for any general <i>conditional</i> transfer entropy 
- *  (see Lizier et al, Chaos 2010) by only supplying a limited
- *  number of sources in the array of other variables to be 
- *  conditioned on.
- * The causal information contributors (specified using either their
+ * <p>Implements <i>conditional</i> transfer entropy,
+ * and <i>local conditional</i> transfer entropy
+ * (see Lizier et al., PRE, 2008, and Lizier et al., Chaos, 2010).
+ * This class can be used for to compute <i>complete</i> transfer entropy 
+ *  (see Lizier et al, PRE, 2008) which conditions on <b>all</b> 
+ *  other causal information contributors to the destination.</p>
+ *  
+ * <p>Specifically, this implements the complete transfer entropy for 
+ * <i>discrete</i>-valued variables.</p>
+ *
+ * <p>
+ * The conditional sources (specified using either their
  *  offsets from the destination variable or their absolute column numbers
  *  in the multivariate data set)
  *  should be supplied in the same order in every method call, otherwise the answer supplied will
  *  be incorrect.
  * </p>
  * 
- * <p>Specifically, this implements the complete transfer entropy for 
- * <i>discrete</i>-valued variables.</p>
- *
  * <p>Ideally, this class would extend ContextOfPastMeasure, however
  *  by conditioning on other info contributors, we need to alter
  *  the arrays pastCount and nextPastCount to consider all
@@ -73,7 +73,7 @@ import infodynamics.utils.RandomGenerator;
  * TODO Add methods for passing in single time series
  *
  */
-public class CompleteTransferEntropyCalculator extends InfoMeasureCalculator {
+public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator {
 
 	protected int k = 0; // history length k.
 	protected int base_power_k = 0;
@@ -101,10 +101,10 @@ public class CompleteTransferEntropyCalculator extends InfoMeasureCalculator {
 	 * 
 	 * @return
 	 */
-	public static CompleteTransferEntropyCalculator
+	public static ConditionalTransferEntropyCalculator
 		newInstance(int base, int history, int numOtherInfoContributors) {
 		
-		return new CompleteTransferEntropyCalculator
+		return new ConditionalTransferEntropyCalculator
 					(base, history, numOtherInfoContributors);
 		
 		// Old code for an attempted optimisation:
@@ -128,7 +128,7 @@ public class CompleteTransferEntropyCalculator extends InfoMeasureCalculator {
 	 *   (other than the past of the destination, if history < 1,
 	 *   of the source) to condition on.
 	 */
-	public CompleteTransferEntropyCalculator
+	public ConditionalTransferEntropyCalculator
 		(int base, int history, int numOtherInfoContributors) {
 
 		super(base);
@@ -554,7 +554,7 @@ public class CompleteTransferEntropyCalculator extends InfoMeasureCalculator {
 		// (Not necessary to check for distinct random perturbations)
 		int[][] newOrderings = rg.generateRandomPerturbations(observations, numPermutationsToCheck);
 
-		CompleteTransferEntropyCalculator cte = newInstance(base, k, numOtherInfoContributors);
+		ConditionalTransferEntropyCalculator cte = newInstance(base, k, numOtherInfoContributors);
 		cte.initialise();
 		cte.observations = observations;
 		cte.pastOthersCount = pastOthersCount;

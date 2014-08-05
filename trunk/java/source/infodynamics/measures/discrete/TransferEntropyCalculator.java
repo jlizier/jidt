@@ -14,14 +14,15 @@ import infodynamics.utils.RandomGenerator;
  *  We use the term <i>apparent</i> transfer entropy to mean that
  *  we compute the transfer that appears to come from a single
  *  source variable, without examining any other potential sources
- *  (see Lizier et al, PRE, 2008).</p>
+ *  (see Lizier et al, PRE, 2008). This is also known as <i>pairwise</i>
+ *  transfer entropy.</p>
  * 
  * <p>Specifically, this implements the transfer entropy for 
  * <i>discrete</i>-valued variables.</p>
  * 
  * <p>Usage:
  * <ol>
- * 	<li>Construct: {@link #ApparentTransferEntropyCalculator(int, int)}</li>
+ * 	<li>Construct: {@link #TransferEntropyCalculator(int, int)}</li>
  * 	<li>Initialise: {@link #initialise()}</li>
  *  <li>Either:
  *  	<ol>
