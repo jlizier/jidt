@@ -3,7 +3,7 @@ package infodynamics.measures.discrete;
 import infodynamics.utils.RandomGenerator;
 import junit.framework.TestCase;
 
-public class ApparentTransferEntropyTester extends TestCase {
+public class TransferEntropyTester extends TestCase {
 
 	protected RandomGenerator rand = new RandomGenerator();
 
