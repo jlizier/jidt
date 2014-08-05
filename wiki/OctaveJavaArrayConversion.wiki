@@ -26,15 +26,24 @@ These scripts are available at [http://code.google.com/p/information-dynamics-to
  * [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/octaveToJavaIntMatrix.m octaveToJavaIntMatrix.m]- convert native octave matrix to a java int[][] matrix
  * [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/javaMatrixToOctave.m javaMatrixToOctave.m] - convert a java array or matrix (either int or double) to a native octave matrix
 
-See example use in [OctaveMatlabExamples#Example_2_-_Transfer_entropy_on_multidimensional_binary_data OctaveMatlabExamples-Example_2]). 
+See example use in [OctaveMatlabExamples#Example_2_-_Transfer_entropy_on_multidimensional_binary_data OctaveMatlabExamples-Example_2]. 
 
-The conversion is performed using the {{{org.octave.Matrix}}} class (distributed and installed with the octave-java package) - if you examine the source code of [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/octaveToJavaDoubleArray.m octaveToJavaDoubleArray.m] or [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/octaveToJavaDoubleMatrix.m octaveToJavaDoubleMatrix.m] you will see that we simply create a {{{org.octave.Matrix}}} object from the octave matrix, telling it the dimensions of that matrix, then extract the Java array object of the required type.
+The conversion is performed using the `infodynamics.utils.OctaveMatrix` class (which extends the `org.octave.Matrix` class that is distributed and installed with the octave-java package).
+We extended `org.octave.Matrix` so that we had access to new conversion routines for int data.
+If you examine the source code of [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/octaveToJavaDoubleArray.m octaveToJavaDoubleArray.m] or [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/octaveToJavaDoubleMatrix.m octaveToJavaDoubleMatrix.m] you will see that we simply create a {{{infodynamics.utils.OctaveMatrix}}} object from the octave matrix, telling it the dimensions of that matrix, then extract the Java array object of the required type.
 
-The {{{org.octave.Matrix}}} conversion doesn't work for java {{{int[]}}} or {{{int[][]}}} however; our solution in  [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/octaveToJavaIntArray.m octaveToJavaIntArray.m] and [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/octaveToJavaIntMatrix.m octaveToJavaIntMatrix.m] is to convert to {{{double[]}}} or {{{double[][]}}} first, then call our [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/java/source/infodynamics/utils/MatrixUtils.java MatrixUtils].doubleToIntArray() functions to convert the Java arrays internally.
+The _reverse_ conversion is performed with the `javaMatrixToOctave` script, which uses the {{{java_convert_matrix}}} feature (to automatically convert {{{org.octave.Matrix}}} to octave native types).
 
-The reverse conversion is performed using the {{{java_convert_matrix}}} feature (to automatically convert {{{org.octave.Matrix}}} to octave native types).
+In Matlab, matrices are converted back and forth to java format automatically. To ensure that your code can be used in either Matlab or Octave, you can call our conversion scripts - they will work in either Matlab or Octave: in Matlab, they simply return the matrix that was passed in.
 
-In Matlab, matrices are converted back and forth to java format automatically. To ensure that your code can be used in either Matlab or Octave, you can call our conversion scripts - they will work in either Matlab or Octave: in Matlab, they simply return the matrix that was passed in,
+= Caveats =
+
+Note that there are still some arrays that Octave will not recognise even with this conversion, e.g. see `sourceArray=(rand(100,1)>0.5)*1;` in [OctaveMatlabExamples#Example_1_-_Transfer_entropy_on_binary_data OctaveMatlabExamples-Example_1]. This line contains a `*1` to convert the Boolean(?) array into something that Octave will recognise as an integer array -- without the `*1` the line will not work, even if we wrap it in a `octaveToJavaIntArray` conversion.
+More information is provided by looking at the output of:
+{{{
+javaMethod('get', 'java.lang.reflect.Array', (rand(100,1)>0.5), 1);
+}}}
+which gives the error `java.lang.IllegalArgumentException: Argument is not an array`, whereas if one adds the `*1` then this error does not occur. It seems that Octave simply does not recognise `rand(100,1)>0.5)` as any type of array, though it is unclear why.
 
 = Links =
 
