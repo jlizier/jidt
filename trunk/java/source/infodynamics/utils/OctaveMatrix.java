@@ -9,6 +9,8 @@ occasions).
 This class is only used when the toolkit is called from
 octave, to convert between octave native types and java arrays
 
+The original copyright notice is as follows:
+
 Copyright (C) 2007 Michael Goffioul
 
 This file is part of Octave.
@@ -91,6 +93,39 @@ public class OctaveMatrix
   {
     this.dims = dims;
     this.data = ByteBuffer.wrap(data);
+  }
+
+  /**
+   * Need to have method signature for int or octave can't match it
+   * 
+   * @param data
+   * @param dims
+   */
+  public void loadByteData (int[] data, int[] dims)
+  {
+	this.dims = dims;
+	byte[] byteData = new byte[data.length];
+	for (int i = 0; i < data.length; i++) {
+		byteData[i] = (byte) data[i];
+	}
+    this.data = ByteBuffer.wrap(byteData);
+  }
+
+  /**
+   * Need to have a method signature for boolean in case
+   * Octave thinks it has got Boolean data.
+   * 
+   * @param data array of booleans
+   * @param dims array of true dimensions of the data
+   */
+  public void loadIntData (boolean[] data, int[] dims)
+  {
+    this.dims = dims;
+	int[] intData = new int[data.length];
+	for (int i = 0; i < data.length; i++) {
+		intData[i] = data[i] ? 1 : 0;
+	}
+    this.data = IntBuffer.wrap(intData);
   }
 
   public void loadIntData (int[] data, int[] dims)
@@ -324,6 +359,41 @@ public class OctaveMatrix
       }
     else
       System.out.println ("Warning: invalid conversion to integer matrix");
+
+    return null;
+  }
+
+  public byte[] asByteVector ()
+  {
+    if (data instanceof ByteBuffer)
+      return toByte ();
+    else
+      System.out.println ("Warning: invalid conversion to byte vector");
+    return null;
+  }
+
+  public byte[][] asByteMatrix ()
+  {
+    if (cache != null)
+      {
+        try { return (byte[][])cache; }
+        catch (ClassCastException e) { }
+      }
+
+    if (data instanceof ByteBuffer && dims.length == 2)
+      {
+        byte[][] m = new byte[dims[0]][dims[1]];
+        byte[] data = ((ByteBuffer)this.data).array ();
+        int idx = 0;
+        if (data.length > 0)
+          for (int j = 0; j < m[0].length; j++)
+            for (int i = 0; i < m.length; i++)
+              m[i][j] = data[idx++];
+        cache = m;
+        return m;
+      }
+    else
+      System.out.println ("Warning: invalid conversion to byte matrix");
 
     return null;
   }
