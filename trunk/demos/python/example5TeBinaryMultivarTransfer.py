@@ -28,13 +28,13 @@ teCalc.initialise()
 # We need to construct the joint values of the dest and source before we pass them in,
 #  and need to use the matrix conversion routine when calling from Matlab/Octave:
 mUtils= JPackage('infodynamics.utils').MatrixUtils
-teCalc.addObservations(mUtils.computeCombinedValues(destArray, 2), \
-		mUtils.computeCombinedValues(sourceArray, 2))
+teCalc.addObservations(mUtils.computeCombinedValues(sourceArray, 2), \
+		mUtils.computeCombinedValues(destArray, 2))
 result = teCalc.computeAverageLocalOfObservations()
 print('For source which the 2 bits are determined from, result should be close to 2 bits : %.3f' % result)
 teCalc.initialise()
-teCalc.addObservations(mUtils.computeCombinedValues(destArray, 2), \
-		mUtils.computeCombinedValues(sourceArray2, 2))
+teCalc.addObservations(mUtils.computeCombinedValues(sourceArray2, 2), \
+		mUtils.computeCombinedValues(destArray, 2))
 result2 = teCalc.computeAverageLocalOfObservations()
 print('For random source, result should be close to 0 bits in theory: %.3f' % result2)
 print('The result for random source is inflated towards 0.3 due to finite observation length (%d). One can verify that the answer is consistent with that from a random source by checking: teCalc.computeSignificance(1000); ans.pValue\n' % teCalc.getNumObservations())
