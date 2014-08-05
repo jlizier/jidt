@@ -96,9 +96,9 @@ function [aisHeart, aisBreath] = activeInfoStorageHeartBreathRatesKraskov(kHisto
 	fprintf('Total runtime was %.1f sec\n', totaltime);
 	
 	hold off;
-	plot(kHistories, aisHeart, 'rx');
+	plot(kHistories, aisHeart, 'rx', 'markersize', 10);
 	hold on;
-	plot(kHistories, aisBreath, 'bo');
+	plot(kHistories, aisBreath, 'bo', 'markersize', 10);
 	hold off;
 	legend(['AIS(Heart) '; 'AIS(Breath)'])
 	set (gca,'fontsize',26);
