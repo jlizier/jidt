@@ -13,21 +13,26 @@
 % - kHistory - destination embedding length
 % - lHistory - source embedding length
 % - knns - a scalar specifying a single, or vector specifying multiple, value of K nearest neighbours to evaluate TE (Kraskov) with
+% - numSurrogates - a scalar specifying the number of surrogates to evaluate AIS from null distribution
 % Outputs
 % - teHeartToBreath - TE (heart -> breath) for each value of k nearest neighbours
 % - teBreathToHeart - TE (breath -> heart) for each value of k nearest neighbours
 
 
-function [teHeartToBreath, teBreathToHeart] = runHeartBreathRateKraskov(kHistory, lHistory, knns)
+function [teHeartToBreath, teBreathToHeart] = runHeartBreathRateKraskov(kHistory, lHistory, knns, numSurrogates)
 
 	starttime = tic;
 	
 	% Add utilities to the path
 	addpath('..');
 
-	% Assumes the jar is two levels up - change this if this is not the case
+	% Assumes the jar is three levels up - change this if this is not the case
 	% Octave is happy to have the path added multiple times; I'm unsure if this is true for matlab
 	javaaddpath('../../../infodynamics.jar');
+
+	if (nargin < 4)
+		numSurrogates = 0;
+	end
 
 	data = load('../../data/SFI-heartRate_breathVol_bloodOx.txt');
 	
@@ -55,6 +60,11 @@ function [teHeartToBreath, teBreathToHeart] = runHeartBreathRateKraskov(kHistory
 		teCalc.setObservations(octaveToJavaDoubleArray(heart), ...
 					octaveToJavaDoubleArray(chestVol));
 		teHeartToBreath(knnIndex) = teCalc.computeAverageLocalOfObservations();
+		if (numSurrogates > 0)
+			teHeartToBreathNullDist = teCalc.computeSignificance(numSurrogates);
+			teHeartToBreathNullMean = teHeartToBreathNullDist.getMeanOfDistribution();
+			teHeartToBreathNullStd = teHeartToBreathNullDist.getStdOfDistribution();
+		end
 		
 		% Perform calculation for breath -> heart (lag 1)
 		teCalc.initialise(kHistory,1,lHistory,1,1);
@@ -62,13 +72,28 @@ function [teHeartToBreath, teBreathToHeart] = runHeartBreathRateKraskov(kHistory
 		teCalc.setObservations(octaveToJavaDoubleArray(chestVol), ...
 					octaveToJavaDoubleArray(heart));
 		teBreathToHeart(knnIndex) = teCalc.computeAverageLocalOfObservations();
+		if (numSurrogates > 0)
+			teBreathToHeartNullDist = teCalc.computeSignificance(numSurrogates);
+			teBreathToHeartNullMean = teBreathToHeartNullDist.getMeanOfDistribution();
+			teBreathToHeartNullStd = teBreathToHeartNullDist.getStdOfDistribution();
+		end
 		
-		fprintf('TE(k=%d): heart->breath = %.3f, breath->heart = %.3f nats\n', knn, teHeartToBreath(knnIndex), teBreathToHeart(knnIndex));
+		fprintf('TE(k=%d,l=%d,knn=%d): h->b = %.3f', kHistory, lHistory, knn, teHeartToBreath(knnIndex));
+		if (numSurrogates > 0)
+			fprintf(' (null = %.3f +/- %.3f)', teHeartToBreathNullMean, teHeartToBreathNullStd);
+		end
+		fprintf(', b->h = %.3f nats', teBreathToHeart(knnIndex));
+		if (numSurrogates > 0)
+			fprintf('(null = %.3f +/- %.3f)\n', teBreathToHeartNullMean, teBreathToHeartNullStd);
+		else
+			fprintf('\n');
+		end
 	end
 		
 	tElapsed = toc(starttime);
 	fprintf('Total runtime was %.1f sec\n', tElapsed);
 	
+	hold off;
 	plot(knns, teHeartToBreath, 'rx', 'markersize', 10);
 	hold on;
 	plot(knns, teBreathToHeart, 'mo', 'markersize', 10);
@@ -77,6 +102,6 @@ function [teHeartToBreath, teBreathToHeart] = runHeartBreathRateKraskov(kHistory
 	set (gca,'fontsize',26);
 	xlabel('K nearest neighbours', 'FontSize', 44, 'FontWeight', 'bold');
 	ylabel('TE', 'FontSize', 44, 'FontWeight', 'bold');
-	print('results.eps', '-deps', '-color');
+	% print('results.eps', '-deps', '-color');
 end
 
