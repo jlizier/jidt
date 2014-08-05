@@ -1,5 +1,8 @@
 package infodynamics.measures.discrete;
 
+import infodynamics.utils.AnalyticMeasurementDistribution;
+import infodynamics.utils.AnalyticNullDistributionComputer;
+import infodynamics.utils.ChiSquareMeasurementDistribution;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
@@ -56,7 +59,7 @@ import infodynamics.utils.RandomGenerator;
  *
  */
 public class ApparentTransferEntropyCalculator extends ContextOfPastMeasureCalculator 
-	implements ChannelCalculator {
+	implements ChannelCalculator, AnalyticNullDistributionComputer {
 
 	protected int[][][] sourceNextPastCount = null;	// count for (source[n],dest[n+1],dest[n]^k) tuples
 	protected int[][] sourcePastCount = null;			// count for (source[n],dest[n]^k) tuples
@@ -89,6 +92,11 @@ public class ApparentTransferEntropyCalculator extends ContextOfPastMeasureCalcu
 	 *  (needs to account for an embedding in the previous steps)
 	 */
 	protected int startObservationTime = 1;
+	
+	/**
+	 * Tracks whether the measure has been computed since the last initialisation
+	 */
+	protected boolean estimateComputed = false;
 	
 	/**
 	 * User was formerly forced to create new instances through this factory method.
@@ -188,6 +196,7 @@ public class ApparentTransferEntropyCalculator extends ContextOfPastMeasureCalcu
 	 */
 	public void initialise(){
 		super.initialise();
+		estimateComputed = false;
 		
 		MatrixUtils.fill(sourceNextPastCount, 0);
 		MatrixUtils.fill(sourcePastCount, 0);
@@ -850,6 +859,7 @@ public class ApparentTransferEntropyCalculator extends ContextOfPastMeasureCalcu
 		
 		average = te;
 		std = Math.sqrt(meanSqLocals - average * average);
+		estimateComputed = true;
 		return te;
 	}
 	
@@ -992,6 +1002,16 @@ public class ApparentTransferEntropyCalculator extends ContextOfPastMeasureCalcu
 		return measDistribution;
 	}
 	
+	@Override
+	public AnalyticMeasurementDistribution computeSignificance()
+			throws Exception {
+		if (!estimateComputed) {
+			computeAverageLocalOfObservations();
+		}
+		return new ChiSquareMeasurementDistribution(2.0*((double)observations)*average,
+				(sourceHistoryEmbedLength*base - 1)*(base - 1)*(k*base));
+	}
+
 	/**
 	 * Computes local transfer entropy for the given values
 	 *  
