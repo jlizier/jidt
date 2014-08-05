@@ -1,4 +1,4 @@
-% function [teHeartToBreath, teBreathToHeart] = runHeartBreathRateKraskov(knns)
+% function [teHeartToBreath, teBreathToHeart] = runHeartBreathRateKraskov(kHistory, lHistory, knns, numSurrogates)
 %
 % runHeartBreathRateKraskov
 % Version 1.0
@@ -12,8 +12,8 @@
 % Inputs
 % - kHistory - destination embedding length
 % - lHistory - source embedding length
-% - knns - a scalar specifying a single, or vector specifying multiple, value of K nearest neighbours to evaluate TE (Kraskov) with
-% - numSurrogates - a scalar specifying the number of surrogates to evaluate AIS from null distribution
+% - knns - a scalar specifying a single, or vector specifying multiple, value of K nearest neighbours to evaluate TE (Kraskov) with.
+% - numSurrogates - a scalar specifying the number of surrogates to evaluate TE from null distribution
 % Outputs
 % - teHeartToBreath - TE (heart -> breath) for each value of k nearest neighbours
 % - teBreathToHeart - TE (breath -> heart) for each value of k nearest neighbours
@@ -21,7 +21,7 @@
 
 function [teHeartToBreath, teBreathToHeart] = runHeartBreathRateKraskov(kHistory, lHistory, knns, numSurrogates)
 
-	starttime = tic;
+	tic;
 	
 	% Add utilities to the path
 	addpath('..');
@@ -90,7 +90,7 @@ function [teHeartToBreath, teBreathToHeart] = runHeartBreathRateKraskov(kHistory
 		end
 	end
 		
-	tElapsed = toc(starttime);
+	tElapsed = toc;
 	fprintf('Total runtime was %.1f sec\n', tElapsed);
 	
 	hold off;
@@ -100,8 +100,8 @@ function [teHeartToBreath, teBreathToHeart] = runHeartBreathRateKraskov(kHistory
 	hold off;
 	legend(['TE(heart->breath)'; 'TE(breath->heart)']);
 	set (gca,'fontsize',26);
-	xlabel('K nearest neighbours', 'FontSize', 44, 'FontWeight', 'bold');
-	ylabel('TE', 'FontSize', 44, 'FontWeight', 'bold');
-	% print('results.eps', '-deps', '-color');
+	xlabel('K nearest neighbours', 'FontSize', 36, 'FontWeight', 'bold');
+	ylabel('TE', 'FontSize', 36, 'FontWeight', 'bold');
+	print('heartBreathResults-kraskovTE.eps', '-depsc');
 end
 
