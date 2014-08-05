@@ -41,11 +41,11 @@ int[] sourceArray2 = rg.generateRandomInts(arrayLengths, 2);
 TransferEntropyCalculator teCalc=
 		new TransferEntropyCalculator(2, 1);
 teCalc.initialise();
-teCalc.addObservations(destArray, sourceArray);
+teCalc.addObservations(sourceArray, destArray);
 double result = teCalc.computeAverageLocalOfObservations();
 System.out.printf("For copied source, result should be close to 1 bit : %.3f bits\n", result);
 teCalc.initialise();
-teCalc.addObservations(destArray, sourceArray2);
+teCalc.addObservations(sourceArray2, destArray);
 double result2 = teCalc.computeAverageLocalOfObservations();
 System.out.printf("For random source, result should be close to 0 bits: %.3f bits\n", result2);
 }}}
@@ -226,8 +226,8 @@ TransferEntropyCalculator teCalc=
 teCalc.initialise();
 
 // We need to construct the joint values of the dest and source before we pass them in:
-teCalc.addObservations(MatrixUtils.computeCombinedValues(destArray, 2),
-		MatrixUtils.computeCombinedValues(sourceArray, 2));
+teCalc.addObservations(MatrixUtils.computeCombinedValues(sourceArray, 2),
+		MatrixUtils.computeCombinedValues(destArray, 2));
 
 double result = teCalc.computeAverageLocalOfObservations();
 System.out.printf("For source which the 2 bits are determined from, " +
@@ -235,8 +235,8 @@ System.out.printf("For source which the 2 bits are determined from, " +
 
 // Check random source:
 teCalc.initialise();
-teCalc.addObservations(MatrixUtils.computeCombinedValues(destArray, 2),
-		MatrixUtils.computeCombinedValues(sourceArray2, 2));
+teCalc.addObservations(MatrixUtils.computeCombinedValues(sourceArray2, 2),
+		MatrixUtils.computeCombinedValues(destArray, 2));
 double result2 = teCalc.computeAverageLocalOfObservations();
 System.out.printf("For random source, result should be close to 0 bits " +
 		"in theory: %.3f\n", result2);
@@ -403,7 +403,7 @@ int[] binnedDest = MatrixUtils.discretise(destArray, numDiscreteLevels);
 TransferEntropyCalculator teCalc =
     new TransferEntropyCalculator(numDiscreteLevels, 1);
 teCalc.initialise();
-teCalc.addObservations(binnedDest, binnedSource);
+teCalc.addObservations(binnedSource, binnedDest);
 double result = teCalc.computeAverageLocalOfObservations();
 // Calculation will be heavily biased because of the binning,
 //  and the small number of samples
