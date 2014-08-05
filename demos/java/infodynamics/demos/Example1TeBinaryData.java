@@ -33,11 +33,11 @@ public class Example1TeBinaryData {
 		TransferEntropyCalculator teCalc=
 				new TransferEntropyCalculator(2, 1);
 		teCalc.initialise();
-		teCalc.addObservations(destArray, sourceArray);
+		teCalc.addObservations(sourceArray, destArray);
 		double result = teCalc.computeAverageLocalOfObservations();
 		System.out.printf("For copied source, result should be close to 1 bit : %.3f bits\n", result);
 		teCalc.initialise();
-		teCalc.addObservations(destArray, sourceArray2);
+		teCalc.addObservations(sourceArray2, destArray);
 		double result2 = teCalc.computeAverageLocalOfObservations();
 		System.out.printf("For random source, result should be close to 0 bits: %.3f bits\n", result2);
 	}
