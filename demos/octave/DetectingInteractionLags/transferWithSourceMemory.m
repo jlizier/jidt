@@ -84,7 +84,7 @@ function transferWithSourceMemory(savePlot)
 		teXnminus1ToYnplus1(deltaIndex) = teCalc.computeAverageLocalOfObservations();
 		
 		% Compute MITs
-		compTeCalc = javaObject('infodynamics.measures.discrete.CompleteTransferEntropyCalculator', 4, 1, 1);
+		compTeCalc = javaObject('infodynamics.measures.discrete.ConditionalTransferEntropyCalculator', 4, 1, 1);
 		compTeCalc.initialise();
 		% We need to additionally condition on the past of X:
 		compTeCalc.addObservations(octaveToJavaIntMatrix([y(2:length(y)), x(2:length(x)), x(1:length(x)-1)]), ...
