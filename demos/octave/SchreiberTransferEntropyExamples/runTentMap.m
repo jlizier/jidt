@@ -28,7 +28,7 @@ function teValues = runTentMap()
 	tic;
 	
 	% Construct for binary values, k=1 history length
-	teCalc=javaObject('infodynamics.measures.discrete.ApparentTransferEntropyCalculator', 2, 1);
+	teCalc=javaObject('infodynamics.measures.discrete.TransferEntropyCalculator', 2, 1);
 	
 	teValues = zeros(numberOfRuns, length(couplings));
 	for couplingIndex = 1:length(couplings)

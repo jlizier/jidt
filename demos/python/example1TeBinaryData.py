@@ -16,7 +16,7 @@ destArray = [0] + sourceArray[0:99];
 sourceArray2 = [random.randint(0,1) for r in xrange(100)]
 
 # Create a TE calculator and run it:
-teCalcClass = JPackage("infodynamics.measures.discrete").ApparentTransferEntropyCalculator
+teCalcClass = JPackage("infodynamics.measures.discrete").TransferEntropyCalculator
 teCalc = teCalcClass(2,1)
 teCalc.initialise()
 # Since we have simple arrays of ints, we can directly pass these in:

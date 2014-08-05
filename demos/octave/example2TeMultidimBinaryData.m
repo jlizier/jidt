@@ -22,7 +22,7 @@ twoDTimeSeriesOctave(2, :) = [twoDTimeSeriesOctave(1,100), twoDTimeSeriesOctave(
 twoDTimeSeriesJavaInt = octaveToJavaIntMatrix(twoDTimeSeriesOctave);
 
 % Create a TE calculator and run it:
-teCalc=javaObject('infodynamics.measures.discrete.ApparentTransferEntropyCalculator', 2, 1);
+teCalc=javaObject('infodynamics.measures.discrete.TransferEntropyCalculator', 2, 1);
 teCalc.initialise();
 % Add observations of transfer across one cell to the right per time step:
 teCalc.addObservations(twoDTimeSeriesJavaInt, 1);

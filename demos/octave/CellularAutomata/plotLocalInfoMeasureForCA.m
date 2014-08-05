@@ -14,7 +14,7 @@
 % - timeSteps - number of rows to execute the CA for (including the random initial row)
 % - measureId - which local info dynamics measure to plot - can be a string or an integer as follows:
 %    - 'active', 0 - active information storage (requires measureParams.k)
-%    - 'transfer', 1 - apparent transfer entropy (requires measureParams.k and j)
+%    - 'transfer', 1 - pairwise or apparent transfer entropy (requires measureParams.k and j)
 %    - 'transfercomplete', 2 - complete transfer entropy (requires measureParams.k and j)
 %    - 'separable', 3 - separable information (requires measureParams.k)
 %    - 'entropy', 4 - excess entropy (requires no params)
@@ -154,7 +154,7 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 		if (measureParams.j == 0)
 			error('Cannot compute transfer entropy from a cell to itself (setting measureParams.j == 0)');
 		end
-		transferCalc = javaObject('infodynamics.measures.discrete.ApparentTransferEntropyCalculator', base, measureParams.k);
+		transferCalc = javaObject('infodynamics.measures.discrete.TransferEntropyCalculator', base, measureParams.k);
 		transferCalc.initialise();
 		transferCalc.addObservations(caStatesJInts, measureParams.j);
 		avTransfer = transferCalc.computeAverageLocalOfObservations();

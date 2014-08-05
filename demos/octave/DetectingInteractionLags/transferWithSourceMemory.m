@@ -75,7 +75,7 @@ function transferWithSourceMemory(savePlot)
 		y = [rand() < 0.5; x1(1:N)];
 		
 		% Compute TEs
-		teCalc = javaObject('infodynamics.measures.discrete.ApparentTransferEntropyCalculator', 4, 1);
+		teCalc = javaObject('infodynamics.measures.discrete.TransferEntropyCalculator', 4, 1);
 		teCalc.initialise();
 		teCalc.addObservations(y, x);
 		teXnToYnplus1(deltaIndex) = teCalc.computeAverageLocalOfObservations();
