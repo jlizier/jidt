@@ -21,18 +21,17 @@ public interface ChannelCalculator {
 	 * Add observations for the source and destination
 	 * 
 	 * @param states
-	 * @param destIndex
 	 * @param sourceIndex
+	 * @param destIndex
 	 */
-	public void addObservations(int states[][], int destIndex, int sourceIndex);
+	public void addObservations(int states[][], int sourceIndex, int destIndex);
 
 	/**
 	 * Add observations for the source and destination
-	 * 
-	 * @param dest
 	 * @param source
+	 * @param dest
 	 */
-	public void addObservations(int[] dest, int[] source);
+	public void addObservations(int[] source, int[] dest);
 	
 	/**
 	 * Compute the value of the measure

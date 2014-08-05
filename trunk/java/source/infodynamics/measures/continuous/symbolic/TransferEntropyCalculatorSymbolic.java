@@ -234,7 +234,7 @@ public class TransferEntropyCalculatorSymbolic
 			// Add these observations in, and keep them locally
 			destSymbolsVector.add(destSymbols);
 			sourceSymbolsVector.add(sourceSymbols);
-			teCalc.addObservations(destSymbols, sourceSymbols);
+			teCalc.addObservations(sourceSymbols, destSymbols);
 			
 			if (destination.length - maxEmbeddingLength != destSymbols.length - 1) {
 				throw new RuntimeException(
@@ -293,7 +293,7 @@ public class TransferEntropyCalculatorSymbolic
 		Iterator<int[]> iterator = destSymbolsVector.iterator();
 		for (int[] sourceSymbols : sourceSymbolsVector) {
 			int[] destSymbols = iterator.next();
-			double[] theseLocals = teCalc.computeLocalFromPreviousObservations(destSymbols, sourceSymbols);
+			double[] theseLocals = teCalc.computeLocalFromPreviousObservations(sourceSymbols, destSymbols);
 			System.arraycopy(theseLocals, 1, locals, currentIndexInLocals, theseLocals.length - 1);
 			currentIndexInLocals += theseLocals.length - 1;
 		}

@@ -50,7 +50,7 @@ public class SeparableInfoCalculatorByAddition extends SeparableInfoCalculator {
 		aiCalc.addObservations(states);
 		int[] cleanedSourcesAbsolute = cleanAbsoluteSources(sourcesAbsolute, destCol);
 		for (int i = 0; i < numSources; i++) {
-			ateCalcs[i].addObservations(states, destCol, cleanedSourcesAbsolute[i]);
+			ateCalcs[i].addObservations(states, cleanedSourcesAbsolute[i], destCol);
 		}
 	}
 
@@ -68,8 +68,8 @@ public class SeparableInfoCalculatorByAddition extends SeparableInfoCalculator {
 		aiCalc.addObservations(states, destAgentRow, destAgentColumn);
 		int[][] cleanedSourcesAbsolute = cleanAbsoluteSources(sourcesAbsolute, destAgentRow, destAgentColumn);
 		for (int i = 0; i < numSources; i++) {
-			ateCalcs[i].addObservations(states, destAgentRow, destAgentColumn,
-					cleanedSourcesAbsolute[i][ROW_INDEX], cleanedSourcesAbsolute[i][COLUMN_INDEX]);
+			ateCalcs[i].addObservations(states, cleanedSourcesAbsolute[i][ROW_INDEX], cleanedSourcesAbsolute[i][COLUMN_INDEX],
+					destAgentRow, destAgentColumn);
 		}
 	}
 
@@ -105,7 +105,7 @@ public class SeparableInfoCalculatorByAddition extends SeparableInfoCalculator {
 		int[] cleanedSourcesAbsolute = cleanAbsoluteSources(sourcesAbsolute, destCol);
 		double[] temp;
 		for (int i = 0; i < numSources; i++) {
-			temp = ateCalcs[i].computeLocalFromPreviousObservations(states, destCol, cleanedSourcesAbsolute[i]);
+			temp = ateCalcs[i].computeLocalFromPreviousObservations(states, cleanedSourcesAbsolute[i], destCol);
 			if (computeMultiInfoCoherence) {
 				// Keep a link to this apparent transfer
 				localComponents[1 + numSources] = temp;
@@ -172,9 +172,9 @@ public class SeparableInfoCalculatorByAddition extends SeparableInfoCalculator {
 		double[] temp;
 		for (int i = 0; i < numSources; i++) {
 			temp = ateCalcs[i].computeLocalFromPreviousObservations(
-					states, destAgentRow, destAgentColumn,
-					cleanedSourcesAbsolute[i][ROW_INDEX],
-					cleanedSourcesAbsolute[i][COLUMN_INDEX]);
+					states, cleanedSourcesAbsolute[i][ROW_INDEX], cleanedSourcesAbsolute[i][COLUMN_INDEX],
+					destAgentRow,
+					destAgentColumn);
 			if (computeMultiInfoCoherence) {
 				// Keep a link to this apparent transfer
 				localComponents[1 + numSources] = temp;
@@ -352,7 +352,7 @@ public class SeparableInfoCalculatorByAddition extends SeparableInfoCalculator {
 		double[] temp;
 		for (int i = 0; i < numSources; i++) {
 			temp = ateCalc.computeLocal(
-					states, destCol, cleanedOffsets[i]);
+					states, cleanedOffsets[i], destCol);
 			if (computeMultiInfoCoherence) {
 				// Keep a link to this apparent transfer
 				localComponents[1 + numSources] = temp;
@@ -387,9 +387,9 @@ public class SeparableInfoCalculatorByAddition extends SeparableInfoCalculator {
 		ateCalc.setPeriodicBoundaryConditions(periodicBoundaryConditions);
 		double[] temp;
 		for (int i = 0; i < numSources; i++) {
-			temp = ateCalc.computeLocal(states, destAgentRow, destAgentColumn,
-					cleanedSourcesAbsolute[i][ROW_INDEX],
-					cleanedSourcesAbsolute[i][COLUMN_INDEX]);
+			temp = ateCalc.computeLocal(states, cleanedSourcesAbsolute[i][ROW_INDEX], cleanedSourcesAbsolute[i][COLUMN_INDEX],
+					destAgentRow,
+					destAgentColumn);
 			if (computeMultiInfoCoherence) {
 				// Keep a link to this apparent transfer
 				localComponents[1 + numSources] = temp;
@@ -419,7 +419,7 @@ public class SeparableInfoCalculatorByAddition extends SeparableInfoCalculator {
 			TransferEntropyCalculator.newInstance(base, k);
 		ateCalc.setPeriodicBoundaryConditions(periodicBoundaryConditions);
 		for (int i = 0; i < numSources; i++) {
-			average += ateCalc.computeAverageLocal(states, destCol, cleanedSourcesAbsolute[i]);
+			average += ateCalc.computeAverageLocal(states, cleanedSourcesAbsolute[i], destCol);
 		}
 		localStatsValid = false;
 		return average;

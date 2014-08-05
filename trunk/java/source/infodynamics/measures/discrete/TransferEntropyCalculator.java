@@ -206,11 +206,10 @@ public class TransferEntropyCalculator extends ContextOfPastMeasureCalculator
 	/**
  	 * Add observations for a single source-destination pair 
  	 *  to our estimates of the pdfs.
-	 *
-	 * @param dest destination time series
 	 * @param source source timte series
+	 * @param dest destination time series
 	 */
-	public void addObservations(int[] dest, int[] source) {
+	public void addObservations(int[] source, int[] dest) {
 		int rows = dest.length;
 		// increment the count of observations:
 		observations += (rows - startObservationTime); 
@@ -253,14 +252,13 @@ public class TransferEntropyCalculator extends ContextOfPastMeasureCalculator
 	/**
  	 * Add observations for a single source-destination pair 
  	 *  to our estimates of the pdfs.
-	 *
-	 * @param dest destination time series
 	 * @param source source timte series
+	 * @param dest destination time series
 	 * @param valid time series of whether the signals
 	 *  at the given time should be considered valid 
 	 *  and added to our PDFs
 	 */
-	public void addObservations(int[] dest, int[] source, boolean[] valid) {
+	public void addObservations(int[] source, int[] dest, boolean[] valid) {
 		int rows = dest.length;
 		
 		// Initialise and store the current previous value
@@ -336,14 +334,13 @@ public class TransferEntropyCalculator extends ContextOfPastMeasureCalculator
 	 * Start and end time are the (inclusive) indices within which to add the observations.
 	 * The start time is from the earliest of the k historical values of the destination (inclusive),
 	 *  the end time is the last destination time point to add in.
-	 *
-	 * @param dest
 	 * @param source
+	 * @param dest
 	 * @param startTime
 	 * @param endTime
 	 * 
 	 */
-	public void addObservations(int[] dest, int[] source, int startTime, int endTime) {
+	public void addObservations(int[] source, int[] dest, int startTime, int endTime) {
 		// increment the count of observations:
 		observations += (endTime - startTime) - startObservationTime + 1; 
 		
@@ -389,7 +386,7 @@ public class TransferEntropyCalculator extends ContextOfPastMeasureCalculator
 	 *
 	 * @param states 1st index is time, 2nd index is agent number
 	 * @param j - number of columns to compute transfer entropy across
-	 * 	(i.e. src i-j, dest i: transfer is j cells to the right) 
+	 * 	(i.e. src is column i-j, dest is column i: transfer is j cells to the right) 
 	 */
 	public void addObservations(int states[][], int j) {
 		int timeSteps = states.length;
@@ -587,10 +584,10 @@ public class TransferEntropyCalculator extends ContextOfPastMeasureCalculator
  	 *  for computing active info for heterogeneous agents.
 	 *
 	 * @param states 1st index is time, 2nd index is agent number
-	 * @param destIndex destination agent index
 	 * @param sourceIndex source agent index
+	 * @param destIndex destination agent index
 	 */
-	public void addObservations(int states[][], int destIndex, int sourceIndex) {
+	public void addObservations(int states[][], int sourceIndex, int destIndex) {
 		int rows = states.length;
 		// increment the count of observations:
 		observations += (rows - startObservationTime); 
@@ -637,13 +634,13 @@ public class TransferEntropyCalculator extends ContextOfPastMeasureCalculator
  	 *  for computing active info for heterogeneous agents.
 	 *
 	 * @param states 1st index is time, 2nd and 3rd index give the 2D agent number
-	 * @param destRowIndex destination agent row index
-	 * @param destColumnIndex destination agent column index
 	 * @param sourceRowIndex source agent row index
 	 * @param sourceColumnIndex source agent column index
+	 * @param destRowIndex destination agent row index
+	 * @param destColumnIndex destination agent column index
 	 */
-	public void addObservations(int states[][][], int destRowIndex, int destColumnIndex,
-												  int sourceRowIndex, int sourceColumnIndex) {
+	public void addObservations(int states[][][], int sourceRowIndex, int sourceColumnIndex,
+												  int destRowIndex, int destColumnIndex) {
 		int timeSteps = states.length;
 		// increment the count of observations:
 		observations += (timeSteps - startObservationTime); 
@@ -1015,14 +1012,14 @@ public class TransferEntropyCalculator extends ContextOfPastMeasureCalculator
 
 	/**
 	 * Computes local transfer entropy for the given values
-	 *  
-	 * @see {@link #getPastCount(int)} for how the joint values representing the past are calculated.
+	 * @param sourceCurrent
 	 * @param destNext
 	 * @param destPast
-	 * @param sourceCurrent
+	 *  
+	 * @see {@link #getPastCount(int)} for how the joint values representing the past are calculated.
 	 * @return
 	 */
-	public double computeLocalFromPreviousObservations(int destNext, int destPast, int sourceCurrent){
+	public double computeLocalFromPreviousObservations(int sourceCurrent, int destNext, int destPast){
 
 		double logTerm = ((double) sourceNextPastCount[sourceCurrent][destNext][destPast] / (double) sourcePastCount[sourceCurrent][destPast]) /
 	 		((double) nextPastCount[destNext][destPast] / (double) pastCount[destPast]);
@@ -1034,11 +1031,11 @@ public class TransferEntropyCalculator extends ContextOfPastMeasureCalculator
 	 *  states, using pdfs built up from observations previously
 	 *  sent in via the addObservations method.
 	 * This method to be used for homogeneous agents only
-	 *  
 	 * @param states 1st index is time, 2nd index is agent number
+	 *  
 	 * @return
 	 */
-	public double[] computeLocalFromPreviousObservations(int destStates[], int sourceStates[]){
+	public double[] computeLocalFromPreviousObservations(int sourceStates[], int destStates[]){
 		int timeSteps = destStates.length;
 
 		// Allocate for all rows even though we'll leave the first ones as zeros
@@ -1095,6 +1092,7 @@ public class TransferEntropyCalculator extends ContextOfPastMeasureCalculator
 	 * This method to be used for homogeneous agents only
 	 *  
 	 * @param states 1st index is time, 2nd index is agent number
+	 * @param j columns across which to compute TE
 	 * @return
 	 */
 	public double[][] computeLocalFromPreviousObservations(int states[][], int j){
@@ -1313,7 +1311,7 @@ public class TransferEntropyCalculator extends ContextOfPastMeasureCalculator
 	 * @param states 1st index is time, 2nd index is agent number
 	 * @return
 	 */
-	public double[] computeLocalFromPreviousObservations(int states[][], int destCol, int sourceCol){
+	public double[] computeLocalFromPreviousObservations(int states[][], int sourceCol, int destCol){
 		int rows = states.length;
 		// int columns = states[0].length;
 
@@ -1372,14 +1370,14 @@ public class TransferEntropyCalculator extends ContextOfPastMeasureCalculator
 	 * This method is suitable for heterogeneous agents
 	 *  
 	 * @param states 1st index is time, 2nd and 3rd index give the 2D agent number
-	 * @param destRowIndex destination agent row index
-	 * @param destColumnIndex destination agent column index
 	 * @param sourceRowIndex source agent row index
 	 * @param sourceColumnIndex source agent column index
+	 * @param destRowIndex destination agent row index
+	 * @param destColumnIndex destination agent column index
 	 * @return
 	 */
 	public double[] computeLocalFromPreviousObservations(int states[][][],
-			int destRowIndex, int destColumnIndex, int sourceRowIndex, int sourceColumnIndex){
+			int sourceRowIndex, int sourceColumnIndex, int destRowIndex, int destColumnIndex){
 		int timeSteps = states.length;
 		// int columns = states[0].length;
 
@@ -1436,16 +1434,16 @@ public class TransferEntropyCalculator extends ContextOfPastMeasureCalculator
 	 * compute local transfer entropy between two time series
 	 * Return a time series of local values.
 	 * First history rows are zeros
-	 * 
-	 * @param destStates time series of destination states
 	 * @param sourceStates time series of source states
+	 * @param destStates time series of destination states
+	 * 
 	 * @return
 	 */
-	public double[] computeLocal(int destStates[], int sourceStates[]) {
+	public double[] computeLocal(int sourceStates[], int destStates[]) {
 		
 		initialise();
-		addObservations(destStates, sourceStates);
-		return computeLocalFromPreviousObservations(destStates, sourceStates);
+		addObservations(sourceStates, destStates);
+		return computeLocalFromPreviousObservations(sourceStates, destStates);
 	}
 
 	/**
@@ -1535,15 +1533,15 @@ public class TransferEntropyCalculator extends ContextOfPastMeasureCalculator
 	 * This method suitable for heterogeneous agents
 	 * 
 	 * @param states - 2D array of states
-	 * @param destCol - column index for the destination agent
 	 * @param sourceCol - column index for the source agent
+	 * @param destCol - column index for the destination agent
 	 * @return
 	 */
-	public double[] computeLocal(int states[][], int destCol, int sourceCol) {
+	public double[] computeLocal(int states[][], int sourceCol, int destCol) {
 		
 		initialise();
-		addObservations(states, destCol, sourceCol);
-		return computeLocalFromPreviousObservations(states, destCol, sourceCol);
+		addObservations(states, sourceCol, destCol);
+		return computeLocalFromPreviousObservations(states, sourceCol, destCol);
 	}
 
 	/**
@@ -1555,19 +1553,19 @@ public class TransferEntropyCalculator extends ContextOfPastMeasureCalculator
 	 * This method suitable for heterogeneous agents
 	 * 
 	 * @param states 1st index is time, 2nd and 3rd index give the 2D agent number
-	 * @param destRowIndex destination agent row index
-	 * @param destColumnIndex destination agent column index
 	 * @param sourceRowIndex source agent row index
 	 * @param sourceColumnIndex source agent column index
+	 * @param destRowIndex destination agent row index
+	 * @param destColumnIndex destination agent column index
 	 * @return
 	 */
-	public double[] computeLocal(int states[][][], int destRowIndex, int destColumnIndex,
-											int sourceRowIndex, int sourceColumnIndex) {
+	public double[] computeLocal(int states[][][], int sourceRowIndex, int sourceColumnIndex,
+											int destRowIndex, int destColumnIndex) {
 		
 		initialise();
-		addObservations(states, destRowIndex, destColumnIndex, sourceRowIndex, sourceColumnIndex);
-		return computeLocalFromPreviousObservations(states, destRowIndex, destColumnIndex,
-				sourceRowIndex, sourceColumnIndex);
+		addObservations(states, sourceRowIndex, sourceColumnIndex, destRowIndex, destColumnIndex);
+		return computeLocalFromPreviousObservations(states, sourceRowIndex, sourceColumnIndex,
+				destRowIndex, destColumnIndex);
 	}
 
 	/**
@@ -1578,14 +1576,14 @@ public class TransferEntropyCalculator extends ContextOfPastMeasureCalculator
 	 * This method suitable for heterogeneous agents.
 	 * 
 	 * @param states - 2D array of states
-	 * @param destCol - column index for the destination agent
 	 * @param sourceCol - column index for the source agent
+	 * @param destCol - column index for the destination agent
 	 * @return
 	 */
-	public double computeAverageLocal(int states[][], int destCol, int sourceCol) {
+	public double computeAverageLocal(int states[][], int sourceCol, int destCol) {
 		
 		initialise();
-		addObservations(states, destCol, sourceCol);
+		addObservations(states, sourceCol, destCol);
 		return computeAverageLocalOfObservations();
 	}
 	
@@ -1597,17 +1595,17 @@ public class TransferEntropyCalculator extends ContextOfPastMeasureCalculator
 	 * This method suitable for heterogeneous agents
 	 * 
 	 * @param states 1st index is time, 2nd and 3rd index give the 2D agent number
-	 * @param destRowIndex destination agent row index
-	 * @param destColumnIndex destination agent column index
 	 * @param sourceRowIndex source agent row index
 	 * @param sourceColumnIndex source agent column index
+	 * @param destRowIndex destination agent row index
+	 * @param destColumnIndex destination agent column index
 	 * @return
 	 */
-	public double computeAverageLocal(int states[][][], int destRowIndex, int destColumnIndex,
-			int sourceRowIndex, int sourceColumnIndex) {
+	public double computeAverageLocal(int states[][][], int sourceRowIndex, int sourceColumnIndex,
+			int destRowIndex, int destColumnIndex) {
 		
 		initialise();
-		addObservations(states, destRowIndex, destColumnIndex, sourceRowIndex, sourceColumnIndex);
+		addObservations(states, sourceRowIndex, sourceColumnIndex, destRowIndex, destColumnIndex);
 		return computeAverageLocalOfObservations();
 	}
 
