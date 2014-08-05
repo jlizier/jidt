@@ -5,7 +5,7 @@ import infodynamics.utils.MatrixUtils;
 public class SeparableInfoCalculatorByAddition extends SeparableInfoCalculator {
 
 	ActiveInformationCalculator aiCalc;
-	ApparentTransferEntropyCalculator[] ateCalcs;
+	TransferEntropyCalculator[] ateCalcs;
 	
 	private boolean localStatsValid = true;
 	
@@ -26,9 +26,9 @@ public class SeparableInfoCalculatorByAddition extends SeparableInfoCalculator {
 	 *
 	 */
 	private void createAppTeCalculators() {
-		ateCalcs = new ApparentTransferEntropyCalculator[numSources];
+		ateCalcs = new TransferEntropyCalculator[numSources];
 		for (int i = 0; i < numSources; i++) {
-			ateCalcs[i] = ApparentTransferEntropyCalculator.newInstance(base, k);
+			ateCalcs[i] = TransferEntropyCalculator.newInstance(base, k);
 			ateCalcs[i].setPeriodicBoundaryConditions(periodicBoundaryConditions);
 		}
 	}
@@ -237,8 +237,8 @@ public class SeparableInfoCalculatorByAddition extends SeparableInfoCalculator {
 			localComponents[0] = local;
 		}
 		int[] cleanedOffsets = cleanOffsetOfDestFromSources(offsetOfDestFromSources);
-		ApparentTransferEntropyCalculator ateCalc = 
-			ApparentTransferEntropyCalculator.newInstance(base, k);
+		TransferEntropyCalculator ateCalc = 
+			TransferEntropyCalculator.newInstance(base, k);
 		ateCalc.setPeriodicBoundaryConditions(periodicBoundaryConditions);
 		double[][] temp;
 		for (int i = 0; i < numSources; i++) {
@@ -273,8 +273,8 @@ public class SeparableInfoCalculatorByAddition extends SeparableInfoCalculator {
 			localComponents[0] = local;
 		}
 		int[][] cleanedOffsets = cleanOffsetOfDestFromSources(offsetOfDestFromSources);
-		ApparentTransferEntropyCalculator ateCalc = 
-			ApparentTransferEntropyCalculator.newInstance(base, k);
+		TransferEntropyCalculator ateCalc = 
+			TransferEntropyCalculator.newInstance(base, k);
 		ateCalc.setPeriodicBoundaryConditions(periodicBoundaryConditions);
 		double[][][] temp;
 		for (int i = 0; i < numSources; i++) {
@@ -307,8 +307,8 @@ public class SeparableInfoCalculatorByAddition extends SeparableInfoCalculator {
 		//  ApparentTransferEntropy object
 		average = aiCalc.computeAverageLocal(states);
 		int[] cleanedOffsets = cleanOffsetOfDestFromSources(sourceOffsets);
-		ApparentTransferEntropyCalculator ateCalc = 
-			ApparentTransferEntropyCalculator.newInstance(base, k);
+		TransferEntropyCalculator ateCalc = 
+			TransferEntropyCalculator.newInstance(base, k);
 		ateCalc.setPeriodicBoundaryConditions(periodicBoundaryConditions);
 		for (int i = 0; i < numSources; i++) {
 			average += ateCalc.computeAverageLocal(states, cleanedOffsets[i]);
@@ -324,8 +324,8 @@ public class SeparableInfoCalculatorByAddition extends SeparableInfoCalculator {
 		//  ApparentTransferEntropy object
 		average = aiCalc.computeAverageLocal(states);
 		int[][] cleanedOffsets = cleanOffsetOfDestFromSources(sourceOffsets);
-		ApparentTransferEntropyCalculator ateCalc = 
-			ApparentTransferEntropyCalculator.newInstance(base, k);
+		TransferEntropyCalculator ateCalc = 
+			TransferEntropyCalculator.newInstance(base, k);
 		ateCalc.setPeriodicBoundaryConditions(periodicBoundaryConditions);
 		for (int i = 0; i < numSources; i++) {
 			average += ateCalc.computeAverageLocal(states,
@@ -346,8 +346,8 @@ public class SeparableInfoCalculatorByAddition extends SeparableInfoCalculator {
 			localComponents[0] = local;
 		}
 		int[] cleanedOffsets = cleanAbsoluteSources(sourcesAbsolute, destCol);
-		ApparentTransferEntropyCalculator ateCalc = 
-			ApparentTransferEntropyCalculator.newInstance(base, k);
+		TransferEntropyCalculator ateCalc = 
+			TransferEntropyCalculator.newInstance(base, k);
 		ateCalc.setPeriodicBoundaryConditions(periodicBoundaryConditions);
 		double[] temp;
 		for (int i = 0; i < numSources; i++) {
@@ -382,8 +382,8 @@ public class SeparableInfoCalculatorByAddition extends SeparableInfoCalculator {
 			localComponents[0] = local;
 		}
 		int[][] cleanedSourcesAbsolute = cleanAbsoluteSources(sourcesAbsolute, destAgentRow, destAgentColumn);
-		ApparentTransferEntropyCalculator ateCalc = 
-			ApparentTransferEntropyCalculator.newInstance(base, k);
+		TransferEntropyCalculator ateCalc = 
+			TransferEntropyCalculator.newInstance(base, k);
 		ateCalc.setPeriodicBoundaryConditions(periodicBoundaryConditions);
 		double[] temp;
 		for (int i = 0; i < numSources; i++) {
@@ -415,8 +415,8 @@ public class SeparableInfoCalculatorByAddition extends SeparableInfoCalculator {
 		//  ApparentTransferEntropy object
 		average = aiCalc.computeAverageLocal(states, destCol);
 		int[] cleanedSourcesAbsolute = cleanAbsoluteSources(sourcesAbsolute, destCol);
-		ApparentTransferEntropyCalculator ateCalc = 
-			ApparentTransferEntropyCalculator.newInstance(base, k);
+		TransferEntropyCalculator ateCalc = 
+			TransferEntropyCalculator.newInstance(base, k);
 		ateCalc.setPeriodicBoundaryConditions(periodicBoundaryConditions);
 		for (int i = 0; i < numSources; i++) {
 			average += ateCalc.computeAverageLocal(states, destCol, cleanedSourcesAbsolute[i]);
@@ -433,8 +433,8 @@ public class SeparableInfoCalculatorByAddition extends SeparableInfoCalculator {
 		//  ApparentTransferEntropy object
 		average = aiCalc.computeAverageLocal(states);
 		int[][] cleanedSourcesAbsolute = cleanAbsoluteSources(sourcesAbsolute, destAgentRow, destAgentColumn);
-		ApparentTransferEntropyCalculator ateCalc = 
-			ApparentTransferEntropyCalculator.newInstance(base, k);
+		TransferEntropyCalculator ateCalc = 
+			TransferEntropyCalculator.newInstance(base, k);
 		ateCalc.setPeriodicBoundaryConditions(periodicBoundaryConditions);
 		for (int i = 0; i < numSources; i++) {
 			average += ateCalc.computeAverageLocal(states,

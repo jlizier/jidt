@@ -58,7 +58,7 @@ import infodynamics.utils.RandomGenerator;
  * <a href="http://lizier.me/joseph/">www</a>
  *
  */
-public class ApparentTransferEntropyCalculator extends ContextOfPastMeasureCalculator 
+public class TransferEntropyCalculator extends ContextOfPastMeasureCalculator 
 	implements ChannelCalculator, AnalyticNullDistributionComputer {
 
 	protected int[][][] sourceNextPastCount = null;	// count for (source[n],dest[n+1],dest[n]^k) tuples
@@ -107,9 +107,9 @@ public class ApparentTransferEntropyCalculator extends ContextOfPastMeasureCalcu
 	 * 
 	 * @return
 	 */
-	public static ApparentTransferEntropyCalculator newInstance(int base, int destHistoryEmbedLength) {
+	public static TransferEntropyCalculator newInstance(int base, int destHistoryEmbedLength) {
 		
-		return new ApparentTransferEntropyCalculator(base, destHistoryEmbedLength);
+		return new TransferEntropyCalculator(base, destHistoryEmbedLength);
 
 		// Old code for an attempted optimisation:
 		/*
@@ -129,7 +129,7 @@ public class ApparentTransferEntropyCalculator extends ContextOfPastMeasureCalcu
 	 * @param destHistoryEmbedLength embedded history length of the destination to condition on -
 	 *        this is k in Schreiber's notation.
 	 */
-	public ApparentTransferEntropyCalculator(int base, int destHistoryEmbedLength) {
+	public TransferEntropyCalculator(int base, int destHistoryEmbedLength) {
 
 		super(base, destHistoryEmbedLength);
 		base_power_l = MathsUtils.power(base, sourceHistoryEmbedLength);
@@ -160,7 +160,7 @@ public class ApparentTransferEntropyCalculator extends ContextOfPastMeasureCalcu
 	 * @param sourceHistoryEmbeddingLength embedded history length of the source to include -
 	 *        this is l in Schreiber's notation.
 	 */
-	public ApparentTransferEntropyCalculator(int base, int destHistoryEmbedLength, int sourceHistoryEmbeddingLength) {
+	public TransferEntropyCalculator(int base, int destHistoryEmbedLength, int sourceHistoryEmbeddingLength) {
 
 		super(base, destHistoryEmbedLength);
 		this.sourceHistoryEmbedLength = sourceHistoryEmbeddingLength;
@@ -968,7 +968,7 @@ public class ApparentTransferEntropyCalculator extends ContextOfPastMeasureCalcu
 		//  of resources here, but there's not much other choice. A better solution
 		//  will come when we switch to an underlying conditional MI calculator, with separate
 		//  bases for each variable, and just use its computeSignificance() method.
-		ApparentTransferEntropyCalculator ate2 = new ApparentTransferEntropyCalculator(base_power_l, k, 1);
+		TransferEntropyCalculator ate2 = new TransferEntropyCalculator(base_power_l, k, 1);
 		ate2.initialise();
 		ate2.observations = observations;
 		ate2.pastCount = pastCount;
