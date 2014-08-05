@@ -14,7 +14,7 @@ public class TransferEntropyTester extends TestCase {
 		TransferEntropyCalculator teCalc =
 				new TransferEntropyCalculator(2, 1);
 		teCalc.initialise();
-		teCalc.addObservations(dest, source);
+		teCalc.addObservations(source, dest);
 		double result = teCalc.computeAverageLocalOfObservations();
 		assertEquals(0, result, 0.0000001);
 	}
@@ -38,14 +38,14 @@ public class TransferEntropyTester extends TestCase {
 		TransferEntropyCalculator teCalc =
 				new TransferEntropyCalculator(2, 1);
 		teCalc.initialise();
-		teCalc.addObservations(dest, source);
+		teCalc.addObservations(source, dest);
 		double result = teCalc.computeAverageLocalOfObservations();
 		assertEquals(1, result, 0.0000001);
 		
 		// with k=2, we will see the self-predictability of the dest
 		teCalc = new TransferEntropyCalculator(2, 2);
 		teCalc.initialise();
-		teCalc.addObservations(dest, source);
+		teCalc.addObservations(source, dest);
 		result = teCalc.computeAverageLocalOfObservations();
 		assertEquals(0, result, 0.0000001);
 
