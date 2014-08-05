@@ -5,8 +5,7 @@
 
 = Schreiber Transfer Entropy Demos =
 
-This demonstration set (available from release 1.0) shows how to recreate the examples in Schreiber's original paper introducing transfer entropy:
-  * T. Schreiber, [http://dx.doi.org/10.1103/physrevlett.85.461 "Measuring Information Transfer"], Physical Review Letters 85(2): 461-464.
+This demonstration set (available from release 1.0) shows how to recreate the examples in Schreiber's original paper introducing transfer entropy (ref. 1) (see [#References] below).
 Several additional analyses on the same data set are provided as well.
 
 It is written for MATLAB or Octave.
@@ -17,6 +16,7 @@ The examples included are:
  # [#1._Tent_Map Tent Map]
  # [#2._Ulam_Map Ulam Map]
  # [#3._Heart-breath_interaction Heart-breath interaction]
+ # [#4._Heart-breath_interaction_-_further_investigation Heart-breath interaction - further investigation]
 
 == 1. Tent Map ==
 
@@ -30,7 +30,7 @@ The script as it is takes 15 - 30 minutes to run (for all coupling strengths and
 
 The script finally plots the TE as a function of the coupling parameter of the Tent Map, as shown here:
 
-[https://information-dynamics-toolkit.googlecode.com/svn/trunk/demos/octave/SchreiberTransferEntropyExamples/sampleResults/tentMapResultsForWebMatlab.png] 
+[http://information-dynamics-toolkit.googlecode.com/svn/trunk/demos/octave/SchreiberTransferEntropyExamples/sampleResults/tentMapResultsForWebMatlab.png] 
 
 Note that the line was Schreiber's line of best fit, which may not necessarily be quite the line of best fit from our run.
 
@@ -47,15 +47,15 @@ The script finally plots the TE as a function of the coupling parameter of the U
 
 Now, if we use the parameters exactly as stated in Schreiber's paper (with kernel width of 0.2) then we get the following result:
 
-[https://information-dynamics-toolkit.googlecode.com/svn/trunk/demos/octave/SchreiberTransferEntropyExamples/sampleResults/ulamMapResults-noNorm-dynExc100-r0.2.png]
+[http://information-dynamics-toolkit.googlecode.com/svn/trunk/demos/octave/SchreiberTransferEntropyExamples/sampleResults/ulamMapResults-noNorm-dynExc100-r0.2.png]
 
 where the TE(1->2) is clearly larger than Schreiber's results (which we have recreated here by extraction from his plot, see file [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave%2FSchreiberTransferEntropyExamples/SchreiberExample2.txt SchreiberExample2.txt]).
 
 However, if we change the kernel width to 0.3, then we get results which are uncannily similar to Schreiber's:
 
-[https://information-dynamics-toolkit.googlecode.com/svn/trunk/demos/octave/SchreiberTransferEntropyExamples/sampleResults/ulamMapResults-noNorm-dynExc100-r0.3.png]
+[http://information-dynamics-toolkit.googlecode.com/svn/trunk/demos/octave/SchreiberTransferEntropyExamples/sampleResults/ulamMapResults-noNorm-dynExc100-r0.3.png]
 
-I have exchanged correspondence with Thomas Schreiber on this, establishing that he in fact added bias correction (as stated in the 2002 Kaiser and Schreiber Physica D paper, though not stated in this paper), though I've found this makes no difference for the 10000 iterates here.
+I have exchanged correspondence with Thomas Schreiber on this, establishing that he in fact added bias correction (as stated in Schreiber's later work (ref. 2), though not stated in (ref. 1)), though I've found this makes no difference for the 10000 iterates here.
 
 Since we found no other discrepancy (and our kernel estimator is clearly working as per example 3 below), and the match for kernel width of 0.3 is so good, then we conclude that Schreiber seems to have used a kernel width of 0.3 for this example. As such, our script sets the kernel width to 0.3.
 
@@ -71,12 +71,56 @@ This script loads the heart-breath data, then computes TE using box-kernel estim
 A number of crucial details were not made explicit in Schreiber's original paper:
  # The individual variables were *normalised* to mean 0 and unit variance. Schreiber doesn't explicitly say this is done for TE, but it is done for the raw data plots in Figure 3. We do this by setting the TE calculator's property `'NORMALISE'` to `true`.
  # *Dynamic correlation exclusion* within 100 time points was used; although Schreiber does not state this for example 3, it is stated for example 2 that "Neighbors closer in time than 100 iterates were excluded from the kernel estimation" and we validate that this is the case here also. We do this by setting the TE calculator's property `'DYN_CORR_EXCL'` to `'100'`.
- # The estimates were *bias corrected* using the approximation log_e(x) ~ digamma(x). Again, this is not stated in the paper, but in correspondence with Schreiber he confirmed that it was done for example 2, and we validate that it is the case here also. We do this by calling the method `computeAverageLocalOfObservationsWithCorrection()` intead of `computeAverageLocalOfObservations()`. Note that we implement bias correction via a separate method rather than by setting a property since we do not wish to make it a proper option here. This is because it is not recommended to use the bias corrected method, since it is not clear how the corrections cancel (see Kaiser and Schreiber, 2002, section 5.2.3.1. It is done properly by the later Kraskov estimator.
+ # The estimates were *bias corrected* using the approximation log_e(x) ~ digamma(x) as per Grassberger. Again, this is not stated in the paper, but in correspondence with Schreiber he confirmed that it was done for example 2, and we validate that it is the case here also. We do this by calling the method `computeAverageLocalOfObservationsWithCorrection()` intead of `computeAverageLocalOfObservations()`. Note that we implement bias correction via a separate method rather than by setting a property since we do not wish to make it a proper option here. This is because it is not recommended to use the bias corrected method, since it is not clear how the corrections cancel (see (ref. 2), section 5.2.3.1). It is done properly by the later Kraskov estimator.
 
 The script as it is take a couple of seconds to run.
 
 The script plots the TE as a function of the kernel width, as shown here:
 
-[https://information-dynamics-toolkit.googlecode.com/svn/trunk/demos/octave/SchreiberTransferEntropyExamples/sampleResults/heartBreathResults-kernel.png] 
+[http://information-dynamics-toolkit.googlecode.com/svn/trunk/demos/octave/SchreiberTransferEntropyExamples/sampleResults/heartBreathResults-kernel.png] 
 
 Note the strong match to Schreiber's figure 3 (which we have recreated here by extraction from his plot, see file SchreiberExample3.txt).
+
+== 4. Heart-breath interaction - further investigation ==
+
+The original analysis of the heart-breath interaction above leaves several open questions:
+ # Were the time-series properly embedded to capture their states and eliminate information storage from the calculation? One can easily use `k=2` in the above example (exercise left to reader) to establish that the majority of what is inferred as information transfer by the transfer entropy with `k=1` appears to be information storage. Other authors have used `k=5` (ref. 3).
+ # What is the most appropriate kernel width to use? The results here are highly variable with respect to kernel width, which has been noted in particular in (ref. 2).
+ # Was bias eliminated properly using the Grassberger method? We know that it is not clear how the corrections cancel and its use is not recommended (ref. 2).
+
+Continuing with a kernel estimator, one could use surrogates to compute the bias (see [SimpleJavaExamples#Example_3_-_Transfer_entropy_on_continuous_data_using_kernel_est Example 3 of the Simple Java Examples]), and indeed explore the embedding this way, however we are still stuck with the problem of choosing the kernel width.
+
+A better approach is to switch estimators to the newer nearest-neighbour based *Kraskov-Stoegbauer-Grassberger (KSG) estimator* for mutual information (ref. 4), extended to transfer entropy in (ref. 5). That is because this estimator includes automatic bias correction and is very stable to parameter selection (being the number of nearest neighbours). We continue with this type of estimator.
+
+Our first step is to check the embedding dimension. We use the script [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave%2FSchreiberTransferEntropyExamples/activeInfoStorageHeartBreathRatesKraskov.m activeInfoStorageHeartBreathRatesKraskov.m] for this purpose. For a given number of `K` nearest neighbours (here 4), this plots the active information storage (see (ref. 6)) as a function of embedded history length `k`, e.g.  
+{{{
+[aisHeart, aisBreath] = activeInfoStorageHeartBreathRatesKraskov(1:15, 4);
+}}}
+produces the following plot:
+
+[http://information-dynamics-toolkit.googlecode.com/svn/trunk/demos/octave/SchreiberTransferEntropyExamples/sampleResults/heartBreathResults-kraskovAIS.png] 
+
+Since the Kraskov estimator is bias corrected (i.e. while a raw MI would normally increase with an increase in dimensionality -- caused by increasing `k` here -- this one will reduce once we start undersampling), we can use the peak to suggest that an embedded history of `k=2` for both heart and breath time-series is appropriate to capture all relevant information from the past without capturing more spurious than relevant information as `k` increases. This result is stable with the number of nearest neighbours `K` -- you can check this by changing `K=4` above. Another exercise is to supply the third parameter to the script to validate that the AIS values are significantly above the noise floor (left to the reader).
+
+We then turn back to transfer entropy, this time via a Kraskov estimator, using our established embedding lengths of `k=l=2` for both series. We use the script [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave%2FSchreiberTransferEntropyExamples/runHeartBreathRateKraskov.m runHeartBreathRateKraskov.m] for this purpose. For our given embedding lengths, we compute the measure for a number of `K` nearest neighbours:
+{{{
+ [teHeartToBreath, teBreathToHeart] = runHeartBreathRateKraskov(2, 2, 1:15);
+}}}
+which produces the following plot:
+
+[http://information-dynamics-toolkit.googlecode.com/svn/trunk/demos/octave/SchreiberTransferEntropyExamples/sampleResults/heartBreathResults-kraskovTE.png] 
+
+There are a number of important items to observe here:
+ # The level of TE was dramatically reduced by proper embedding (to remove information storage) and proper bias correction;
+ # The results are above the noise floor for approximately `K>=3` for breath->heart and approximately `K>=8` for heart->breath. That is, below this scale any apparent TE is a statistical fluctuation simply due to undersampling. One can explore this by using the fourth parameter `numSurrogates` to this script (use 100 to quickly get an estimate of the variance of the noise floor, though for formal results one should use at least 1000).
+ # With an appropriate setting for the number of nearest neighbours `K` to set the scale avoiding undersampling, we see that the measure is very robust to this parameter.
+ # Indeed, the results suggest that breath->heart is the dominant direction for information transfer, though there is of course a complex two-way interaction here.
+
+== References ==
+
+ # T. Schreiber, [http://dx.doi.org/10.1103/physrevlett.85.461 "Measuring Information Transfer"], Physical Review Letters *85*(2): 461-464, 2000.
+ # A. Kaiser and T. Schreiber, [http://dx.doi.org/10.1016/S0167-2789(02)00432-3 "Information transfer in continuous processes"], Physica D *166*(1-2): 43-62, 2002.
+ # N. Ancona, D. Marinazzo, and S. Stramaglia. [http://dx.doi.org/10.1103/PhysRevE.70.056221 "Radial basis function approach to nonlinear Granger causality of time series"], Physical Review E, *70*: 056221, 2004.
+ # A. Kraskov, H. Stoegbauer, and P. Grassberger, [http://dx.doi.org/10.1103/PhysRevE.69.066138 "Estimating mutual information"], Physical Review E *69*: 066138–066153, 2004.
+ # G. Gomez-Herrero, W. Wu, K. Rutanen, M. C. Soriano, G. Pipa, and R. Vicente. [http://arxiv.org/abs/1008.0539 "Assessing coupling dynamics from an ensemble of time series"], arXiv:1008.0539, 2010.
+ # J. T. Lizier, M. Prokopenko, and A. Y. Zomaya, [http://dx.doi.org/10.1016/j.ins.2012.04.016 "Local measures of information storage in complex distributed computation"], Information Sciences, *208*: 39–54, 2012.
