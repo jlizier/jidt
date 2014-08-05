@@ -66,7 +66,7 @@ It is run simply as follows:
 {{{
 [teHeartToBreath, teBreathToHeart] = runHeartBreathRateKernel();
 }}}
-This script loads the heart-breath data, then computes TE using box-kernel estimation for a range of kernel widths.
+This script loads the heart-breath data (made available via the Santa Fe Institute time series contest held in 1991 (ref. 8) and redistributed with permission from Andreas Weigend), then computes TE using box-kernel estimation for a range of kernel widths.
 
 A number of crucial details were not made explicit in Schreiber's original paper:
  # The individual variables were *normalised* to mean 0 and unit variance. Schreiber doesn't explicitly say this is done for TE, but it is done for the raw data plots in Figure 3. We do this by setting the TE calculator's property `'NORMALISE'` to `true`.
@@ -125,3 +125,4 @@ There are a number of important items to observe here:
  # G. Gomez-Herrero, W. Wu, K. Rutanen, M. C. Soriano, G. Pipa, and R. Vicente. [http://arxiv.org/abs/1008.0539 "Assessing coupling dynamics from an ensemble of time series"], arXiv:1008.0539, 2010.
  # J. T. Lizier, M. Prokopenko, and A. Y. Zomaya, [http://dx.doi.org/10.1016/j.ins.2012.04.016 "Local measures of information storage in complex distributed computation"], Information Sciences, *208*: 39–54, 2012.
  # P. Grassberger, [http://dx.doi.org/10.1016/0375-9601(88)90193-4/ "Finite sample corrections to entropy and dimension estimates"] Physics Letters A, *128*(6-7): 369-373, 1988.
+ # D. R. Rigney, A. L. Goldberger, W. Ocasio, Y. Ichimaru, G. B. Moody, and R. Mark, "Multi-Channel physiological data: Description and analysis". In A. S. Weigend and N. A. Gershenfeld, editors, "Time Series Prediction: Forecasting the Future and Understanding the Past", pp. 105–129. Addison-Wesley, Reading, MA, 1993.
