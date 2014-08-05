@@ -1,6 +1,8 @@
 #summary Demos to show how to compute local information dynamics profiles in cellular automata
 #labels CellularAutomata,octave,matlab
 
+[Demos] > Cellular Automata demos
+
 = Cellular Automata demos =
 
 This demonstration set shows how to compute local information dynamics profiles in (1D) [http://en.wikipedia.org/wiki/Cellular_automaton cellular automata] (CAs).
