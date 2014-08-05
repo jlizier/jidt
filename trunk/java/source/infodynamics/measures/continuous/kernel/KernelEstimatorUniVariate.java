@@ -258,6 +258,10 @@ public class KernelEstimatorUniVariate {
 			System.out.println("Count after upper bin " + (bin + 1) + " = " + count);
 		}
 
+		// TODO Should we divide this result by the kernel width (in use)?
+		//  Schreiber doesn't do this in the TE paper, but it is done in 
+		//  the Kaiser and Schreiber paper. It won't matter to TE, but
+		//  will make a difference to individual entropy estimates.
 		return (double) count / (double) totalTimePointsCompared;
 	}
 	
