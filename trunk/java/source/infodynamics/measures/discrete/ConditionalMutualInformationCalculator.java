@@ -1,5 +1,8 @@
 package infodynamics.measures.discrete;
 
+import infodynamics.utils.AnalyticMeasurementDistribution;
+import infodynamics.utils.AnalyticNullDistributionComputer;
+import infodynamics.utils.ChiSquareMeasurementDistribution;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.RandomGenerator;
@@ -20,7 +23,7 @@ import infodynamics.utils.RandomGenerator;
  * http://lizier.me/joseph/
  *
  */
-public class ConditionalMutualInformationCalculator extends InfoMeasureCalculator {
+public class ConditionalMutualInformationCalculator extends InfoMeasureCalculator implements AnalyticNullDistributionComputer {
 
 	/**
 	 * Store the bases for each variable
@@ -34,6 +37,8 @@ public class ConditionalMutualInformationCalculator extends InfoMeasureCalculato
 	protected int[][] secondCondCount = null; // Count for (y,Cond) tuples
 	protected int[] condCount = null; // Count for Cond
 
+	protected boolean condMiComputed = false;
+	
 	/**
 	 * User was formerly forced to create new instances through this factory method.
 	 * Retained for backwards compatibility.
@@ -74,6 +79,8 @@ public class ConditionalMutualInformationCalculator extends InfoMeasureCalculato
 	public void initialise(){
 		super.initialise();
 		
+		condMiComputed = false;
+		
 		MatrixUtils.fill(firstSecondCondCount, 0);
 		MatrixUtils.fill(firstCondCount, 0);
 		MatrixUtils.fill(secondCondCount, 0);
@@ -100,6 +107,89 @@ public class ConditionalMutualInformationCalculator extends InfoMeasureCalculato
 			firstCondCount[var1[r]][cond[r]]++;
 			secondCondCount[var2[r]][cond[r]]++;
 			condCount[cond[r]]++;
+		}
+	}
+
+	/**
+ 	 * Add observations for the given var1,var2,cond tuples of the multi-agent system
+ 	 *  to our estimates of the pdfs.
+ 	 * This method signature allows applications using byte data (to save memory)
+ 	 *  to operate correctly.
+	 *
+	 * @param var1 values for the first variable
+	 * @param var2 values for the second variable
+	 * @param cond values for the conditional variable
+	 */
+	public void addObservations(byte var1[], byte var2[], byte cond[]) {
+		int rows = var1.length;
+		// increment the count of observations:
+		observations += rows;
+		
+		// 1. Count the tuples observed
+		for (int r = 0; r < rows; r++) {
+			// Add to the count for this particular transition:
+			firstSecondCondCount[var1[r]][var2[r]][cond[r]]++;
+			firstCondCount[var1[r]][cond[r]]++;
+			secondCondCount[var2[r]][cond[r]]++;
+			condCount[cond[r]]++;
+		}
+	}
+
+	/**
+ 	 * Add observations for the given var1,var2,cond tuples of the multi-agent system
+ 	 *  to our estimates of the pdfs, only when those observations are confirmed
+ 	 *  as valid.
+	 *
+	 * @param var1 values for the first variable
+	 * @param var2 values for the second variable
+	 * @param cond values for the conditional variable
+	 * @param valid whether each observation is valid to be counted in the PDFs
+	 */
+	public void addObservations(int var1[], int var2[], int cond[],
+			boolean[] valid) {
+		
+		int rows = var1.length;
+		
+		// 1. Count the tuples observed
+		for (int r = 0; r < rows; r++) {
+			if (valid[r]) {
+				// Add to the count for this particular transition:
+				firstSecondCondCount[var1[r]][var2[r]][cond[r]]++;
+				firstCondCount[var1[r]][cond[r]]++;
+				secondCondCount[var2[r]][cond[r]]++;
+				condCount[cond[r]]++;
+				observations++; // increment the count of observations:
+			}
+		}
+	}
+
+	/**
+ 	 * Add observations for the given var1,var2,cond tuples of the multi-agent system
+ 	 *  to our estimates of the pdfs, only when those observations are confirmed
+ 	 *  as valid.
+ 	 * This method signature allows applications using byte data (to save memory)
+ 	 *  to operate correctly.
+	 *
+	 * @param var1 values for the first variable
+	 * @param var2 values for the second variable
+	 * @param cond values for the conditional variable
+	 * @param valid whether each observation is valid to be counted in the PDFs
+	 */
+	public void addObservations(byte var1[], byte var2[], byte cond[],
+			boolean[] valid) {
+		
+		int rows = var1.length;
+		
+		// 1. Count the tuples observed
+		for (int r = 0; r < rows; r++) {
+			if (valid[r]) {
+				// Add to the count for this particular transition:
+				firstSecondCondCount[var1[r]][var2[r]][cond[r]]++;
+				firstCondCount[var1[r]][cond[r]]++;
+				secondCondCount[var2[r]][cond[r]]++;
+				condCount[cond[r]]++;
+				observations++; // increment the count of observations:
+			}
 		}
 	}
 
@@ -185,6 +275,7 @@ public class ConditionalMutualInformationCalculator extends InfoMeasureCalculato
 		
 		average = condMi;
 		std = Math.sqrt(meanSqLocals - average * average);
+		condMiComputed = true;
 		return condMi;
 	}
 	
@@ -252,7 +343,8 @@ public class ConditionalMutualInformationCalculator extends InfoMeasureCalculato
 		}
 
 		average = average/(double) rows;
-		
+		condMiComputed = true;
+
 		return localCondMi;
 	}
 
@@ -344,6 +436,46 @@ public class ConditionalMutualInformationCalculator extends InfoMeasureCalculato
 		measDistribution.pValue = (double) countWhereMIIsMoreSignificantThanOriginal / (double) numPermutationsToCheck;
 		measDistribution.actualValue = actualCondMI;
 		return measDistribution;
+	}
+
+	/**
+	 * <p>Compute the statistical significance of the conditional mutual information 
+	 *  result analytically, without creating a distribution
+	 *  under the null hypothesis by bootstrapping.</p>
+	 *
+	 * <p>Brillinger (see reference below) showed that under the null hypothesis
+	 *  of no source-destination relationship, the MI for two
+	 *  discrete distributions follows a chi-square distribution with
+	 *  degrees of freedom equal to the product of the number of discrete values
+	 *  minus one, for each variable.</p>
+	 *  
+	 * <p>Cheng extend this to show that for conditional MI, the number of
+	 *  degrees of freedom for this distribution is:
+	 *  (base1 - 1)*(base2 - 1)*condBase
+	 * </p>
+	 * 
+	 * <p>Barnett and Bossomaier later echoed this for the transfer entropy
+	 *  (which is of course a conditional MI)
+	 * </p>
+	 *
+	 * @return ChiSquareMeasurementDistribution object 
+	 *  This object contains the proportion of conditional MI scores from the distribution
+	 *  which have higher or equal conditional MIs to ours.
+	 *  
+	 * @see Brillinger, "Some data analyses using mutual information",
+	 * {@link http://www.stat.berkeley.edu/~brill/Papers/MIBJPS.pdf}
+	 * @see Cheng et al., "Data Information in Contingency Tables: A
+	 *  Fallacy of Hierarchical Loglinear Models",
+	 *  {@link http://www.jds-online.com/file_download/112/JDS-369.pdf}
+	 * @see Barnett and Bossomaier, "Transfer Entropy as a Log-likelihood Ratio" 
+	 *  {@link http://arxiv.org/abs/1205.6339}
+	 */
+	public AnalyticMeasurementDistribution computeSignificance() {
+		if (!condMiComputed) {
+			computeAverageLocalOfObservations();
+		}
+		return new ChiSquareMeasurementDistribution(2.0*((double)observations)*average,
+				(base1 - 1)*(base2 - 1)*condBase);
 	}
 
 	/**
