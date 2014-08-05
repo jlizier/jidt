@@ -15,7 +15,7 @@
 % - measureId - which local info dynamics measure to plot - can be a string or an integer as follows:
 %    - 'active', 0 - active information storage (requires measureParams.k)
 %    - 'transfer', 1 - pairwise or apparent transfer entropy (requires measureParams.k and j)
-%    - 'transfercomplete', 2 - complete transfer entropy (requires measureParams.k and j)
+%    - 'transfercomplete', 2 - complete transfer entropy (requires measureParams.k and j), conditioning on all other sources
 %    - 'separable', 3 - separable information (requires measureParams.k)
 %    - 'entropy', 4 - excess entropy (requires no params)
 %    - 'entropyrate', 5 - excess entropy (requires measureParams.k)
@@ -180,14 +180,14 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 	end
 	
 	%============================
-	% Complete transfer entropy
+	% Complete transfer entropy, conditioning on all other sources
 	if ((ischar(measureId) && (strcmpi('transfercomplete', measureId) || strcmpi('completetransfer', measureId) || strcmpi('all', measureId))) || ...
 	    (not(ischar(measureId)) && ((measureId == 2) || (measureId == -1))))
 		% Compute complete transfer entropy
 		if (measureParams.j == 0)
 			error('Cannot compute transfer entropy from a cell to itself (setting measureParams.j == 0)');
 		end
-		transferCalc = javaObject('infodynamics.measures.discrete.CompleteTransferEntropyCalculator', ...
+		transferCalc = javaObject('infodynamics.measures.discrete.ConditionalTransferEntropyCalculator', ...
 			base, measureParams.k, neighbourhood - 2);
 		transferCalc.initialise();
 		% Offsets of all parents can be included here - even 0 and j, these will be eliminated internally:
