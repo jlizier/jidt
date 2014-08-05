@@ -57,11 +57,11 @@ That's it.
 Documentation
 =============
 
+A research paper describing the toolkit is included in the top level directory -- "InfoDynamicsToolkit.pdf".
+
 Javadocs for the toolkit are included in the full distribution at javadocs.
 They can also be generated using "ant javadocs" (useful if you are on an SVN view).
 Further, they will soon be posted on the web.
-
-A research paper describing the toolkit and its use is in preparation and will be included in the distribution in future.
 
 Further documentation is provided by the Usage examples below.
 
@@ -79,9 +79,11 @@ Several sets of demonstration code are distributed with the toolkit:
 
  d. demos/octave/CellularAutomata -- using the Java toolkit to plot local information dynamics profiles in cellular automata; the toolkit is run under Octave or Matlab -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/CellularAutomataDemos
  
- e. demos/octave/DetectingInteractionLags -- brief examples using the transfer entropy to examine source-delay interaction lags. Documentation to come soon; in the interim, see header comments in the .m files.
+ e. demos/octave/SchreiberTransferEntropyExamples -- recreates the transfer entropy examples in Schreiber's original paper presenting this measure; shows the correct parameter settings to reproduce these results  -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/SchreiberTeDemos
+ 
+ f. demos/octave/DetectingInteractionLags -- brief examples using the transfer entropy to examine source-delay interaction lags. Documentation to come soon; in the interim, see header comments in the .m files.
 
- f. java/unittests -- the JUnit test cases for the Java toolkit are included in the distribution -- these case also be browsed to see simple use cases for the various calculators in the toolkit -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/JUnitTestCases
+ g. java/unittests -- the JUnit test cases for the Java toolkit are included in the distribution -- these case also be browsed to see simple use cases for the various calculators in the toolkit -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/JUnitTestCases
 
 =============
 
