@@ -237,6 +237,8 @@ public class TransferEntropyCalculatorKernel
 	 *   though the adverse correction of the bias correction is worse than the correction
 	 *   itself (because the probabilities being multiplied/divided are not independent), 
 	 *   so recommend not to use this method.
+	 *   (Bias correction is implemented properly in the Kraskov et al. 
+	 *   estimators, see {@link infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov}
 	 * </p>
 	 * <p>It is implemented here for testing purposes only.</p>
 	 * 
@@ -244,25 +246,60 @@ public class TransferEntropyCalculatorKernel
 	public double computeAverageLocalOfObservationsWithCorrection() throws Exception {
 		
 		double te = 0.0;
+		int numNoNeighbours = 0;
+		double contributionsNoNeighbours = 0.0;
 		for (int b = 0; b < totalObservations; b++) {
 			TransferEntropyKernelCounts kernelCounts = teKernelEstimator.getCount(destPastVectors[b],
 					destNextValues[b], sourceValues[b], b);
 			double cont = 0.0;
-			if (kernelCounts.countNextPastSource > 0) {
+			// Original code:
+			/* if (kernelCounts.countNextPastSource > 0) {
 				cont = MathsUtils.digamma(kernelCounts.countNextPastSource) - 
 						MathsUtils.digamma(kernelCounts.countPastSource) -
 						MathsUtils.digamma(kernelCounts.countNextPast) +
 						MathsUtils.digamma(kernelCounts.countPast);
+			} */
+			// But Schreiber confirmed to me that with dynamic correlation 
+			//  exclusion, when you may have no nearest neighbours,
+			//  he was allowing contributions from other groups (e.g. countPastSource)
+			//  to be added even if the full joint count was zero.
+			// Implement it like this:
+			//  TODO Do we need to correct the totalObservations
+			//   divisor for each digamma sum to account for this?
+			//   (Schreiber does not do that; for the moment we'll accept that
+			//    as the right approach)
+			if (kernelCounts.countPastSource > 0) {
+				cont -= MathsUtils.digamma(kernelCounts.countPastSource);
+			}
+			if (kernelCounts.countNextPast > 0) {
+				cont -= MathsUtils.digamma(kernelCounts.countNextPast);
+			}
+			if (kernelCounts.countPast > 0) {
+				cont += MathsUtils.digamma(kernelCounts.countPast);
+			}
+			if (kernelCounts.countNextPastSource > 0) {
+				cont += MathsUtils.digamma(kernelCounts.countNextPastSource);
+			} else {
+				// These contributions are from a set with no neighbours in 
+				//  the full joint space.
+				contributionsNoNeighbours += cont;
+				numNoNeighbours++;
 			}
 			te += cont;
 			/*
 			if (debug) {
-				System.out.println(b + ": " + logTerm + " -> " + (cont/Math.log(2.0)) + " -> sum: " + (te/Math.log(2.0)));
+				System.out.println(b + ": " + cont + " -> " + (cont/Math.log(2.0)) + " -> sum: " + (te/Math.log(2.0)));
 			}
 			*/
 		}
 		// Average it, and convert results to bytes
 		lastAverage = te / (double) totalObservations / Math.log(2.0);
+		if (debug) {
+			System.out.printf("TE=%.4f, with %d contributions from 0 neighbour sets being %.4f\n",
+					lastAverage,
+					numNoNeighbours,
+					contributionsNoNeighbours / (double) totalObservations / Math.log(2.0));
+		}
 		return lastAverage;
 	}
 
