@@ -1,6 +1,8 @@
 #summary Examples of using the toolkit in Octave or Matlab
 #labels octave,matlab,Phase-Deploy,examples,Featured
 
+[Demos] > Octave/Matlab code examples
+
 = Octave/Matlab code examples =
 
 This page describes a basic set of demonstration scripts for using the toolkit in Octave or Matlab. The .m files can be found at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave demos/octave] in the svn or main distributions. Please note that other more complicated examples are available from the main [Demos] page.
