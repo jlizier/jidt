@@ -2,7 +2,7 @@ package infodynamics.demos;
 
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.RandomGenerator;
-import infodynamics.measures.discrete.ApparentTransferEntropyCalculator;
+import infodynamics.measures.discrete.TransferEntropyCalculator;
 
 /**
  * 
@@ -38,8 +38,8 @@ public class Example5TeBinaryMultivarTransfer {
 
 		// Create a TE calculator and run it.
 		// Need to represent 4-state variables for the joint destination variable
-		ApparentTransferEntropyCalculator teCalc=
-				new ApparentTransferEntropyCalculator(4, 1);
+		TransferEntropyCalculator teCalc=
+				new TransferEntropyCalculator(4, 1);
 		teCalc.initialise();
 
 		// We need to construct the joint values of the dest and source before we pass them in:

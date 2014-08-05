@@ -1,7 +1,7 @@
 package infodynamics.demos;
 
 import infodynamics.utils.RandomGenerator;
-import infodynamics.measures.discrete.ApparentTransferEntropyCalculator;
+import infodynamics.measures.discrete.TransferEntropyCalculator;
 
 /**
  * 
@@ -36,8 +36,8 @@ public class Example2TeMultidimBinaryData {
 		System.arraycopy(twoDTimeSeries[0], 0, twoDTimeSeries[1], 1, variables - 1);
 
 		// Create a TE calculator and run it:
-		ApparentTransferEntropyCalculator teCalc=
-				new ApparentTransferEntropyCalculator(2, 1);
+		TransferEntropyCalculator teCalc=
+				new TransferEntropyCalculator(2, 1);
 		teCalc.initialise();
 		// Add observations of transfer across one cell to the right (j=1)
 		//  per time step:
