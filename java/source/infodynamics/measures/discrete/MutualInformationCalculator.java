@@ -1,5 +1,8 @@
 package infodynamics.measures.discrete;
 
+import infodynamics.utils.AnalyticMeasurementDistribution;
+import infodynamics.utils.AnalyticNullDistributionComputer;
+import infodynamics.utils.ChiSquareMeasurementDistribution;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.RandomGenerator;
@@ -18,13 +21,33 @@ import infodynamics.utils.RandomGenerator;
  *
  */
 public class MutualInformationCalculator extends InfoMeasureCalculator 
-	implements ChannelCalculator {
+	implements ChannelCalculator, AnalyticNullDistributionComputer {
 
 	private int timeDiff = 0;
 	private int[][]	jointCount = null; // Count for (i[t-timeDiff], j[t]) tuples
 	private int[] iCount = null; // Count for i[t-timeDiff]		
 	private int[] jCount = null; // Count for j[t]
 
+	protected boolean miComputed = false;
+	
+	/**
+	 * Construct a new MI calculator with default time difference of 0
+	 * 
+	 * @param base number of symbols for each variable
+	 * @throws Exception
+	 */
+	public MutualInformationCalculator(int base) throws Exception {
+		this(base, 0);
+	}
+	
+	/**
+	 * Create a new mutual information calculator
+	 * 
+	 * @param base number of symbols for each variable
+	 * @param timeDiff number of time steps across which to compute
+	 *   MI for given time series
+	 * @throws Exception when timeDiff < 0
+	 */
 	public MutualInformationCalculator(int base, int timeDiff) throws Exception {
 		super(base);
 		if (timeDiff < 0) {
@@ -42,6 +65,7 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 	 */
 	public void initialise(){
 		super.initialise();
+		miComputed = false;		
 		MatrixUtils.fill(iCount, 0);
 		MatrixUtils.fill(jCount, 0);
 		MatrixUtils.fill(jointCount, 0);
@@ -141,6 +165,7 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 		}
 		
 		average = mi;
+		miComputed = true;
 		std = Math.sqrt(meanSqLocals - average * average);
 
 		return mi;
@@ -222,6 +247,37 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 	}
 
 	/**
+	 * <p>Compute the statistical significance of the mutual information 
+	 *  result analytically, without creating a distribution
+	 *  under the null hypothesis by bootstrapping.</p>
+	 *
+	 * <p>Brillinger (see reference below) shows that under the null hypothesis
+	 *  of no source-destination relationship, the MI for two
+	 *  discrete distributions follows a chi-square distribution with
+	 *  degrees of freedom equal to the product of the number of discrete values
+	 *  minus one, for each variable.</p>
+	 *
+	 * @return ChiSquareMeasurementDistribution object 
+	 *  This object contains the proportion of MI scores from the distribution
+	 *  which have higher or equal MIs to ours.
+	 *  
+	 * @see Brillinger, "Some data analyses using mutual information",
+	 * {@link http://www.stat.berkeley.edu/~brill/Papers/MIBJPS.pdf}
+	 * @see Cheng et al., "Data Information in Contingency Tables: A
+	 *  Fallacy of Hierarchical Loglinear Models",
+	 *  {@link http://www.jds-online.com/file_download/112/JDS-369.pdf}
+	 * @see Barnett and Bossomaier, "Transfer Entropy as a Log-likelihood Ratio" 
+	 *  {@link http://arxiv.org/abs/1205.6339}
+	 */
+	public AnalyticMeasurementDistribution computeSignificance() {
+		if (!miComputed) {
+			computeAverageLocalOfObservations();
+		}
+		return new ChiSquareMeasurementDistribution(2.0*((double)observations)*average,
+				(base - 1) * (base - 1));
+	}
+	
+	/**
 	 * Computes local mutual information (or pointwise mutual information)
 	 *  for the given (single) specific values, using pdfs built up from observations previously
 	 *  sent in via the addObservations method.
@@ -287,7 +343,8 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 			}
 		}
 		average = average/(double) observations;
-		
+		miComputed = true;
+
 		return localMI;
 	}
 	
@@ -349,5 +406,4 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 		return computeLocalFromPreviousObservations(states, iCol, jCol);
 		
 	}
-	
 }
