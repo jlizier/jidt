@@ -43,8 +43,8 @@ public class Example5TeBinaryMultivarTransfer {
 		teCalc.initialise();
 
 		// We need to construct the joint values of the dest and source before we pass them in:
-		teCalc.addObservations(MatrixUtils.computeCombinedValues(destArray, 2),
-				MatrixUtils.computeCombinedValues(sourceArray, 2));
+		teCalc.addObservations(MatrixUtils.computeCombinedValues(sourceArray, 2),
+				MatrixUtils.computeCombinedValues(destArray, 2));
 
 		double result = teCalc.computeAverageLocalOfObservations();
 		System.out.printf("For source which the 2 bits are determined from, " +
@@ -52,8 +52,8 @@ public class Example5TeBinaryMultivarTransfer {
 		
 		// Check random source:
 		teCalc.initialise();
-		teCalc.addObservations(MatrixUtils.computeCombinedValues(destArray, 2),
-				MatrixUtils.computeCombinedValues(sourceArray2, 2));
+		teCalc.addObservations(MatrixUtils.computeCombinedValues(sourceArray2, 2),
+				MatrixUtils.computeCombinedValues(destArray, 2));
 		double result2 = teCalc.computeAverageLocalOfObservations();
 		System.out.printf("For random source, result should be close to 0 bits " +
 				"in theory: %.3f\n", result2);

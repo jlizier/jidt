@@ -43,7 +43,7 @@ public class Example8TeContinuousDataByBinning {
 		TransferEntropyCalculator teCalc=
                 new TransferEntropyCalculator(numDiscreteLevels, 1);
 		teCalc.initialise();
-		teCalc.addObservations(binnedDest, binnedSource);
+		teCalc.addObservations(binnedSource, binnedDest);
 		double result = teCalc.computeAverageLocalOfObservations();
 		// Calculation will be heavily biased because of the binning,
 		//  and the small number of samples
