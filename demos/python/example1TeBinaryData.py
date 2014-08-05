@@ -20,10 +20,10 @@ teCalcClass = JPackage("infodynamics.measures.discrete").TransferEntropyCalculat
 teCalc = teCalcClass(2,1)
 teCalc.initialise()
 # Since we have simple arrays of ints, we can directly pass these in:
-teCalc.addObservations(destArray, sourceArray)
+teCalc.addObservations(sourceArray, destArray)
 print("For copied source, result should be close to 1 bit : %.4f" % teCalc.computeAverageLocalOfObservations())
 teCalc.initialise()
-teCalc.addObservations(destArray, sourceArray2)
+teCalc.addObservations(sourceArray2, destArray)
 print("For random source, result should be close to 0 bits: %.4f" % teCalc.computeAverageLocalOfObservations())
 
 shutdownJVM() 

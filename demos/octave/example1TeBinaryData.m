@@ -15,11 +15,11 @@ sourceArray2=(rand(100,1)>0.5)*1;
 teCalc=javaObject('infodynamics.measures.discrete.TransferEntropyCalculator', 2, 1);
 teCalc.initialise();
 % Since we have simple arrays of ints, we can directly pass these in:
-teCalc.addObservations(destArray, sourceArray);
+teCalc.addObservations(sourceArray, destArray);
 fprintf('For copied source, result should be close to 1 bit : ');
 result = teCalc.computeAverageLocalOfObservations()
 teCalc.initialise();
-teCalc.addObservations(destArray, sourceArray2);
+teCalc.addObservations(sourceArray2, destArray);
 fprintf('For random source, result should be close to 0 bits: ');
 result2 = teCalc.computeAverageLocalOfObservations()
 
