@@ -188,12 +188,11 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 	/**
  	 * Add observations for a single source-destination-conditionals set
  	 *  to our estimates of the pdfs.
-	 *
-	 * @param dest destination time series
 	 * @param source source time series
+	 * @param dest destination time series
 	 * @param conditionals conditionals multivariate time series
 	 */
-	public void addObservations(int[] dest, int[] source, int[][] conditionals)
+	public void addObservations(int[] source, int[] dest, int[][] conditionals)
 		throws Exception {
 
 		int rows = dest.length;
@@ -255,13 +254,12 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
  	 * {@link MatrixUtils#computeCombinedValues(int[][], int)}. This cannot be
  	 * checked here however, so use at your own risk!
  	 * </p>
-	 *
-	 * @param dest destination time series
 	 * @param source source time series
+	 * @param dest destination time series
 	 * @param conditionals conditionals univariate time series - it is assumed
 	 *  that the user has combined the values of the multivariate conditionals time series
 	 */
-	public void addObservations(int[] dest, int[] source, int[] conditionals)
+	public void addObservations(int[] source, int[] dest, int[] conditionals)
 		throws Exception {
 
 		int rows = dest.length;
@@ -383,17 +381,17 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 	 *
 	 * @param states
 	 */
-	public void addObservations(int states[][], int destCol, int sourceCol, int[] othersAbsolute) {
-		addObservations(states, destCol, sourceCol, othersAbsolute, false);
+	public void addObservations(int states[][], int sourceCol, int destCol, int[] othersAbsolute) {
+		addObservations(states, sourceCol, destCol, othersAbsolute, false);
 	}
-	private void addObservations(int states[][], int destCol, int sourceCol, int[] othersAbsolute, boolean cleanedOthers) {
+	private void addObservations(int states[][], int sourceCol, int destCol, int[] othersAbsolute, boolean cleanedOthers) {
 
 		int[] cleanedOthersAbsolute;
 		if (cleanedOthers) {
 			cleanedOthersAbsolute = othersAbsolute;
 		} else {
-			cleanedOthersAbsolute = cleanAbsoluteOthers(othersAbsolute, destCol,
-					sourceCol, k > 0);
+			cleanedOthersAbsolute = cleanAbsoluteOthers(othersAbsolute, sourceCol,
+					destCol, k > 0);
 			// This call made redundant by cleanAbsoluteOthers:
 			// confirmEnoughAbsoluteOthers(othersAbsolute, destCol, sourceCol);
 		}
@@ -685,19 +683,19 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 	 * @return
 	 */
 	public double[] computeLocalFromPreviousObservations
-		(int states[][], int destCol, int sourceCol, int[] othersAbsolute){
+		(int states[][], int sourceCol, int destCol, int[] othersAbsolute){
 		
-		return computeLocalFromPreviousObservations(states, destCol, sourceCol, othersAbsolute, false);
+		return computeLocalFromPreviousObservations(states, sourceCol, destCol, othersAbsolute, false);
 	}
 	private double[] computeLocalFromPreviousObservations
-		(int states[][], int destCol, int sourceCol, int[] othersAbsolute, boolean cleanedOthers){
+		(int states[][], int sourceCol, int destCol, int[] othersAbsolute, boolean cleanedOthers){
 
 		int[] cleanedOthersAbsolute;
 		if (cleanedOthers) {
 			cleanedOthersAbsolute = othersAbsolute;
 		} else {
 			cleanedOthersAbsolute = cleanAbsoluteOthers(othersAbsolute,
-					destCol, sourceCol, k > 0);
+					sourceCol, destCol, k > 0);
 			// This call made redundant by cleanOffsetOthers:
 			// confirmEnoughAbsoluteOthers(othersAbsolute, destCol, sourceCol);
 		}
@@ -803,18 +801,18 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 	 * This method suitable for heterogeneous agents
 	 * 
 	 * @param states - 2D array of states
-	 * @param destCol - column index for the destination agent
 	 * @param sourceCol - column index for the source agent
+	 * @param destCol - column index for the destination agent
 	 * @param othersAbsolute - column indices for other causal info contributors
 	 * @return
 	 */
-	public double[] computeLocal(int states[][], int destCol, int sourceCol, int[] othersAbsolute) {
+	public double[] computeLocal(int states[][], int sourceCol, int destCol, int[] othersAbsolute) {
 		
 		initialise();
-		int[] cleanedOthers = cleanAbsoluteOthers(othersAbsolute, destCol,
-				sourceCol, k > 0);
-		addObservations(states, destCol, sourceCol, cleanedOthers, true);
-		return computeLocalFromPreviousObservations(states, destCol, sourceCol, cleanedOthers, true);
+		int[] cleanedOthers = cleanAbsoluteOthers(othersAbsolute, sourceCol,
+				destCol, k > 0);
+		addObservations(states, sourceCol, destCol, cleanedOthers, true);
+		return computeLocalFromPreviousObservations(states, sourceCol, destCol, cleanedOthers, true);
 	}
 
 	/**
@@ -825,15 +823,15 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 	 * This method suitable for heterogeneous agents
 	 * 
 	 * @param states - 2D array of states
-	 * @param destCol - column index for the destination agent
 	 * @param sourceCol - column index for the source agent
+	 * @param destCol - column index for the destination agent
 	 * @param othersAbsolute - column indices for other causal info contributors
 	 * @return
 	 */
-	public double computeAverageLocal(int states[][], int destCol, int sourceCol, int[] othersAbsolute) {
+	public double computeAverageLocal(int states[][], int sourceCol, int destCol, int[] othersAbsolute) {
 		
 		initialise();
-		addObservations(states, destCol, sourceCol, othersAbsolute);
+		addObservations(states, sourceCol, destCol, othersAbsolute);
 		return computeAverageLocalOfObservations();
 	}
 	
@@ -866,13 +864,13 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 	 * node itself not included only when removeDest is set to true)
 	 * 
 	 * @param others
-	 * @param dest
 	 * @param src
+	 * @param dest
 	 * @param removeDest remove the destination itself from the count
 	 *     of absolute others.
 	 * @return
 	 */
-	public static int countOfAbsoluteOthers(int[] others, int dest, int src,
+	public static int countOfAbsoluteOthers(int[] others, int src, int dest,
 			boolean removeDest) {
 		int countOfOthers = 0;
 		for (int index = 0; index < others.length; index++) {
@@ -908,15 +906,15 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 	 * contributors is long enough compared to our expectation
 	 * 
 	 * @param othersAbsolute
-	 * @param dest
 	 * @param src
+	 * @param dest
 	 * @param removeDest remove the destination itself from the count
 	 *     of absolute others.
 	 * @return
 	 */
-	public boolean confirmEnoughAbsoluteOthers(int[] othersAbsolute, int dest,
-			int src, boolean removeDest) {
-		if (countOfAbsoluteOthers(othersAbsolute, dest, src, removeDest) !=
+	public boolean confirmEnoughAbsoluteOthers(int[] othersAbsolute, int src,
+			int dest, boolean removeDest) {
+		if (countOfAbsoluteOthers(othersAbsolute, src, dest, removeDest) !=
 				numOtherInfoContributors) {
 			throw new RuntimeException("Incorrect number of others in absolutes");
 		}
@@ -969,15 +967,15 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 	 * Checks that there are enough other information contributors.
 	 * 
 	 * @param others
-	 * @param dest
 	 * @param src
+	 * @param dest
 	 * @param removeDest Remove the destination itself from the cleaned
 	 *           other sources (if it is there). Should not be done
 	 *           if k == 0 (because then the destination is not included
 	 *           in the past history)
 	 * @return
 	 */
-	public int[] cleanAbsoluteOthers(int[] others, int dest, int src,
+	public int[] cleanAbsoluteOthers(int[] others, int src, int dest,
 			boolean removeDest) {
 		int[] cleaned = new int[numOtherInfoContributors];
 		int countOfOthers = 0;
