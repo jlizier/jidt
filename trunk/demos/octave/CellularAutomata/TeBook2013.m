@@ -1,8 +1,25 @@
+%%
+%%  Java Information Dynamics Toolkit (JIDT)
+%%  Copyright (C) 2012, Joseph T. Lizier
+%%  
+%%  This program is free software: you can redistribute it and/or modify
+%%  it under the terms of the GNU General Public License as published by
+%%  the Free Software Foundation, either version 3 of the License, or
+%%  (at your option) any later version.
+%%  
+%%  This program is distributed in the hope that it will be useful,
+%%  but WITHOUT ANY WARRANTY; without even the implied warranty of
+%%  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%%  GNU General Public License for more details.
+%%  
+%%  You should have received a copy of the GNU General Public License
+%%  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+%%
+
 % To recreate the plots in:
-% chapter 5 of T. Bossomaier, L. Barnett, M. Harr&eacute; and J.T. Lizier, "An Introduction to Transfer Entropy: Information Flow in Complex Systems", Springer, to be published, 2013.
+% chapter 5 of T. Bossomaier, L. Barnett, M. Harr&eacute; and J.T. Lizier, "An Introduction to Transfer Entropy: Information Flow in Complex Systems", Springer, to be published, 2014.
 % These plots were first published in (see DirectedMeasuresChapterDemo2013.m):
-% J. T. Lizier, "Measuring the dynamics of information processing on a local scale in time and space",
-%  accepted for "Directed Information Measures in Neuroscience", edited by M. Wibral, R. Vicente, J. T. Lizier, to be published by Springer, 2013
+% J.T. Lizier, "Measuring the dynamics of information processing on a local scale in time and space", in Directed information measures in Neuroscience, ed. M. Wibral, R. Vicente and J.T. Lizier, pp. 161-193, Springer, Berlin/Heidelberg, 2014; doi: 10.1007/978-3-642-54474-3_7
 
 clear all;
 

@@ -1,6 +1,23 @@
+%%
+%%  Java Information Dynamics Toolkit (JIDT)
+%%  Copyright (C) 2012, Joseph T. Lizier
+%%  
+%%  This program is free software: you can redistribute it and/or modify
+%%  it under the terms of the GNU General Public License as published by
+%%  the Free Software Foundation, either version 3 of the License, or
+%%  (at your option) any later version.
+%%  
+%%  This program is distributed in the hope that it will be useful,
+%%  but WITHOUT ANY WARRANTY; without even the implied warranty of
+%%  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%%  GNU General Public License for more details.
+%%  
+%%  You should have received a copy of the GNU General Public License
+%%  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+%%
+
 % To recreate the plots in:
-% Lizier, Prokopenko and Zomaya, "A framework for the local information dynamics of distributed computation in complex systems",
-%  accepted for "Guided Self-Organization: Inception", edited by M. Prokopenko, to be published by Springer, 2013
+% J.T. Lizier, M. Prokopenko and A.Y. Zomaya, "A framework for the local information dynamics of distributed computation in complex systems", in Guided self-organisation: Inception, ed. M. Prokopenko, pp. 115-158, Springer, Berlin/Heidelberg, 2014; doi: 10.1007/978-3-642-53734-9_5, arXiv:0811.2690.
 
 clear all;
 
