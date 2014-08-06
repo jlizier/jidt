@@ -86,6 +86,15 @@ Several sets of demonstration code are distributed with the toolkit:
  g. java/unittests -- the JUnit test cases for the Java toolkit are included in the distribution -- these case also be browsed to see simple use cases for the various calculators in the toolkit -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/JUnitTestCases
 
 =============
+   Notices
+=============
+
+This project includes modified files from the Apache Commons Math library -- http://commons.apache.org/proper/commons-math/
+This Apache 2 software is now included as a derivative work in this GPLv3 licensed JIDT project, as per: http://www.apache.org/licenses/GPL-compatibility.html
+Notices and license for this software are found in the notices/commons-math directory.
+
+
+=============
 
 Joseph T. Lizier, @DATE@
 
