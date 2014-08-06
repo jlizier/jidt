@@ -69,9 +69,15 @@
 		</junit>
 	</target>
 
-	<!-- Make javadocs -->
+	<!-- Make javadocs, excluding the classes we've derived from Apache Commons Math -->
 	<target name="javadocs" depends="compile" description="Make the javadocs for the toolkit">
-		<javadoc sourcepath="${src}" destdir="${javadocsdir}"/>
+		<javadoc destdir="${javadocsdir}">
+			<fileset dir="${src}">
+				<include name="**/*.java"/>
+				<exclude name="**/commonsmath3/*.java"/>
+				<exclude name="**/commonsmath3/**/*.java"/>
+			</fileset>
+		</javadoc>
 	</target>
 
 	<!-- Clean up -->
@@ -145,11 +151,12 @@
 			<fileset file="${jarplainname}"/>
 			<fileset file="license-gplv3.txt"/>
 			<fileset file="readme.txt"/>
+			<fileset file="InfoDynamicsToolkit.pdf"/>
 			<fileset file="${versionfile}"/>
 			<zipfileset dir="java" includes="**/*.java" prefix="java"/>
 			<zipfileset dir="demos" includes="**/*.*,**/*" prefix="demos"/>
 			<zipfileset dir="javadocs" includes="**/*.*,**/*" prefix="javadocs"/>
-			<!-- TODO Include the paper on the toolkit once it's ready -->
+			<zipfileset dir="notices" includes="**/*.*,**/*" prefix="notices"/>
 		</zip>
 	</target>
 </project>
