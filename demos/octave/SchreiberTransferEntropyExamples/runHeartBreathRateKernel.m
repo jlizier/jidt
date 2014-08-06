@@ -43,7 +43,6 @@ function [teHeartToBreath, teBreathToHeart] = runHeartBreathRateKernel(rs)
 	
 	fprintf('TE for heart rate <-> breath rate for kernel estimation with %d samples:\n', timeSteps);
 
-	% Using a single conditional mutual information calculator is the least biased way to run this:
 	teCalc=javaObject('infodynamics.measures.continuous.kernel.TransferEntropyCalculatorKernel');
 	teCalc.setProperty('NORMALISE', 'true'); % Normalise the individual variables. Schreiber doesn't explicitly say this is done for TE, but it is done for the raw data plots in Figure 3.
 	teCalc.setProperty('DYN_CORR_EXCL', '100'); % Schreiber never mentions that dynamic correlation exclusion is used, but one suspects that it is done with 100 time steps (as per example 2), and indeed this is borne out by the results.

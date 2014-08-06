@@ -49,7 +49,6 @@ function [aisHeart, aisBreath] = activeInfoStorageHeartBreathRatesKraskov(kHisto
 	
 	fprintf('AIS for heart rate and breath rate for Kraskov estimation with %d samples:\n', timeSteps);
 
-	% Using a single conditional mutual information calculator is the least biased way to run this:
 	aisCalc=javaObject('infodynamics.measures.continuous.kraskov.ActiveInfoStorageCalculatorKraskov');
 
 	for kIndex = 1:length(kHistories)
