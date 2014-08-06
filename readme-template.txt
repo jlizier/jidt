@@ -93,6 +93,8 @@ This project includes modified files from the Apache Commons Math library -- htt
 This Apache 2 software is now included as a derivative work in this GPLv3 licensed JIDT project, as per: http://www.apache.org/licenses/GPL-compatibility.html
 Notices and license for this software are found in the notices/commons-math directory.
 
+The project also contains adapted code from the JAMA project -- http://math.nist.gov/javanumerics/jama/
+Notices and license for this software are found in the notices/JAMA directory.
 
 =============
 
