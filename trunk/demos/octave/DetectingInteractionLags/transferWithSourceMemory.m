@@ -13,6 +13,8 @@
 %  showing that it is not maximised
 %  for the correct delay even in such simple unidirectional coupling.
 %
+% This script takes 1-2 minutes to run and generate the plots.
+% 
 % NOTE: You may need to increase the Java heap space in Matlab for this
 %  to work (you will get a "java.lang.OutOfMemoryError: Java heap space"
 %  error if this is a problem).
@@ -83,17 +85,19 @@ function transferWithSourceMemory(savePlot)
 		teCalc.addObservations(x(1:length(x)-1), y(2:length(y)));
 		teXnminus1ToYnplus1(deltaIndex) = teCalc.computeAverageLocalOfObservations();
 		
-		% Compute MITs
+		% Compute MITs using a conditional TE calculator, adding the past of the source to the conditionals
 		compTeCalc = javaObject('infodynamics.measures.discrete.ConditionalTransferEntropyCalculator', 4, 1, 1);
 		compTeCalc.initialise();
 		% We need to additionally condition on the past of X:
-		compTeCalc.addObservations(octaveToJavaIntMatrix([y(2:length(y)), x(2:length(x)), x(1:length(x)-1)]), ...
-			0, 1, octaveToJavaIntArray([2]));
+		compTeCalc.addObservations(octaveToJavaIntArray(x(2:length(x))), ...
+					octaveToJavaIntArray(y(2:length(y))), ...
+					octaveToJavaIntArray(x(1:length(x)-1)));
 		mitXnToYnplus1(deltaIndex) = compTeCalc.computeAverageLocalOfObservations();
 		compTeCalc.initialise();
 		% We need to shift x forward here to investigate the lag, and condition on the past of Y
-		compTeCalc.addObservations(octaveToJavaIntMatrix([y(3:length(y)), x(2:length(x)-1), x(1:length(x)-2)]), ...
-			0, 1, octaveToJavaIntArray([2]));
+		compTeCalc.addObservations(octaveToJavaIntArray(x(2:length(x)-1)), ...
+					octaveToJavaIntArray(y(3:length(y))), ...
+					octaveToJavaIntArray(x(1:length(x)-2)));
 		mitXnminus1ToYnplus1(deltaIndex) = compTeCalc.computeAverageLocalOfObservations();
 		
 		fprintf('delta=%.3f, TE(X_{n} -> Y_{n+1})=%.3f, TE(X_{n-1} -> Y_{n+1})=%.3f, MIT(X_{n} -> Y_{n+1})=%.3f, MIT(X_{n-1} -> Y_{n+1})=%.3f\n', ...
@@ -148,6 +152,7 @@ function transferWithSourceMemory(savePlot)
 			'Location', 'East');
 	end
 
+	% Plot the MIT's
 	figure;
 	if (exist ('OCTAVE_VERSION', 'builtin'))
 		% Make the full plots only on octave
