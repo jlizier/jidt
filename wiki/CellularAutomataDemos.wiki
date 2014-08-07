@@ -1,5 +1,5 @@
 #summary Demos to show how to compute local information dynamics profiles in cellular automata
-#labels CellularAutomata,octave,matlab,Demos
+#labels CellularAutomata,octave,matlab,examples
 
 [Demos] > Cellular Automata demos
 
