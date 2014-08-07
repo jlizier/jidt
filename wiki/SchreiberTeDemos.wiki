@@ -1,5 +1,5 @@
 #summary Demos to recreate Schreiber's original transfer entropy examples
-#labels octave,matlab
+#labels octave,matlab,examples
 
 [Demos] > Schreiber Transfer Entropy Demos
 
