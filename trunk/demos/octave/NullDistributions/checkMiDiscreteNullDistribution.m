@@ -26,21 +26,41 @@
 % - observations - length of time series for each calculation
 % - bias1 - proportion of values for variable 1 to be assigned 0 instead of 1. 0.5 means 50-50 probability
 % - bias2 - proportion of values for variable 2 to be assigned 0 instead of 1. 0.5 means 50-50 probability
+% - useToolkit - whether or not to use the toolkit to generate the bootstrapped distribution. Default is false, and it is better not to do this, since it fixes the bias precisely for each time series sample, restricting the number of possible MI values that could be measured. While the results from setting this still follow the analytic distribution, they do so in a stepped manner (since there is a restricted set of allowable MI values)
 
-function [mis] = checkMiDiscreteNullDistribution(repeats, observations, bias1, bias2)
+function [mis] = checkMiDiscreteNullDistribution(repeats, observations, bias1, bias2, useToolkit)
 
 	addpath('..');
 	javaaddpath('../../../infodynamics.jar');
 
-	mis = zeros(1, repeats);
-	miCalc=javaObject('infodynamics.measures.discrete.MutualInformationCalculator', 2);
-	for s = 1 : repeats
-		x = (rand(1,observations) < bias1)*1;
-		y = (rand(1,observations) < bias2)*1;
+	if (nargin < 5)
+		useToolkit = false;
+	end
+
+	if (useToolkit)
+		% 1. We can let the toolkit compute the distribution of MIs for us,
+		%  by first supplying the variables with the correct bias.
+		% It is NOT recommended to use this approach however, as described in the header comments.
+		miCalc=javaObject('infodynamics.measures.discrete.MutualInformationCalculator', 2);
+		x = [zeros(1,observations*bias1) ones(1,observations*(1-bias1))]; % Create data with exact bias
+		y = [zeros(1,observations*bias2) ones(1,observations*(1-bias2))]; % Create data with exact bias
+		fprintf('Creating surrogates from x and y of lengths %d and %d with biases %.3f and %.3f \n', length(x), length(y), sum(x == 0)/length(x), sum(y == 0)/length(y));
 		miCalc.initialise();
-		% Since we have simple arrays of ints, we can directly pass these in:
 		miCalc.addObservations(octaveToJavaIntArray(x), octaveToJavaIntArray(y));
-		mis(s) = miCalc.computeAverageLocalOfObservations();
+		nullDist = miCalc.computeSignificance(repeats); % Compute null distribution
+		mis = javaMatrixToOctave(nullDist.distribution);	
+	else
+		% OR
+		% 2. We could compute the bootstrapped distribution of MIs by bootstrapping ourselves:
+		mis = zeros(1, repeats);
+		miCalc=javaObject('infodynamics.measures.discrete.MutualInformationCalculator', 2);
+		for s = 1 : repeats
+			x = (rand(1,observations) < bias1)*1; % Create data with sampled bias
+			y = (rand(1,observations) < bias2)*1; % Create data with sampled bias
+			miCalc.initialise();
+			miCalc.addObservations(octaveToJavaIntArray(x), octaveToJavaIntArray(y));
+			mis(s) = miCalc.computeAverageLocalOfObservations();
+		end
 	end
 
 	bins = 100;
@@ -59,6 +79,7 @@ function [mis] = checkMiDiscreteNullDistribution(repeats, observations, bias1, b
 	hold off;
 	legend(['Bootstrapped'; 'Chi^2 analytic'], 'Location', 'East');
 	axis([0 max(pdfX) 0 1]);
+	% Draw a line at the alpha=0.05 cutoff
 	line([0 max(pdfX)], [0.95 0.95], 'linewidth', 2, 'color', 'blue');
 	set (gca,'fontsize',26);
 	xlabel('MI', 'FontSize', 36, 'FontWeight', 'bold');
