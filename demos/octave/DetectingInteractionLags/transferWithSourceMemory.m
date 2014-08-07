@@ -147,15 +147,6 @@ function transferWithSourceMemory(savePlot)
 		hold off;
 		% Make figures ok for plotting:
 		legend('location', 'east');
-		if (savePlot)
-			xlabel('\eta', 'fontsize', 32);
-			ylabel('Information (bits)', 'fontsize', 32);
-			print('te.eps', '-deps', '-color');
-		else
-			% do these without fontsize to have more stable displays in octave
-			xlabel('\eta');
-			ylabel('Information (bits)');
-		end
 	else
 		% We're on Matlab - just make a quick plot
 		plot(deltas, teXnToYnplus1, 'rx', 'markersize', markersize); % Empirical: TE_{SPO}(X \rightarrow Y, 1);
@@ -168,6 +159,15 @@ function transferWithSourceMemory(savePlot)
 		legend('Empirical: TE_{SPO}(X \rightarrow Y, 1)', 'Analytic: TE_{SPO}(X \rightarrow Y, 1)', ...
 			'Empirical: TE_{SPO}(X \rightarrow y, 2)', 'Analytic: TE_{SPO}(X \rightarrow Y, 2)', ...
 			'Location', 'East');
+	end
+	if (savePlot)
+		xlabel('\eta', 'fontsize', 32);
+		ylabel('Information (bits)', 'fontsize', 32);
+		print('te.eps', '-depsc');
+	else
+		% do these without fontsize to have more stable displays in octave
+		xlabel('\eta');
+		ylabel('Information (bits)');
 	end
 
 	% Plot the MIT's
@@ -185,15 +185,6 @@ function transferWithSourceMemory(savePlot)
 		hold off;
 		% Make figures ok for plotting:
 		legend('location', 'east')
-		if (savePlot)
-			xlabel('\eta', 'fontsize', 32);
-			ylabel('Information (bits)', 'fontsize', 32);
-			print('mit.eps', '-deps', '-color');
-		else
-			% do these without fontsize to have more stable displays in octave
-			xlabel('\eta');
-			ylabel('Information (bits)');
-		end
 	else
 		% We're on Matlab - just make a quick plot
 		plot(deltas, mitXnToYnplus1, 'rx', 'markersize', markersize); % Empirical: MIT(X \rightarrow Y, 1)
@@ -206,6 +197,15 @@ function transferWithSourceMemory(savePlot)
 		legend('Empirical: MIT(X \rightarrow Y, 1)', 'Analytic: MIT(X \rightarrow Y, 1)', ...
 			'Empirical: MIT(X \rightarrow Y, 2)', 'Analytic: MIT(X \rightarrow Y, 2)', ...
 			'Location', 'East');
+	end
+	if (savePlot)
+		xlabel('\eta', 'fontsize', 32);
+		ylabel('Information (bits)', 'fontsize', 32);
+		print('mit.eps', '-depsc');
+	else
+		% do these without fontsize to have more stable displays in octave
+		xlabel('\eta');
+		ylabel('Information (bits)');
 	end
 
 	toc;
