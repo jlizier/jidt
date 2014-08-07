@@ -20,7 +20,7 @@ The results lead to the conclusions that:
 
 This demo is run in Matlab or Octave.
 
-It is found at demos/octave/DetectingInteractionLags in the svn or full distribution.
+It is found at `demos/octave/DetectingInteractionLags` in the svn or full distribution.
 
 == Test case Ia -- Source with memory ==
 
