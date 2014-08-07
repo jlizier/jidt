@@ -5,7 +5,11 @@
 
 = Schreiber Transfer Entropy Demos =
 
-This demonstration set (available from release 1.0) shows how to recreate the examples in Schreiber's original paper introducing transfer entropy (ref. 1) (see [#References] below).
+This demonstration set (available from release 1.0) shows how to recreate the examples in Schreiber's original paper introducing transfer entropy:
+
+ # T. Schreiber, [http://dx.doi.org/10.1103/physrevlett.85.461 "Measuring Information Transfer"], Physical Review Letters *85*(2): 461-464, 2000.
+
+(Or see ref. 1 in [#References] below).
 Several additional analyses on the same data set are provided as well.
 
 It is written for MATLAB or Octave.
