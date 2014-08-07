@@ -1,5 +1,5 @@
 #summary How to find and run the JUnit test cases included in the full distribution
-#labels demos,Phase-QA,Phase-Implementation
+#labels examples,Phase-QA,Phase-Implementation
 
 = Introduction =
 
