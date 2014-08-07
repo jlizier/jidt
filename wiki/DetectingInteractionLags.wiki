@@ -60,7 +60,7 @@ Next, the Wibral et al. paper revisits transfer entropy TE(X->Y) for coupled log
     fmod1(x) := 4 .* (x mod 1) .* (1 - (x mod 1));
     gYToX = cYToX .* Y(t - delayYtoX) + (1-cYToX) .* X(t - 1);
     X(t) = fmod1(gYToX);
-    gXToY = cXToY .* X(t - delayXtoY,:) + (1-cXToY) .* Y(t - 1,:);
+    gXToY = cXToY .* X(t - delayXtoY) + (1-cXToY) .* Y(t - 1);
     Y(t) = fmod1(gXToY);
 }}}
 We use `delayYtoX = 5; delayXtoY = 2; cYToX = 0.2; cXToY = 0.5`; time-series length 512 and embedded history length `k=1` to match parameters in the papers above.
