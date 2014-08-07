@@ -80,7 +80,6 @@ Sample results are as follows:
 {{{
 TE(X->Y,delay=1) = 0.5735 nats (+/- std 0.0324, stderr 0.0010) or 0.8274 bits
 TE(X->Y,delay=2) = 1.4703 nats (+/- std 0.0242, stderr 0.0008) or 2.1212 bits
-If measured:
 TE(X->Y,delay=3) = 0.4772 nats (+/- std 0.0358, stderr 0.0011) or 0.6885 bits
 }}}
 
