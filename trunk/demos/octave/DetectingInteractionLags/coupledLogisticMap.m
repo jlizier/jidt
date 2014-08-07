@@ -23,7 +23,7 @@
 %       fmod1(x) := 4 .* (x mod 1) .* (1 - (x mod 1));
 % 	gYToX = cYToX .* Y(t - delayYtoX) + (1-cYToX) .* X(t - 1);
 %	X(t) = fmod1(gYToX);
-%	gXToY = cXToY .* X(t - delayXtoY,:) + (1-cXToY) .* Y(t - 1,:);
+%	gXToY = cXToY .* X(t - delayXtoY) + (1-cXToY) .* Y(t - 1);
 %	Y(t) = fmod1(gXToY);
 %
 % Specifically, we use delayYtoX = 5; and delayXtoY = 2; and check
@@ -83,7 +83,7 @@ function coupledLogisticMap()
 	transientRunsOfT = 100;
 
 	% The actual values of the results slightly change with the Kraskov K parameter,
-	%  but we note that delay 2 is higher for K=1,2,3,4,10...
+	%  but we note that delay 2 is higher for K's we've tested
 	KraskovK ='4'; % Use Kraskov parameter K=4 for 4 nearest points
 	% For K=2 we get:
 	%TE(X->Y,delay=1) = 0.7773 nats (+/- std 0.0959, stderr 0.0096)
@@ -130,52 +130,34 @@ function coupledLogisticMap()
 	resultsLag3 = zeros(1,repeats);
 	for r = 1 : repeats
 		% Create a TE calculator and run it:
-			
-		% Using a single conditional mutual information calculator is the least biased way to run this:
-		% TODO replace this with Kraskov TE estimator now that it uses only a single conditional MI estimator
-		teCalc=javaObject('infodynamics.measures.continuous.kraskov.ConditionalMutualInfoCalculatorMultiVariateKraskov1');
+		%  (Our TE calculator is now using a single conditional MI calculator, so
+		%   we replace the conditional MI calculator that was here before)
+		teCalc=javaObject('infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov');
 		% Perform calculation for X -> Y (lag 1)
-		teCalc.initialise(1,1,k); % Use history length k (Schreiber k)
+		teCalc.initialise(k,1,1,1,1); % Use history length k (Schreiber k)
 		teCalc.setProperty('k', KraskovK);
-		teCalc.setObservations(octaveToJavaDoubleMatrix(X(seedSteps:size(X,1)-1,r)), ...
-					octaveToJavaDoubleMatrix(Y(seedSteps+1:size(Y,1),r)), ...
-					octaveToJavaDoubleMatrix(Y(seedSteps:size(Y,1)-1,r)));
+		teCalc.setObservations(octaveToJavaDoubleMatrix(X(seedSteps:size(X,1),r)), ...
+					octaveToJavaDoubleMatrix(Y(seedSteps:size(Y,1),r)));
 		resultsLag1(r) = teCalc.computeAverageLocalOfObservations();
 		% Perform calculation for X -> Y (lag 2)
-		teCalc.initialise(1,1,k); % Use history length k (Schreiber k)
+		teCalc.initialise(k,1,1,1,2); % Use history length k (Schreiber k)
 		teCalc.setProperty('k', KraskovK);
-		teCalc.setObservations(octaveToJavaDoubleMatrix(X(seedSteps:size(X,1)-2,r)), ...
-					octaveToJavaDoubleMatrix(Y(seedSteps+2:size(Y,1),r)), ...
-					octaveToJavaDoubleMatrix(Y(seedSteps+1:size(X,1)-1,r)));
+		teCalc.setObservations(octaveToJavaDoubleMatrix(X(seedSteps:size(X,1),r)), ...
+					octaveToJavaDoubleMatrix(Y(seedSteps:size(Y,1),r)));
 		resultsLag2(r) = teCalc.computeAverageLocalOfObservations();
-		% Perform calculation for X -> Y (lag 2)
-		teCalc.initialise(1,1,k); % Use history length k (Schreiber k)
+		% Perform calculation for X -> Y (lag 3)
+		teCalc.initialise(k,1,1,1,3); % Use history length k (Schreiber k)
 		teCalc.setProperty('k', KraskovK);
-		teCalc.setObservations(octaveToJavaDoubleMatrix(X(seedSteps:size(X,1)-3,r)), ...
-					octaveToJavaDoubleMatrix(Y(seedSteps+3:size(Y,1),r)), ...
-					octaveToJavaDoubleMatrix(Y(seedSteps+2:size(X,1)-1,r)));
+		teCalc.setObservations(octaveToJavaDoubleMatrix(X(seedSteps:size(X,1),r)), ...
+					octaveToJavaDoubleMatrix(Y(seedSteps:size(Y,1),r)));
 		resultsLag3(r) = teCalc.computeAverageLocalOfObservations();
-		
-		%% TransferEntropyCalculatorKraskov uses two MI calculators, so doesn't eliminate all bias.
-		% It still returns the correct ordering of lag 1 and 2 though:
-		% teCalc=javaObject('infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov');
-		%% Perform calculation for X -> Y (lag 1)
-		%teCalc.initialise(k); % Use history length k (Schreiber k)
-		%teCalc.setProperty('k', KraskovK);
-		%teCalc.setObservations(X(seedSteps:size(X,1),r), Y(seedSteps:size(Y,1),r));
-		%resultsLag1(r) = teCalc.computeAverageLocalOfObservations();
-		%% Perform calculation for X -> Y (lag 2)
-		%teCalc.initialise(k); % Use history length k (Schreiber k)
-		%teCalc.setProperty('k', KraskovK);
-		%teCalc.setObservations(X(seedSteps-1:size(X,1)-1,r), Y(seedSteps:size(Y,1),r));
-		%resultsLag2(r) = teCalc.computeAverageLocalOfObservations();
 		
 		% Kernel estimator returns the correct ordering of lag 1 and 2 for 
 		% reasonably tight values of the kernel width (<~ 0.45 normalised units)
 		% At larger kernel widths, the ordering becomes incorrect - it seems that
 		%  because larger kernel widths mean we have imprecision in observations that
 		%  we are grouping together, then we start to see the same effect as we did with
-		%  the symbolic coding.
+		%  the symbolic coding!!
 		%teCalc=javaObject('infodynamics.measures.continuous.kernel.TransferEntropyCalculatorKernel');
 		%kernelWidth = '0.25'; % normalised units
 		%% Perform calculation for X -> Y (lag 1)
@@ -193,7 +175,7 @@ function coupledLogisticMap()
 		mean(resultsLag1), std(resultsLag1), std(resultsLag1)./sqrt(repeats), mean(resultsLag1)./log(2) );
 	fprintf('TE(X->Y,delay=2) = %.4f nats (+/- std %.4f, stderr %.4f) or %.4f bits\n', ...
 		mean(resultsLag2), std(resultsLag2), std(resultsLag2)./sqrt(repeats), mean(resultsLag2) ./log(2));
-	fprintf('If measured:\nTE(X->Y,delay=3) = %.4f nats (+/- std %.4f, stderr %.4f) or %.4f bits\n', ...
+	fprintf('TE(X->Y,delay=3) = %.4f nats (+/- std %.4f, stderr %.4f) or %.4f bits\n', ...
 		mean(resultsLag3), std(resultsLag3), std(resultsLag3)./sqrt(repeats), mean(resultsLag3) ./log(2));
 	
 	toc;
