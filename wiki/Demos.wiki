@@ -9,7 +9,7 @@ Several sets of demonstration code are distributed with the toolkit. Links to th
   * PythonExamples -- `demos/python` -- basic examples on using the Java toolkit from Python using the JPype interface - these mirror the SimpleJavaExamples;
   * SchreiberTeDemos -- `demos/octave/SchreiberTransferEntropyExamples` -- using the toolkit to reproduce the transfer entropy examples originally included in Schreiber's 2000 paper introducing transfer entropy;
   * CellularAutomataDemos -- `demos/octave/CellularAutomata` -- using the Java toolkit to plot local information dynamics profiles in cellular automata; the demo is run under Octave or Matlab;
-  * DetectingInteractionLags -- `demos/java/DetectingInteractionLags` -- demonstration of using the transfer entropy with source-destination lags; the demo is run under Octave or Matlab;
+  * DetectingInteractionLags -- `demos/octave/DetectingInteractionLags` -- demonstration of using the transfer entropy with source-destination lags; the demo is run under Octave or Matlab;
   * InterregionalTransfer -- `demos/java/interregionalTransfer` -- higher level example using collective transfer entropy to infer effective connections between "regions" of data;
   * NullDistributions -- `demos/octave/NullDistributions` -- investigating the correspondence between analytic and bootstrapped distributions for TE and MI under null hypotheses of no relationship; the demo is run under Octave or Matlab;
 
