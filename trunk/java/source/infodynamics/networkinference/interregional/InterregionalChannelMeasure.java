@@ -209,7 +209,7 @@ public abstract class InterregionalChannelMeasure {
 		channelCalc = (ChannelCalculatorMultiVariate)
 					Class.forName(calculatorClass).newInstance();
 		channelCalc.setDebug(debug);
-		setPropertiesOnCalculator();
+		setPropertiesOnCalculator(true);
 		rg = new RandomGenerator();
 		rg.setSeed(seed);
 		subsetsForEachRegion1 = null;
@@ -307,11 +307,11 @@ public abstract class InterregionalChannelMeasure {
 	 * 
 	 * @throws Exception
 	 */
-	protected void setPropertiesOnCalculator()
+	protected void setPropertiesOnCalculator(boolean forcePrintProperties)
 		throws Exception {
 		
 		boolean oldDebug = debug;
-		channelCalc.setDebug(true);
+		channelCalc.setDebug(debug || forcePrintProperties);
 		for (Object keyObject : calculatorProperties.keySet()) {
 			channelCalc.setProperty((String) keyObject,
 					calculatorProperties.getProperty((String) keyObject));
@@ -341,7 +341,7 @@ public abstract class InterregionalChannelMeasure {
 	 */
 	public ChannelMeasurementDistribution computeMean() throws Exception {
 		// Set up the calculator
-		setPropertiesOnCalculator();
+		setPropertiesOnCalculator(false);
 		
 		checkSubsetsAreGenerated();
 		
@@ -440,7 +440,7 @@ public abstract class InterregionalChannelMeasure {
 		int reorderingsForSignificance = reorderings.length;
 		
 		// Set up the calculator
-		setPropertiesOnCalculator();
+		setPropertiesOnCalculator(false);
 		
 		checkSubsetsAreGenerated();
 
@@ -561,7 +561,7 @@ public abstract class InterregionalChannelMeasure {
 	 */
 	public LocalChannelMeasurementDistribution computeLocals(double cutoff, boolean cutoffIsSignificance) throws Exception {
 		// Set up the calculator
-		setPropertiesOnCalculator();
+		setPropertiesOnCalculator(false);
 		
 		checkSubsetsAreGenerated();
 
