@@ -54,14 +54,14 @@ package infodynamics.measures.continuous;
  * 							{@link #addObservations(double[], double[], int, int)}, then</li>
  * 						<li>{@link #finaliseAddObservations()};</li>
  * 					</ol></li>
- * 			</ul>
+ * 			</ul></li>
  * 		<li>Compute the required quantities, being one or more of:
  * 			<ul>
  * 				<li>the average TE: {@link #computeAverageLocalOfObservations()};</li>
  * 				<li>the local TE values for these samples: {@link #computeLocalOfPreviousObservations()}</li>
  * 				<li>local TE values for a specific set of samples:
  * 				{@link #computeLocalUsingPreviousObservations(double[], double[])} </li>
- * 				<li>the distribution of MI values under the null hypothesis
+ * 				<li>the distribution of TE values under the null hypothesis
  * 					of no relationship between source and
  * 					destination values: {@link #computeSignificance(int)} or
  * 					{@link #computeSignificance(int[][])}.</li>

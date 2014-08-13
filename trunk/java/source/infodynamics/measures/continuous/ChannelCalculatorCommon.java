@@ -129,7 +129,6 @@ public abstract interface ChannelCalculatorCommon {
 	 * Compute the channel measure from the previously-supplied samples.
 	 * 
 	 * @return the estimate of the channel measure
-	 * @throws Exception
 	 */
 	public double computeAverageLocalOfObservations() throws Exception;
 
@@ -149,7 +148,6 @@ public abstract interface ChannelCalculatorCommon {
 	 *  to create a single "time-series" return array.</p>
 	 *  
 	 * @return the "time-series" of local channel measure values.
-	 * @throws Exception
 	 */
 	public double[] computeLocalOfPreviousObservations() throws Exception;
 
@@ -177,7 +175,6 @@ public abstract interface ChannelCalculatorCommon {
 	 * @return the distribution of channel measure scores under this null hypothesis.
 	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
 	 *    toolkit for studying the dynamics of complex systems', 2014."
-	 * @throws Exception
 	 */
 	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception;
 	
@@ -244,8 +241,6 @@ public abstract interface ChannelCalculatorCommon {
 	 * </p>
 	 * 
 	 * @return the number of samples to be used for the PDFs
-	 * @throws Exception
 	 */
 	public int getNumObservations() throws Exception;
-
 }

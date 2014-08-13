@@ -19,8 +19,9 @@
 package infodynamics.measures.continuous;
 
 /**
- * A basic interface for calculators computing measures on a univariate <i>channel</i> from a
- * source to a destination time-series (i.e. mutual information and transfer entropy).
+ * A basic interface for calculators computing measures on a univariate <i>channel</i>
+ * for continuous (ie double[]) data from a
+ * source to a destination time-series (ie mutual information and transfer entropy).
  * In the following, we refer to the abstract measure computed by this calculator
  * as the <i>"channel measure"</i>.
  * 
@@ -38,7 +39,7 @@ package infodynamics.measures.continuous;
  * 
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
- * @see ChannelCalculator
+ * @see ChannelCalculatorCommon
  */
 public interface ChannelCalculator extends ChannelCalculatorCommon {
 

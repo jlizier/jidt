@@ -263,12 +263,12 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	 *  (with PDFs computed using all of the previously supplied observation sets).</p>
 	 *  
 	 * <p>If the samples were supplied via a single call such as
-	 * {@link #setObservations(double[])},
+	 * {@link #setObservations(double[][], double[][])},
 	 * then the return value is a single time-series of local
 	 * channel measure values corresponding to these samples.</p>
 	 * 
 	 * <p>Otherwise where disjoint time-series observations were supplied using several 
-	 *  calls such as {@link addObservations(double[])}
+	 *  calls such as {@link #addObservations(double[][], double[][])}
 	 *  then the local values for each disjoint observation set will be appended here
 	 *  to create a single "time-series" return array.</p>
 	 * 
