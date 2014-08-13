@@ -63,7 +63,7 @@ public abstract class MultiInfoCalculatorKraskov implements
 	/**
 	 * we compute distances to the kth nearest neighbour
 	 */
-	protected int k;
+	protected int k = 4;
 	/**
 	 * Cached observations
 	 */
@@ -109,7 +109,7 @@ public abstract class MultiInfoCalculatorKraskov implements
 	
 	/**
 	 * Property name for the number of K nearest neighbours used in
-	 * the KSG algorithm (default 1).
+	 * the KSG algorithm (default 4).
 	 */
 	public final static String PROP_K = "k";
 	/**
@@ -133,7 +133,6 @@ public abstract class MultiInfoCalculatorKraskov implements
 	 */
 	public MultiInfoCalculatorKraskov() {
 		super();
-		k = 1; // by default
 		normCalculator = new EuclideanUtils(EuclideanUtils.NORM_MAX_NORM);
 	}
 
@@ -155,7 +154,7 @@ public abstract class MultiInfoCalculatorKraskov implements
 	 * values should represent, include:</p>
 	 * <ul>
 	 *  <li>{@link #PROP_K} -- number of k nearest neighbours to use in joint kernel space
-	 *      in the KSG algorithm (default is 1).</li>
+	 *      in the KSG algorithm (default is 4).</li>
 	 * 	<li>{@link #PROP_NORM_TYPE}</li> -- normalization type to apply to 
 	 * 		working out the norms between the points in each marginal space.
 	 * 		Options are defined by {@link EuclideanUtils#setNormToUse(String)} -

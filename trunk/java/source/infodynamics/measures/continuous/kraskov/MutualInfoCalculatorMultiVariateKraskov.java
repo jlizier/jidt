@@ -65,7 +65,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	/**
 	 * we compute distances to the kth nearest neighbour
 	 */
-	protected int k = 1;
+	protected int k = 4;
 	
 	/**
 	 * Calculator for the norm between data points
@@ -92,7 +92,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	
 	/**
 	 * Property name for the number of K nearest neighbours used in
-	 * the KSG algorithm in the full joint space.
+	 * the KSG algorithm in the full joint space (default 4).
 	 */
 	public final static String PROP_K = "k";
 	/**
@@ -149,7 +149,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	 * values should represent, include:</p>
 	 * <ul>
 	 *  <li>{@link #PROP_K} -- number of k nearest neighbours to use in joint kernel space
-	 *      in the KSG algorithm (default is 1).</li>
+	 *      in the KSG algorithm (default is 4).</li>
 	 * 	<li>{@link #PROP_NORM_TYPE}</li> -- normalization type to apply to 
 	 * 		working out the norms between the points in each marginal space.
 	 * 		Options are defined by {@link EuclideanUtils#setNormToUse(String)} -
