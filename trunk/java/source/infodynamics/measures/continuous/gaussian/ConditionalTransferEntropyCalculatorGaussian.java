@@ -18,6 +18,7 @@
 
 package infodynamics.measures.continuous.gaussian;
 
+import infodynamics.measures.continuous.ConditionalTransferEntropyCalculator;
 import infodynamics.measures.continuous.ConditionalTransferEntropyCalculatorViaCondMutualInfo;
 import infodynamics.utils.AnalyticNullDistributionComputer;
 import infodynamics.utils.ChiSquareMeasurementDistribution;

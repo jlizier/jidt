@@ -18,6 +18,7 @@
 
 package infodynamics.measures.continuous.kraskov;
 
+import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariate;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 
