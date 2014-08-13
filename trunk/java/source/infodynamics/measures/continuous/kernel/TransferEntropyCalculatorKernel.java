@@ -28,24 +28,32 @@ import infodynamics.utils.RandomGenerator;
 
 import java.util.Iterator;
 
-
 /**
+ * <p>Computes the differential transfer entropy (TE) between two univariate
+ *  <code>double[]</code> time-series of observations
+ *  using box-kernel estimation.
+ *  For details on box-kernel estimation, see Kantz and Schreiber (below).</p>
+ *  
+ * <p>TE was defined by Schreiber (below).
+ *  This estimator is realised here by extending
+ *  {@link TransferEntropyCommon}.</p>
+ *  
+ * <p>This is our <b>main</b> class for TE by box-kernel estimation, implementing
+ * dynamic correlation exclusion, and optimisation for the box counting.
+ * Note the existence of several other classes using box-kernel estimation,
+ * which implement TE in various less efficient ways, e.g. 
+ * {@link TransferEntropyCalculatorKernelPlain}, {@link TransferEntropyCalculatorKernelPlainIterators}</p>
  * 
- * <p>
- * Implements a transfer entropy calculator using kernel estimation.
- * (see Schreiber, PRL 85 (2) pp.461-464, 2000)</p> 
- * 
- * <p>
- * Usage:
- * 	<ol>
- * 		<li>Construct</li>
- * 		<li>SetProperty() for each property</li>
- *		<li>intialise()</li>
- * 		<li>setObservations(), or [startAddObservations(), addObservations()*, finaliseAddObservations()]
- *   Note: If not using setObservations(), the results from computeLocal or getSignificance
- *    are not likely to be particularly sensible.</li> 
- * 		<li>computeAverageLocalOfObservations() or ComputeLocalOfPreviousObservations()</li>
- * 	</ol>
+ * <p>Usage is as per the paradigm outlined for {@link TransferEntropyCalculator},
+ * with:
+ * <ul>
+ * 	<li>The constructor step being a simple call to {@link #TransferEntropyCalculatorKernel()}.</li>
+ *  <li>Further properties are available, see {@link #setProperty(String, String)};</li>
+ *  <li>An additional {@link #initialise(int, double)} option;</li>
+ *  <li>Additional utility methods for computing other information-theoretic values
+ *  are available here (e.g. {@link #computeAverageLocalOfObservationsWithCorrection()}) which
+ *  can be called after all observations are supplied.</li>
+ *  </ul>
  * </p>
  * 
  * <p>
@@ -53,10 +61,21 @@ import java.util.Iterator;
  *  way this is done in Plain calculator).
  * </p>
  * 
- * @author Joseph Lizier
- * @see For transfer entropy: Schreiber, PRL 85 (2) pp.461-464, 2000; http://dx.doi.org/10.1103/PhysRevLett.85.461
- * @see For local transfer entropy: Lizier et al, PRE 77, 026110, 2008; http://dx.doi.org/10.1103/PhysRevE.77.026110
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>T. Schreiber, <a href="http://dx.doi.org/10.1103/PhysRevLett.85.461">
+ * "Measuring information transfer"</a>,
+ *  Physical Review Letters 85 (2) pp.461-464, 2000.</li>
+ *  <li>J. T. Lizier, M. Prokopenko and A. Zomaya,
+ *  <a href="http://dx.doi.org/10.1103/PhysRevE.77.026110">
+ *  "Local information transfer as a spatiotemporal filter for complex systems"</a>
+ *  Physical Review E 77, 026110, 2008.</li>
+ *  <li>H. Kantz and T. Schreiber, "Nonlinear Time Series Analysis"
+ *  (Cambridge University Press, Cambridge, MA, 1997).</li>
+ * </ul>
  *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class TransferEntropyCalculatorKernel
 	extends TransferEntropyCommon implements TransferEntropyCalculator {
@@ -69,23 +88,42 @@ public class TransferEntropyCalculatorKernel
 	protected double[]   sourceValues;
 	
 	private boolean normalise = true;
+	/**
+	 * Property name for whether to normalise the incoming variables 
+	 * to mean 0, standard deviation 1, or not (default false)
+	 */
 	public static final String NORMALISE_PROP_NAME = "NORMALISE";
 	
 	private boolean dynCorrExcl = false;
 	private int dynCorrExclTime = 100;
+	/**
+	 * Property name for a dynamics exclusion time window (see Kantz and Schreiber),
+	 * default is 0 which means no dynamic exclusion window.
+	 */
 	public static final String DYN_CORR_EXCL_TIME_NAME = "DYN_CORR_EXCL";
 	
 	private boolean forceCompareToAll = false;
+	/**
+	 * Property name for whether to force the underlying kernel estimators to compare
+	 *  each data point to each other (or else allow it to use optimisations)
+	 */
 	public static final String FORCE_KERNEL_COMPARE_TO_ALL = "FORCE_KERNEL_COMPARE_TO_ALL";
 	
 	/**
-	 * Default value for epsilon (kernel width)
+	 * Default value for kernel width
 	 */
-	public static final double DEFAULT_EPSILON = 0.25;
+	public static final double DEFAULT_KERNEL_WIDTH = 0.25;
 	/**
 	 * Kernel width
 	 */
-	private double epsilon = DEFAULT_EPSILON;
+	private double kernelWidth = DEFAULT_KERNEL_WIDTH;
+	/**
+	 * Property name for the kernel width
+	 */
+	public static final String KERNEL_WIDTH_PROP_NAME = "KERNEL_WIDTH";
+	/**
+	 * Legacy property name for the kernel width
+	 */
 	public static final String EPSILON_PROP_NAME = "EPSILON";
 	
 	/**
@@ -98,56 +136,76 @@ public class TransferEntropyCalculatorKernel
 		teKernelEstimator.setNormalise(normalise);
 	}
 
-	/**
-	 * Initialises the calculator with the existing value for epsilon
-	 * 
-	 * @param k history length
-	 */
+	@Override
 	public void initialise(int k) throws Exception {
-		initialise(k, epsilon);
+		initialise(k, kernelWidth);
 	}
 	
 	/**
-	 * Initialises the calculator
-	 * 
-	 * @param k history length
-	 * @param epsilon kernel width
+	 * Initialise the calculator for (re-)use, with a specific 
+	 * embedded destination history length and kernel width,
+	 * and existing (or default) values of other parameters,.
+	 * Clears an PDFs of previously supplied observations.
+	 *
+	 * @param k destination embedded history length
+	 * @param kernelWidth if {@link #NORMALISE_PROP_NAME} property has
+	 *  been set, then this kernel width corresponds to the number of
+	 *  standard deviations from the mean (otherwise it is an absolute value)
 	 */
-	public void initialise(int k, double epsilon) throws Exception {
-		this.epsilon = epsilon;
+	public void initialise(int k, double kernelWidth) throws Exception {
+		this.kernelWidth = kernelWidth;
 		super.initialise(k); // calls initialise();
 	}
 
-	/**
-	 * Initialise using default or existing values for k and epsilon
-	 */
+	@Override
 	public void initialise() {
-		teKernelEstimator.initialise(k, epsilon);
+		teKernelEstimator.initialise(k, kernelWidth);
 		destPastVectors = null;
 		destNextValues = null;
 		sourceValues = null;
 	}
 	
 	/**
-	 * Set properties for the transfer entropy calculator.
-	 * These can include:
-	 * <ul>
-	 * 		<li>K_PROP_NAME</li>
-	 * 		<li>EPSILON_PROP_NAME</li>
-	 * 		<li>NORMALISE_PROP_NAME</li>
-	 * 		<li>DYN_CORR_EXCL_TIME_NAME</li>
-	 * 		<li>FORCE_KERNEL_COMPARE_TO_ALL</li>
-	 * </ul> 
+	 * <p>Set properties for the kernel TE calculator.
+	 *  New property values are not guaranteed to take effect until the next call
+	 *  to an initialise method. 
 	 * 
-	 * @param propertyName
-	 * @param propertyValue
-	 * @throws Exception 
+	 * <p>Valid property names, and what their
+	 * values should represent, include:</p>
+	 * <ul>
+	 * 		<li>{@link #KERNEL_WIDTH_PROP_NAME} (legacy value is {@link #EPSILON_PROP_NAME}) --
+	 * 			kernel width to be used in the calculation. If {@link #normalise} is set,
+	 * 		    then this is a number of standard deviations; otherwise it
+	 * 			is an absolute value. Default is {@link #DEFAULT_KERNEL_WIDTH}.</li>
+	 * 		<li>{@link #NORMALISE_PROP_NAME} -- whether to normalise the incoming variables 
+	 * 			to mean 0, standard deviation 1, or not (default false). Sets {@link #normalise}.</li>
+	 * 		<li>{@link #DYN_CORR_EXCL_TIME_NAME} -- a dynamics exclusion time window (see Kantz and Schreiber),
+	 * 			default is 0 which means no dynamic exclusion window.</li>
+	 * 		<li>{@link #FORCE_KERNEL_COMPARE_TO_ALL} -- whether to force the underlying kernel estimators to compare
+	 *  		each data point to each other (or else allow it to use optimisations).</li>
+	 *  	<li>any valid properties for {@link TransferEntropyCommon#setProperty(String, String)}.</li>
+	 * </ul>
+	 * </p>
+	 * 
+	 * <p>Note that dynamic correlation exclusion (set with {@link #DYN_CORR_EXCL_TIME_NAME})
+	 *  may have unexpected results if multiple
+	 *  observation sets have been added. This is because multiple observation sets
+	 *  are treated as though they are from a single time series, so observations from
+	 *  near the end of observation set i will be excluded from comparison to 
+	 *  observations near the beginning of observation set (i+1). 
+	 * 
+	 * <p>Unknown property values are ignored.</p>
+	 * 
+	 * @param propertyName name of the property
+	 * @param propertyValue value of the property
+	 * @throws Exception for invalid property values
 	 */
+	@Override
 	public void setProperty(String propertyName, String propertyValue) throws Exception {
-		super.setProperty(propertyName, propertyValue);
 		boolean propertySet = true;
-		if (propertyName.equalsIgnoreCase(EPSILON_PROP_NAME)) {
-			epsilon = Double.parseDouble(propertyValue);
+		if (propertyName.equalsIgnoreCase(KERNEL_WIDTH_PROP_NAME) ||
+				propertyName.equalsIgnoreCase(EPSILON_PROP_NAME)) {
+			kernelWidth = Double.parseDouble(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(NORMALISE_PROP_NAME)) {
 			normalise = Boolean.parseBoolean(propertyValue);
 			teKernelEstimator.setNormalise(normalise);
@@ -165,6 +223,8 @@ public class TransferEntropyCalculatorKernel
 		} else {
 			// No property was set
 			propertySet = false;
+			// try the superclass:
+			super.setProperty(propertyName, propertyValue);
 		}
 		if (debug && propertySet) {
 			System.out.println(this.getClass().getSimpleName() + ": Set property " + propertyName +
@@ -172,10 +232,7 @@ public class TransferEntropyCalculatorKernel
 		}
 	}
 
-	/**
-	 * Flag that the observations are complete, probability distribution functions can now be built.
-	 *
-	 */
+	@Override
 	public void finaliseAddObservations() {
 		// First work out the size to allocate the joint vectors, and do the allocation:
 		totalObservations = 0;
@@ -216,10 +273,7 @@ public class TransferEntropyCalculatorKernel
 		vectorOfDestinationObservations = null;
 	}
 	
-	/**
-	 * <p>Computes the average Transfer Entropy for the previously supplied observations</p> 
-	 * 
-	 */
+	@Override
 	public double computeAverageLocalOfObservations() throws Exception {
 		
 		double te = 0.0;
@@ -251,15 +305,17 @@ public class TransferEntropyCalculatorKernel
 	/**
 	 * <p>Computes the average Transfer Entropy for the previously supplied observations,
 	 *  using the Grassberger correction for the point count k: log_e(k) ~= digamma(k).</p>
-	 * <p>Kaiser and Schreiber, Physica D 166 (2002) pp. 43-62 suggest (on p. 57) that for the TE
+	 *  
+	 * <p><b>HOWEVER</b> -- Kaiser and Schreiber, Physica D 166 (2002) pp. 43-62 suggest (on p. 57) that for the TE
 	 *   though the adverse correction of the bias correction is worse than the correction
 	 *   itself (because the probabilities being multiplied/divided are not independent), 
 	 *   so recommend not to use this method.
 	 *   (Bias correction is implemented properly in the Kraskov et al. 
 	 *   estimators, see {@link infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov}
 	 * </p>
-	 * <p>It is implemented here for testing purposes only.</p>
+	 * <p>As such, it is implemented here for testing purposes only.</p>
 	 * 
+	 * @see #computeAverageLocalOfObservations()
 	 */
 	public double computeAverageLocalOfObservationsWithCorrection() throws Exception {
 		
@@ -321,42 +377,30 @@ public class TransferEntropyCalculatorKernel
 		return lastAverage;
 	}
 
-	/**
-	 * Computes the local transfer entropies for the previous supplied observations.
-	 * 
-	 * Where more than one time series has been added, the array
-	 *  contains the local values for each tuple in the order in
-	 *  which they were added.
-	 * 
-	 * If there was only a single time series added, the array
-	 *  contains k zero values before the local values.
-	 *  (This means the length of the return array is the same
-	 *  as the length of the input time series).
-	 * 
-	 */
+	@Override
 	public double[] computeLocalOfPreviousObservations() throws Exception {
 		return computeLocalUsingPreviousObservations(null, null, true);
 	}
 
 	/**
-	 * Comptues local transfer entropies for the given observations, using the previously supplied
-	 * observations to compute the PDFs.
-	 * I don't think it's such a good idea to do this for continuous variables (e.g. where
-	 * one can get kernel estimates for probabilities of zero now) but I've implemented
-	 * it anyway. I guess getting kernel estimates of zero here is no different than what
-	 * can occur with dynamic correlation exclusion.
+	 * {@inheritDoc} 
 	 * 
-	 * @param source
-	 * @param destination
-	 * @return
-	 * @throws Exception
+	 * I'm not convinced it is such a good idea to do this 
+	 * on data not used for the PDFs with a
+	 * kernel estimator (since one can now get kernel estimates
+	 * for probabilities of zero now) but I've implemented
+	 * it anyway. I guess getting kernel estimates of zero here
+	 * is no different than what
+	 * can occur with dynamic correlation exclusion.
 	 */
 	public double[] computeLocalUsingPreviousObservations(double[] source, double[] destination) throws Exception {
 		return computeLocalUsingPreviousObservations(source, destination, false);
 	}
 	
 	/**
-	 * Returns the local TE at every time point.
+	 * Private utility function to implement
+	 * {@link #computeLocalOfPreviousObservations()} and
+	 * {@link #computeLocalUsingPreviousObservations(double[], double[])}
 	 * 
 	 * @param source
 	 * @param destination
@@ -421,19 +465,7 @@ public class TransferEntropyCalculatorKernel
 		return localTE;
 	}
 
-	/**
-	 * Compute the significance of obtaining the given average TE from the given observations
-	 * 
-	 * 	This is as per Chavez et. al., "Statistical assessment of nonlinear causality:
-	 *  application to epileptic EEG signals", Journal of Neuroscience Methods 124 (2003) 113-128.
-	 *
-	 * Basically, we shuffle the source observations against the destination tuples.
-	 * This keeps the marginal PDFs the same (including the entropy rate of the destination)
-	 *  but destroys any correlation between the source and state change of the destination.
-	 * 
-	 * @param numPermutationsToCheck number of new orderings of the source values to compare against
-	 * @return
-	 */
+	@Override
 	public EmpiricalMeasurementDistribution computeSignificance(
 			int numPermutationsToCheck) throws Exception {
 		// Generate the re-ordered indices:
@@ -443,16 +475,7 @@ public class TransferEntropyCalculatorKernel
 		return computeSignificance(newOrderings);
 	}
 	
-	/**
-	 * As per {@link computeSignificance(int) computeSignificance()} but supplies
-	 *  the re-orderings of the observations of the source variables.
-	 *  
-	 * 
-	 * @param newOrderings first index is permutation number, i.e. newOrderings[i]
-	 * 		is an array of 1 permutation of 0..n-1, where there were n observations.
-	 * @return
-	 * @throws Exception
-	 */
+	@Override
 	public EmpiricalMeasurementDistribution computeSignificance(
 			int[][] newOrderings) throws Exception {
 		
@@ -471,7 +494,7 @@ public class TransferEntropyCalculatorKernel
 			sourceValues = MatrixUtils.extractSelectedTimePoints(oldSourceValues, newOrderings[p]);
 			
 			// Make the equivalent operations of intialise
-			teKernelEstimator.initialise(k, epsilon);
+			teKernelEstimator.initialise(k, kernelWidth);
 			// Make the equivalent operations of setObservations:
 			teKernelEstimator.setObservations(destPastVectors, destNextValues, sourceValues);
 			// And get a TE value for this realisation:
@@ -486,7 +509,7 @@ public class TransferEntropyCalculatorKernel
 		lastAverage = actualTE;
 		sourceValues = oldSourceValues;
 		// And set the kernel estimator back to their previous state
-		teKernelEstimator.initialise(k, epsilon);
+		teKernelEstimator.initialise(k, kernelWidth);
 		teKernelEstimator.setObservations(destPastVectors, destNextValues, sourceValues);
 		
 		// And return the significance
@@ -495,6 +518,7 @@ public class TransferEntropyCalculatorKernel
 		return measDistribution;
 	}
 
+	@Override
 	public void setDebug(boolean debug) {
 		super.setDebug(debug);
 		teKernelEstimator.setDebug(debug);

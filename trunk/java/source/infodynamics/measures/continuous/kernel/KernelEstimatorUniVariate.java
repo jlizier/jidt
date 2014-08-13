@@ -32,10 +32,18 @@ import java.util.Arrays;
  *  see Kantz and Schreiber (below).
  * </p>
  * 
- * @see "H. Kantz and T. Schreiber, 'Nonlinear Time Series Analysis'.
- *   Cambridge, MA: Cambridge University Press, 1997"
- * @author Joseph Lizier, <a href="mailto:joseph.lizier at gmail.com">joseph.lizier at gmail.com</>
+ * <p>
+ * TODO More thoroughly check the Javadocs here
+ * </p>
+ * 
+ * <p><b>References:</b><br/>
+ * <ul>
+ *  <li>H. Kantz and T. Schreiber, "Nonlinear Time Series Analysis"
+ *  (Cambridge University Press, Cambridge, MA, 1997).</li>
+ * </ul>
  *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class KernelEstimatorUniVariate {
 

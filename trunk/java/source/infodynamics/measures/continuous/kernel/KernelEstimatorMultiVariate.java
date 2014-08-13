@@ -34,11 +34,19 @@ import java.util.Hashtable;
  *  see Kantz and Schreiber (below).
  * </p>
  * 
- * @see KernelEstimatorUniVariate
- * @see "H. Kantz and T. Schreiber, 'Nonlinear Time Series Analysis'.
- *   Cambridge, MA: Cambridge University Press, 1997"
- * @author Joseph Lizier, <a href="mailto:joseph.lizier at gmail.com">joseph.lizier at gmail.com</>
+ * <p>
+ * TODO More thoroughly check the Javadocs here
+ * </p>
+ * 
+ * <p><b>References:</b><br/>
+ * <ul>
+ *  <li>H. Kantz and T. Schreiber, "Nonlinear Time Series Analysis"
+ *  (Cambridge University Press, Cambridge, MA, 1997).</li>
+ * </ul>
  *
+ * @see KernelEstimatorUniVariate
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class KernelEstimatorMultiVariate implements Cloneable {
 
@@ -76,8 +84,8 @@ public class KernelEstimatorMultiVariate implements Cloneable {
 	 * Private class to store a time-stamped data point.
 	 * This allows us to eliminate dynamic correlations later.
 	 * 
-	 * @author Joseph Lizier
-	 *
+	 * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+	 * <a href="http://lizier.me/joseph/">www</a>)
 	 */
 	private class TimeStampedObservation {
 		public int timeStep;
@@ -92,8 +100,8 @@ public class KernelEstimatorMultiVariate implements Cloneable {
 	/**
 	 * Wrapper class for an integer array so we can hash it properly
 	 * 
-	 * @author Joseph Lizier
-	 *
+	 * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+	 * <a href="http://lizier.me/joseph/">www</a>)
 	 */
 	private class IntArray {
 		public int[] array;
@@ -127,14 +135,14 @@ public class KernelEstimatorMultiVariate implements Cloneable {
 	/**
 	 * Initialise the estimator before passing any observations in.
 	 *
-	 * @param epsilon
+	 * @param kernelWidth
 	 * @param dimensions
 	 */
-	public void initialise(int dimensions, double epsilon) {
+	public void initialise(int dimensions, double kernelWidth) {
 		this.dimensions = dimensions;
 		this.suppliedKernelWidths = new double[dimensions];
 		for (int d = 0; d < dimensions; d++) {
-			this.suppliedKernelWidths[d] = epsilon;
+			this.suppliedKernelWidths[d] = kernelWidth;
 		}
 		finishInitialisation();
 	}
@@ -142,13 +150,13 @@ public class KernelEstimatorMultiVariate implements Cloneable {
 	/**
 	 * Initialise the estimator before passing any observations in.
 	 *
-	 * @param epsilon
+	 * @param kernelWidths
 	 */
-	public void initialise(double[] epsilon) {
-		dimensions = epsilon.length;
+	public void initialise(double[] kernelWidths) {
+		dimensions = kernelWidths.length;
 		this.suppliedKernelWidths = new double[dimensions];
 		for (int d = 0; d < dimensions; d++) {
-			this.suppliedKernelWidths[d] = epsilon[d];
+			this.suppliedKernelWidths[d] = kernelWidths[d];
 		}
 		finishInitialisation();
 	}
@@ -176,6 +184,7 @@ public class KernelEstimatorMultiVariate implements Cloneable {
 	 * 
 	 * @param data
 	 */
+	@SuppressWarnings("unchecked")
 	public void setObservations(double[][] data) {
 		totalObservations = data.length;
 		bins = new int[dimensions];

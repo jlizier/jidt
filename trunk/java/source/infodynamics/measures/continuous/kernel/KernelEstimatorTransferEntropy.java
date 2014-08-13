@@ -21,18 +21,26 @@ package infodynamics.measures.continuous.kernel;
 import infodynamics.utils.MatrixUtils;
 
 /**
- * <p>Kernel estimator for use with the transfer entropy.</p>
+ * <p>Kernel estimator for computing PDFs ready for the transfer entropy.</p>
  * 
  * <p>Extends KernelEstimatorMultiVariate, using the super class to manage the history of the destination
  * variable, and adds the next state and source on top of this. Any calls to the super class methods will only
  * function on the joint history.
  * </p> 
  * 
- * @see KernelEstimatorMultiVariate
- * @see "H. Kantz and T. Schreiber, 'Nonlinear Time Series Analysis'.
- *   Cambridge, MA: Cambridge University Press, 1997"
- * @author Joseph Lizier, <a href="mailto:joseph.lizier at gmail.com">joseph.lizier at gmail.com</>
+ * <p>
+ * TODO More thoroughly check the Javadocs here
+ * </p>
+ * 
+ * <p><b>References:</b><br/>
+ * <ul>
+ *  <li>H. Kantz and T. Schreiber, "Nonlinear Time Series Analysis"
+ *  (Cambridge University Press, Cambridge, MA, 1997).</li>
+ * </ul>
  *
+ * @see KernelEstimatorMultiVariate
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class KernelEstimatorTransferEntropy extends KernelEstimatorMultiVariate {
 

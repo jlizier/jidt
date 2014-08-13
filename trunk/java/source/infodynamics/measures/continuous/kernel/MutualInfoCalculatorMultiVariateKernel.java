@@ -23,29 +23,20 @@ import infodynamics.measures.continuous.MutualInfoMultiVariateCommon;
 
 /**
  * <p>Computes the differential mutual information of two given multivariate sets of
- *  observations,
- *  using kernel estimation.
- *  For more details on kernel estimation for computing probability distribution functions,
- *  see Kantz and Schreiber (below).</p>
+ *  observations (implementing {@link MutualInfoCalculatorMultiVariate}),
+ *  using box-kernel estimation.
+ *  For details on box-kernel estimation, see Kantz and Schreiber (below).</p>
  *  
- * <p>
- * Usage:
- * 	<ol>
- * 		<li>Construct {@link #MutualInfoCalculatorMultiVariateKernel()}</li>
- * 		<li>Set properties using {@link #setProperty(String, String)}</li>
- *		<li>{@link #initialise(int, int)} or {@link #initialise(int, int, double)}</li>
- * 		<li>Provide the observations to the calculator using:
- * 			{@link #setObservations(double[][], double[][])}
- * 			a sequence of:
- * 			{@link #startAddObservations()},
- *          multiple calls to either {@link #addObservations(double[][], double[][])}
- *          or {@link #addObservations(double[][], double[][], int, int)}, and then
- *          {@link #finaliseAddObservations()}.</li>
- * 		<li>Compute the required information-theoretic results, primarily:
- * 			{@link #computeAverageLocalOfObservations()} to return the average MI
- *          entropy based on the supplied observations; or other calls to compute
- *          local values or statistical significance.</li>
- * 	</ol>
+ * <p>Usage is as per the paradigm outlined for {@link MutualInfoCalculatorMultiVariate},
+ * with:
+ * <ul>
+ * 	<li>The constructor step being a simple call to {@link #MutualInfoCalculatorMultiVariateKernel()}.</li>
+ *  <li>Further properties are available, see {@link #setProperty(String, String)};</li>
+ *  <li>An additional {@link #initialise(int, int, double)} option;</li>
+ *  <li>Additional utility methods for computing other information-theoretic values
+ *  are available here (e.g. {@link #computeAverageJointEntropy()}) which
+ *  can be called after all observations are supplied.</li>
+ *  </ul>
  * </p>
  * 
  * <p>
@@ -55,32 +46,35 @@ import infodynamics.measures.continuous.MutualInfoMultiVariateCommon;
  * 
  * @see "H. Kantz and T. Schreiber, 'Nonlinear Time Series Analysis'.
  *   Cambridge, MA: Cambridge University Press, 1997"
- * @author Joseph Lizier, <a href="mailto:joseph.lizier at gmail.com">joseph.lizier at gmail.com</>
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class MutualInfoCalculatorMultiVariateKernel
 	extends MutualInfoMultiVariateCommon
 	implements MutualInfoCalculatorMultiVariate, Cloneable {
 
-	KernelEstimatorMultiVariate mvkeSource = null;
-	KernelEstimatorMultiVariate mvkeDest = null;
-	KernelEstimatorMultiVariate mvkeJoint = null;
+	protected KernelEstimatorMultiVariate mvkeSource = null;
+	protected KernelEstimatorMultiVariate mvkeDest = null;
+	protected KernelEstimatorMultiVariate mvkeJoint = null;
 
 	private boolean normalise = true;
 	/**
-	 * Property name for whether to normalise the incoming variables or not
+	 * Property name for whether to normalise the incoming variables 
+	 * to mean 0, standard deviation 1, or not (default false)
 	 */
 	public static final String NORMALISE_PROP_NAME = "NORMALISE";
 	
 	private boolean dynCorrExcl = false;
 	private int dynCorrExclTime = 100;
 	/**
-	 * Property name for a supplied dynamics exclusion time window (see Kantz and Schreiber).
+	 * Property name for a dynamics exclusion time window (see Kantz and Schreiber),
+	 * default is 0 which means no dynamic exclusion window.
 	 */
 	public static final String DYN_CORR_EXCL_TIME_NAME = "DYN_CORR_EXCL";
 	
 	private boolean forceCompareToAll = false;
 	/**
-	 * Whether to force the underlying kernel estimators to compare
+	 * Property name for whether to force the underlying kernel estimators to compare
 	 *  each data point to each other (or else allow it to use optimisations)
 	 */
 	public static final String FORCE_KERNEL_COMPARE_TO_ALL = "FORCE_KERNEL_COMPARE_TO_ALL";
@@ -90,7 +84,7 @@ public class MutualInfoCalculatorMultiVariateKernel
 	 */
 	public static final double DEFAULT_KERNEL_WIDTH = 0.25;
 	/**
-	 * Kernel width
+	 * Kernel width currently in use
 	 */
 	private double kernelWidth = DEFAULT_KERNEL_WIDTH;
 	/**
@@ -102,6 +96,9 @@ public class MutualInfoCalculatorMultiVariateKernel
 	 */
 	public static final String EPSILON_PROP_NAME = "EPSILON";
 	
+	/**
+	 * Construct an instance of the box-kernel MI calculator
+	 */
 	public MutualInfoCalculatorMultiVariateKernel() {
 		// Create our kernel estimator objects:
 		mvkeSource = new KernelEstimatorMultiVariate();
@@ -112,24 +109,22 @@ public class MutualInfoCalculatorMultiVariateKernel
 		mvkeJoint.setNormalise(normalise);
 	}
 
-	/**
-	 * Initialise using a default kernel width
-	 * 
-	 * @param sourceDimensions
-	 * @param destDimensions
-	 */
 	public void initialise(int sourceDimensions, int destDimensions) {
 		initialise(sourceDimensions, destDimensions, kernelWidth);
 	}
 
 	/**
-	 * Initialise the calculator with a specific kernel width
-	 * 
-	 * @param sourceDimensions
-	 * @param destDimensions
+	 * Initialise the calculator for (re-)use, with a specific kernel width
+	 * with number of source
+	 * and destination joint variables specified, and existing
+	 * (or default) values of other parameters,.
+	 * Clears an PDFs of previously supplied observations.
+	 *
+	 * @param sourceDimensions the number of joint variables in the source
+	 * @param destDimensions the number of joint variables in the destination
 	 * @param kernelWidth if {@link #NORMALISE_PROP_NAME} property has
 	 *  been set, then this kernel width corresponds to the number of
-	 *  standard deviations from the mean (else it is an absolute value)
+	 *  standard deviations from the mean (otherwise it is an absolute value)
 	 */
 	public void initialise(int sourceDimensions, int destDimensions, double kernelWidth) {
 		super.initialise(sourceDimensions, destDimensions);
@@ -169,9 +164,9 @@ public class MutualInfoCalculatorMultiVariateKernel
 	}
 
 	/**
-	 * Compute the MI from the observations we were given
+	 * Compute the average MI from the previously supplied observations.
 	 * 
-	 * @return
+	 * @return the average MI in bits
 	 */
 	public double computeAverageLocalOfObservations() {
 		double mi = 0.0;
@@ -198,9 +193,11 @@ public class MutualInfoCalculatorMultiVariateKernel
 	}
 
 	/**
-	 * Extra utility method to return the joint entropy
+	 * Extra utility method to return the joint entropy, for the source
+	 * and destination variables considered jointly, using the previously supplied
+	 * observations.
 	 * 
-	 * @return
+	 * @return the average joint entropy in bits.
 	 */
 	public double computeAverageJointEntropy() {
 		double entropy = 0.0;
@@ -219,9 +216,9 @@ public class MutualInfoCalculatorMultiVariateKernel
 	}
 
 	/**
-	 * Extra utility method to return the entropy of the first set of joint variables
+	 * Extra utility method to return the entropy of the (first) source variable
 	 * 
-	 * @return
+	 * @return entropy of source variable in bits.
 	 */
 	public double computeAverageEntropyOfObservation1() {
 		double entropy = 0.0;
@@ -242,9 +239,9 @@ public class MutualInfoCalculatorMultiVariateKernel
 	}
 
 	/**
-	 * Extra utility method to return the entropy of the second set of joint variables
+	 * Extra utility method to return the entropy of the second (destination) variable
 	 * 
-	 * @return
+	 * @return entropy of the destination in bits
 	 */
 	public double computeAverageEntropyOfObservation2() {
 		double entropy = 0.0;
@@ -263,9 +260,10 @@ public class MutualInfoCalculatorMultiVariateKernel
 	}
 
 	/**
-	 * Extra utility method to return the information distance
+	 * Extra utility method to return the information distance between the source 
+	 * and destination
 	 * 
-	 * @return
+	 * @return information distance between the source and destination in bits.
 	 */
 	public double computeAverageInfoDistanceOfObservations() {
 		double infoDistance = 0.0;
@@ -288,9 +286,22 @@ public class MutualInfoCalculatorMultiVariateKernel
 	}
 
 	/**
-	 * Compute the local MI values for the previous observations.
+	 * <p>Computes the local values of the MI,
+	 *  for each valid observation in the previously supplied observations
+	 *  (with PDFs computed using all of the previously supplied observation sets).</p>
+	 *  
+	 * <p>If the samples were supplied via a single call such as
+	 * {@link #setObservations(double[])},
+	 * then the return value is a single time-series of local
+	 * channel measure values corresponding to these samples.</p>
 	 * 
-	 * @return
+	 * <p>Otherwise where disjoint time-series observations were supplied using several 
+	 *  calls such as {@link addObservations(double[])}
+	 *  then the local values for each disjoint observation set will be appended here
+	 *  to create a single "time-series" return array.</p>
+	 * 
+	 * @return the "time-series" of local MIs in bits
+	 * @throws Exception
 	 */
 	public double[] computeLocalOfPreviousObservations() throws Exception {
 		return computeLocalUsingPreviousObservations(sourceObservations, destObservations, true);
@@ -298,26 +309,54 @@ public class MutualInfoCalculatorMultiVariateKernel
 
 
 	/**
-	 * Compute the local MI values for these given values, using the previously provided
-	 *  observations to compute the probabilities.
-	 * Calls to this method will not harness dynamic correlation exclusion (if set)
-	 *  since we don't know whether it's the same time set or not.
+	 * Compute the local MI values for each of the
+	 * supplied samples in <code>states1</code> and <code>states2</code>.
 	 * 
-	 * @param states1
-	 * @param states2
-	 * @return
+	 * <p>PDFs are computed using all of the previously supplied
+	 * observations, but not those in <code>states1</code> and <code>states2</code>
+	 * (unless they were
+	 * some of the previously supplied samples).</p>
+	 * 
+	 * <p>Calls to this method will not harness dynamic correlation exclusion (if set)
+	 *  since we don't know whether it's the same time set or not.
+	 * </p>
+	 *  
+	 * @param states1 series of multivariate observations for the source variable
+	 *  (first index is time or observation index, second is variable number)
+	 * @param states2 series of multivariate observations for the destination variable
+	 *  (first index is time or observation index, second is variable number).
+	 *  Length must match <code>source</code>, and their indices must correspond.
+	 * @return the local values in bits.
+	 *  If the {@link MutualInfoCalculatorMultiVariate#PROP_TIME_DIFF}
+	 *  property was set to say k, then the local values align with the
+	 *  destination value (i.e. after the given delay k). As such, the
+	 *  first k values of the array will be zeros. 
 	 */
 	public double[] computeLocalUsingPreviousObservations(double states1[][], double states2[][]) {
 		return computeLocalUsingPreviousObservations(states1, states2, false);
 	}
 	
 	/**
-	 * Internal method implementing local computation
+	 * Protected utility function to compute the local MI values for each of the
+	 * supplied samples in <code>states1</code> and <code>states2</code>.
 	 * 
-	 * @param states1
-	 * @param states2
-	 * @param isOurPreviousObservations
-	 * @return
+	 * <p>PDFs are computed using all of the previously supplied
+	 * observations. <code>isOurPreviousObservations</code> indicates whether
+	 * those in <code>states1</code> and <code>states2</code>
+	 * were some of the previously supplied samples.</p>
+	 * 
+	 * @param states1 provided source observations
+	 * @param states2 provided destination observations
+	 * @param isOurPreviousObservations whether these are our previous
+	 *  observations - this determines whether to add zeros for the first
+	 *  timeDiff local values, and also 
+	 *  whether to set the internal lastAverage field,
+	 *  which is returned by later calls to {@link #getLastAverage()}
+	 * @return the local values in bits.
+	 *  If the {@link MutualInfoCalculatorMultiVariate#PROP_TIME_DIFF}
+	 *  property was set to say k, then the local values align with the
+	 *  destination value (i.e. after the given delay k). As such, the
+	 *  first k values of the array will be zeros.
 	 */
 	protected double[] computeLocalUsingPreviousObservations(double states1[][],
 			double states2[][], boolean isOurPreviousObservations) {
@@ -363,9 +402,9 @@ public class MutualInfoCalculatorMultiVariateKernel
 	 * Compute the local joint entropy values of the previously provided
 	 *  observations.
 	 *  
-	 * @param states1
-	 * @param states2
-	 * @return
+	 * @param states1 provided source observations
+	 * @param states2 provided destination observations
+	 * @return the local joint entropies in bits
 	 */
 	public double[] computeLocalJointEntropyOfPreviousObservations() throws Exception {
 		return computeLocalJointEntropyUsingPreviousObservations(sourceObservations,
@@ -378,9 +417,9 @@ public class MutualInfoCalculatorMultiVariateKernel
 	 * Calls to this method will not harness dynamic correlation exclusion (if set)
 	 *  since we don't know whether it's the same time set or not.
 	 *  
-	 * @param states1
-	 * @param states2
-	 * @return
+	 * @param states1 provided source observations
+	 * @param states2 provided destination observations
+	 * @return the local joint entropies in bits
 	 */
 	public double[] computeLocalJointEntropyUsingPreviousObservations(double states1[][], double states2[][]) {
 		return computeLocalJointEntropyUsingPreviousObservations(states1,
@@ -419,25 +458,25 @@ public class MutualInfoCalculatorMultiVariateKernel
 
 	/**
 	 * Compute the local entropy values for the previously provided
-	 *  observations for VARIABLE 1 to compute the probabilities.
+	 *  observations for the (first) source variable 
+	 *  (using those previous observations to compute the PDFs).
 	 * 
-	 * @param states1
-	 *  
-	 * @return
+	 * @return array of local entropies for the source observations
 	 */
 	public double[] computeLocalEntropy1OfPreviousObservations() {
 		return computeLocalEntropyFromPreviousObservations(sourceObservations, 1, true);
 	}
 
 	/**
-	 * Compute the local entropy values for these given values, using the previously provided
-	 *  observations for VARIABLE 1 to compute the probabilities.
+	 * Compute the local entropy values for these given source values,
+	 * using the previously provided
+	 *  observations for the (first) source variable to compute the probabilities.
 	 * Calls to this method will not harness dynamic correlation exclusion (if set)
 	 *  since we don't know whether it's the same time set or not.
 	 * 
-	 * @param states1
+	 * @param states1 provided source observations
 	 *  
-	 * @return
+	 * @return array of local entropies for these source observations
 	 */
 	public double[] computeLocalEntropy1UsingPreviousObservations(double[][] states) {
 		return computeLocalEntropyFromPreviousObservations(states, 1, false);
@@ -445,38 +484,41 @@ public class MutualInfoCalculatorMultiVariateKernel
 
 	/**
 	 * Compute the local entropy values for the previously provided
-	 *  observations for VARIABLE 1 to compute the probabilities.
+	 *  observations for the (second) destination variable 
+	 *  (using those previous observations to compute the PDFs).
 	 * 
-	 * @param states2
-	 *  
-	 * @return
+	 * @return array of local entropies for the destination observations
 	 */
 	public double[] computeLocalEntropy2OfPreviousObservations() {
 		return computeLocalEntropyFromPreviousObservations(destObservations, 2, true);
 	}
 
 	/**
-	 * Compute the local entropy values for these given values, using the previously provided
-	 *  observations for VARIABLE 2 to compute the probabilities.
+	 * Compute the local entropy values for these given destination values,
+	 * using the previously provided
+	 *  observations for the (second) destination variable to compute the probabilities.
 	 * Calls to this method will not harness dynamic correlation exclusion (if set)
 	 *  since we don't know whether it's the same time set or not.
+	 * 
+	 * @param states2 provided destination observations
 	 *  
-	 * @param states1
-	 * @param states2
-	 * @return
+	 * @return array of local entropies for these destination observations
 	 */
 	public double[] computeLocalEntropy2UsingPreviousObservations(double states[][]) {
 		return computeLocalEntropyFromPreviousObservations(states, 2, false);
 	}
 
 	/**
-	 * Utility function to implement computeLocalEntropy1FromPreviousObservations
-	 *  and computeLocalEntropy2FromPreviousObservations
+	 * Private utility function to implement {@link #computeLocalEntropy1OfPreviousObservations()},
+	 * {@link #computeLocalEntropy1UsingPreviousObservations(double[][])},
+	 * {@link #computeLocalEntropy2OfPreviousObservations()} and
+	 * {@link #computeLocalEntropy2UsingPreviousObservations(double[][])}.
 	 *  
-	 * @param states
+	 * @param states provided set of observations
 	 * @param useProbsForWhichVar use 1 for variable 1, 2 for variable 2
-	 * @param isOurPreviousObservations
-	 * @return
+	 * @param isOurPreviousObservations whether these are the previously provided
+	 * observations or not.
+	 * @return array of local entropies for these observations
 	 */
 	private double[] computeLocalEntropyFromPreviousObservations(
 			double states[][], int useProbsForWhichVar, boolean isOurPreviousObservations) {
@@ -512,7 +554,7 @@ public class MutualInfoCalculatorMultiVariateKernel
 	 * Compute the local Info distance values for the previously provided
 	 *  observations to compute the probabilities.
 	 * 
-	 * @return
+	 * @return array of local information distances
 	 */
 	public double[] computeLocalInfoDistanceOfPreviousObservations() {
 		return computeLocalInfoDistanceUsingPreviousObservations(sourceObservations,
@@ -525,14 +567,23 @@ public class MutualInfoCalculatorMultiVariateKernel
 	 * Calls to this method will not harness dynamic correlation exclusion (if set)
 	 *  since we don't know whether it's the same time set or not.
 	 * 
-	 * @return
+	 * @return array of local information distances.
 	 */
 	public double[] computeLocalInfoDistanceUsingPreviousObservations(double[][] states1, double[][] states2) {
 		return computeLocalInfoDistanceUsingPreviousObservations(states1,
 				states2, false);
 	}
 
-	
+	/**
+	 * Protected utility function to implement {@link #computeLocalInfoDistanceOfPreviousObservations()}
+	 * and {@link #computeLocalInfoDistanceUsingPreviousObservations(double[][], double[][])}.
+	 * 
+	 * @param states1 provided source observations
+	 * @param states2 provided destination observations
+	 * @param isOurPreviousObservations whether these are the previously provided
+	 * observations or not.
+	 * @return array of local information distances.
+	 */
 	protected double[] computeLocalInfoDistanceUsingPreviousObservations(
 			double[][] states1, double[][] states2, boolean isOurPreviousObservations) {
 		int timeSteps = states1.length;
@@ -561,24 +612,26 @@ public class MutualInfoCalculatorMultiVariateKernel
 		return localInfoDistance;
 	}
 
-	public void setDebug(boolean debug) {
-		this.debug = debug;
-	}
-
-	public double getLastAverage() {
-		return lastAverage;
-	}
-
 	/**
-	 * <p>Set properties for the kernel mutual information calculator.
-	 * These can include:
+	 * <p>Set properties for the kernel MI calculator.
+	 *  New property values are not guaranteed to take effect until the next call
+	 *  to an initialise method. 
+	 * 
+	 * <p>Valid property names, and what their
+	 * values should represent, include:</p>
 	 * <ul>
-	 * 		<li>{@link #KERNEL_WIDTH_PROP_NAME} (legacy value is {@link #EPSILON_PROP_NAME})</li>
-	 * 		<li>{@link #NORMALISE_PROP_NAME}</li>
-	 * 		<li>{@link #DYN_CORR_EXCL_TIME_NAME}</li>
-	 * 		<li>{@link #FORCE_KERNEL_COMPARE_TO_ALL}</li>
+	 * 		<li>{@link #KERNEL_WIDTH_PROP_NAME} (legacy value is {@link #EPSILON_PROP_NAME}) --
+	 * 			kernel width to be used in the calculation. If {@link #normalise} is set,
+	 * 		    then this is a number of standard deviations; otherwise it
+	 * 			is an absolute value. Default is {@link #DEFAULT_KERNEL_WIDTH}.</li>
+	 * 		<li>{@link #NORMALISE_PROP_NAME} -- whether to normalise the incoming variables 
+	 * 			to mean 0, standard deviation 1, or not (default false). Sets {@link #normalise}.</li>
+	 * 		<li>{@link #DYN_CORR_EXCL_TIME_NAME} -- a dynamics exclusion time window (see Kantz and Schreiber),
+	 * 			default is 0 which means no dynamic exclusion window.</li>
+	 * 		<li>{@link #FORCE_KERNEL_COMPARE_TO_ALL} -- whether to force the underlying kernel estimators to compare
+	 *  		each data point to each other (or else allow it to use optimisations).</li>
+	 *  	<li>any valid properties for {@link MutualInfoMultiVariateCommon#setProperty(String, String)}.</li>
 	 * </ul>
-	 * or any properties set in {@link MutualInfoMultiVariateCommon#setProperty(String, String)}.
 	 * </p>
 	 * 
 	 * <p>Note that dynamic correlation exclusion (set with {@link #DYN_CORR_EXCL_TIME_NAME})
@@ -588,8 +641,11 @@ public class MutualInfoCalculatorMultiVariateKernel
 	 *  near the end of observation set i will be excluded from comparison to 
 	 *  observations near the beginning of observation set (i+1). 
 	 * 
-	 * @param propertyName
-	 * @param propertyValue
+	 * <p>Unknown property values are ignored.</p>
+	 * 
+	 * @param propertyName name of the property
+	 * @param propertyValue value of the property
+	 * @throws Exception for invalid property values
 	 */
 	public void setProperty(String propertyName, String propertyValue)
 			throws Exception {
@@ -632,10 +688,10 @@ public class MutualInfoCalculatorMultiVariateKernel
 		}
 	}
 
-	public int getNumObservations() {
-		return totalObservations;
-	}
-
+	/**
+	 * 
+	 * @return the kernel width in use in the calculator
+	 */
 	public double getKernelWidth() {
 		return kernelWidth;
 	}

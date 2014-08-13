@@ -20,10 +20,10 @@ package infodynamics.measures.continuous.kernel;
 
 /**
  * Structure to hold a kernel count, the total count it was taken from,
- *  and an array of booleans indicating which time points got counted
+ *  and an array of booleans indicating which time points got counted.
  * 
- * @author Joseph Lizier
- *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class KernelCount {
 	public int count;
