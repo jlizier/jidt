@@ -24,7 +24,13 @@ import java.util.Properties;
 import java.util.Set;
 import java.io.FileOutputStream;
 
-
+/**
+ * Utility to parse properties files and retrieve 
+ * requested property values.
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
+ */
 public class ParsedProperties {
 	private Properties properties;
 	

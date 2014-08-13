@@ -20,6 +20,13 @@ package infodynamics.utils;
 
 import infodynamics.utils.commonsmath3.special.Gamma;
 
+/**
+ * This class implements a number of static 
+ * methods for mathematical functions.
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
+ */
 public class MathsUtils {
 
 	private static final double EULER_MASCHERONI_CONSTANT = 0.5772156;

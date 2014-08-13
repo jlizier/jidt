@@ -21,8 +21,8 @@ package infodynamics.utils;
 /**
  * An exception class to signal that an input matrix was not positive definite
  * 
- * @author Joseph Lizier
- *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class NonPositiveDefiniteMatrixException extends Exception {
 

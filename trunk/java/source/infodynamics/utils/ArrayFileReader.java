@@ -25,14 +25,15 @@ import java.io.FileReader;
 import java.io.IOException;
 
 /**
- * Reads basic files with one or two dimensional arrays of integers.,
+ * Reads basic files with one or two dimensional arrays of integers
+ *  and doubles,
  *  delimited by space, tab or comma.
  * One dimensional arrays should have a single number on each line.
  * Files can have comment lines, which start with # or % characters.
- * Empty lines are allowed.
+ * Empty lines are allowed and skipped.
  * 
- * @author Joseph Lizier
- *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class ArrayFileReader {
 	private String filename;
@@ -52,6 +53,11 @@ public class ArrayFileReader {
 		filename = arrayFilename;
 	}
 	
+	/**
+	 * Creates the ArrayFileReader with a {@link File} instance
+	 * 
+	 * @param file {@link File} instance to read
+	 */
 	public ArrayFileReader(File file) {
 		filename = file.getPath();
 	}
@@ -117,6 +123,12 @@ public class ArrayFileReader {
 		isOpen = false;
 	}
 
+	/**
+	 * Attempt to read a 2D int matrix from the file
+	 * 
+	 * @return the 2D int[][] matrix
+	 * @throws Exception
+	 */
 	public int[][] getInt2DMatrix() throws Exception {
 		openArrayFile();
 		// Create the return array
@@ -168,6 +180,12 @@ public class ArrayFileReader {
 		return values;
 	}
 
+	/**
+	 * Attempt to read a 1D int array from the file
+	 * 
+	 * @return the array that was read
+	 * @throws Exception
+	 */
 	public int[] getIntArray() throws Exception {
 		openArrayFile();
 		
@@ -263,6 +281,12 @@ public class ArrayFileReader {
 		return values;
 	}
 
+	/**
+	 * Attempt to read a double[][] array from the file
+	 * 
+	 * @return the read double[][] array
+	 * @throws Exception
+	 */
 	public double[][] getDouble2DMatrix() throws Exception {
 		openArrayFile();
 		// Create the return array
@@ -314,6 +338,12 @@ public class ArrayFileReader {
 		return values;
 	}
 
+	/**
+	 * Attempt to read a double[] array from the file
+	 * 
+	 * @return the read double[] array
+	 * @throws Exception
+	 */
 	public double[] getDoubleArray() throws Exception {
 		openArrayFile();
 		

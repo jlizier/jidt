@@ -22,10 +22,10 @@ package infodynamics.utils;
  * 
  * Structure to hold a distribution of info-theoretic measurements,
  *  and a significance value for how an original measurement compared 
- *  with these.
+ *  with these, which is determined empirically by bootstrapping.
  * 
- * @author Joseph Lizier
- *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class EmpiricalMeasurementDistribution extends MeasurementDistribution {
 
@@ -47,12 +47,24 @@ public class EmpiricalMeasurementDistribution extends MeasurementDistribution {
 	 */
 	protected double stdOfDist;
 	
+	/**
+	 * Construct an instance, ready to fill out the distribution
+	 * 
+	 * @param size number of surrogates used
+	 */
 	public EmpiricalMeasurementDistribution(int size) {
 		super(); // Creating the super class with mean and pValue 0
 		// These value will be filled out by the caller later.
 		distribution = new double[size];
 	}
 
+	/**
+	 * Construct an instance with the given distribution of 
+	 * surrogates
+	 * 
+	 * @param distribution surrogate measurements
+	 * @param actualValue actual observed value
+	 */
 	public EmpiricalMeasurementDistribution(double[] distribution, double actualValue) {
 		super(actualValue, 0); // Using pValue = 0 temporarily ...
 		this.distribution = distribution;
@@ -76,6 +88,12 @@ public class EmpiricalMeasurementDistribution extends MeasurementDistribution {
 	}
 	*/
 	
+	/**
+	 * Assuming the distribution is Gaussian, return a t-score
+	 * for our observed measurement
+	 * 
+	 * @return a t-score for our observed measurement
+	 */
 	public double getTSscore() {
 		if (! computedMean) {
 			meanOfDist = MatrixUtils.mean(distribution);
@@ -86,6 +104,11 @@ public class EmpiricalMeasurementDistribution extends MeasurementDistribution {
 		return t;
 	}
 	
+	/**
+	 * Return the mean of the distribution
+	 * 
+	 * @return the mean of the distribution
+	 */
 	public double getMeanOfDistribution() {
 		if (! computedMean) {
 			meanOfDist = MatrixUtils.mean(distribution);
@@ -95,6 +118,11 @@ public class EmpiricalMeasurementDistribution extends MeasurementDistribution {
 		return meanOfDist;
 	}
 
+	/**
+	 * Return the standard deviation of the distribution
+	 * 
+	 * @return the standard deviation of the distribution
+	 */
 	public double getStdOfDistribution() {
 		if (! computedMean) {
 			meanOfDist = MatrixUtils.mean(distribution);

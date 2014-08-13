@@ -25,7 +25,8 @@ package infodynamics.utils;
  * <p>Usage: <code>java.util.Arrays.sort(int[][], FirstIndexComparatorInteger.getInstance())</code>;
  * </p>
  * 
- * @author Joseph Lizier
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class FirstIndexComparatorInteger implements java.util.Comparator<int[]> {
 	
