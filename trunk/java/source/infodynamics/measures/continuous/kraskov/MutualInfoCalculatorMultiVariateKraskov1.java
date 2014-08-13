@@ -18,47 +18,47 @@
 
 package infodynamics.measures.continuous.kraskov;
 
+import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 
 /**
- * <p>Compute the Mutual Info using the Kraskov estimation method.
- * Uses the first algorithm (defined at end of p.2 of the paper)</p>
- * <p>Computes this directly looking at the marginal space for each variable, rather than
- * using the multi-info (or integration) in the marginal spaces.
- * </p>
- * @see "Estimating mutual information", Kraskov, A., Stogbauer, H., Grassberger, P., Physical Review E 69, (2004) 066138
- * @see http://dx.doi.org/10.1103/PhysRevE.69.066138
- * 
- * @author Joseph Lizier
+ * <p>Computes the differential mutual information of two given multivariate sets of
+ *  observations (implementing {@link MutualInfoCalculatorMultiVariate}),
+ *  using Kraskov-Stoegbauer-Grassberger (KSG) estimation (see Kraskov et al., below),
+ *  <b>algorithm 1</b>.
+ *  Most of the functionality is defined by the parent class 
+ *  {@link MutualInfoCalculatorMultiVariateKraskov}.</p>
  *
+ * <p>Usage is as per the paradigm outlined for {@link MutualInfoCalculatorMultiVariate},
+ * and expanded on in {@link MutualInfoCalculatorMultiVariateKraskov}.
+ * </p>
+ *  
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>Kraskov, A., Stoegbauer, H., Grassberger, P., 
+ *   <a href="http://dx.doi.org/10.1103/PhysRevE.69.066138">"Estimating mutual information"</a>,
+ *   Physical Review E 69, (2004) 066138.</li>
+ * </ul>
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class MutualInfoCalculatorMultiVariateKraskov1
 	extends MutualInfoCalculatorMultiVariateKraskov {
 	
-	// Multiplier used in hueristic for determining whether to use a linear search
-	//  for min kth element or a binary search.
+	/**
+	 * Multiplier used as hueristic for determining whether to use a linear search
+	 *  for kth nearest neighbour or a binary search.
+	 */
 	protected static final double CUTOFF_MULTIPLIER = 1.5;
 
-	/**
-	 * Compute the average MI from the previously set observations
-	 */
+	@Override
 	public double computeAverageLocalOfObservations() throws Exception {
 		return computeAverageLocalOfObservations(null);
 	}
 
-	/**
-	 * Compute what the average MI would look like were the second time series reordered
-	 *  as per the array of time indices in reordering.
-	 * The user should ensure that all values 0..N-1 are represented exactly once in the
-	 *  array reordering and that no other values are included here. 
-	 * If reordering is null, it is assumed there is no reordering of
-	 *  the y variable.
-	 * 
-	 * @param reordering the reordered time steps of the y variable
-	 * @return
-	 * @throws Exception
-	 */
+	@Override
 	public double computeAverageLocalOfObservations(int[] reordering) throws Exception {
 		if (!tryKeepAllPairsNorms || (sourceObservations.length > MAX_DATA_SIZE_FOR_KEEP_ALL_PAIRS_NORM)) {
 			double[][] originalData2 = destObservations;
@@ -145,12 +145,13 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 	}
 	
 	/**
-	 * This method correctly computes the average local MI, but recomputes the x and y 
+	 * This method correctly computes the average MI, but recomputes the x and y 
 	 *  distances between all tuples in time.
 	 * Kept here for cases where we have too many observations
 	 *  to keep the norm between all pairs, and for testing purposes.
 	 * 
-	 * @return
+	 * @see #computeAverageLocalOfObservations()
+	 * @return average MI value in nats not bits
 	 * @throws Exception
 	 */
 	public double computeAverageLocalOfObservationsWhileComputingDistances() throws Exception {
@@ -215,6 +216,7 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 		return lastAverage;
 	}
 
+	@Override
 	public double[] computeLocalOfPreviousObservations() throws Exception {
 		int N = sourceObservations.length; // number of observations
 		int cutoffForKthMinLinear = (int) (CUTOFF_MULTIPLIER * Math.log(N) / Math.log(2.0));
@@ -287,6 +289,7 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 		return localMi;
 	}
 
+	@Override
 	public String printConstants(int N) throws Exception {
 		String constants = String.format("digamma(k=%d)=%.3e + digamma(N=%d)=%.3e => %.3e",
 				k, MathsUtils.digamma(k), N, MathsUtils.digamma(N),

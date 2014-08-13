@@ -18,21 +18,32 @@
 
 package infodynamics.measures.continuous.kraskov;
 
+import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.utils.FirstIndexComparatorDouble;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 
 /**
- * <p>Compute the Mutual Info using the Kraskov estimation method.
- * Uses the second algorithm (defined at start of p.3 of the paper)</p>
- * <p>Computes this directly looking at the marginal space for each variable, rather than
- * using the multi-info (or integration) in the marginal spaces.
- * </p>
- * @see "Estimating mutual information", Kraskov, A., Stogbauer, H., Grassberger, P., Physical Review E 69, (2004) 066138
- * @see http://dx.doi.org/10.1103/PhysRevE.69.066138
- * 
- * @author Joseph Lizier
+ * <p>Computes the differential mutual information of two given multivariate sets of
+ *  observations (implementing {@link MutualInfoCalculatorMultiVariate}),
+ *  using Kraskov-Stoegbauer-Grassberger (KSG) estimation (see Kraskov et al., below),
+ *  <b>algorithm 2</b>.
+ *  Most of the functionality is defined by the parent class 
+ *  {@link MutualInfoCalculatorMultiVariateKraskov}.</p>
  *
+ * <p>Usage is as per the paradigm outlined for {@link MutualInfoCalculatorMultiVariate},
+ * and expanded on in {@link MutualInfoCalculatorMultiVariateKraskov}.
+ * </p>
+ *  
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>Kraskov, A., Stoegbauer, H., Grassberger, P., 
+ *   <a href="http://dx.doi.org/10.1103/PhysRevE.69.066138">"Estimating mutual information"</a>,
+ *   Physical Review E 69, (2004) 066138.</li>
+ * </ul>
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class MutualInfoCalculatorMultiVariateKraskov2
 	extends MutualInfoCalculatorMultiVariateKraskov {
@@ -40,20 +51,12 @@ public class MutualInfoCalculatorMultiVariateKraskov2
 	protected static final int JOINT_NORM_VAL_COLUMN = 0;
 	protected static final int JOINT_NORM_TIMESTEP_COLUMN = 1;
 
-	// Multiplier used in hueristic for determining whether to use a linear search
-	//  for min kth element or a binary search.
+	/**
+	 * Multiplier used as hueristic for determining whether to use a linear search
+	 *  for kth nearest neighbour or a binary search.
+	 */
 	protected static final double CUTOFF_MULTIPLIER = 1.5;
 	
-	/**
-	 * Compute what the average MI would look like were the second time series reordered
-	 *  as per the array of time indices in reordering.
-	 * The user should ensure that all values 0..N-1 are represented exactly once in the
-	 *  array reordering and that no other values are included here. 
-	 * 
-	 * @param reordering
-	 * @return
-	 * @throws Exception
-	 */
 	public double computeAverageLocalOfObservations(int[] reordering) throws Exception {
 		if (!tryKeepAllPairsNorms || (sourceObservations.length > MAX_DATA_SIZE_FOR_KEEP_ALL_PAIRS_NORM)) {
 			double[][] originalData2 = destObservations;
@@ -255,6 +258,7 @@ public class MutualInfoCalculatorMultiVariateKraskov2
 	 * Kept here for cases where we have too many observations
 	 *  to keep the norm between all pairs, and for testing purposes.
 	 * 
+	 * @see #computeAverageLocalOfObservations()
 	 * @return
 	 * @throws Exception
 	 */
