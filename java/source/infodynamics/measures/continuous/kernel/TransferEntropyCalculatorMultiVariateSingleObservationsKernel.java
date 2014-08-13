@@ -18,37 +18,39 @@
 
 package infodynamics.measures.continuous.kernel;
 
+import infodynamics.measures.continuous.TransferEntropyCalculatorMultiVariate;
 import infodynamics.utils.MatrixUtils;
 
 import java.util.Iterator;
 import java.util.Vector;
 
 /**
- * 
  * <p>
- * Implements a transfer entropy calculator using kernel estimation.
- * (see Schreiber, PRL 85 (2) pp.461-464, 2000)</p> 
- * 
- * <p>
- * This calculator handles multi-variate source and destination variables,
- *  and should only be used to add observation tuples, i.e.
+ * Extends {@link TransferEntropyCalculatorMultiVariateKernel} for
+ * computing the differential transfer entropy (TE) between two <b>multivariate</b>
+ *  <code>double[][]</code> time-series of observations
+ *  using box-kernel estimation.
+ * This calculator however only be used to add observation tuples, i.e.
  *  (source, destination next state, destination past)
  *  one at a time. This allows the user to specify the variable that
- *  should be used as the destination past, for advanced applications.
- * </p>
+ *  should be used as the destination past state, for advanced applications
+ *  (where the state is somehow captured differently to the past
+ *  embedding vector). As an example, see Wang et al. (2012) below.
+ * </p> 
  * 
- * <p>
- * Usage:
- * 	<ol>
- * 		<li>Construct</li>
- * 		<li>SetProperty() for each property</li>
- *		<li>initialise()</li>
- * 		<li>setObservations(), or [startAddObservations(),
- * 			(addObservations|addSingleObservation)*, finaliseAddObservations()]
- *   Note: If not using setObservations(), the results from computeLocal or getSignificance
- *    are not guaranteed to be particularly sensible.</li> 
- * 		<li>computeAverageLocalOfObservations() or ComputeLocalOfPreviousObservations()</li>
- * 	</ol>
+ * <p>Javadocs are somewhat incomplete since this is 
+ * a niche class. TODO Finish these properly.</p>
+ * 
+ * <p>Usage is as per the paradigm outlined for {@link TransferEntropyCalculatorMultiVariateKernel}
+ * (extending {@link TransferEntropyCalculatorMultiVariate}),
+ * with:
+ * <ul>
+ * 	<li>The constructor step being a simple call to
+ * 		{@link #TransferEntropyCalculatorMultiVariateSingleObservationsKernel()}.</li>
+ *  <li>Adds additional {@link #initialise(double)} and {@link #initialiseAllDimensions(int, int, int)} options</li>
+ *  <li>The addition of {@link #addSingleObservation(double[], double[], double[])}
+ *      for adding single observations in.</li>
+ *  </ul>
  * </p>
  * 
  * <p>
@@ -57,10 +59,30 @@ import java.util.Vector;
  * TODO Think about added error-trapping code to make sure the user only makes one type of addObservations call.
  * </p>
  * 
- * @author Joseph Lizier
- * @see For transfer entropy: Schreiber, PRL 85 (2) pp.461-464, 2000; http://dx.doi.org/10.1103/PhysRevLett.85.461
- * @see For local transfer entropy: Lizier et al, PRE 77, 026110, 2008; http://dx.doi.org/10.1103/PhysRevE.77.026110
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>T. Schreiber, <a href="http://dx.doi.org/10.1103/PhysRevLett.85.461">
+ * "Measuring information transfer"</a>,
+ *  Physical Review Letters 85 (2) pp.461-464, 2000.</li>
+ *  <li>J.T. Lizier, J. Heinzle, A. Horstmann, J.-D. Haynes, M. Prokopenko,
+ *  <a href="http://dx.doi.org/10.1007/s10827-010-0271-2">
+ *  "Multivariate information-theoretic measures reveal directed information
+ *  structure and task relevant changes in fMRI connectivity"</a>,
+ *  Journal of Computational Neuroscience, vol. 30, pp. 85-107, 2011.</li>
+ *  <li>J. T. Lizier, M. Prokopenko and A. Zomaya,
+ *  <a href="http://dx.doi.org/10.1103/PhysRevE.77.026110">
+ *  "Local information transfer as a spatiotemporal filter for complex systems"</a>
+ *  Physical Review E 77, 026110, 2008.</li>
+ *  <li>H. Kantz and T. Schreiber, "Nonlinear Time Series Analysis"
+ *  (Cambridge University Press, Cambridge, MA, 1997).</li>
+ *  <li>X. R. Wang, J. M. Miller, J. T. Lizier, M. Prokopenko, and L. F. Rossi,
+ *  <a href="http://dx.doi.org/10.1371/journal.pone.0040084">
+ *  "Quantifying and Tracing Information Cascades in Swarms"</a>,
+ *  PLoS ONE 7, e40084+ (2012).</li>
+ * </ul>
  *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class TransferEntropyCalculatorMultiVariateSingleObservationsKernel
 		extends TransferEntropyCalculatorMultiVariateKernel {
@@ -72,6 +94,9 @@ public class TransferEntropyCalculatorMultiVariateSingleObservationsKernel
 
 	protected int destPastDimensions = 1;
 
+	/**
+	 * Construct an instance
+	 */
 	public TransferEntropyCalculatorMultiVariateSingleObservationsKernel() {
 		super();
 	}
@@ -82,10 +107,11 @@ public class TransferEntropyCalculatorMultiVariateSingleObservationsKernel
 	 * @param epsilon kernel width
 	 */
 	public void initialise(double epsilon) throws Exception {
-		this.epsilon = epsilon;
+		this.kernelWidth = epsilon;
 		initialise(1, 1); // assume 1 dimension in source and dest
 	}
 
+	@Override
 	public void initialise(int sourceDimensions, int destDimensions) throws Exception {
 		this.destDimensions = destDimensions;
 		this.sourceDimensions = sourceDimensions;
@@ -93,6 +119,15 @@ public class TransferEntropyCalculatorMultiVariateSingleObservationsKernel
 		super.initialise(1); // Feeds k=1 to super and calls initialise();
 	}
 
+	/**
+	 * Initialise routine where the number of dimensions considered
+	 * to be part of the past state may also be supplied.
+	 * 
+	 * @param sourceDimensions
+	 * @param destDimensions
+	 * @param destPastDimensions
+	 * @throws Exception
+	 */
 	public void initialiseAllDimensions(int sourceDimensions,
 			int destDimensions, int destPastDimensions) throws Exception {
 		this.destDimensions = destDimensions;
@@ -106,8 +141,8 @@ public class TransferEntropyCalculatorMultiVariateSingleObservationsKernel
 		// Mimic super.initialise() (it would use k * destDimenions in the kernel estimator
 		//  for destPast instead of destPastDimensions if we're not careful)
 		teKernelEstimator.initialise(destPastDimensions,
-				sourceDimensions, epsilon, epsilon);
-		nextStateKernelEstimator.initialise(destDimensions, epsilon);
+				sourceDimensions, kernelWidth, kernelWidth);
+		nextStateKernelEstimator.initialise(destDimensions, kernelWidth);
 		destPastVectors = null;
 		destNextVectors = null;
 		sourceVectors = null;
@@ -201,10 +236,7 @@ public class TransferEntropyCalculatorMultiVariateSingleObservationsKernel
 		super.addObservations(sourceContainer, destContainer);
 	}
 
-	/**
-	 * Flag that the observations are complete, probability distribution functions can now be built.
-	 *
-	 */
+	@Override
 	public void finaliseAddObservations() {
 		// First work out the size to allocate the joint vectors, and do the allocation:
 		totalObservations = 0;

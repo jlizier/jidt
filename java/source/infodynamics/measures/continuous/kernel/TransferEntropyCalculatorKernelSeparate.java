@@ -28,28 +28,35 @@ import infodynamics.utils.RandomGenerator;
 
 import java.util.Iterator;
 
-
 /**
- * 
- * <p>
- * Implements a transfer entropy calculator using kernel estimation.
- * (see Schreiber, PRL 85 (2) pp.461-464, 2000)</p> 
- * 
- * <p>
- * Uses separate kernel estimators for each probability calculation required.
+ * <p>Computes the differential transfer entropy (TE) between two uniivariate
+ *  <code>double[]</code> time-series of observations
+ *  using box-kernel estimation.
+ *  For details on box-kernel estimation, see Kantz and Schreiber (below).</p>
+ *  
+ * <p>TE was defined by Schreiber (below).
+ *  This estimator is realised here by extending
+ *  {@link TransferEntropyCommon}.</p>
+ *  
+ * <p>***** This implementation is simple in terms of using separate
+ * kernel estimators for each probability calculation required.
+ * The main TE box-kernel class, {@link TransferEntropyCalculatorKernel} is significantly
+ * more efficient.
  * </p>
  * 
- * <p>
- * Usage:
- * 	<ol>
- * 		<li>Construct</li>
- * 		<li>SetProperty() for each property</li>
- *		<li>intialise()</li>
- * 		<li>setObservations(), or [startAddObservations(), addObservations()*, finaliseAddObservations()]
- *   Note: If not using setObservations(), the results from computeLocal or getSignificance
- *    are not likely to be particularly sensible.</li> 
- * 		<li>computeAverageLocalOfObservations() or ComputeLocalOfPreviousObservations()</li>
- * 	</ol>
+ * <p><b>Since this is not our main TE box-kernel class, the javadocs are
+ * not necessarily well-maintained either ...</b> TODO Update javadocs here</p>
+ * 
+ * <p>Usage is as per the paradigm outlined for {@link TransferEntropyCalculator},
+ * with:
+ * <ul>
+ * 	<li>The constructor step being a simple call to {@link #TransferEntropyCalculatorKernel()}.</li>
+ *  <li>Further properties are available, see {@link #setProperty(String, String)};</li>
+ *  <li>An additional {@link #initialise(int, double)} option;</li>
+ *  <li>Additional utility methods for computing other information-theoretic values
+ *  are available here (e.g. {@link #computeAverageLocalOfObservationsWithCorrection()}) which
+ *  can be called after all observations are supplied.</li>
+ *  </ul>
  * </p>
  * 
  * <p>
@@ -57,10 +64,19 @@ import java.util.Iterator;
  *  way this is done in Plain calculator).
  * </p>
  * 
- * @author Joseph Lizier
- * @see For transfer entropy: Schreiber, PRL 85 (2) pp.461-464, 2000; http://dx.doi.org/10.1103/PhysRevLett.85.461
- * @see For local transfer entropy: Lizier et al, PRE 77, 026110, 2008; http://dx.doi.org/10.1103/PhysRevE.77.026110
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>T. Schreiber, <a href="http://dx.doi.org/10.1103/PhysRevLett.85.461">
+ * "Measuring information transfer"</a>,
+ *  Physical Review Letters 85 (2) pp.461-464, 2000.</li>
+ *  <li>J. T. Lizier, M. Prokopenko and A. Zomaya,
+ *  <a href="http://dx.doi.org/10.1103/PhysRevE.77.026110">
+ *  "Local information transfer as a spatiotemporal filter for complex systems"</a>
+ *  Physical Review E 77, 026110, 2008.</li>
+ * </ul>
  *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class TransferEntropyCalculatorKernelSeparate
 	extends TransferEntropyCommon implements TransferEntropyCalculator {

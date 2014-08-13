@@ -19,11 +19,11 @@
 package infodynamics.measures.continuous.kernel;
 
 /**
- * Structure to hold the results of the kernel
- *  estimation for one time point
+ * Structure to hold the results of the box-kernel
+ *  estimation counts for one sample point.
  * 
- * @author Joseph Lizier, joseph.lizier at gmail.com
- *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class TransferEntropyKernelCounts {
 	public int countPast;
