@@ -18,6 +18,7 @@
 
 package infodynamics.measures.mixed.gaussian;
 
+import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariate;
 import infodynamics.measures.continuous.gaussian.EntropyCalculatorMultiVariateGaussian;
 import infodynamics.measures.mixed.MutualInfoCalculatorMultiVariateWithDiscrete;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
@@ -42,7 +43,12 @@ import infodynamics.utils.RandomGenerator;
  * as we would normally expect a mutual information calculation: if we add more
  * continuous variables in, it increases in spite of redundancy between these
  * variables. TODO Further exploration should take place here ...</p>
- *  
+ * 
+ * <p>These calculators are <b>EXPERIMENTAL</b> -- not properly tested,
+ * and not well documented. The intended calling pattern is similar to
+ * {@link ConditionalMutualInfoCalculatorMultiVariate}
+ * </p>
+ * 
  * <p>
  * Usage:
  * 	<ol>
@@ -62,8 +68,8 @@ import infodynamics.utils.RandomGenerator;
  * 
  * @see Differential entropy for Gaussian random variables defined at 
  *      {@link http://mathworld.wolfram.com/DifferentialEntropy.html}
- * @author Joseph Lizier joseph.lizier_at_gmail.com
- *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class MutualInfoCalculatorMultiVariateWithDiscreteGaussian implements
 		MutualInfoCalculatorMultiVariateWithDiscrete, Cloneable {

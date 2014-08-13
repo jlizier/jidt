@@ -19,6 +19,7 @@
 package infodynamics.measures.mixed.gaussian;
 
 import infodynamics.measures.mixed.ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSourceCommon;
+import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariate;
 import infodynamics.measures.continuous.ConditionalMutualInfoMultiVariateCommon;
 import infodynamics.measures.continuous.gaussian.EntropyCalculatorMultiVariateGaussian;
 import infodynamics.utils.MatrixUtils;
@@ -43,7 +44,12 @@ import infodynamics.utils.MatrixUtils;
  * as we would normally expect a mutual information calculation: if we add more
  * continuous variables in, it may increase in spite of redundancy between these
  * variables. TODO Further exploration should take place here ...</p>
- *  
+ * 
+ * <p>These calculators are <b>EXPERIMENTAL</b> -- not properly tested,
+ * and not well documented. The intended calling pattern is similar to
+ * {@link ConditionalMutualInfoCalculatorMultiVariate}
+ * </p>
+ * 
  * <p>
  * Usage:
  * 	<ol>
@@ -75,8 +81,8 @@ import infodynamics.utils.MatrixUtils;
  * @see <a href="http://mathworld.wolfram.com/DifferentialEntropy.html">Differential entropy for Gaussian random variables at Mathworld</a>
  * @see <a href="http://en.wikipedia.org/wiki/Differential_entropy">Differential entropy for Gaussian random variables at Wikipedia</a>
  * @see <a href="http://en.wikipedia.org/wiki/Multivariate_normal_distribution">Multivariate normal distribution on Wikipedia</a>
- * @author Joseph Lizier joseph.lizier_at_gmail.com
- * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSourceGaussian
 		extends	ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSourceCommon 

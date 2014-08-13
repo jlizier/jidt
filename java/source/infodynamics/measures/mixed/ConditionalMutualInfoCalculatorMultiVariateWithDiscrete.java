@@ -19,13 +19,19 @@
 package infodynamics.measures.mixed;
 
 import infodynamics.utils.EmpiricalMeasurementDistribution;
+import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariate;
 
 /**
  * A conditional mutual information calculator between a joint set of continuous variables, 
  *  and a discrete variable, conditioned on another discrete variable. 
  * 
- * @author Joseph Lizier, joseph.lizier at gmail.com
- *
+ * <p>These calculators are <b>EXPERIMENTAL</b> -- not properly tested,
+ * and not well documented. The intended calling pattern is similar to
+ * {@link ConditionalMutualInfoCalculatorMultiVariate}
+ * </p>
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public interface ConditionalMutualInfoCalculatorMultiVariateWithDiscrete {
 

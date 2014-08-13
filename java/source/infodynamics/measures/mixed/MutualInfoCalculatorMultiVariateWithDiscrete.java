@@ -18,6 +18,7 @@
 
 package infodynamics.measures.mixed;
 
+import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 
 /**
@@ -43,8 +44,13 @@ import infodynamics.utils.EmpiricalMeasurementDistribution;
  * 	</ol>
  * </p>
  * 
- * @author Joseph Lizier joseph.lizier_at_gmail.com
- *
+ * <p>These calculators are <b>EXPERIMENTAL</b> -- not properly tested,
+ * and not well documented. The intended calling pattern is similar to
+ * {@link MutualInfoCalculatorMultiVariate}
+ * </p>
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public interface MutualInfoCalculatorMultiVariateWithDiscrete {
 
