@@ -22,16 +22,42 @@ import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 
 /**
- * Usage:
- * 1. Continuous accumulation of observations:
- *   Call: a. initialise()
- *         b. addObservations() several times over
- *         c. computeLocalFromPreviousObservations()
- * 2. Standalone:
- *   Call: localMultiInformation()
+ * <p>Multi-information or integration calculator for multivariate discrete data.
+ * That is, it is applied to <code>double[][]</code> data, where the first index
+ * is observation number or time, and the second is variable number.
+ * See Tononi et al. below for the definition of multi-information/integration.</p>
+ * </p>
  * 
- * @author Joseph Lizier
- *
+ * <p>Usage of the class is intended to follow this paradigm:</p>
+ * <ol>
+ * 		<li>Construct the calculator:
+ * 			{@link #MultiInformationCalculator(int, int)};</li>
+ *		<li>Initialise the calculator using {@link #initialise()};</li>
+ * 		<li>Provide the observations/samples for the calculator
+ *      	to set up the PDFs, using one or more calls to
+ * 			sets of {@link #addObservations(int[][], int[])} methods, then</li>
+ * 		<li>Compute the required quantities, being (at this stage):
+ * 			<ul>
+ * 				<li>the average MI: {@link #computeAverageLocalOfObservations()};</li>
+ * 			</ul>
+ * 		</li>
+ * 		<li>
+ * 		Return to step 2 to re-use the calculator on a new data set.
+ * 		</li>
+ * 	</ol>
+ * 
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>"G. Tononi, O. Sporns, G. M. Edelman,
+ *  <a href="http://dx.doi.org/10.1073/pnas.91.11.5033">"A measure for
+ *  brain complexity:
+ * 	relating functional segregation and integration in the nervous system"</a>
+ *  Proceedings of the National Academy of Sciences, Vol. 91, No. 11.
+ *  (1994), pp. 5033-5037.</li>
+ * </ul>
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class MultiInformationCalculator extends InfoMeasureCalculator {
 	
@@ -43,8 +69,12 @@ public class MultiInformationCalculator extends InfoMeasureCalculator {
 	private boolean checkedFirst = false;
 
 	/**
-	 * Constructor
-	 *
+	 * Construct an instance
+	 * 
+	 * @base number of symbols for each variable.
+	 *        E.g. binary variables are in base-2.
+	 * @numVars numbers of joint variables that multi-info
+	 *     will be computed over.
 	 */
 	public MultiInformationCalculator(int base, int numVars) {
 		super(base);
@@ -54,22 +84,24 @@ public class MultiInformationCalculator extends InfoMeasureCalculator {
 		marginalCounts = new int[numVars][base];
 	}
 
-	/**
-	 * Initialise calculator, preparing to take observation sets in
-	 *
-	 */
+	@Override
 	public void initialise(){
 		super.initialise();
 		MatrixUtils.fill(jointCount, 0);
 		MatrixUtils.fill(marginalCounts, 0);
 	}
 	
+	// TODO Define just a simple addObservations for 
+	//  int[][] states where there are just numVars variables
+	
 	/**
-	 * Add observations of the variables based at every point, with the set defined by 
-	 *  the group offsets array
+	 * Given one time sample of a homogeneous array of variables (states),
+	 * add the observations of all sets of numVars of these, defined
+	 * by the offsets in groupOffsets from every point in the array.
 	 *  
-	 * @param states
-	 * @param groupOffsets
+	 * @param states current values of an array of variables 
+	 * @param groupOffsets offsets for the numVars set from a given
+	 *   data point
 	 */
 	public void addObservations(int[] states, int[] groupOffsets) {
 		for (int c = 0; c < states.length; c++) {
@@ -87,11 +119,15 @@ public class MultiInformationCalculator extends InfoMeasureCalculator {
 	}
 	
 	/**
-	 * Add observations of the variables based at every point, with the set defined by 
-	 *  the group offsets array
+	 * Given one time sample of a homogeneous array of variables (states),
+	 * add the observations of one set of numVars of these, defined
+	 * by the offsets in groupOffsets from destinationIndex.
 	 *  
-	 * @param states
-	 * @param groupOffsets
+	 * @param states current values of an array of variables 
+	 * @param destinationIndex which variable to center
+	 *  our offsets from and take the sample,
+	 * @param groupOffsets offsets for the numVars set from a given
+	 *   data point
 	 */
 	public void addObservations(int[] states, int destinationIndex, int[] groupOffsets) {
 		// Add the marginal observations in, and compute the joint state value
@@ -107,11 +143,15 @@ public class MultiInformationCalculator extends InfoMeasureCalculator {
 	}
 
 	/**
-	 * Add observations of the variables based at every point, with the set defined by 
-	 *  the group offsets array
+	 * Given multiple time samples of a homogeneous array of variables (states),
+	 * add the observations of all sets of numVars of these, defined
+	 * by the offsets in groupOffsets from every point in the array.
+	 * Do this for every time point
 	 *  
-	 * @param states
-	 * @param groupOffsets
+	 * @param states 2D array of values of an array of variables
+	 *  at many observations (first index is time, second is variable index) 
+	 * @param groupOffsets offsets for the numVars set from a given
+	 *   data point
 	 */
 	public void addObservations(int[][] states, int[] groupOffsets) {
 		for (int t = 0; t < states.length; t++) {
@@ -130,12 +170,7 @@ public class MultiInformationCalculator extends InfoMeasureCalculator {
 		}
 	}
 	
-	/**
-	 * Returns the average local multi information storage from
-	 *  the observed values which have been passed in previously. 
-	 *  
-	 * @return
-	 */
+	@Override
 	public double computeAverageLocalOfObservations() {
 		
 		int[] jointTuple = new int[numVars];
@@ -146,7 +181,7 @@ public class MultiInformationCalculator extends InfoMeasureCalculator {
 	}
 	
 	/**
-	 * Compute the contribution to the MI for all tuples starting with tuple[0..(fromIndex-1)].
+	 * Private utility to compute the contribution to the MI for all tuples starting with tuple[0..(fromIndex-1)].
 	 * 
 	 * @param tuple
 	 * @param fromIndex

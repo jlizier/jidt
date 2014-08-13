@@ -20,6 +20,26 @@ package infodynamics.measures.discrete;
 
 import infodynamics.utils.MatrixUtils;
 
+/**
+ * Implements <b>separable information</b> (see Lizier et al, 2010, below),
+ *  by using separate Transfer Entropy and Active information storage
+ *  calculators.
+ *  
+ * Javadocs are preliminary here (TODO), please see 
+ * {@link SeparableInfoCalculator} for user-level documentation
+ * regarding the methods.
+ * 
+ * <p><b>References:</b><br/>
+ * <ul>
+ *  <li>J. T. Lizier, M. Prokopenko and A. Zomaya,
+ *  <a href=http://dx.doi.org/10.1063/1.3486801">
+ *  "Information modification and particle collisions in distributed computation"</a>
+ *  Chaos 20, 3, 037109 (2010).</li>
+ * </ul>
+ *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
+ */
 public class SeparableInfoCalculatorByAddition extends SeparableInfoCalculator {
 
 	ActiveInformationCalculator aiCalc;
@@ -533,7 +553,7 @@ public class SeparableInfoCalculatorByAddition extends SeparableInfoCalculator {
 		
 		// Now compute the coherence of computation
 		if (computeMultiInfoCoherence) {
-			miCalc.startIndividualObservations();
+			miCalc.startAddObservations();
 			double[] miTuple = new double[numSources + 1];
 			for (int t = k; t < timeSteps; t++) {
 				// Construct the multi-info tuple
@@ -544,7 +564,7 @@ public class SeparableInfoCalculatorByAddition extends SeparableInfoCalculator {
 				miCalc.addObservation(miTuple);
 			}
 			try {
-				miCalc.endIndividualObservations();
+				miCalc.finaliseAddObservations();
 			} catch (Exception e) {
 				// an exception would only be thrown if we changed the number of causal contributors here
 				//  which simply will not happen. Just in case it does, we'll throw a runtime exception
@@ -612,7 +632,7 @@ public class SeparableInfoCalculatorByAddition extends SeparableInfoCalculator {
 
 		// Now compute the coherence of computation
 		if (computeMultiInfoCoherence) {
-			miCalc.startIndividualObservations();
+			miCalc.startAddObservations();
 			double[] miTuple = new double[numSources + 1];
 			for (int t = k; t < timeSteps; t++) {
 				for (int r = periodicBoundaryConditions ? 0 : nonPeriodicStartAgent;
@@ -627,7 +647,7 @@ public class SeparableInfoCalculatorByAddition extends SeparableInfoCalculator {
 				}
 			}
 			try {
-				miCalc.endIndividualObservations();
+				miCalc.finaliseAddObservations();
 			} catch (Exception e) {
 				// an exception would only be thrown if we changed the number of causal contributors here
 				//  which simply will not happen. Just in case it does, we'll throw a runtime exception
@@ -720,7 +740,7 @@ public class SeparableInfoCalculatorByAddition extends SeparableInfoCalculator {
 		
 		// Now compute the coherence of computation
 		if (computeMultiInfoCoherence) {
-			miCalc.startIndividualObservations();
+			miCalc.startAddObservations();
 			double[] miTuple = new double[numSources + 1];
 			for (int t = k; t < timeSteps; t++) {
 				for (int r = periodicBoundaryConditions ? 0 : nonPeriodicStartRow;
@@ -739,7 +759,7 @@ public class SeparableInfoCalculatorByAddition extends SeparableInfoCalculator {
 				}
 			}
 			try {
-				miCalc.endIndividualObservations();
+				miCalc.finaliseAddObservations();
 			} catch (Exception e) {
 				// an exception would only be thrown if we changed the number of causal contributors here
 				//  which simply will not happen. Just in case it does, we'll throw a runtime exception

@@ -22,26 +22,50 @@ import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 
 /**
- * Computes entropy over blocks of consecutive states in time.
- * 
+ * <p>Block entropy calculator for univariate discrete (int[]) data
+ * (ie computes entropy over blocks of consecutive states in time).
  * Implemented separately from the single state entropy 
  *  calculator to allow the single state calculator 
- *  to have optimal performance.
- * 
- * Usage:
- * 1. Continuous accumulation of observations:
- *   Call: a. initialise()
- *         b. addObservations() several times over
- *         c. computeLocalFromPreviousObservations()
- * 2. Standalone:
- *   Call: localActiveInformation()
- * 
- * @author Joseph Lizier
+ *  to have optimal performance.</p>
  *
+ * <p>Usage of the class is intended to follow this paradigm:</p>
+ * <ol>
+ * 		<li>Construct the calculator: {@link #BlockEntropyCalculator(int, int)};</li>
+ *		<li>Initialise the calculator using {@link #initialise()};</li>
+ * 		<li>Provide the observations/samples for the calculator
+ *      	to set up the PDFs, using one or more calls to
+ * 			sets of {@link #addObservations(int[])} methods, then</li>
+ * 		<li>Compute the required quantities, being one or more of:
+ * 			<ul>
+ * 				<li>the average entropy: {@link #computeAverageLocalOfObservations()};</li>
+ * 				<li>local entropy values, such as {@link #computeLocal(int[])};</li>
+ * 				<li>and variants of these.</li>
+ * 			</ul>
+ * 		</li>
+ * 		<li>As an alternative to steps 3 and 4, the user may undertake
+ * 			standalone computation from a single set of observations, via
+ *  		e.g.: {@link #computeLocal(int[])},
+ *  		{@link #computeAverageLocal(int[])} etc.</li>
+ * 		<li>
+ * 		Return to step 2 to re-use the calculator on a new data set.
+ * 		</li>
+ * 	</ol>
+ * 
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>T. M. Cover and J. A. Thomas, 'Elements of Information
+Theory' (John Wiley & Sons, New York, 1991).</li>
+ * </ul>
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class BlockEntropyCalculator extends EntropyCalculator {
 
-	protected int blocksize = 0; // temporal blocksize to compute entropy over. Need initialised to 0 for changedSizes
+	/**
+	 * Number of consecutive time-steps to compute entropy over.
+	 */
+	protected int blocksize = 0; //  Need initialised to 0 for changedSizes
 	protected int[] maxShiftedValue = null; // states * (base^(blocksize-1))
 
 	protected int base_power_blocksize = 0;
@@ -52,16 +76,18 @@ public class BlockEntropyCalculator extends EntropyCalculator {
 	 * 
 	 * @param blocksize
 	 * @param base
-	 * @return
+	 * @deprecated
 	 */
 	public static EntropyCalculator newInstance(int blocksize, int base) {
 		return new BlockEntropyCalculator(blocksize, base);
 	}
 	
 	/**
+	 * Construct a new instance
 	 * 
-	 * @param blocksize
-	 * @param base
+	 * @param blocksize Number of consecutive time-steps to compute entropy over.
+	 * @param base number of quantisation levels for each variable.
+	 *        E.g. binary variables are in base-2.
 	 */
 	public BlockEntropyCalculator(int blocksize, int base) {
 
@@ -89,22 +115,13 @@ public class BlockEntropyCalculator extends EntropyCalculator {
 		}
 	}
 	
-	/**
-	 * Initialise calculator, preparing to take observation sets in
-	 * Should be called prior to any of the addObservations() methods.
-	 * You can reinitialise without needing to create a new object.
-	 */
+	@Override
 	public void initialise(){
 		super.initialise();
 		MatrixUtils.fill(stateCount, 0);
 	}
-		
 	
-	/**
- 	 * Add observations in to our estimates of the pdfs.
-	 *
-	 * @param states index is time
-	 */
+	@Override
 	public void addObservations(int states[]) {
 		int rows = states.length;
 		// increment the count of observations:
@@ -133,13 +150,7 @@ public class BlockEntropyCalculator extends EntropyCalculator {
 		}		
 	}
 	
-	/**
- 	 * Add observations in to our estimates of the pdfs.
- 	 * This call suitable only for homogeneous agents, as all
- 	 *  agents will contribute to single pdfs.
-	 *
-	 * @param states 1st index is time, 2nd index is agent number
-	 */
+	@Override
 	public void addObservations(int states[][]) {
 		int rows = states.length;
 		int columns = states[0].length;
@@ -174,13 +185,7 @@ public class BlockEntropyCalculator extends EntropyCalculator {
 		}		
 	}
 	
-	/**
- 	 * Add observations in to our estimates of the pdfs.
- 	 * This call suitable only for homogeneous agents, as all
- 	 *  agents will contribute to single pdfs.
-	 *
-	 * @param states 1st index is time, 2nd and 3rd index are agent number
-	 */
+	@Override
 	public void addObservations(int states[][][]) {
 		int timeSteps = states.length;
 		if (timeSteps == 0) {
@@ -226,14 +231,7 @@ public class BlockEntropyCalculator extends EntropyCalculator {
 		}		
 	}
 
-	/**
- 	 * Add observations for a single agent of the multi-agent system
- 	 *  to our estimates of the pdfs.
- 	 * This call should be made as opposed to addObservations(int states[][])
- 	 *  for computing active info for heterogeneous agents.
-	 *
-	 * @param states 1st index is time, 2nd index is agent number
-	 */
+	@Override
 	public void addObservations(int states[][], int col) {
 		int rows = states.length;
 		// increment the count of observations:
@@ -262,14 +260,7 @@ public class BlockEntropyCalculator extends EntropyCalculator {
 		}
 	}
 
-	/**
- 	 * Add observations for a single agent of the multi-agent system
- 	 *  to our estimates of the pdfs.
- 	 * This call should be made as opposed to addObservations(int states[][][])
- 	 *  for computing active info for heterogeneous agents.
-	 *
-	 * @param states 1st index is time, 2nd and 3rd index are agent number
-	 */
+	@Override
 	public void addObservations(int states[][][], int agentIndex1, int agentIndex2) {
 		int timeSteps = states.length;
 		// increment the count of observations:
@@ -298,12 +289,7 @@ public class BlockEntropyCalculator extends EntropyCalculator {
 		}
 	}
 
-	/**
-	 * Returns the average local entropy from
-	 *  the observed values which have been passed in previously. 
-	 *  
-	 * @return
-	 */
+	@Override
 	public double computeAverageLocalOfObservations() {
 		double ent = 0.0;
 		double entCont = 0.0;
@@ -332,15 +318,7 @@ public class BlockEntropyCalculator extends EntropyCalculator {
 		return ent;
 	}
 	
-	/**
-	 * Computes local entropy for the given
-	 *  states, using pdfs built up from observations previously
-	 *  sent in via the addObservations method 
-	 * This method to be used for homogeneous agents only
-	 *  
-	 * @param states 1st index is time, 2nd index is agent number
-	 * @return
-	 */
+	@Override
 	public double[][] computeLocalFromPreviousObservations(int states[][]){
 		int rows = states.length;
 		int columns = states[0].length;
@@ -388,15 +366,7 @@ public class BlockEntropyCalculator extends EntropyCalculator {
 		
 	}
 	
-	/**
-	 * Computes local entropy for the given
-	 *  states, using pdfs built up from observations previously
-	 *  sent in via the addObservations method 
-	 * This method to be used for homogeneous agents only
-	 *  
-	 * @param states 1st index is time, 2nd and 3rd index are agent number
-	 * @return
-	 */
+	@Override
 	public double[][][] computeLocalFromPreviousObservations(int states[][][]){
 		int timeSteps = states.length;
 		int agentRows, agentColumns;
@@ -459,15 +429,7 @@ public class BlockEntropyCalculator extends EntropyCalculator {
 		
 	}
 
-	/**
-	 * Computes local entropy for the given
-	 *  states, using pdfs built up from observations previously
-	 *  sent in via the addObservations method 
-	 * This method is suitable for heterogeneous agents
-	 *  
-	 * @param states 1st index is time, 2nd index is agent number
-	 * @return
-	 */
+	@Override
 	public double[] computeLocalFromPreviousObservations(int states[][], int col){
 		int rows = states.length;
 		//int columns = states[0].length;
@@ -512,15 +474,7 @@ public class BlockEntropyCalculator extends EntropyCalculator {
 		
 	}
 	
-	/**
-	 * Computes local entropy for the given
-	 *  states, using pdfs built up from observations previously
-	 *  sent in via the addObservations method 
-	 * This method is suitable for heterogeneous agents
-	 *  
-	 * @param states 1st index is time, 2nd and 3rd index are agent number
-	 * @return
-	 */
+	@Override
 	public double[] computeLocalFromPreviousObservations(int states[][][], int agentIndex1, int agentIndex2){
 		int timeSteps = states.length;
 		//int columns = states[0].length;

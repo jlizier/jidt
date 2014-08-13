@@ -21,30 +21,39 @@ package infodynamics.measures.discrete;
 import infodynamics.utils.MatrixUtils;
 
 /**
- * <p>Univariate entropy calculator</p>
+ * <p>Entropy calculator for univariate discrete (int[]) data.</p>
  * 
- * <p>Usage:
+ * <p>Usage of the class is intended to follow this paradigm:</p>
  * <ol>
- *  <li>Continuous accumulation of observations. Call:
- *  	<ol>
- *  		<li>{@link #initialise()};</li>
- *          <li>then supply the observations using any of the addObservations()
- *          methods (several times over), e.g. {@link #addObservations(int[][])};</li>
- *          <li>then when all observations have been added, call any of the
- *          compute methods (several times over), e.g.: 
- *          {@link #computeLocalFromPreviousObservations(int[][])}</li>
- *      </ol>
- *   </li>
- *   <li>Standalone mode. Call:
- *   	<ol>
- *   		<li>one of the standalone methods which supply observations
- *          and compute at once, e.g. {@link #computeAverageLocal(int[][])}.</li>
- *      </ol>
- *   </li>
- * </ol></p>
+ * 		<li>Construct the calculator: {@link #EntropyCalculator(int)};</li>
+ *		<li>Initialise the calculator using {@link #initialise()};</li>
+ * 		<li>Provide the observations/samples for the calculator
+ *      	to set up the PDFs, using one or more calls to
+ * 			sets of {@link #addObservations(int[])} methods, then</li>
+ * 		<li>Compute the required quantities, being one or more of:
+ * 			<ul>
+ * 				<li>the average entropy: {@link #computeAverageLocalOfObservations()};</li>
+ * 				<li>local entropy values, such as {@link #computeLocal(int[])};</li>
+ * 				<li>and variants of these.</li>
+ * 			</ul>
+ * 		</li>
+ * 		<li>As an alternative to steps 3 and 4, the user may undertake
+ * 			standalone computation from a single set of observations, via
+ *  		e.g.: {@link #computeLocal(int[])},
+ *  		{@link #computeAverageLocal(int[])} etc.</li>
+ * 		<li>
+ * 		Return to step 2 to re-use the calculator on a new data set.
+ * 		</li>
+ * 	</ol>
  * 
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>T. M. Cover and J. A. Thomas, 'Elements of Information
+Theory' (John Wiley & Sons, New York, 1991).</li>
+ * </ul>
  * 
- * @author Joseph Lizier
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class EntropyCalculator extends InfoMeasureCalculator
 				implements SingleAgentMeasure
@@ -56,10 +65,12 @@ public class EntropyCalculator extends InfoMeasureCalculator
 	 * User was formerly forced to create new instances through this factory method.
 	 * Retained for backwards compatibility.
 	 * 
-	 * @param base
-	 * @param blocksize
-	 * 
-	 * @return
+	 * @param base number of symbols for each variable.
+	 *        E.g. binary variables are in base-2.
+	 * @param blocksize number of consecutive joint values to include
+	 *  in the calculation.
+	 * @deprecated
+	 * @return a new EntropyCalculator
 	 */
 	public static EntropyCalculator newInstance(int base, int blocksize) {
 		if (blocksize > 1) {
@@ -73,8 +84,10 @@ public class EntropyCalculator extends InfoMeasureCalculator
 	}
 	
 	/**
+	 * Contruct a new instance
 	 * 
-	 * @param base
+	 * @param base number of quantisation levels for each variable.
+	 *        E.g. binary variables are in base-2.
 	 */
 	public EntropyCalculator(int base) {
 
@@ -84,22 +97,13 @@ public class EntropyCalculator extends InfoMeasureCalculator
 		stateCount = new int[base];
 	}
 	
-	/**
-	 * Initialise calculator, preparing to take observation sets in
-	 * Should be called prior to any of the addObservations() methods.
-	 * You can reinitialise without needing to create a new object.
-	 */
+	@Override
 	public void initialise(){
 		super.initialise();
 		MatrixUtils.fill(stateCount, 0);
 	}
 		
-	
-	/**
- 	 * Add observations in to our estimates of the pdfs.
-	 *
-	 * @param states 1st index is time
-	 */
+	@Override
 	public void addObservations(int states[]) {
 		int rows = states.length;
 		// increment the count of observations:
@@ -112,13 +116,7 @@ public class EntropyCalculator extends InfoMeasureCalculator
 		}		
 	}
 
-	/**
- 	 * Add observations in to our estimates of the pdfs.
- 	 * This call suitable only for homogeneous agents, as all
- 	 *  agents will contribute to single pdfs.
-	 *
-	 * @param states 1st index is time, 2nd index is agent number
-	 */
+	@Override
 	public void addObservations(int states[][]) {
 		int rows = states.length;
 		int columns = states[0].length;
@@ -134,13 +132,7 @@ public class EntropyCalculator extends InfoMeasureCalculator
 		}		
 	}
 	
-	/**
- 	 * Add observations in to our estimates of the pdfs.
- 	 * This call suitable only for homogeneous agents, as all
- 	 *  agents will contribute to single pdfs.
-	 *
-	 * @param states 1st index is time, 2nd and 3rd index give the 2D agent number
-	 */
+	@Override
 	public void addObservations(int states[][][]) {
 		int timeSteps = states.length;
 		if (timeSteps == 0) {
@@ -165,15 +157,7 @@ public class EntropyCalculator extends InfoMeasureCalculator
 		}		
 	}
 
-	/**
- 	 * Add observations for a single agent of the multi-agent system
- 	 *  to our estimates of the pdfs.
- 	 * This call should be made as opposed to addObservations(int states[][])
- 	 *  for computing active info for heterogeneous agents.
-	 *
-	 * @param states 1st index is time, 2nd index is agent number
-	 * @param agentNumber
-	 */
+	@Override
 	public void addObservations(int states[][], int agentNumber) {
 		int rows = states.length;
 		// increment the count of observations:
@@ -186,16 +170,7 @@ public class EntropyCalculator extends InfoMeasureCalculator
 		}
 	}
 
-	/**
- 	 * Add observations for a single agent of the multi-agent system
- 	 *  to our estimates of the pdfs.
- 	 * This call should be made as opposed to addObservations(int states[][])
- 	 *  for computing active info for heterogeneous agents.
-	 *
-	 * @param states 1st index is time, 2nd and 3rd index give the 2D agent number
-	 * @param agentIndex1
-	 * @param agentIndex2
-	 */
+	@Override
 	public void addObservations(int states[][][], int agentIndex1, int agentIndex2) {
 		int timeSteps = states.length;
 		// increment the count of observations:
@@ -209,8 +184,9 @@ public class EntropyCalculator extends InfoMeasureCalculator
 	}
 
 	/**
+	 * Return the current count for the given value
 	 * 
-	 * @param stateVal
+	 * @param stateVal given value
 	 * @return count of observations of the given state
 	 */
 	public int getStateCount(int stateVal) {
@@ -218,20 +194,16 @@ public class EntropyCalculator extends InfoMeasureCalculator
 	}
 	
 	/**
+	 * Return the current probability for the given value
 	 * 
-	 * @param stateVal
+	 * @param stateVal given value
 	 * @return probability of the given state
 	 */
 	public double getStateProbability(int stateVal) {
 		return (double) stateCount[stateVal] / (double) observations;
 	}
 
-	/**
-	 * Returns the average entropy from
-	 *  the observed values which have been passed in previously. 
-	 *  
-	 * @return the average entropy
-	 */
+	@Override
 	public double computeAverageLocalOfObservations() {
 		double ent = 0.0;
 		double entCont = 0.0;
@@ -260,14 +232,7 @@ public class EntropyCalculator extends InfoMeasureCalculator
 		return ent;
 	}
 	
-	/**
-	 * Computes local entropy for the given
-	 *  states, using pdfs built up from observations previously
-	 *  sent in via the addObservations method 
-	 *  
-	 * @param states index is time
-	 * @return
-	 */
+	@Override
 	public double[] computeLocalFromPreviousObservations(int states[]){
 		int rows = states.length;
 		
@@ -292,15 +257,7 @@ public class EntropyCalculator extends InfoMeasureCalculator
 		
 	}
 	
-	/**
-	 * Computes local entropy for the given
-	 *  states, using pdfs built up from observations previously
-	 *  sent in via the addObservations method 
-	 * This method to be used for homogeneous agents only
-	 *  
-	 * @param states 1st index is time, 2nd index is agent number
-	 * @return
-	 */
+	@Override
 	public double[][] computeLocalFromPreviousObservations(int states[][]){
 		int rows = states.length;
 		int columns = states[0].length;
@@ -328,15 +285,7 @@ public class EntropyCalculator extends InfoMeasureCalculator
 		
 	}
 	
-	/**
-	 * Computes local entropy for the given
-	 *  states, using pdfs built up from observations previously
-	 *  sent in via the addObservations method 
-	 * This method to be used for homogeneous agents only
-	 *  
-	 * @param states 1st index is time, 2nd and 3rd index are agent number
-	 * @return
-	 */
+	@Override
 	public double[][][] computeLocalFromPreviousObservations(int states[][][]){
 		int timeSteps = states.length;
 		int agentRows, agentColumns;
@@ -377,16 +326,7 @@ public class EntropyCalculator extends InfoMeasureCalculator
 		
 	}
 
-	/**
-	 * Computes local entropy for the given
-	 *  states, using pdfs built up from observations previously
-	 *  sent in via the addObservations method 
-	 * This method is suitable for heterogeneous agents
-	 *  
-	 * @param states
-	 * @param agentNumber
-	 * @return
-	 */
+	@Override
 	public double[] computeLocalFromPreviousObservations(int states[][], int agentNumber){
 		int rows = states.length;
 		//int columns = states[0].length;
@@ -412,17 +352,7 @@ public class EntropyCalculator extends InfoMeasureCalculator
 		
 	}
 	
-	/**
-	 * Computes local entropy for the given
-	 *  states, using pdfs built up from observations previously
-	 *  sent in via the addObservations method 
-	 * This method is suitable for heterogeneous agents
-	 *  
-	 * @param states 1st index is time, 2nd and 3rd index are agent number
-	 * @param agentIndex1
-	 * @param agentIndex2
-	 * @return
-	 */
+	@Override
 	public double[] computeLocalFromPreviousObservations(int states[][][], int agentIndex1, int agentIndex2){
 		int timeSteps = states.length;
 		//int columns = states[0].length;
@@ -449,16 +379,7 @@ public class EntropyCalculator extends InfoMeasureCalculator
 		
 	}
 
-	/**
-	 * Standalone routine to 
-	 * compute local information theoretic measure across a 1D temporal
-	 *  array of the states of homogeneous agents
-	 * Return a 1D temporal array of local values.
-	 * First history rows are zeros
-	 * 
-	 * @param states - 1D array of states
-	 * @return
-	 */
+	@Override
 	public final double[] computeLocal(int states[]) {
 		
 		initialise();
@@ -466,16 +387,7 @@ public class EntropyCalculator extends InfoMeasureCalculator
 		return computeLocalFromPreviousObservations(states);
 	}
 
-	/**
-	 * Standalone routine to 
-	 * compute local information theoretic measure across a 2D spatiotemporal
-	 *  array of the states of homogeneous agents
-	 * Return a 2D spatiotemporal array of local values.
-	 * First history rows are zeros
-	 * 
-	 * @param states - 2D array of states
-	 * @return
-	 */
+	@Override
 	public final double[][] computeLocal(int states[][]) {
 		
 		initialise();
@@ -483,16 +395,7 @@ public class EntropyCalculator extends InfoMeasureCalculator
 		return computeLocalFromPreviousObservations(states);
 	}
 
-	/**
-	 * Standalone routine to 
-	 * compute local information theoretic measure across a 3D spatiotemporal
-	 *  array of the states of 2D homogeneous agents
-	 * Return a 3D spatiotemporal array of local values.
-	 * First history rows are zeros
-	 * 
-	 * @param states 1st index is time, 2nd and 3rd index are agent number
-	 * @return
-	 */
+	@Override
 	public final double[][][] computeLocal(int states[][][]) {
 		
 		initialise();
@@ -500,15 +403,7 @@ public class EntropyCalculator extends InfoMeasureCalculator
 		return computeLocalFromPreviousObservations(states);
 	}
 
-	/**
-	 * Standalone routine to 
-	 * compute average local information theoretic measure across a 1D temporal
-	 *  array of the states of homogeneous agents
-	 * Return the average
-	 * 
-	 * @param states - 1D array of states
-	 * @return
-	 */
+	@Override
 	public final double computeAverageLocal(int states[]) {
 		
 		initialise();
@@ -516,16 +411,7 @@ public class EntropyCalculator extends InfoMeasureCalculator
 		return computeAverageLocalOfObservations();
 	}
 
-	/**
-	 * Standalone routine to 
-	 * compute average local information theoretic measure across a 2D spatiotemporal
-	 *  array of the states of homogeneous agents
-	 * Return the average
-	 * This method to be called for homogeneous agents only
-	 * 
-	 * @param states - 2D array of states
-	 * @return
-	 */
+	@Override
 	public final double computeAverageLocal(int states[][]) {
 		
 		initialise();
@@ -533,92 +419,37 @@ public class EntropyCalculator extends InfoMeasureCalculator
 		return computeAverageLocalOfObservations();
 	}
 
-	/**
-	 * Standalone routine to 
-	 * compute average local information theoretic measure across a 3D spatiotemporal
-	 *  array of the states of 2D homogeneous agents
-	 * Return the average
-	 * This method to be called for homogeneous agents only
-	 * 
-	 * @param states 1st index is time, 2nd and 3rd index are agent number
-	 * @return
-	 */
+	@Override
 	public final double computeAverageLocal(int states[][][]) {
-		
 		initialise();
 		addObservations(states);
 		return computeAverageLocalOfObservations();
 	}
 
-	/**
-	 * Standalone routine to 
-	 * compute local information theoretic measure for one agent in a 2D spatiotemporal
-	 *  array of the states of agents
-	 * Return a 2D spatiotemporal array of local values.
-	 * First history rows are zeros
-	 * This method should be used for heterogeneous agents
-	 * 
-	 * @param states - 2D array of states
-	 * @param col - column number of the agent in the states array
-	 * @return
-	 */
-	public final double[] computeLocalAtAgent(int states[][], int col) {
-		
+	@Override
+	public final double[] computeLocal(int states[][], int col) {
 		initialise();
 		addObservations(states, col);
 		return computeLocalFromPreviousObservations(states, col);
 	}
 
-	/**
-	 * Standalone routine to 
-	 * compute local information theoretic measure for one agent in a 2D spatiotemporal
-	 *  array of the states of agents
-	 * Return a 2D spatiotemporal array of local values.
-	 * First history rows are zeros
-	 * This method should be used for heterogeneous agents
-	 * 
-	 * @param states 1st index is time, 2nd and 3rd index are agent number
-	 * @param agentIndex1
-	 * @param agentIndex2
-	 * @return
-	 */
-	public final double[] computeLocalAtAgent(int states[][][], int agentIndex1, int agentIndex2) {
-		
+	@Override
+	public final double[] computeLocal(int states[][][],
+			int agentIndex1, int agentIndex2) {
 		initialise();
 		addObservations(states, agentIndex1, agentIndex2);
 		return computeLocalFromPreviousObservations(states, agentIndex1, agentIndex2);
 	}
 
-	/**
-	 * Standalone routine to 
-	 * compute average local information theoretic measure 
-	 * for a single agent
-	 * Returns the average
-	 * This method suitable for heterogeneous agents
-	 * @param states - 2D array of states
-	 * @param col - column number of the agent in the states array
-	 * 
-	 * @return
-	 */
-	public final double computeAverageLocalAtAgent(int states[][], int col) {
+	@Override
+	public final double computeAverageLocal(int states[][], int col) {
 		initialise();
 		addObservations(states, col);
 		return computeAverageLocalOfObservations();
 	}
 
-	/**
-	 * Standalone routine to 
-	 * compute average local information theoretic measure 
-	 * for a single agent
-	 * Returns the average
-	 * This method suitable for heterogeneous agents
-	 * @param states - 2D array of states
-	 * @param agentIndex1
-	 * @param agentIndex2
-	 * 
-	 * @return
-	 */
-	public final double computeAverageLocalAtAgent(int states[][][], int agentIndex1, int agentIndex2) {
+	@Override
+	public final double computeAverageLocal(int states[][][], int agentIndex1, int agentIndex2) {
 		initialise();
 		addObservations(states, agentIndex1, agentIndex2);
 		return computeAverageLocalOfObservations();

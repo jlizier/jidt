@@ -25,23 +25,53 @@ import infodynamics.utils.MatrixUtils;
 import java.util.Properties;
 
 /**
- * Implements separable information (see Lizier et al, Chaos 2010)
- * Separable information = sum of active information and apparent transfer entropy from every
+ * Implements <b>separable information</b> (see Lizier et al, 2010, below).
+ * 
+ * Separable information is the sum of active information and apparent transfer entropy from every
  *  causal information contributor.
- * The causal information contributors (either their offsets or their absolute column numbers)
- *  should be supplied in the same order in every method call, otherwise the answer supplied will
- *  be incorrect.
- * 
- * Usage:
- * 1. Continuous accumulation of observations:
- *   Call: a. initialise()
- *         b. addObservations() several times over
- *         c. computeLocalFromPreviousObservations()
- * 2. Standalone:
- *   Call: localActiveInformation()
- * 
- * @author Joseph Lizier
  *
+ * <p>
+ * Usage of the child classes implementing this interface is intended to follow this paradigm:
+ * </p>
+ * <ol>
+ * 		<li>Construct the calculator via
+ * 			{@link #SeparableInfoCalculator(int, int, int)};</li>
+ *		<li>Initialise the calculator using
+ *			{@link #initialise()};</li>
+ * 		<li>Provide the observations/samples for the calculator
+ *      	to set up the PDFs, using one or more calls to
+ * 			the set of {@link #addObservations(int[][], int[])} methods, then</li>
+ * 		<li>Compute the required quantities, being one or more of:
+ * 			<ul>
+ * 				<li>the average TE: {@link #computeAverageLocalOfObservations()};</li>
+ * 				<li>the local TE values for these samples: {@link #computeLocalOfPreviousObservations()}</li>
+ * 				<li>local TE values for a specific set of samples: e.g.
+ * 				{@link #computeLocalFromPreviousObservations(int[][], int[])} etc.</li>
+ * 			</ul>
+ * 		</li>
+ * 		<li>As an alternative to steps 3 and 4, the user may undertake
+ * 			standalone computation from a single set of observations, via
+ *  		e.g.: {@link #computeLocal(int[][], int[])} or
+ *  		{@link #computeAverageLocal(int[][], int[])}.</li>
+ * 		<li>
+ * 		Return to step 2 to re-use the calculator on a new data set.
+ * 		</li>
+ * 	</ol>
+ * 
+ * <p>The causal information contributors (either their offsets or their absolute column numbers)
+ *  should be supplied in the same order in every method call, otherwise the answer supplied will
+ *  be incorrect.</p>
+ * 
+ * <p><b>References:</b><br/>
+ * <ul>
+ *  <li>J. T. Lizier, M. Prokopenko and A. Zomaya,
+ *  <a href=http://dx.doi.org/10.1063/1.3486801">
+ *  "Information modification and particle collisions in distributed computation"</a>
+ *  Chaos 20, 3, 037109 (2010).</li>
+ * </ul>
+ *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 
@@ -94,7 +124,7 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 			//TODO make this class compatible with k==0
 			//  (low priority, not truly necessary) 
 			throw new RuntimeException("This class does not currently " +
-					"function with k < 1 (see CompleteTransferEntropyCalculator " +
+					"function with k < 1 (see ConditionalTransferEntropyCalculator " +
 					"for how to implement this)");
 		}
 		
@@ -109,11 +139,35 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 		}
 	}
 
+	/**
+	 * Construct an instance
+	 * 
+	 * @param base number of symbols for each variable.
+	 *        E.g. binary variables are in base-2.
+	 * @param history embedded history length of the destination to condition on -
+	 *        this is k in Schreiber's notation.
+	 * @param numOtherInfoContributors number of information contributors
+	 *   (other than the past of the destination
+	 *   or the source) to condition on.
+	 */
 	public SeparableInfoCalculator
 		(int base, int history, int numInfoContributors) {
 		this(base, history, numInfoContributors, false);
 	}
 
+	/**
+	 * Private method to implement the public constructor
+	 * 
+	 * @param base number of symbols for each variable.
+	 *        E.g. binary variables are in base-2.
+	 * @param history embedded history length of the destination to condition on -
+	 *        this is k in Schreiber's notation.
+	 * @param numOtherInfoContributors number of information contributors
+	 *   (other than the past of the destination
+	 *   or the source) to condition on.
+	 * @param dontCreateObsStorage indicates that storage for
+	 *  observations should not be created.
+	 */
 	protected SeparableInfoCalculator
 		(int base, int history, int numInfoContributors, boolean dontCreateObsStorage) {
 
@@ -131,12 +185,7 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 		}
 	}
 
-	/**
-	 * Initialise calculator, preparing to take observation sets in
-	 * Should be called prior to any of the addObservations() methods.
-	 * You can reinitialise without needing to create a new object.
-	 *
-	 */
+	@Override
 	public void initialise(){
 		super.initialise();
 		
@@ -159,7 +208,7 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
  	 *  agents will contribute to single pdfs, and all are assumed
  	 *  to have other info contributors at same offsets.
  	 * 
-	 * @param states states 1st index is time, 2nd index is agent number
+	 * @param states multivariate time series, 1st index is time, 2nd index is agent number
 	 * @param offsetOfDestFromSources offsets of the destination *from* causal information contributors.
 	 * 		  (i.e. an offset of 1 means the destination is one index larger, or one to the right,
 	 * 			than the source). 
@@ -238,7 +287,7 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
  	 *  agents will contribute to single pdfs, and all are assumed
  	 *  to have other info contributors at same offsets.
  	 * 
-	 * @param states 1st index is time, 2nd and 3rd index give the 2D agent number
+	 * @param states multivariate time series 1st index is time, 2nd and 3rd index give the 2D agent number
 	 * @param offsetOfDestFromSources 2D offsets of the destination *from* causal information contributors.
 	 * 		  (i.e. an offset of 1 means the destination is one index larger, or one to the right,
 	 * 			than the source). 
@@ -334,12 +383,12 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 	}
 
 	/**
- 	 * Add observations for a single source-destination pair of the multi-agent system
+ 	 * Add observations for a single destination of the multi-agent system
  	 *  to our estimates of the pdfs.
  	 * This call should be made as opposed to addObservations(int states[][])
  	 *  for computing active info for heterogeneous agents.
 	 *
-	 * @param states the space-time observations to compute over
+	 * @param states multivariate time series, 1st index is time, 2nd index is agent number
 	 * @param destCol the destination index
 	 * @param sourcesAbsolute array of the source indices
 	 */
@@ -394,12 +443,13 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 	}
 
 	/**
- 	 * Add observations for a single source-destination pair of the multi-agent system
+ 	 * Add observations for a single destination pair of the 
+ 	 * multivariate time series
  	 *  to our estimates of the pdfs.
  	 * This call should be made as opposed to addObservations(int states[][])
  	 *  for computing active info for heterogeneous agents.
 	 *
-	 * @param states 1st index is time, 2nd and 3rd index give the 2D agent number
+	 * @param states multivariate time series: 1st index is time, 2nd and 3rd index give the 2D agent number
 	 * @param destAgentRow the destination index
 	 * @param destAgentColumn the destination index
 	 * @param sourcesAbsolute array of the source indices
@@ -455,12 +505,7 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 		}
 	}
 
-	/**
-	 * Returns the average local separable information from
-	 *  the observed values which have been passed in previously. 
-	 *  
-	 * @return
-	 */
+	@Override
 	public synchronized double computeAverageLocalOfObservations() {
 		max = 0;
 		min = 0;
@@ -469,7 +514,7 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 		avPositiveLocal = 0.0;
 		avNegativeLocal = 0.0;
 		if (computeMultiInfoCoherence) {
-			miCalc.startIndividualObservations();
+			miCalc.startAddObservations();
 		}
 		
 		// Create space for the joint source values to run through:
@@ -479,7 +524,7 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 		// Close off the individual observations
 		try {
 			if (computeMultiInfoCoherence) {
-				miCalc.endIndividualObservations();
+				miCalc.finaliseAddObservations();
 			}
 		} catch (Exception e) {
 			// an exception would only be thrown if we changed the number of causal contributors here
@@ -489,8 +534,11 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 		std = Math.sqrt(meanSqLocals - average * average);
 		return average;
 	}
+	
 	/**
-	 * Updates the average, max, min and meanSq of locals for the separable information
+	 * Private utility function.
+	 * 
+	 * <p>Updates the average, max, min and meanSq of locals for the separable information
 	 *  for the given source values in sourceValues up to the index indexToModify over
 	 *  all possible source values after the index indexToModify onwards. Uses recursion
 	 *  on increasing indexToModify.
@@ -588,13 +636,16 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 	 *  states, using pdfs built up from observations previously
 	 *  sent in via the addObservations method.
 	 * This method to be used for homogeneous agents only
+	 *  since it assumes the source offsets are the same
+	 *  for all destinations (and all are added to the PDFs)
 	 *  
-	 * @param states 1st index is time, 2nd is agent index
+	 * @param states multivariate time series 1st index is time, 2nd is agent index
 	 * @param offsetOfDestFromSources offsets of the destination *from* causal information contributors.
 	 * 		  (i.e. an offset of 1 means the destination is one index larger, or one to the right,
 	 * 			than the source). 
 	 *        sourcesOffsets is permitted to include 0, it will be ignored.
-	 * @return
+	 * @return multivariate time series of local separable information,
+	 *  indexed as per states.
 	 */
 	public double[][] computeLocalFromPreviousObservations
 		(int states[][], int offsetOfDestFromSources[]){
@@ -640,7 +691,7 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 		
 		// Make a vector of the active and TE values for the coherence computation
 		if (computeMultiInfoCoherence) {
-			miCalc.startIndividualObservations();
+			miCalc.startAddObservations();
 		}
 		double[] localActAndTes = new double[numSources + 1];
 		
@@ -708,7 +759,7 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 		// Close off the individual observations
 		try {
 			if (computeMultiInfoCoherence) {
-				miCalc.endIndividualObservations();
+				miCalc.finaliseAddObservations();
 			}
 		} catch (Exception e) {
 			// an exception would only be thrown if we changed the number of causal contributors here
@@ -724,13 +775,16 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 	 *  states, using pdfs built up from observations previously
 	 *  sent in via the addObservations method.
 	 * This method to be used for homogeneous agents only
+	 *  since it assumes offsets are same for all destinations
+	 *  and includes them all in the calculation
 	 *  
-	 * @param states 1st index is time, 2nd and 3rd index give the 2D agent number
+	 * @param states multivariate time series 1st index is time, 2nd and 3rd index give the 2D agent number
 	 * @param offsetOfDestFromSources offsets of the destination *from* causal information contributors.
 	 * 		  (i.e. an offset of 1 means the destination is one index larger, or one to the right,
 	 * 			than the source). 
 	 *        sourcesOffsets is permitted to include 0, it will be ignored.
-	 * @return
+	 * @return multivariate time series of local separable information
+	 *  values, indexed as per states.
 	 */
 	public double[][][] computeLocalFromPreviousObservations
 		(int states[][][], int offsetOfDestFromSources[][]){
@@ -784,7 +838,7 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 		
 		// Make a vector of the active and TE values for the coherence computation
 		if (computeMultiInfoCoherence) {
-			miCalc.startIndividualObservations();
+			miCalc.startAddObservations();
 		}
 		double[] localActAndTes = new double[numSources + 1];
 		
@@ -865,7 +919,7 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 		// Close off the individual observations
 		try {
 			if (computeMultiInfoCoherence) {
-				miCalc.endIndividualObservations();
+				miCalc.finaliseAddObservations();
 			}
 		} catch (Exception e) {
 			// an exception would only be thrown if we changed the number of causal contributors here
@@ -878,14 +932,16 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 
 	/**
 	 * Computes local separable information for the given
-	 *  states, using pdfs built up from observations previously
+	 *  destination in the multivariate time series,
+	 *  using pdfs built up from observations previously
 	 *  sent in via the addObservations method.
 	 * This method is suitable for heterogeneous agents
 	 *  
-	 * @param states 1st index is time, 2nd index is agent number
+	 * @param states multivariate time series 1st index is time, 2nd index is agent number
 	 * @param destCol index for the destination agent
 	 * @param sourcesAbsolute indices for the source agents
-	 * @return
+	 * @return multivariate time series of local separable information
+	 *  values for the given destination variable
 	 */
 	public double[] computeLocalFromPreviousObservations
 		(int states[][], int destCol, int[] sourcesAbsolute){
@@ -925,7 +981,7 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 		
 		// Make a vector of the active and TE values for the coherence computation
 		if (computeMultiInfoCoherence) {
-			miCalc.startIndividualObservations();
+			miCalc.startAddObservations();
 		}
 		double[] localActAndTes = new double[numSources + 1];
 
@@ -985,7 +1041,7 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 		// Close off the individual observations
 		try {
 			if (computeMultiInfoCoherence) {
-				miCalc.endIndividualObservations();
+				miCalc.finaliseAddObservations();
 			}
 		} catch (Exception e) {
 			// an exception would only be thrown if we changed the number of causal contributors here
@@ -998,15 +1054,18 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 
 	/**
 	 * Computes local separable information for the given
-	 *  states, using pdfs built up from observations previously
+	 *  destination variable in a multivariate time series,
+	 *  using pdfs built up from observations previously
 	 *  sent in via the addObservations method.
 	 * This method is suitable for heterogeneous agents
 	 *  
-	 * @param states 1st index is time, 2nd and 3rd index give the 2D agent number
+	 * @param states multivariate time series: 1st index is time,
+	 * 	2nd and 3rd index give the 2D agent number
 	 * @param destAgentRow the destination index
 	 * @param destAgentColumn the destination index
 	 * @param sourcesAbsolute array of the source indices
-	 * @return
+	 * @return multivariate time series of local separable information
+	 *  values for the given destination
 	 */
 	public double[] computeLocalFromPreviousObservations
 		(int states[][][], int destAgentRow, int destAgentColumn, int[][] sourcesAbsolute){
@@ -1046,7 +1105,7 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 		
 		// Make a vector of the active and TE values for the coherence computation
 		if (computeMultiInfoCoherence) {
-			miCalc.startIndividualObservations();
+			miCalc.startAddObservations();
 		}
 		double[] localActAndTes = new double[numSources + 1];
 
@@ -1107,7 +1166,7 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 		// Close off the individual observations
 		try {
 			if (computeMultiInfoCoherence) {
-				miCalc.endIndividualObservations();
+				miCalc.finaliseAddObservations();
 			}
 		} catch (Exception e) {
 			// an exception would only be thrown if we changed the number of causal contributors here
@@ -1120,18 +1179,22 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 
 	/**
 	 * Standalone routine to 
-	 * compute local separable info across a 2D spatiotemporal
-	 *  array of the states of homogeneous agents
-	 * Return a 2D spatiotemporal array of local values.
-	 * First history rows are zeros
+	 * compute local separable info across a 2D multivariate time series
+	 *  of the states of homogeneous agents
+	 * Return a 2D spatiotemporal multivariate time series of local values.
+	 * First history rows are zeros.
 	 * This method to be called for homogeneous agents only
+	 * since it assumes all destinations have the same source offsets
+	 * and includes them all in the calculation.
 	 * 
-	 * @param states - 2D array of states
+	 * @param states multivariate time series: first index is time,
+	 *  second is variable index.
 	 * @param offsetOfDestFromSources offsets of the destination *from* causal information contributors.
 	 * 		  (i.e. an offset of 1 means the destination is one index larger, or one to the right,
 	 * 			than the source). 
 	 *        sourcesOffsets is permitted to include 0, it will be ignored.
-	 * @return
+	 * @return multivariate time series of local separable information,
+	 *  indexed as per states.
 	 */
 	public double[][] computeLocal(int states[][], int[] offsetOfDestFromSources) {
 		
@@ -1143,18 +1206,21 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 
 	/**
 	 * Standalone routine to 
-	 * compute local separable info across a 3D spatiotemporal
-	 *  array of the states of homogeneous agents
+	 * compute local separable info across a 3D multivariate time series
+	 *  of the states of homogeneous agents.
 	 * Return a 3D spatiotemporal array of local values.
-	 * First history rows are zeros
+	 * First history rows are zeros.
 	 * This method to be called for homogeneous agents only
+	 * since it assumes all destinations have the same source offsets
+	 * and includes them all in the calculation.
 	 * 
-	 * @param states 1st index is time, 2nd and 3rd are agent indices
+	 * @param states multivariate time series: 1st index is time, 2nd and 3rd are agent indices
 	 * @param offsetOfDestFromSources offsets of the destination *from* causal information contributors.
 	 * 		  (i.e. an offset of 1 means the destination is one index larger, or one to the right,
 	 * 			than the source). 
 	 *        sourcesOffsets is permitted to include 0, it will be ignored.
-	 * @return
+	 * @return multivariate time series of local separable information,
+	 *  indexed as per states.
 	 */
 	public double[][][] computeLocal(int states[][][], int[][] offsetOfDestFromSources) {
 		
@@ -1166,14 +1232,19 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 
 	/**
 	 * Standalone routine to 
-	 * compute average local transfer entropy across a 2D spatiotemporal
-	 *  array of the states of homogeneous agents
-	 * Return the average
+	 * compute average separable information across a 2D multivariate time series
+	 *  of the states of homogeneous agents.
+	 * Return the average.
 	 * This method to be called for homogeneous agents only
+	 * since it assumes all destinations have the same source offsets
+	 * and includes them all in the calculation.
 	 * 
-	 * @param states - 2D array of states
-	 * @param sourceOffsets - column offsets for causal info contributors
-	 * @return
+	 * @param states multivariate time series: first index is time,
+	 *  second is variable number
+	 * @param sourceOffsets column offsets for causal info contributors
+	 *  from each destination
+	 * @return average separable information for these
+	 *  observations.
 	 */
 	public double computeAverageLocal(int states[][], int[] sourceOffsets) {
 		
@@ -1184,16 +1255,18 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 
 	/**
 	 * Standalone routine to 
-	 * compute average local transfer entropy across a 3D spatiotemporal
-	 *  array of the states of homogeneous agents
-	 * Return the average
+	 * compute average separable information across a 3D multivariate time series
+	 *  of the states of homogeneous agents.
+	 * Return the average separable info.
 	 * This method to be called for homogeneous agents only
+	 * since it assumes all destinations have the same source offsets
+	 * and includes them all in the calculation.
 	 * 
-	 * @param states 1st index is time, 2nd and 3rd are agent indices
+	 * @param states multivariate time series: 1st index is time, 2nd and 3rd are agent indices
 	 * @param sourceOffsets agent offsets for causal info contributors. 1st index points to 
 	 *  an array of two elements for the row and column offsets.
-	 *   
-	 * @return
+	 * @return average separable information for these
+	 *  observations.
 	 */
 	public double computeAverageLocal(int states[][][], int[][] sourceOffsets) {
 		
@@ -1204,16 +1277,19 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 
 	/**
 	 * Standalone routine to 
-	 * compute local transfer entropy across a 2D spatiotemporal
-	 *  array of the states of homogeneous agents
+	 * compute local separable information for a specific destination
+	 * in a 2D multivariate time series
+	 *  of the states.
 	 * Return a 2D spatiotemporal array of local values.
-	 * First history rows are zeros
+	 * First history rows are zeros.
 	 * This method suitable for heterogeneous agents
 	 * 
-	 * @param states - 2D array of states
-	 * @param destCol - column index for the destination agent
-	 * @param sourcesAbsolute - column indices for causal info contributors
-	 * @return
+	 * @param states multivariate time series: first index is time,
+	 *  second is variable number
+	 * @param destCol column index for the destination agent to consider
+	 * @param sourcesAbsolute column indices for causal info contributors
+	 *  to this destination
+	 * @return time series of local separable information
 	 */
 	public double[] computeLocal(int states[][], int destCol, int[] sourcesAbsolute) {
 		
@@ -1225,17 +1301,17 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 
 	/**
 	 * Standalone routine to 
-	 * compute local transfer entropy across a 3D spatiotemporal
-	 *  array of the states of homogeneous agents
-	 * Return a 3D spatiotemporal array of local values.
-	 * First history rows are zeros
-	 * This method suitable for heterogeneous agents
+	 * compute local separable information for a specific destination
+	 * in a 3D multivariate time series
+	 *  of the states.
+	 * First history rows are zeros.
+	 * This method suitable for heterogeneous agents.
 	 * 
-	 * @param states 1st index is time, 2nd and 3rd are agent indices
+	 * @param states multivariate time series: 1st index is time, 2nd and 3rd are agent indices
 	 * @param destAgentRow row index for the destination agent
 	 * @param destAgnetColumn column index for the destination agent
 	 * @param sourcesAbsolute absolute indices for causal info contributors to this destination
-	 * @return
+	 * @return time series of local separable information
 	 */
 	public double[] computeLocal(int states[][][], int destAgentRow,
 			int destAgentColumn, int[][] sourcesAbsolute) {
@@ -1248,15 +1324,17 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 
 	/**
 	 * Standalone routine to 
-	 * compute average local transfer entropy across a 2D spatiotemporal
-	 *  array of the states of homogeneous agents
-	 * Returns the average
+	 * compute average separable information for a specific destination
+	 * in a 2D multivariate time series
+	 *  of the states.
+	 * Returns the average.
 	 * This method suitable for heterogeneous agents
 	 * 
-	 * @param states - 2D array of states
-	 * @param destCol - column index for the destination agent
-	 * @param sourcesAbsolute - column indices for causal info contributors
-	 * @return
+	 * @param states multivariate time series: first index is time,
+	 *  second is variable number
+	 * @param destCol column index for the destination agent
+	 * @param sourcesAbsolute column indices for causal info contributors
+	 * @return average separable information for this destination
 	 */
 	public double computeAverageLocal(int states[][], int destCol, int[] sourcesAbsolute) {
 		
@@ -1267,16 +1345,17 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 	
 	/**
 	 * Standalone routine to 
-	 * compute average local transfer entropy across a 3D spatiotemporal
-	 *  array of the states of homogeneous agents
-	 * Returns the average
+	 * compute average separable information for a specific destination
+	 * in a 3D multivariate time series
+	 *  of the states.
+	 * Returns the average.
 	 * This method suitable for heterogeneous agents
 	 * 
-	 * @param states 1st index is time, 2nd and 3rd indices are agent indices
+	 * @param states multivariate time series: 1st index is time, 2nd and 3rd are agent indices
 	 * @param destAgentRow row index for the destination agent
 	 * @param destAgnetColumn column index for the destination agent
 	 * @param sourcesAbsolute absolute indices for causal info contributors to this destination
-	 * @return
+	 * @return average separable information for this destination
 	 */
 	public double computeAverageLocal(int states[][][], int destAgentRow,
 			int destAgentColumn, int[][] sourcesAbsolute) {
@@ -1318,8 +1397,8 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 	 * Counts the information contributors to this node which
 	 * are not equal to the node itself (offset 0)
 	 * 
-	 * @param sourcesOffsets
-	 * @return
+	 * @param sourcesOffsets information contributors
+	 * @return count of sourcesOffsets with any 0 entries removed from the array
 	 */
 	public static int countOfOffsetSources(int[] sourcesOffsets) {
 		int countOfSources = 0;
@@ -1335,8 +1414,8 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 	 * Counts the information contributors to this node which
 	 * are not equal to the node itself (offset (0,0))
 	 * 
-	 * @param sourcesOffsets
-	 * @return
+	 * @param sourcesOffsets information contributors
+	 * @return count of sourcesOffsets with any (0,0) entries removed from the 2D array
 	 */
 	public static int countOfOffsetSources(int[][] sourcesOffsets) {
 		int countOfSources = 0;
@@ -1352,9 +1431,9 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 	 * Counts the information contributors to the dest which
 	 * are not equal to the node itself 
 	 * 
-	 * @param sources
-	 * @param dest
-	 * @return
+	 * @param sources array of source indices
+	 * @param dest index of dest
+	 * @return count of sources with any entries equal to dest removed.
 	 */
 	public static int countOfAbsoluteSources(int[] sources, int dest) {
 		int countOfSources = 0;
@@ -1371,8 +1450,9 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 	 * are not equal to the node itself 
 	 * 
 	 * @param sources array of arrays of row and column indices
-	 * @param dest
-	 * @return
+	 * @param destAgentRow row of dest variable
+	 * @param destAgentColumn column of dest variable
+	 * @return count of entries in sources not equal to the dest indices
 	 */
 	public static int countOfAbsoluteSources(int[][] sources, int destAgentRow, int destAgentColumn) {
 		int countOfSources = 0;
@@ -1389,8 +1469,9 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 	 * Check that the supplied array of offsets as sources
 	 *  is long enough compared to our expectation
 	 * 
-	 * @param sourcesOffsets
-	 * @return
+	 * @param sourcesOffsets array of source offsets
+	 * @return whether it is as long as expected
+	 * @throws RuntimeException if it is not
 	 */
 	public boolean confirmEnoughOffsetSources(int[] sourcesOffsets) {
 		if (countOfOffsetSources(sourcesOffsets) != numSources) {
@@ -1403,8 +1484,9 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 	 * Check that the supplied array of offsets as sources
 	 *  is long enough compared to our expectation
 	 * 
-	 * @param sourcesOffsets
-	 * @return
+	 * @param sourcesOffsets array of 2D source offsets
+	 * @return whether it is as long as expected
+	 * @throws RuntimeException if it is not
 	 */
 	public boolean confirmEnoughOffsetSources(int[][] sourcesOffsets) {
 		if (countOfOffsetSources(sourcesOffsets) != numSources) {
@@ -1417,9 +1499,10 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 	 * Check that the supplied array of absolutes as sources
 	 *  is long enough compared to our expectation
 	 * 
-	 * @param sourcesAbsolute
-	 * @param dest
-	 * @return
+	 * @param sourcesAbsolute array of source indices
+	 * @param dest dest index
+	 * @return whether it is as long as expected
+	 * @throws RuntimeException if it is not
 	 */
 	public boolean confirmEnoughAbsoluteSources(int[] sourcesAbsolute, int dest) {
 		if (countOfAbsoluteSources(sourcesAbsolute, dest) != numSources) {
@@ -1432,10 +1515,11 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 	 * Check that the supplied array of absolutes as sources
 	 *  is long enough compared to our expectation
 	 * 
-	 * @param sourcesAbsolute
-	 * @param destAgentRow
-	 * @param destAgentColumn
-	 * @return
+	 * @param sourcesAbsolute array of 2D source indices
+	 * @param destAgentRow row of dest variable
+	 * @param destAgentColumn column of dest variable
+	 * @return whether it is as long as expected
+	 * @throws RuntimeException if it is not
 	 */
 	public boolean confirmEnoughAbsoluteSources(int[][] sourcesAbsolute, int destAgentRow, int destAgentColumn) {
 		if (countOfAbsoluteSources(sourcesAbsolute, destAgentRow, destAgentColumn) != numSources) {
@@ -1449,8 +1533,9 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 	 * are not equal to the node itself (offset 0).
 	 * Checks that there are enough sources.
 	 * 
-	 * @param sourcesOffsets
-	 * @return
+	 * @param sourcesOffsets array of source offsets
+	 * @return sourcesOffsets with these entries removed
+	 *  from the array
 	 */
 	public int[] cleanOffsetOfDestFromSources(int[] sourcesOffsets) {
 		int[] cleaned = new int[numSources];
@@ -1481,7 +1566,8 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 	 * 
 	 * @param sourcesOffsets 2D source offsets. 1st dimension is source index, 2nd index is for
 	 *   1st or 2nd index of source indice pair
-	 * @return
+	 * @return sourcesOffsets with these entries removed
+	 *  from the array
 	 */
 	public int[][] cleanOffsetOfDestFromSources(int[][] sourcesOffsets) {
 		int[][] cleaned = new int[numSources][2];
@@ -1512,9 +1598,10 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 	 * are not equal to the node itself (offset 0).
 	 * Checks that there are enough other information contributors.
 	 * 
-	 * @param sources
-	 * @param dest
-	 * @return
+	 * @param sources array of source indices
+	 * @param dest dest index
+	 * @return sources with these entries removed
+	 *  from the array
 	 */
 	public int[] cleanAbsoluteSources(int[] sources, int dest) {
 		int[] cleaned = new int[numSources];
@@ -1544,9 +1631,10 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 	 * are not equal to the node itself (offset 0).
 	 * Checks that there are enough other information contributors.
 	 * 
-	 * @param sources
-	 * @param dest
-	 * @return
+	 * @param sources 2D array of source indices
+	 * @param dest dest index
+	 * @return sources with these entries removed
+	 *  from the array
 	 */
 	public int[][] cleanAbsoluteSources(int[][] sources, int destAgentRow, int destAgentColumn) {
 		int[][] cleaned = new int[numSources][2];
@@ -1573,13 +1661,31 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 		return cleaned;
 	}
 	
+	/**
+	 * Whether we use periodic boundary conditions when considering
+	 * spatiotemporal data for homogeneous variables
+	 * 
+	 * @return if this is the case
+	 */
 	public boolean isPeriodicBoundaryConditions() {
 		return periodicBoundaryConditions;
 	}
+	/**
+	 * Set whether to use periodic boundary conditions
+	 * 
+	 * @param periodicBoundaryConditions as above
+	 */
 	public void setPeriodicBoundaryConditions(boolean periodicBoundaryConditions) {
 		this.periodicBoundaryConditions = periodicBoundaryConditions;
 	}
 	
+	/**
+	 * Whether the calculator should gather observations to
+	 *  compute a multi-info between the local TEs and
+	 *  AIS values.
+	 * See Lizier et al, 2012 "Coherent information structure in complex computation"
+	 *   
+	 */
 	public boolean isComputeMultiInfoCoherence() {
 		return computeMultiInfoCoherence;
 	}
@@ -1627,11 +1733,14 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 		return true;
 	}
 	
-	// Allows reclaiming of some vital memory
+	/**
+	 * Allows reclaiming of some vital memory
+	 */
 	public void resetMultiInfoCoherenceCalculator() {
 		miCalc.initialise(numSources + 1);
 	}
 	
+	@Override
 	public void setDebug(boolean debug) {
 		if (computeMultiInfoCoherence) {
 			miCalc.setDebug(debug);

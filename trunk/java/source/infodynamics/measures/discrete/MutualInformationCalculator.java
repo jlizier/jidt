@@ -25,18 +25,43 @@ import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.RandomGenerator;
 
-
 /**
- * Usage:
- * 1. Continuous accumulation of observations:
- *   Call: a. initialise()
- *         b. addObservations() several times over
- *         c. computeLocalFromPreviousObservations()
- * 2. Standalone:
- *   Call: localMutualInformation()
+ * <p>Mutual information (MI) calculator for univariate discrete (int[]) data.</p>
  * 
- * @author Joseph Lizier, joseph.lizier at gmail.com
- *
+ * <p>Usage of the class is intended to follow this paradigm:</p>
+ * <ol>
+ * 		<li>Construct the calculator: {@link #MutualInformationCalculator(int)}
+ * 			or {@link #MutualInformationCalculator(int, int)};</li>
+ *		<li>Initialise the calculator using {@link #initialise()};</li>
+ * 		<li>Provide the observations/samples for the calculator
+ *      	to set up the PDFs, using one or more calls to
+ * 			sets of {@link #addObservations(int[], int[])} methods, then</li>
+ * 		<li>Compute the required quantities, being one or more of:
+ * 			<ul>
+ * 				<li>the average MI: {@link #computeAverageLocalOfObservations()};</li>
+ * 				<li>local MI values, such as
+ * 				{@link #computeLocalFromPreviousObservations(int[], int[])};</li>
+ * 				<li>comparison to null distribution, such as
+ * 				{@link #computeSignificance()};</li>
+ * 				<li>and variants of these.</li>
+ * 			</ul>
+ * 		</li>
+ * 		<li>As an alternative to steps 3 and 4, the user may undertake
+ * 			standalone computation from a single set of observations, via
+ *  		e.g.: {@link #computeLocal(int[][], int, int)}.</li>
+ * 		<li>
+ * 		Return to step 2 to re-use the calculator on a new data set.
+ * 		</li>
+ * 	</ol>
+ * 
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>T. M. Cover and J. A. Thomas, 'Elements of Information
+Theory' (John Wiley & Sons, New York, 1991).</li>
+ * </ul>
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class MutualInformationCalculator extends InfoMeasureCalculator 
 	implements ChannelCalculator, AnalyticNullDistributionComputer {
@@ -50,8 +75,10 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 	
 	/**
 	 * Construct a new MI calculator with default time difference of 0
+	 *  between the variables
 	 * 
-	 * @param base number of symbols for each variable
+	 * @param base number of symbols for each variable.
+	 *        E.g. binary variables are in base-2.
 	 * @throws Exception
 	 */
 	public MutualInformationCalculator(int base) throws Exception {
@@ -61,7 +88,8 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 	/**
 	 * Create a new mutual information calculator
 	 * 
-	 * @param base number of symbols for each variable
+	 * @param base number of symbols for each variable.
+	 *        E.g. binary variables are in base-2.
 	 * @param timeDiff number of time steps across which to compute
 	 *   MI for given time series
 	 * @throws Exception when timeDiff < 0
@@ -77,10 +105,7 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 		jCount = new int[base];
 	}
 
-	/**
-	 * Initialise calculator, preparing to take observation sets in
-	 *
-	 */
+	@Override
 	public void initialise(){
 		super.initialise();
 		miComputed = false;		
@@ -90,10 +115,13 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 	}
 	
 	/**
-	 * Add more observations in to our estimates of the pdfs
-	 * Pairs are between the arrays var1 and var2, separated in time by timeDiff (i is first)
+	 * {@inheritDoc}
+	 * 
+	 * Pairs for MI are between the arrays var1 and var2, separated in time by timeDiff
+	 * (var1 is first).
 	 *
 	 */
+	@Override
 	public void addObservations(int[] var1, int[] var2) {
 		int timeSteps = var1.length;
 		// int columns = states[0].length;
@@ -113,10 +141,12 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 	}
 
 	/**
-	 * Add more observations in to our estimates of the pdfs
-	 * Pairs are between columns iCol and jCol, separated in time by timeDiff (i is first)
+	 * {@inheritDoc}
+	 * 
+	 * Pairs for MI are between columns iCol and jCol, separated in time by timeDiff (i is first).
 	 *
 	 */
+	@Override
 	public void addObservations(int states[][], int iCol, int jCol) {
 		int rows = states.length;
 		// int columns = states[0].length;
@@ -135,12 +165,7 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 		}
 	}
 	
-	/**
-	 * Returns the average local mutual information storage from
-	 *  the observed values which have been passed in previously. 
-	 *  
-	 * @return
-	 */
+	@Override
 	public double computeAverageLocalOfObservations() {
 		double mi = 0.0;
 		double miCont = 0.0;
@@ -189,12 +214,7 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 		return mi;
 	}
 
-	/**
-	 * Compute the significance of obtaining the given average from the given observations
-	 * 
-	 * @param numPermutationsToCheck number of new orderings of the source values to compare against
-	 * @return
-	 */
+	@Override
 	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) {
 		RandomGenerator rg = new RandomGenerator();
 		// (Not necessary to check for distinct random perturbations)
@@ -203,10 +223,38 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 	}
 	
 	/**
-	 * Compute the significance of obtaining the given average from the given observations
+	 * Generate a bootstrapped distribution of what the MI would look like,
+	 * under a null hypothesis that the source values of our
+	 * samples had no relation to the destination values.
 	 * 
-	 * @param newOrderings the reorderings to use
-	 * @return
+	 * <p>See Section II.E "Statistical significance testing" of 
+	 * the JIDT paper below for a description of how this is done for  
+	 * a mutual information. Basically, the marginal PDFs
+	 * of each marginal
+	 * are preserved, while their joint PDF is destroyed, and the 
+	 * distribution of MI under these conditions is generated.</p>
+	 * 
+	 * <p>Note that if several disjoint time-series have been added 
+	 * as observations using {@link #addObservations(double[])} etc.,
+	 * then these separate "trials" will be mixed up in the generation
+	 * of surrogates here.</p>
+	 * 
+	 * <p>This method (in contrast to {@link #computeSignificance(int)})
+	 * allows the user to specify how to construct the surrogates,
+	 * such that repeatable results may be obtained.</p>
+	 * 
+	 * @param newOrderings a specification of how to shuffle the next values
+	 *  to create the surrogates to generate the distribution with. The first
+	 *  index is the permutation number (i.e. newOrderings.length is the number
+	 *  of surrogate samples we use to bootstrap to generate the distribution here.)
+	 *  Each array newOrderings[i] should be an array of length N (where
+	 *  would be the value returned by {@link #getNumObservations()}),
+	 *  containing a permutation of the values in 0..(N-1).
+	 * @return the distribution of MI scores under this null hypothesis.
+	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
+	 *    toolkit for studying the dynamics of complex systems', 2014."
+	 * @throws Exception where the length of each permutation in newOrderings
+	 *   is not equal to the number N samples that were previously supplied.
 	 */
 	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings) {
 		double actualMI = computeAverageLocalOfObservations();
@@ -264,29 +312,7 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 		return measDistribution;
 	}
 
-	/**
-	 * <p>Compute the statistical significance of the mutual information 
-	 *  result analytically, without creating a distribution
-	 *  under the null hypothesis by bootstrapping.</p>
-	 *
-	 * <p>Brillinger (see reference below) shows that under the null hypothesis
-	 *  of no source-destination relationship, the MI for two
-	 *  discrete distributions follows a chi-square distribution with
-	 *  degrees of freedom equal to the product of the number of discrete values
-	 *  minus one, for each variable.</p>
-	 *
-	 * @return ChiSquareMeasurementDistribution object 
-	 *  This object contains the proportion of MI scores from the distribution
-	 *  which have higher or equal MIs to ours.
-	 *  
-	 * @see Brillinger, "Some data analyses using mutual information",
-	 * {@link http://www.stat.berkeley.edu/~brill/Papers/MIBJPS.pdf}
-	 * @see Cheng et al., "Data Information in Contingency Tables: A
-	 *  Fallacy of Hierarchical Loglinear Models",
-	 *  {@link http://www.jds-online.com/file_download/112/JDS-369.pdf}
-	 * @see Barnett and Bossomaier, "Transfer Entropy as a Log-likelihood Ratio" 
-	 *  {@link http://arxiv.org/abs/1205.6339}
-	 */
+	@Override
 	public AnalyticMeasurementDistribution computeSignificance() {
 		if (!miComputed) {
 			computeAverageLocalOfObservations();
@@ -331,7 +357,6 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 	 * @return array of local mutual information values for each
 	 *  observation of (var1, var2). Note - if timeDiff > 0, then the
 	 *  return length will be var1.length - timeDiff. 
-	 * @throws Exception 
 	 */
 	public double[] computeLocalFromPreviousObservations(int[] var1, int[] var2) throws Exception{
 		
@@ -371,8 +396,13 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 	 *  for the given states, using pdfs built up from observations previously
 	 *  sent in via the addObservations method 
 	 *  
-	 * @param states
-	 * @return
+	 * @param states 2D time series of observations (first index time,
+	 *  second is variable index)
+	 * @param iCol column number for first variable
+	 * @param jCol column number for second variable
+	 * @return array of local mutual information values for each
+	 *  observation of (var1, var2). Note - if timeDiff > 0, then the
+	 *  return length will be var1.length - timeDiff. 
 	 */
 	public double[] computeLocalFromPreviousObservations(int states[][], int iCol, int jCol){
 		int rows = states.length;
@@ -415,10 +445,15 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 	 * Return a 2D spatiotemporal array of local values.
 	 * First history rows are zeros
 	 * 
-	 * @param states - 2D array of states
-	 * @return
+	 * @param states 2D time series of observations (first index time,
+	 *  second is variable index)
+	 * @param iCol column number for first variable
+	 * @param jCol column number for second variable
+	 * @return array of local mutual information values for each
+	 *  observation of (var1, var2). Note - if timeDiff > 0, then the
+	 *  return length will be var1.length - timeDiff. 
 	 */
-	public double[] localMutualInformation(int states[][], int iCol, int jCol) {
+	public double[] computeLocal(int states[][], int iCol, int jCol) {
 		initialise();
 		addObservations(states, iCol, jCol);
 		return computeLocalFromPreviousObservations(states, iCol, jCol);
