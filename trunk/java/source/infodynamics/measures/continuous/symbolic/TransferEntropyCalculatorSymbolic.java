@@ -29,19 +29,50 @@ import infodynamics.utils.RandomGenerator;
 import java.util.Iterator;
 import java.util.Vector;
 
-
 /**
- * Computing the transfer entropy symbollically
+ * <p>Computes the differential transfer entropy (TE) between two univariate
+ *  <code>double[]</code> time-series of observations
+ *  using symbolic TE estimation.
+ *  For details on symbolic TE estimation, see Staniek and Lehnertz (below).</p>
+ *  
+ * <p>TE was defined by Schreiber (below).
+ *  This estimator is realised here by extending
+ *  {@link TransferEntropyCommon}.</p>
+ *  
+ * <p>Usage is as per the paradigm outlined for {@link TransferEntropyCalculator},
+ * with:
+ * <ul>
+ * 	<li>The constructor step being a simple call to {@link #TransferEntropyCalculatorSymbolic()}.</li>
+ *  <li>A restricted set of properties are available, see {@link #setProperty(String, String)};</li>
+ *  </ul>
+ * </p>
  * 
- * @author Joseph Lizier, joseph.lizier at gmail.com
- * @see Mattha\"{u}s Staniek, Klaus Lehnertz, "Symbolic Transfer Entropy", PRL 100, 158101 (2008)
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>T. Schreiber, <a href="http://dx.doi.org/10.1103/PhysRevLett.85.461">
+ * "Measuring information transfer"</a>,
+ *  Physical Review Letters 85 (2) pp.461-464, 2000.</li>
+ *  <li>J. T. Lizier, M. Prokopenko and A. Zomaya,
+ *  <a href="http://dx.doi.org/10.1103/PhysRevE.77.026110">
+ *  "Local information transfer as a spatiotemporal filter for complex systems"</a>
+ *  Physical Review E 77, 026110, 2008.</li>
+ *  <li>M. Staniek, K. Lehnertz,
+ *  <a href="http://dx.doi.org/10.1103/physrevlett.100.158101">
+ *  "Symbolic Transfer Entropy"</a>,
+ *  Physical Review Letters 100, 158101 (2008)</li>
+ * </ul>
+ *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  *
  */
 public class TransferEntropyCalculatorSymbolic
 		extends TransferEntropyCommon
 		implements infodynamics.measures.continuous.TransferEntropyCalculator {
 
-	// The calculator used to do the grunt work
+	/**
+	 * The discrete calculator used to do the grunt work
+	 */
 	protected TransferEntropyCalculator teCalc;
 
 	protected int maxEmbeddingLength; // = Max(l,k)
@@ -69,16 +100,19 @@ public class TransferEntropyCalculatorSymbolic
 	protected static final int VAL_COLUMN = 0;
 	protected static final int VAR_NUM_COLUMN = 1;
 
-	public static final String PROP_L = "L";
-	
+	/**
+	 * Construct an instance
+	 */
 	public TransferEntropyCalculatorSymbolic() {
 		// Nothing to do
 	}
 
+	@Override
 	public void initialise(int k) throws Exception {
 		super.initialise(k); // calls initialise();
 	}
 
+	@Override
 	public void initialise() throws Exception {
 		if (!lWasSet) {
 			l = k;
@@ -148,27 +182,37 @@ public class TransferEntropyCalculatorSymbolic
 	}
 
 	/**
-	 * <p>Set properties for the transfer entropy calculator.
-	 * These can include:
+	 * <p>Set properties for the kernel TE calculator.
+	 *  New property values are not guaranteed to take effect until the next call
+	 *  to an initialise method. 
+	 * 
+	 * <p>Valid property names, and what their
+	 * values should represent, include:</p>
 	 * <ul>
-	 * 		<li>PROP_L</li>
-	 * </ul> 
-	 * and those for {@link TransferEntropyCommon#setProperty(String,String)}
+	 * 		<li>{@link #L_PROP_NAME} -- embedding length for the source past history vector
+	 * 			(default value 1)</li>
+	 *  	<li>any valid properties for {@link TransferEntropyCommon#setProperty(String, String)},
+	 *  		noting that we are explicitly overriding it to allow {@link #L_PROP_NAME} here.</li>
+	 * </ul>
 	 * </p>
 	 * 
-	 * @param propertyName
-	 * @param propertyValue
-	 * @throws Exception 
+	 * <p>Unknown property values are ignored.</p>
+	 * 
+	 * @param propertyName name of the property
+	 * @param propertyValue value of the property
+	 * @throws Exception for invalid property values
 	 */
+	@Override
 	public void setProperty(String propertyName, String propertyValue) throws Exception {
-		super.setProperty(propertyName, propertyValue);
 		boolean propertySet = true;
-		if (propertyName.equalsIgnoreCase(PROP_L)) {
+		if (propertyName.equalsIgnoreCase(L_PROP_NAME)) {
 			l = Integer.parseInt(propertyValue);
 			lWasSet = true;
 		} else {
 			// No property was set
 			propertySet = false;
+			// try the superclass:
+			super.setProperty(propertyName, propertyValue);
 		}
 		if (debug && propertySet) {
 			System.out.println("Set property " + propertyName +
@@ -176,6 +220,7 @@ public class TransferEntropyCalculatorSymbolic
 		}
 	}
 
+	@Override
 	public void finaliseAddObservations() {
 		// First work out the size to allocate the joint vectors, and do the allocation:
 		totalObservations = 0;
@@ -287,7 +332,7 @@ public class TransferEntropyCalculatorSymbolic
 	 * Generate the unique permutation id for this ordering of variable ids.
 	 * Convert the floating point variable ids into ints first
 	 * 
-	 * @param data
+	 * @param ids
 	 * @param base the number of elements being permuted
 	 * @return
 	 */
@@ -300,11 +345,13 @@ public class TransferEntropyCalculatorSymbolic
 		return permutationId;
 	}
 
+	@Override
 	public double computeAverageLocalOfObservations() throws Exception {
 		lastAverage = teCalc.computeAverageLocalOfObservations();
 		return lastAverage;
 	}
 
+	@Override
 	public double[] computeLocalOfPreviousObservations() throws Exception {
 		double[] locals = new double[totalObservations];
 		int currentIndexInLocals = 0;
@@ -319,19 +366,31 @@ public class TransferEntropyCalculatorSymbolic
 		return locals;
 	}
 
+	/**
+	 * Not implemented yet
+	 */
+	@Override
+	public double[] computeLocalUsingPreviousObservations(
+			double[] newSourceObservations, double[] newDestObservations)
+			throws Exception {
+		throw new UnsupportedOperationException("Not implemented yet");
+	}
+
+	@Override
 	public EmpiricalMeasurementDistribution computeSignificance(
 			int numPermutationsToCheck) throws Exception {
 		return teCalc.computeSignificance(numPermutationsToCheck);
 	}
 
 	/**
-	 * This method does not actually use the newOrderings supplied,
-	 *  which is not strictly what this method is meant to do.
-	 * 
+	 * Not implemented yet
 	 */
 	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings)
 			throws Exception {
+		throw new UnsupportedOperationException("Not implemented yet");
+		/* This method used to cheat:
 		System.out.println("TESymbolic.computeSignificance(): Not using the new orderings supplied");
 		return teCalc.computeSignificance(newOrderings.length);
+		*/
 	}
 }
