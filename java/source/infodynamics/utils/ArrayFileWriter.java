@@ -23,14 +23,22 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
+/**
+ * Writes basic files with one or two dimensional arrays of integers
+ *  and doubles and booleans,
+ *  delimited by tab.
+ *  
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
+ */
 public class ArrayFileWriter {
 	
 	/**
-	 * Outputs different types of 2D Matrix to a file
+	 * Outputs boolean[][] to a file
 	 * 
-	 * @param outputFileName and matrix
+	 * @param matrixthe data to write
+	 * @param outputFileName filename to write to
 	 */
-	
 	public static void makeBooleanMatrixFile(boolean matrix[][],String outputFileName) throws IOException {
     	int rowSize = matrix.length;
 		int colSize = matrix[0].length;
@@ -52,6 +60,12 @@ public class ArrayFileWriter {
 		out.close();
 	}
 	
+	/**
+	 * Outputs double[][] to a file
+	 * 
+	 * @param matrixthe data to write
+	 * @param outputFileName filename to write to
+	 */
 	public static void makeDoubleMatrixFile(double matrix[][],String outputFileName) throws IOException {
     	int rowSize = matrix.length;
 		int colSize = matrix[0].length;
@@ -69,6 +83,13 @@ public class ArrayFileWriter {
 		out.close();
 	}
 
+	/**
+	 * Outputs double[][] to a file
+	 * 
+	 * @param matrix the data to write
+	 * @param outputFileName filename to write to
+	 * @param decimalPlaces number of decimal places to write
+	 */
 	public static void makeDoubleMatrixFile(double matrix[][],String outputFileName, int decimalPlaces) throws IOException {
 		String template = String.format("%%.%df\t", decimalPlaces);
     	int rowSize = matrix.length;
@@ -91,8 +112,8 @@ public class ArrayFileWriter {
 	 * Write the matrix to a file.
 	 * Assumes the 2D array is regular - i.e. all rows have the same number of columns as the first
 	 * 
-	 * @param matrix
-	 * @param outputFileName
+	 * @param matrix data to write
+	 * @param outputFileName output filename
 	 * @throws IOException
 	 */
 	public static void makeIntMatrixFile(int matrix[][],String outputFileName) throws IOException {
@@ -112,6 +133,12 @@ public class ArrayFileWriter {
 		out.close();
 	}
 
+	/**
+	 * Outputs double[] to a file
+	 * 
+	 * @param matrix the data to write
+	 * @param outputFileName filename to write to
+	 */
 	public static void makeMatrixFile(double matrix[],String outputFileName) throws IOException {
     	int rowSize = matrix.length;
 
@@ -123,6 +150,12 @@ public class ArrayFileWriter {
 		out.close();
 	}
 
+	/**
+	 * Outputs Number[][] to a file
+	 * 
+	 * @param matrix the data to write
+	 * @param outputFileName filename to write to
+	 */
 	public static void makeMatrixFile(Number matrix[][],String outputFileName) throws IOException {
     	int rowSize = matrix.length;
 		int colSize = matrix[0].length;
@@ -140,6 +173,12 @@ public class ArrayFileWriter {
 		out.close();
 	}
 
+	/**
+	 * Outputs Number[] to a file
+	 * 
+	 * @param matrix the data to write
+	 * @param outputFileName filename to write to
+	 */
 	public static void makeMatrixFile(Number matrix[],String outputFileName) throws IOException {
     	int rowSize = matrix.length;
 

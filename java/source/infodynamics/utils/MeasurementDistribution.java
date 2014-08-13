@@ -26,8 +26,8 @@ package infodynamics.utils;
  * <p>While in theory this class could be directly used, it is it's
  * children which are intended to be used.</p>
  * 
- * @author Joseph Lizier
- *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class MeasurementDistribution {
 	/**

@@ -25,14 +25,17 @@ import java.io.IOException;
 import java.lang.reflect.Array;
 
 /**
- * Octave file reader.
- * Usage:
- * 1. call constructor
- * 2. to retrieve a variable, call the get method appropriate to the
- *    data type of that variable.
+ * Octave text file format reader.
  * 
- * @author Joseph Lizier
- *
+ * Usage:
+ * <ol>
+ * <li>call constructor</li>
+ * <li>to retrieve a variable, call the get method appropriate to the
+ *    data type of that variable.</li>
+ * </ol>
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class OctaveFileReader {
 	private String filename;

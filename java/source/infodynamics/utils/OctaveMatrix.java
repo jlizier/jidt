@@ -1,16 +1,4 @@
 /*
-This file is modified from org.octave.Matrix, 
-under GPLv3, as per the original notice below.
-We altered the file to make the typing explicit in
-the method names to load data (these were all in
-constructors before, and it appeared that
-octave was not loading the proper types on many
-occasions).
-This class is only used when the toolkit is called from
-octave, to convert between octave native types and java arrays
-
-The original copyright notice is as follows:
-
 Copyright (C) 2007 Michael Goffioul
 
 This file is part of Octave.
@@ -33,6 +21,24 @@ along with Octave; see the file COPYING.  If not, see
 
 package infodynamics.utils;
 
+/**
+This file is modified from org.octave.Matrix
+(Copyright (C) 2007 Michael Goffioul), 
+under GPLv3, as per the original copyright notice above.
+
+<p>
+We altered the file to make the typing explicit in
+the method names to load data (these were all in
+constructors before, and it appeared that
+octave was not loading the proper types on many
+occasions).
+This class is only used when the toolkit is called from
+GNU Octave, to convert between octave native types and java arrays
+
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
+ */
 import java.nio.*;
 import java.text.DecimalFormat;
 

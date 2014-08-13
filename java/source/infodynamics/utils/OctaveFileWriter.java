@@ -34,15 +34,16 @@ import java.util.Properties;
 import java.util.Set;
 
 /**
- * Octave file format writer.
+ * Octave text file format writer.
  * Usage:
- * 1. call constructor
- * 2. call put for each variable to be stored.
- * 3. call writeFile(outputFilename) or setFilename(outputFilename)
- *    then writeFile()
+ * <ol>
+ *  <li>call constructor</li>
+ *  <li>call put for each variable to be stored.</li>
+ *  <li>call writeFile(outputFilename) or setFilename(outputFilename)
+ *    then writeFile()</li>
  * 
- * @author Joseph Lizier
- *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class OctaveFileWriter extends HashMap<String, Object> {
 

@@ -22,8 +22,8 @@ package infodynamics.utils;
  * 
  * A set of utilities for manipulating vectors in Euclidean space.
  * 
- * @author Joseph Lizier
- *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class EuclideanUtils {
 

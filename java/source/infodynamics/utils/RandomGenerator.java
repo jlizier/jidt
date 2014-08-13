@@ -32,8 +32,8 @@ import java.util.Arrays;
  * TODO I think I may need to revisit whether I reuse the objects added to the hashtable;
  * I don't think we should be doing this.
  * 
- * @author Joseph Lizier
- *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class RandomGenerator {
 

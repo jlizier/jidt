@@ -24,11 +24,18 @@ package infodynamics.utils;
  * This class is not designed to be creatable - it's children (which represent
  * various concrete distributions) are those which should be created.
  * 
- * @author Joseph Lizier
- *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class AnalyticMeasurementDistribution extends MeasurementDistribution {
 
+	/**
+	 * Construct the instance
+	 * 
+	 * @param actualValue observed value of the information-theoretic measure
+	 * @param pValue p-value that surrogate measurements are greater than
+	 *  the observed value.
+	 */
 	protected AnalyticMeasurementDistribution(double actualValue, double pValue) {
 		super(actualValue, pValue);
 	}

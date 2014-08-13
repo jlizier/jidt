@@ -21,11 +21,11 @@ package infodynamics.utils;
 import java.util.Arrays;
 
 /**
- * 
- * @author Joseph Lizier
- *
- * LongArrayWrapper is used to wrap a long array so as to be able to give it a hash value
+ * IntArrayWrapper is used to wrap a long array so as to be able to give it a hash value
  *  for placement into a hash table.
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class IntArrayWrapper {
 

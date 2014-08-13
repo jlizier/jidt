@@ -25,13 +25,14 @@ import java.util.Vector;
 
 /**
  * Utilities for computations on arrays and matrices of data.
- * Matrices are represented as two-dimensional
- *  arrays of doubles (double[][] matrix) - it is assumed that all
+ * Matrices are represented as either one-dimensional
+ *  arrays of int[] or double[], or two-dimensional
+ *  arrays of double[][] or int[][] - it is assumed that all
  *  multidimensional matrices have consistent lengths in each dimension
  *  matrix[i].
  * 
- * @author Joseph Lizier, joseph.lizier at gmail.com
- *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class MatrixUtils {
 

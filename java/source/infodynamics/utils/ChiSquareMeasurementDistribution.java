@@ -23,14 +23,23 @@ package infodynamics.utils;
  * some null hypothesis of a relationship between the variables, where that
  * distribution is a Chi Square distribution.
  *
- * @author Joseph Lizier
- *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class ChiSquareMeasurementDistribution extends
 		AnalyticMeasurementDistribution {
 
+	/**
+	 * Number of degrees of freedom for the distribution
+	 */
 	protected int degreesOfFreedom;
 	
+	/**
+	 * Construct the distribution
+	 * 
+	 * @param actualValue actual observed value
+	 * @param degreesOfFreedom degrees of freedom for the distribution
+	 */
 	public ChiSquareMeasurementDistribution(double actualValue, int degreesOfFreedom) {
 		super(actualValue, 1 - MathsUtils.chiSquareCdf(actualValue, degreesOfFreedom));
 		this.degreesOfFreedom = degreesOfFreedom;
