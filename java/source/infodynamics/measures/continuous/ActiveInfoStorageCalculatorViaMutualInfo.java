@@ -24,19 +24,43 @@ import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.MatrixUtils;
 
 /**
- * Active Information Storage calculator which is implemented using a 
- * Mutual Information calculator.
+ * An Active Information Storage (AIS) calculator (implementing {@link ActiveInfoStorageCalculator})
+ * which is affected using a 
+ * given Mutual Information (MI) calculator (implementing
+ * {@link MutualInfoCalculatorMultiVariate}) to make the calculations.
  * 
+ * <p>Usage is as per the paradigm outlined for {@link ActiveInfoStorageCalculator},
+ * except that in the constructor(s) for this class the implementation for
+ * a {@link MutualInfoCalculatorMultiVariate} must be supplied.
+ * </p>
  * 
- * @author Joseph Lizier, <a href="joseph.lizier at gmail.com">email</a>,
- * <a href="http://lizier.me/joseph/">www</a>
- *
+ * <p>This class <i>may</i> be used directly, however users are advised that
+ * several child classes are available which already plug-in the various MI estimators
+ * to provide AIS calculators (taking specific caution associated with
+ * each type of estimator):</p>
+ * <ul>
+ * 	<li>{@link infodynamics.measures.continuous.gaussian.ActiveInfoStorageCalculatorGaussian}</li>
+ * 	<li>{@link infodynamics.measures.continuous.kernel.ActiveInfoStorageCalculatorKernel}</li>
+ * 	<li>{@link infodynamics.measures.continuous.kraskov.ActiveInfoStorageCalculatorKraskov}</li>
+ * </ul>
+ * 
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>J.T. Lizier, M. Prokopenko and A.Y. Zomaya,
+ * 		<a href="http://dx.doi.org/10.1016/j.ins.2012.04.016">
+ * 		"Local measures of information storage in complex distributed computation"</a>,
+ * 		Information Sciences, vol. 208, pp. 39-54, 2012.</li>
+ * </ul>
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
+ * @see ActiveInfoStorageCalculator
  */
 public class ActiveInfoStorageCalculatorViaMutualInfo implements
 		ActiveInfoStorageCalculator {
 
 	/**
-	 * Underlying mutual information calculator
+	 * The underlying mutual information calculator
 	 */
 	protected MutualInfoCalculatorMultiVariate miCalc;
 	/**
@@ -49,8 +73,19 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	 *  observation however.
 	 */
 	protected int tau = 1;
+	/**
+	 * Whether debug mode is on
+	 */
 	protected boolean debug = false;
 	
+	/**
+	 * Construct using an instantiation of the named MI calculator
+	 * 
+	 * @param miCalculatorClassName fully qualified class name of the MI calculator to instantiate
+	 * @throws InstantiationException
+	 * @throws IllegalAccessException
+	 * @throws ClassNotFoundException
+	 */
 	public ActiveInfoStorageCalculatorViaMutualInfo(String miCalculatorClassName)
 			throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		@SuppressWarnings("unchecked")
@@ -60,6 +95,13 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 		construct(miCalc);
 	}
 	
+	/**
+	 * Construct using an instantiation of the given MI class
+	 * 
+	 * @param miCalcClass Class of the MI calculator to instantiate and use
+	 * @throws InstantiationException
+	 * @throws IllegalAccessException
+	 */
 	protected ActiveInfoStorageCalculatorViaMutualInfo(Class<MutualInfoCalculatorMultiVariate> miCalcClass)
 			throws InstantiationException, IllegalAccessException {
 		MutualInfoCalculatorMultiVariate miCalc = miCalcClass.newInstance();
@@ -67,35 +109,57 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	}
 	
 	/**
-	 * Construct this calculator by passing in a constructed but not initialised
-	 * underlying Mutual information calculator.
+	 * Construct using the given (constructed but not initialised)
+	 * MI calculator.
 	 * 
-	 * @param miCalc
+	 * @param miCalc MI calculator which is already constructed but
+	 *  there has not been a call to its {@link MutualInfoCalculatorMultiVariate#initialise()}
+	 *  method yet 
 	 */
 	protected ActiveInfoStorageCalculatorViaMutualInfo(MutualInfoCalculatorMultiVariate miCalc) {
 		construct(miCalc);
 	}
 
+	/**
+	 * Internal routine to execute common code for constructing an instance
+	 * 
+	 * @param miCalc
+	 */
 	protected void construct(MutualInfoCalculatorMultiVariate miCalc) {
 		this.miCalc = miCalc;
 	}
 	
+	/* (non-Javadoc)
+	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#initialise()
+	 */
+	@Override
 	public void initialise() throws Exception {
 		initialise(k, tau); // Initialise with current value of k
 	}
 
+	/* (non-Javadoc)
+	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#initialise(int)
+	 */
+	@Override
 	public void initialise(int k) throws Exception {
 		initialise(k, tau);
 	}
 
 	/**
-	 * This initialisation routine is called by all others above,
-	 *  and should be called child classes.
+	 * Initialise the calculator for (re-)use, with some parameters
+	 * supplied here, and existing (or default) values of other parameters
+	 * to be used.
 	 * 
-	 * @param k
-	 * @param tau
+	 * <p>All child classes <b>must</b> call this routine on this as the super class
+	 *  once they have finished executing their specialised code
+	 *  for their {@link #initialise()} implementations.
+	 * </p>
+	 * 
+	 * @param k embedding length of past history vector
+	 * @param tau embedding delay of past history vector
 	 * @throws Exception
 	 */
+	@Override
 	public void initialise(int k, int tau) throws Exception {
 		this.k = k;
 		this.tau = tau;
@@ -103,19 +167,31 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	}
 
 	/**
-	 * Sets property {@link #K_PROP_NAME} or {@link #TAU_PROP_NAME} or 
-	 *  else assumes the property
-	 *  is for the underlying {@link MutualInfoCalculatorMultiVariate#setProperty(String, String)} implementation.
-	 *  However, the user is not allowed to set the property 
-	 *  {@link MutualInfoCalculatorMultiVariate#PROP_TIME_DIFF} for Active Info Storage
-	 *  calculation. This would set a time difference from the history vector to the next
-	 *  step, which we currently do not allow. (To allow it, we could implement simply by letting
-	 *  the time diff property be set here).
+	 * Set properties for the underlying calculator implementation.
+	 * New property values are not guaranteed to take effect until the next call
+	 *  to an initialise method. 
 	 *  
+	 * <p>Allowable property names include:</p>
+	 * <ul>
+	 * 	<li>Those defined for the {@link ActiveInfoStorageCalculator} interface
+	 *      (i.e. {@link #K_PROP_NAME} or {@link #TAU_PROP_NAME})</li>
+	 *  <li>Any properties defined for the underlying
+	 *     {@link MutualInfoCalculatorMultiVariate#setProperty(String, String)} implementation,
+	 *     <b>however</b> the user is <b>not</b> allowed to set the property 
+	 *     {@link MutualInfoCalculatorMultiVariate#PROP_TIME_DIFF} here.
+	 *     This would set a time difference from the history vector to the next
+	 *     step, which we currently do not allow.
+	 *     (If we change our mind one day and allow it, we could implement
+	 *     it simply by letting the time diff property be set here).</li>
+	 * </ul>
+	 *  
+	 * <p>Note that implementing classes may defined additional properties.</p>
+	 *
 	 * @param propertyName name of the property
-	 * @param propertyValue value of the property.
-	 * @throws Exception if there is a problem with the supplied value
+	 * @param propertyValue value of the property
+	 * @throws Exception for invalid property values
 	 */
+	@Override
 	public void setProperty(String propertyName, String propertyValue)
 			throws Exception {
 		if (propertyName.equalsIgnoreCase(MutualInfoCalculatorMultiVariate.PROP_TIME_DIFF)) {
@@ -139,6 +215,10 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 		}
 	}
 
+	/* (non-Javadoc)
+	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#setObservations(double[])
+	 */
+	@Override
 	public void setObservations(double[] observations) throws Exception {
 		if (observations.length - (k-1)*tau - 1 <= 0) {
 			// There are no observations to add here
@@ -151,10 +231,18 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 		miCalc.setObservations(currentDestPastVectors, currentDestNextVectors);
 	}
 
+	/* (non-Javadoc)
+	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#startAddObservations()
+	 */
+	@Override
 	public void startAddObservations() {
 		miCalc.startAddObservations();
 	}
 
+	/* (non-Javadoc)
+	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#addObservations(double[])
+	 */
+	@Override
 	public void addObservations(double[] observations) throws Exception {
 		if (observations.length - (k-1)*tau - 1 <= 0) {
 			// There are no observations to add here
@@ -169,15 +257,27 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 		miCalc.addObservations(currentDestPastVectors, currentDestNextVectors);
 	}
 
+	/* (non-Javadoc)
+	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#addObservations(double[], int, int)
+	 */
+	@Override
 	public void addObservations(double[] observations, int startTime,
 			int numTimeSteps) throws Exception {
 		addObservations(MatrixUtils.select(observations, startTime, numTimeSteps));
 	}
 
+	/* (non-Javadoc)
+	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#finaliseAddObservations()
+	 */
+	@Override
 	public void finaliseAddObservations() throws Exception {
 		miCalc.finaliseAddObservations();
 	}
 
+	/* (non-Javadoc)
+	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#setObservations(double[], boolean[])
+	 */
+	@Override
 	public void setObservations(double[] observations, boolean[] valid)
 			throws Exception {
 		Vector<int[]> startAndEndTimePairs = computeStartAndEndTimePairs(valid);
@@ -194,13 +294,18 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 
 	/**
 	 * Compute a vector of start and end pairs of time points, between which we have
-	 *  valid series of the observations.
+	 *  valid series of observations.
 	 * 
-	 * Made public so it can be used if one wants to compute the number of
-	 *  observations prior to setting the observations.
+	 * <p>This method is made public so it can be used if one wants to compute the number of
+	 *  observations prior to making a call to {@link #setObservations(double[], boolean[])}.</p>
 	 * 
-	 * @param valid
-	 * @return
+	 * @param valid a time series (with indices the same as observations)
+	 *  indicating whether the entry in observations at that index is valid; 
+	 *  we only take vectors as samples to add to the observation set where
+	 *  all points in the time series (even between points in 
+	 *  the embedded k-vector with embedding delays) are valid.
+	 * @return a vector for start and end time pairs of valid series
+	 *  of observations (as defined by <code>valid</code>).
 	 */
 	public Vector<int[]> computeStartAndEndTimePairs(boolean[] valid) {
 		// Scan along the data avoiding invalid values
@@ -265,17 +370,18 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 		return startAndEndTimePairs;
 	}
 	
+	/* (non-Javadoc)
+	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#computeAverageLocalOfObservations()
+	 */
+	@Override
 	public double computeAverageLocalOfObservations() throws Exception {
 		return miCalc.computeAverageLocalOfObservations();
 	}
 
-	/**
-	 * Returns a time series of local AIS values.
-	 * Pads the first (k-1)*tau + 1 elements with zeros (since AIS is undefined here)
-	 *  if only one time series of observations was used.
-	 * Otherwise, local values for all separate series are concatenated, and without
-	 *  padding of zeros at the start.
+	/* (non-Javadoc)
+	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#computeLocalOfPreviousObservations()
 	 */
+	@Override
 	public double[] computeLocalOfPreviousObservations() throws Exception {
 		double[] local = miCalc.computeLocalOfPreviousObservations();
 		if (!miCalc.getAddedMoreThanOneObservationSet()) {
@@ -287,6 +393,10 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 		}
 	}
 
+	/* (non-Javadoc)
+	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#computeLocalUsingPreviousObservations(double[])
+	 */
+	@Override
 	public double[] computeLocalUsingPreviousObservations(double[] newObservations) throws Exception {
 		if (newObservations.length - (k-1)*tau - 1 <= 0) {
 			// There are no observations to compute for here
@@ -304,27 +414,46 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 
 	}
 	
+	/* (non-Javadoc)
+	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#computeSignificance(int)
+	 */
+	@Override
 	public EmpiricalMeasurementDistribution computeSignificance(
 			int numPermutationsToCheck) throws Exception {
 		return miCalc.computeSignificance(numPermutationsToCheck);
 	}
 
+	/* (non-Javadoc)
+	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#computeSignificance(int[][])
+	 */
+	@Override
 	public EmpiricalMeasurementDistribution computeSignificance(
 			int[][] newOrderings) throws Exception {
 		return miCalc.computeSignificance(newOrderings);
 	}
 
+	/* (non-Javadoc)
+	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#setDebug(boolean)
+	 */
+	@Override
 	public void setDebug(boolean debug) {
 		this.debug = debug;
 		miCalc.setDebug(debug);
 	}
 
+	/* (non-Javadoc)
+	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#getLastAverage()
+	 */
+	@Override
 	public double getLastAverage() {
 		return miCalc.getLastAverage();
 	}
 
+	/* (non-Javadoc)
+	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#getNumObservations()
+	 */
+	@Override
 	public int getNumObservations() throws Exception {
 		return miCalc.getNumObservations();
 	}
-
 }

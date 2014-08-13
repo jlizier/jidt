@@ -25,35 +25,47 @@ import infodynamics.utils.ParsedProperties;
 import java.util.Vector;
 
 /**
- * <p>An abstract Conditional Transfer entropy calculator which is implemented using a 
- * Conditional Mutual Information calculator.
- * The Conditional Mutual Information calculator must be supplied at construction time.
+ * A Conditional Transfer Entropy (TE) calculator
+ * (implementing {@link ConditionalTransferEntropyCalculator})
+ * which is affected using a 
+ * given Conditional Mutual Information (MI) calculator (implementing
+ * {@link ConditionalMutualInfoCalculatorMultiVariate}) to make the calculations.
+ * 
+ * <p>Usage is as per the paradigm outlined for
+ * {@link ConditionalTransferEntropyCalculator},
+ * except that in the constructor(s) for this class the implementation for
+ * a {@link ConditionalMutualInfoCalculatorMultiVariate} must be supplied.
  * </p>
  * 
- * <p>There are no abstract methods of this class, and conceivably it could be constructed
- * with a {@link ConditionalMutualInfoCalculatorMultiVariate} class supplied, 
- * however there are typically extra considerations for each estimator type.
- * As such, the children of this abstract class provide concrete implementations using various
- * estimator types; see e.g. {@link infodynamics.continuous.gaussian.ConditionalTransferEntropyCalculatorGaussian}.
- * </p>
+ * <p>This class <i>may</i> be used directly, however users are advised that
+ * several child classes are available which already plug-in the various
+ * conditional MI estimators
+ * to provide conditional TE calculators (taking specific caution associated with
+ * each type of estimator):</p>
+ * <ul>
+ * 	<li>{@link infodynamics.measures.continuous.gaussian.ConditionalTransferEntropyCalculatorGaussian}</li>
+ * 	<li>{@link infodynamics.measures.continuous.kraskov.ConditionalTransferEntropyCalculatorKraskov}</li>
+ * </ul>
  * 
- * @see "Schreiber, Physical Review Letters 85 (2) pp.461-464 (2000);
- *  <a href='http://dx.doi.org/10.1103/PhysRevLett.85.461'>download</a>
- *  (for definition of transfer entropy)"
- * @see "Lizier, Prokopenko and Zomaya, Physical Review E 77, 026110 (2008);
- * <a href='http://dx.doi.org/10.1103/PhysRevE.77.026110'>download</a>
- *  (for the extension to <i>conditional</i> transfer entropy 
- *  or <i>complete</i> where all other causal sources are conditioned on,
- *  and <i>local</i> transfer entropy)"
- * @see "Lizier, Prokopenko and Zomaya, Chaos 20, 3, 037109 (2010);
- * <a href='http://dx.doi.org/10.1063/1.3486801'>download</a>
- *  (for further clarification on <i>conditional</i> transfer entropy 
- *  or <i>complete</i> where all other causal sources are conditioned on)"
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>T. Schreiber, <a href="http://dx.doi.org/10.1103/PhysRevLett.85.461">
+ * "Measuring information transfer"</a>,
+ *  Physical Review Letters 85 (2) pp.461-464, 2000.</li>
+ *  <li>J. T. Lizier, M. Prokopenko and A. Zomaya,
+ *  <a href="http://dx.doi.org/10.1103/PhysRevE.77.026110">
+ *  "Local information transfer as a spatiotemporal filter for complex systems"</a>
+ *  Physical Review E 77, 026110, 2008.</li>
+ *  <li>J. T. Lizier, M. Prokopenko and A. Zomaya,
+ *  <a href=http://dx.doi.org/10.1063/1.3486801">
+ *  "Information modification and particle collisions in distributed computation"</a>
+ *  Chaos 20, 3, 037109 (2010).</li>
+ * </ul>
  *  
  * @author Joseph Lizier, <a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>
  */
-public abstract class ConditionalTransferEntropyCalculatorViaCondMutualInfo implements
+public class ConditionalTransferEntropyCalculatorViaCondMutualInfo implements
 		ConditionalTransferEntropyCalculator {
 
 	/**
@@ -100,7 +112,7 @@ public abstract class ConditionalTransferEntropyCalculatorViaCondMutualInfo impl
 	
 	/**
 	 * Time index of the last point in the destination embedding of the first
-	 *  (destination past, source past, destination next) tuple than can be 
+	 *  (destination past, source past, destination next) tuple that can be 
 	 *  taken from any set of time-series observations. 
 	 */
 	protected int startTimeForFirstDestEmbedding;
@@ -111,6 +123,9 @@ public abstract class ConditionalTransferEntropyCalculatorViaCondMutualInfo impl
 	 */
 	protected int dimOfConditionals = 0;
 	
+	/**
+	 * Whether we are in debug mode
+	 */
 	protected boolean debug = false;
 	
 	/**
@@ -178,10 +193,12 @@ public abstract class ConditionalTransferEntropyCalculatorViaCondMutualInfo impl
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ChannelCalculatorCommon#initialise()
 	 */
+	@Override
 	public void initialise() throws Exception {
 		initialise(k, k_tau, l, l_tau, delay, condEmbedDims, cond_taus, condDelays);
 	}
 	
+	@Override
 	public void initialise(int k) throws Exception {
 		initialise(k, k_tau, l, l_tau, delay, condEmbedDims, cond_taus, condDelays);
 	}
@@ -189,6 +206,7 @@ public abstract class ConditionalTransferEntropyCalculatorViaCondMutualInfo impl
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ConditionalTransferEntropyCalculator#initialise(int, int, int)
 	 */
+	@Override
 	public void initialise(int k, int l, int condEmbedDim) throws Exception {
 		if (condEmbedDim == 0) {
 			// No conditional variables:
@@ -208,6 +226,7 @@ public abstract class ConditionalTransferEntropyCalculatorViaCondMutualInfo impl
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ConditionalTransferEntropyCalculator#initialise(int, int, int, int, int, int, int, int)
 	 */
+	@Override
 	public void initialise(int k, int k_tau, int l, int l_tau, int delay,
 			int condEmbedDim, int cond_tau, int condDelay) throws Exception {
 		if (condEmbedDim == 0) {
@@ -228,6 +247,7 @@ public abstract class ConditionalTransferEntropyCalculatorViaCondMutualInfo impl
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ConditionalTransferEntropyCalculator#initialise(int, int, int, int, int, int[], int[], int[])
 	 */
+	@Override
 	public void initialise(int k, int k_tau, int l, int l_tau, int delay,
 			int[] condEmbedDims, int[] cond_taus, int[] condDelays)
 			throws Exception {
@@ -298,33 +318,24 @@ public abstract class ConditionalTransferEntropyCalculatorViaCondMutualInfo impl
 	}
 
 	/**
-	 * <p>Set the given property to the given value.
-	 * New property values are not guaranteed to take effect until the next call
+	 * Sets properties for the conditional TE calculator.
+	 *  New property values are not guaranteed to take effect until the next call
 	 *  to an initialise method. 
-	 * These can include the following properties from {@link ConditionalTransferEntropyCalculator}:
+	 *  
+	 * <p>Valid property names, and what their
+	 * values should represent, include:</p>
 	 * <ul>
-	 * 		<li>{@link #K_PROP_NAME}</li>
-	 * 		<li>{@link #K_TAU_PROP_NAME}</li>
-	 * 		<li>{@link #L_PROP_NAME}</li>
-	 * 		<li>{@link #L_TAU_PROP_NAME}</li>
-	 * 		<li>{@link #DELAY_PROP_NAME}</li>
-	 * 		<li>{@link #COND_EMBED_LENGTHS_PROP_NAME} - supplied as a comma separated integer list</li>
-	 * 		<li>{@link #COND_EMBED_DELAYS_PROP_NAME} - supplied as a comma separated integer list</li>
-	 * 		<li>{@link #COND_DELAYS_PROP_NAME} - supplied as a comma separated integer list</li>
+	 * 		<li>Any properties accepted by {@link ConditionalTransferEntropyCalculator};</li>
+	 * 		<li>Or properties accepted by the underlying
+	 * 		{@link ConditionalMutualInfoCalculatorMultiVariate#setProperty(String, String)} implementation.</li>
 	 * </ul>
-	 * Note that you can pass in any of the last three properties as different length
-	 *  arrays to the current values of the others; this will not be checked here (to allow
-	 *  them to be changed here sequentially), but will be checked at the next initialisation
-	 *  of the object.
-	 * </p>
+	 * <p><b>Note:</b> further properties may be defined by child classes.</p>
 	 * 
-	 * <p>Otherwise, it is assumed the property
-	 *  is for the underlying {@link ConditionalMutualInfoCalculatorMultiVariate#setProperty(String, String)} implementation.
-	 * </p>
+	 * <p>Unknown property values are ignored.</p>
 	 * 
 	 * @param propertyName name of the property
 	 * @param propertyValue value of the property.
-	 * @throws Exception if there is a problem with the supplied value
+	 * @throws Exception if there is a problem with the supplied value.
 	 */
 	public void setProperty(String propertyName, String propertyValue) throws Exception {
 		boolean propertySet = true;
@@ -359,6 +370,7 @@ public abstract class ConditionalTransferEntropyCalculatorViaCondMutualInfo impl
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ConditionalTransferEntropyCalculator#setObservations(double[], double[], double[][])
 	 */
+	@Override
 	public void setObservations(double[] source, double[] destination,
 			double[][] conditionals) throws Exception {
 		startAddObservations();
@@ -369,6 +381,7 @@ public abstract class ConditionalTransferEntropyCalculatorViaCondMutualInfo impl
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ConditionalTransferEntropyCalculator#setObservations(double[], double[], double[])
 	 */
+	@Override
 	public void setObservations(double[] source, double[] destination,
 			double[] conditionals) throws Exception {
 		if (condEmbedDims.length != 1) {
@@ -383,6 +396,7 @@ public abstract class ConditionalTransferEntropyCalculatorViaCondMutualInfo impl
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ConditionalTransferEntropyCalculator#startAddObservations()
 	 */
+	@Override
 	public void startAddObservations() {
 		condMiCalc.startAddObservations();
 	}
@@ -390,6 +404,7 @@ public abstract class ConditionalTransferEntropyCalculatorViaCondMutualInfo impl
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ConditionalTransferEntropyCalculator#addObservations(double[], double[], double[][])
 	 */
+	@Override
 	public void addObservations(double[] source, double[] destination,
 			double[][] conditionals) throws Exception {
 		if (source.length != destination.length) {
@@ -430,6 +445,7 @@ public abstract class ConditionalTransferEntropyCalculatorViaCondMutualInfo impl
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ConditionalTransferEntropyCalculator#addObservations(double[], double[], double[])
 	 */
+	@Override
 	public void addObservations(double[] source, double[] destination,
 			double[] conditionals) throws Exception {
 		if (condEmbedDims.length != 1) {
@@ -447,18 +463,22 @@ public abstract class ConditionalTransferEntropyCalculatorViaCondMutualInfo impl
 	}
 
 	/**
-	 * Internal method to take (pre-screened) vectors for a source, destination
+	 * Internal method to take (pre-screened) time-series for a source, destination
 	 *  and conditional variables, and embed them using the given embedding 
 	 *  parameters, as well as combining the destination past and conditionals,
 	 *  making all ready for a conditional MI calculation.
 	 * 
-	 * @param source source time series observations
-	 * @param destination destination time series observations
-	 * @param conditionals 2D array of conditional time series observations.
-	 * @return double[][][] returnValue; where returnValue[0] is the embedded
+	 * @param source source time-series observations
+	 * @param destination destination time-series observations.
+	 *  Length must match source.
+	 * @param conditionals 2D array of conditional time series observations
+	 *  (first index is time, second is variable number)
+	 *  Length must match source.
+	 * @return double[][][] returnValue: where returnValue[0] is the embedded
 	 *  source vectors, returnValue[1] is the destination next values,
 	 *  and returnValue[2] is the joined embedded destination past
-	 *  and conditionals.
+	 *  and conditionals. The first index of each of these is (shifted) time,
+	 *  the second is embedding variable number.
 	 * @throws Exception
 	 */
 	protected double[][][] embedSourceDestAndConditionalsForCondMI(double[] source, double[] destination,
@@ -506,6 +526,7 @@ public abstract class ConditionalTransferEntropyCalculatorViaCondMutualInfo impl
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ConditionalTransferEntropyCalculator#addObservations(double[], double[], double[][], int, int)
 	 */
+	@Override
 	public void addObservations(double[] source, double[] destination,
 			double[][] conditionals, int startTime, int numTimeSteps)
 			throws Exception {
@@ -538,6 +559,7 @@ public abstract class ConditionalTransferEntropyCalculatorViaCondMutualInfo impl
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ConditionalTransferEntropyCalculator#addObservations(double[], double[], double[], int, int)
 	 */
+	@Override
 	public void addObservations(double[] source, double[] destination,
 			double[] conditionals, int startTime, int numTimeSteps) throws Exception {
 		if (condEmbedDims.length != 1) {
@@ -557,6 +579,7 @@ public abstract class ConditionalTransferEntropyCalculatorViaCondMutualInfo impl
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ConditionalTransferEntropyCalculator#finaliseAddObservations()
 	 */
+	@Override
 	public void finaliseAddObservations() throws Exception {
 		condMiCalc.finaliseAddObservations();
 	}
@@ -564,6 +587,7 @@ public abstract class ConditionalTransferEntropyCalculatorViaCondMutualInfo impl
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ConditionalTransferEntropyCalculator#setObservations(double[], double[], double[][], boolean[], boolean[], boolean[][])
 	 */
+	@Override
 	public void setObservations(double[] source, double[] destination,
 			double[][] conditionals, boolean[] sourceValid,
 			boolean[] destValid, boolean[][] conditionalsValid)
@@ -700,19 +724,23 @@ public abstract class ConditionalTransferEntropyCalculatorViaCondMutualInfo impl
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ChannelCalculatorCommon#computeAverageLocalOfObservations()
 	 */
+	@Override
 	public double computeAverageLocalOfObservations() throws Exception {
 		return condMiCalc.computeAverageLocalOfObservations();
 	}
 
 	/**
-	 * Returns a time series of local conditional TE values.
-	 * Pads the first {@link #startTimeForFirstDestEmbedding} elements with zeros (since local TE is undefined here)
-	 *  if only one time series of observations was used.
-	 * Otherwise, local values for all separate series are concatenated, and without
-	 *  padding of zeros at the start.
-	 *  
-	 * @return an array of local TE values of the previously submitted observations.
+	 * Returns the time series of local conditional TE values
+	 * for the previously supplied observations.
+	 * 
+	 * {@inheritDoc} 
+	 * 
+	 * @return a time-series array of local TE values of the previously submitted observations.
+	 *  If only a single series was submitted, then the first
+	 *  {@link #startTimeForFirstDestEmbedding} steps are filled with zeros
+	 *  (since local conditional TE is undefined here)
 	 */
+	@Override
 	public double[] computeLocalOfPreviousObservations() throws Exception {
 		double[] local = condMiCalc.computeLocalOfPreviousObservations();
 		if (!condMiCalc.getAddedMoreThanOneObservationSet()) {
@@ -727,6 +755,7 @@ public abstract class ConditionalTransferEntropyCalculatorViaCondMutualInfo impl
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ConditionalTransferEntropyCalculator#computeLocalUsingPreviousObservations(double[], double[], double[][])
 	 */
+	@Override
 	public double[] computeLocalUsingPreviousObservations(
 			double[] newSourceObservations, double[] newDestObservations,
 			double[][] newCondObservations) throws Exception {
@@ -773,6 +802,7 @@ public abstract class ConditionalTransferEntropyCalculatorViaCondMutualInfo impl
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ConditionalTransferEntropyCalculator#computeLocalUsingPreviousObservations(double[], double[], double[])
 	 */
+	@Override
 	public double[] computeLocalUsingPreviousObservations(
 			double[] newSourceObservations, double[] newDestObservations,
 			double[] newCondObservations) throws Exception {
@@ -792,28 +822,34 @@ public abstract class ConditionalTransferEntropyCalculatorViaCondMutualInfo impl
 				newDestObservations, conditionalsIn2D);
 	}
 	
+	@Override
 	public EmpiricalMeasurementDistribution computeSignificance(
 			int numPermutationsToCheck) throws Exception {
 		return condMiCalc.computeSignificance(1, numPermutationsToCheck); // Reorder the source vectors
 	}
 
+	@Override
 	public EmpiricalMeasurementDistribution computeSignificance(
 			int[][] newOrderings) throws Exception {
 		return condMiCalc.computeSignificance(1, newOrderings); // Reorder the source vectors
 	}
 
+	@Override
 	public double getLastAverage() {
 		return condMiCalc.getLastAverage();
 	}
 
+	@Override
 	public int getNumObservations() throws Exception {
 		return condMiCalc.getNumObservations();
 	}
 	
+	@Override
 	public boolean getAddedMoreThanOneObservationSet() {
 		return condMiCalc.getAddedMoreThanOneObservationSet();
 	}
 
+	@Override
 	public void setDebug(boolean debug) {
 		this.debug = debug;
 		condMiCalc.setDebug(debug);

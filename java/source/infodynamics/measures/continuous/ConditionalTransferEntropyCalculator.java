@@ -19,31 +19,85 @@
 package infodynamics.measures.continuous;
 
 /**
- * <p>This specifies the interface for implementations of
- *  the conditional transfer entropy
- *  and local conditional transfer entropy
- *  (see Lizier et al. PRE, 2008, and Lizier et al., Chaos 2010).
+ * <p>Interface for implementations of the <b>conditional transfer entropy</b>
+ * (conditional TE), which may be applied to univariate continuous
+ * time-series data.
+ * That is, it is applied to <code>double[]</code> data, indexed
+ * by time.
+ * See Schreiber below for the definition of transfer entropy,
+ * and Lizier et al (2008, 2010). for the definition of local transfer entropy
+ * and conditional TE, which is TE conditioned on one or 
+ * more other potential sources.
+ * This is also called complete TE when all other causal sources
+ * are conditioned on.
+ * </p>
+ *  
+ * <p>
+ * Usage of the child classes implementing this interface is intended to follow this paradigm:
+ * </p>
+ * 	<ol>
+ * 		<li>Construct the calculator;</li>
+ * 		<li>Set properties using {@link #setProperty(String, String)}
+ * 			which may now include properties describing
+ * 			the source and destination embedding;</li>
+ *		<li>Initialise the calculator using
+ *			{@link #initialise()}, {@link #initialise(int)}
+ *			{@link #initialise(int, int, int)},
+ *			{@link #initialise(int, int, int, int, int, int, int, int)} or
+ *			{@link #initialise(int, int, int, int, int, int[], int[], int[])};</li>
+ * 		<li>Provide the observations/samples for the calculator
+ *      	to set up the PDFs, using:
+ * 			<ul>
+ * 				<li>{@link #setObservations(double[], double[], double[])},
+ * 					{@link #setObservations(double[], double[], double[][])} or
+ * 					{@link #setObservations(double[], double[], double[][], boolean[], boolean[], boolean[][])}
+ * 					for calculations based on single time-series, OR</li>
+ * 				<li>The following sequence:<ol>
+ * 						<li>{@link #startAddObservations()}, then</li>
+ * 						<li>One or more calls to
+ * 							{@link #addObservations(double[], double[], double[])},
+ * 							{@link #addObservations(double[], double[], double[][])},
+ * 							{@link #addObservations(double[], double[], double[], int, int)} or
+ * 							{@link #addObservations(double[], double[], double[][], int, int)}, then</li>
+ * 						<li>{@link #finaliseAddObservations()};</li>
+ * 					</ol></li>
+ * 			</ul>
+ * 		<li>Compute the required quantities, being one or more of:
+ * 			<ul>
+ * 				<li>the average conditional TE: {@link #computeAverageLocalOfObservations()};</li>
+ * 				<li>the local TE values for these samples: {@link #computeLocalOfPreviousObservations()};</li>
+ * 				<li>local TE values for a specific set of samples:
+ * 				{@link #computeLocalUsingPreviousObservations(double[], double[], double[])} or
+ * 				{@link #computeLocalUsingPreviousObservations(double[], double[], double[][])};</li>
+ * 				<li>the distribution of MI values under the null hypothesis
+ * 					of no relationship between source and
+ * 					destination values: {@link #computeSignificance(int)} or
+ * 					{@link #computeSignificance(int[][])}.</li>
+ * 			</ul>
+ * 		</li>
+ * 		<li>
+ * 		Return to step 2 or 3 to re-use the calculator on a new data set.
+ * 		</li>
+ * 	</ol>
  * </p>
  * 
- * <p>Specifically, this specifies the interface for computing
- * the transfer entropy for <i>continuous</i>-valued variables.</p>
- * 
- * @see "Schreiber, Physical Review Letters 85 (2) pp.461-464 (2000);
- *  <a href='http://dx.doi.org/10.1103/PhysRevLett.85.461'>download</a>
- *  (for definition of transfer entropy)"
- * @see "Lizier, Prokopenko and Zomaya, Physical Review E 77, 026110 (2008);
- * <a href='http://dx.doi.org/10.1103/PhysRevE.77.026110'>download</a>
- *  (for the extension to <i>conditional</i> transfer entropy 
- *  or <i>complete</i> where all other causal sources are conditioned on,
- *  and <i>local</i> transfer entropy)"
- * @see "Lizier, Prokopenko and Zomaya, Chaos 20, 3, 037109 (2010);
- * <a href='http://dx.doi.org/10.1063/1.3486801'>download</a>
- *  (for further clarification on <i>conditional</i> transfer entropy 
- *  or <i>complete</i> where all other causal sources are conditioned on)"
- *  
- * @author Joseph Lizier, <a href="joseph.lizier at gmail.com">email</a>,
- * <a href="http://lizier.me/joseph/">www</a>
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>T. Schreiber, <a href="http://dx.doi.org/10.1103/PhysRevLett.85.461">
+ * "Measuring information transfer"</a>,
+ *  Physical Review Letters 85 (2) pp.461-464, 2000.</li>
+ *  <li>J. T. Lizier, M. Prokopenko and A. Zomaya,
+ *  <a href="http://dx.doi.org/10.1103/PhysRevE.77.026110">
+ *  "Local information transfer as a spatiotemporal filter for complex systems"</a>
+ *  Physical Review E 77, 026110, 2008.</li>
+ *  <li>J. T. Lizier, M. Prokopenko and A. Zomaya,
+ *  <a href=http://dx.doi.org/10.1063/1.3486801">
+ *  "Information modification and particle collisions in distributed computation"</a>
+ *  Chaos 20, 3, 037109 (2010).</li>
+ * </ul>
  *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public interface ConditionalTransferEntropyCalculator extends ChannelCalculatorCommon {
 
@@ -52,19 +106,19 @@ public interface ConditionalTransferEntropyCalculator extends ChannelCalculatorC
 	 */
 	public static final String K_PROP_NAME = "k_HISTORY";	
 	/**
-	 * Embedding delay for the destination past history vector
+	 * Property name for embedding delay for the destination past history vector
 	 */
 	public static final String K_TAU_PROP_NAME = "k_TAU";
 	/**
-	 * Embedding length for the source past history vector
+	 * Property name for embedding length for the source past history vector
 	 */
 	public static final String L_PROP_NAME = "l_HISTORY";
 	/**
-	 * Embedding delay for the source past history vector
+	 * Property name for embedding delay for the source past history vector
 	 */
 	public static final String L_TAU_PROP_NAME = "l_TAU";
 	/**
-	 * Source-destination delay
+	 * Property name for source-destination delay
 	 */
 	public static final String DELAY_PROP_NAME = "DELAY";
 	/**
@@ -85,17 +139,18 @@ public interface ConditionalTransferEntropyCalculator extends ChannelCalculatorC
 	 * A new history length k can be supplied here; all other parameters
 	 * remain unchanged.
 	 * 
-	 * @param k history length to be considered.
+	 * @param k destination history embedding length to be considered.
 	 * @throws Exception
 	 */
 	public void initialise(int k) throws Exception;
 	
 	/**
-	 * Initialise the calculator for a single conditional
+	 * Initialise the calculator for re-use with a single conditional
 	 *  variable, with the given destination,
 	 *  source and conditional embedding length, setting all
 	 *  embedding delays to 1, and the source-dest and
 	 *  conditional-dest delays to 1.
+	 *  All other parameters remain unchanged.
 	 * 
 	 * @param k Length of destination past history to consider
 	 * @param l length of source past history to consider
@@ -106,8 +161,10 @@ public interface ConditionalTransferEntropyCalculator extends ChannelCalculatorC
 	public void initialise(int k, int l, int condEmbedDim) throws Exception;
 
 	/**
-	 * Initialise the calculator with all required parameters supplied,
+	 * Initialise the calculator with all required parameters for
+	 * embeddings and delays supplied,
 	 *  for a single conditional variable.
+	 * All other parameters remain unchanged.
 	 * 
 	 * @param k Length of destination past history to consider
 	 * @param k_tau embedding delay for the destination variable
@@ -121,13 +178,14 @@ public interface ConditionalTransferEntropyCalculator extends ChannelCalculatorC
 	 * @param condDelay time lags between last element of the conditional variable
 	 *  and destination next value.
 	 *  Ignored if condEmbedDim == 0.
-	 * @throws Exception for inconsistent arguments, e.g. if array lengths differ between 
-	 *  condEmbedDims, cond_taus and condDelays.
+	 * @throws Exception
 	 */
 	public void initialise(int k, int k_tau, int l, int l_tau, int delay,
 			int condEmbedDim, int cond_tau, int condDelay) throws Exception;
 	/**
-	 * Initialise the calculator with all required parameters supplied.
+	 * Initialise the calculator with all required parameters for
+	 * embeddings and delays supplied.
+	 * All other parameters remain unchanged.
 	 * 
 	 * @param k Length of destination past history to consider
 	 * @param k_tau embedding delay for the destination variable
@@ -147,53 +205,78 @@ public interface ConditionalTransferEntropyCalculator extends ChannelCalculatorC
 	public void initialise(int k, int k_tau, int l, int l_tau, int delay,
 			int[] condEmbedDims, int[] cond_taus, int[] condDelays) throws Exception;
 	
+	// Overriding the javadocs here, the method is already defined on ChannelCalculatorCommon
 	/**
-	 * <p>Set the given property to the given value.
-	 * New property values are not guaranteed to take effect until the next call
+	 * Sets properties for the conditional TE calculator.
+	 *  New property values are not guaranteed to take effect until the next call
 	 *  to an initialise method. 
-	 * These can include:
+	 *  
+	 * <p>Valid property names, and what their
+	 * values should represent, include:</p>
 	 * <ul>
-	 * 		<li>{@link #K_PROP_NAME}</li>
-	 * 		<li>{@link #K_TAU_PROP_NAME}</li>
-	 * 		<li>{@link #L_PROP_NAME}</li>
-	 * 		<li>{@link #L_TAU_PROP_NAME}</li>
-	 * 		<li>{@link #DELAY_PROP_NAME}</li>
-	 * 		<li>{@link #COND_EMBED_LENGTHS_PROP_NAME} -- as a comma separated integer list</li>
-	 * 		<li>{@link #COND_EMBED_DELAYS_PROP_NAME} -- as a comma separated integer list</li>
-	 * 		<li>{@link #COND_DELAYS_PROP_NAME} -- as a comma separated integer list</li>
+	 * 		<li>{@link #K_PROP_NAME} -- destination history embedding length k
+	 * 			(default value 1)</li>
+	 * 		<li>{@link #K_TAU_PROP_NAME} -- embedding delay for the destination past history vector
+	 * 			(default value 1)</li>
+	 * 		<li>{@link #L_PROP_NAME} -- embedding length for the source past history vector
+	 * 			(default value 1)</li>
+	 * 		<li>{@link #L_TAU_PROP_NAME} -- embedding delay for the source past history vector
+	 * 			(default value 1)</li>
+	 * 		<li>{@link #DELAY_PROP_NAME} -- source-destination delay (default value is 1)</li>
+	 * 		<li>{@link #COND_EMBED_LENGTHS_PROP_NAME} -- conditional variables embedding lengths
+	 * 			as a comma separated integer list (default value "1" for a single variable)</li>
+	 * 		<li>{@link #COND_EMBED_DELAYS_PROP_NAME} -- conditional variables embedding delays
+	 * 			as a comma separated integer list (default value "1" for a single variable)</li>
+	 * 		<li>{@link #COND_DELAYS_PROP_NAME} --  delays from the conditional variables to the destination
+	 * 			as a comma separated integer list (default value "1" for a single variable)</li>
 	 * </ul>
+	 * 
+	 * <p>While {@link #COND_EMBED_LENGTHS_PROP_NAME},
+	 * {@link #COND_EMBED_DELAYS_PROP_NAME} and {@link #COND_DELAYS_PROP_NAME}
+	 * may be set separately and may therefore be arrays of different
+	 * lengths, {@link #COND_EMBED_LENGTHS_PROP_NAME} acts as the master
+	 * from which we determine the number of conditional variables that we have,
+	 * and we will check that they have the same lengths at the next initialisation.</p>
+	 * 
+	 * <p><b>Note:</b> further properties may be defined by child classes.</p>
+	 * 
+	 * <p>Unknown property values are ignored.</p>
 	 * 
 	 * @param propertyName name of the property
 	 * @param propertyValue value of the property.
-	 * @throws Exception if there is a problem with the supplied value
-	 */	
+	 * @throws Exception if there is a problem with the supplied value, 
+	 * or if the property is recognised but unsupported.
+	 */
+	@Override
 	public void setProperty(String propertyName, String propertyValue) throws Exception;
 	
 	/**
-	 * <p>Sets the single set of observations to compute the PDFs from.
-	 * Cannot be called in conjunction with 
-	 * {@link #startAddObservations()}/{@link #addObservations(double[], double[], double[][])} /
-	 * {@link #finaliseAddObservations()}.</p>
+	 * Sets the single time-series from which to compute the PDFs.
+	 * Cannot be called in conjunction with other methods for setting/adding
+	 * observations.
 	 * 
-	 * @param source observations for the source variable
-	 * @param destination observations for the destination variable
-	 * @param conditionals 2D time series array for the conditional variables
-	 *        (first index is time, second index is variable number)
+	 * @param source time-series of observations for the source variable. 
+	 * @param destination time-series of observations for the destination
+	 *  variable. Length must match <code>source</code>.
+	 * @param conditionals 2D time-series array for the conditional variables
+	 *        (first index is time, second index is variable number).
+	 *        Length must match <code>source</code>.
 	 * @throws Exception
 	 */
 	public void setObservations(double[] source, double[] destination, double[][] conditionals) throws Exception;
 	
 	/**
-	 * <p>Sets the single set of observations to compute the PDFs from.
-	 * Cannot be called in conjunction with 
-	 * {@link #startAddObservations()}/{@link #addObservations(double[], double[], double[][])} /
-	 * {@link #finaliseAddObservations()}.</p>
+	 * Sets the single time-series from which to compute the PDFs.
+	 * Cannot be called in conjunction with other methods for setting/adding
+	 * observations.
 	 * 
-	 * @param source observations for the source variable
-	 * @param destination observations for the destination variable
+	 * @param source time-series of observations for the source variable. 
+	 * @param destination time-series of observations for the destination
+	 *  variable. Length must match <code>source</code>.
 	 * @param conditionals 1D time series array for the conditional variables
-	 *        -- valid only if the calculator was initialised for a single
-	 *        conditional variable.
+	 *        (indexed by time only) -- valid only if the calculator
+	 *        was initialised for a single conditional variable.
+	 *        Length must match <code>source</code>.
 	 * @throws Exception for example if the calculator was not initialised for
 	 *        a single conditional variable
 	 */
@@ -206,20 +289,20 @@ public interface ConditionalTransferEntropyCalculator extends ChannelCalculatorC
 	 * {@link #finaliseAddObservations()} once all observations have
 	 * been supplied.</p>
 	 * 
-	 * <p><b>Important:</b> this does not append these observations to the previously
-	 *  supplied observations, but treats them independently - i.e. measurements
-	 *  such as the transfer entropy will not join them up to examine k
-	 *  consecutive values in time.</p>
+	 * <p><b>Important:</b> this does not append/concatenate these observations to the previously
+	 *  supplied observations, but treats them independently.</p>
 	 *  
 	 * <p>Note that the arrays source, destination and conditionals must not be over-written by the user
 	 *  until after finaliseAddObservations() has been called
 	 *  (they are not copied by this method necessarily, but the method
 	 *  may simply hold a pointer to them).</p>
 	 * 
-	 * @param source observations for the source variable
-	 * @param destination observations for the destination variable
-	 * @param conditionals 2D time series array for the conditional variables
-	 *        (first index is time, second index is variable number)
+	 * @param source time-series observations for the source variable
+	 * @param destination time-series of observations for the destination
+	 *  variable. Length must match <code>source</code>.
+	 * @param conditionals 2D time-series array for the conditional variables
+	 *        (first index is time, second index is variable number).
+	 *        Length must match <code>source</code>.
 	 * @throws Exception
 	 */
 	public void addObservations(double[] source, double[] destination,  double[][] conditionals) throws Exception;
@@ -231,47 +314,47 @@ public interface ConditionalTransferEntropyCalculator extends ChannelCalculatorC
 	 * {@link #finaliseAddObservations()} once all observations have
 	 * been supplied.</p>
 	 * 
-	 * <p><b>Important:</b> this does not append these observations to the previously
-	 *  supplied observations, but treats them independently - i.e. measurements
-	 *  such as the transfer entropy will not join them up to examine k
-	 *  consecutive values in time.</p>
+	 * <p><b>Important:</b> this does not append/concatenate these observations to the previously
+	 *  supplied observations, but treats them independently.</p>
 	 *  
 	 * <p>Note that the arrays source, destination and conditionals must not be over-written by the user
 	 *  until after finaliseAddObservations() has been called
 	 *  (they are not copied by this method necessarily, but the method
 	 *  may simply hold a pointer to them).</p>
 	 * 
-	 * @param source observations for the source variable
-	 * @param destination observations for the destination variable
+	 * @param source time-series observations for the source variable
+	 * @param destination time-series of observations for the destination
+	 *  variable. Length must match <code>source</code>.
 	 * @param conditionals 1D time series array for the conditional variables
-	 *        -- valid only if the calculator was initialised for a single
-	 *        conditional variable.
+	 *        (indexed by time only) -- valid only if the calculator
+	 *        was initialised for a single conditional variable.
+	 *        Length must match <code>source</code>.
 	 * @throws Exception for example if the calculator was not initialised for
 	 *        a single conditional variable
 	 */
 	public void addObservations(double[] source, double[] destination,  double[] conditionals) throws Exception;
 
 	/**
-	 * <p>Adds a new set of observations to update the PDFs with - is
+	 * <p>Adds a new sub-series of observations to update the PDFs with - is
 	 * intended to be called multiple times.
 	 * Must be called after {@link #startAddObservations()}; call
 	 * {@link #finaliseAddObservations()} once all observations have
 	 * been supplied.</p>
 	 * 
-	 * <p><b>Important:</b> this does not append these observations to the previously
-	 *  supplied observations, but treats them independently - i.e. measurements
-	 *  such as the transfer entropy will not join them up to examine k
-	 *  consecutive values in time.</p>
+	 * <p><b>Important:</b> this does not append/concatenate these observations to the previously
+	 *  supplied observations, but treats them independently.</p>
 	 *  
 	 * <p>Note that the arrays source, destination and conditionals must not be over-written by the user
 	 *  until after finaliseAddObservations() has been called
 	 *  (they are not copied by this method necessarily, but the method
 	 *  may simply hold a pointer to them).</p>
 	 * 
-	 * @param source observations for the source variable
-	 * @param destination observations for the destination variable
-	 * @param conditionals 2D time series array for the conditional variables
-	 *        (first index is time, second index is variable number)
+	 * @param source time-series observations for the source variable
+	 * @param destination time-series of observations for the destination
+	 *  variable. Length must match <code>source</code>.
+	 * @param conditionals 2D time-series array for the conditional variables
+	 *        (first index is time, second index is variable number).
+	 *        Length must match <code>source</code>.
 	 * @param startTime first time index to take observations on
 	 * @param numTimeSteps number of time steps to use
 	 * @throws Exception
@@ -281,27 +364,27 @@ public interface ConditionalTransferEntropyCalculator extends ChannelCalculatorC
 			int startTime, int numTimeSteps) throws Exception ;
 
 	/**
-	 * <p>Adds a new set of observations to update the PDFs with - is
+	 * <p>Adds a new sub-series of observations to update the PDFs with - is
 	 * intended to be called multiple times.
 	 * Must be called after {@link #startAddObservations()}; call
 	 * {@link #finaliseAddObservations()} once all observations have
 	 * been supplied.</p>
 	 * 
-	 * <p><b>Important:</b> this does not append these observations to the previously
-	 *  supplied observations, but treats them independently - i.e. measurements
-	 *  such as the transfer entropy will not join them up to examine k
-	 *  consecutive values in time.</p>
+	 * <p><b>Important:</b> this does not append/concatenate these observations to the previously
+	 *  supplied observations, but treats them independently.</p>
 	 *  
 	 * <p>Note that the arrays source, destination and conditionals must not be over-written by the user
 	 *  until after finaliseAddObservations() has been called
 	 *  (they are not copied by this method necessarily, but the method
 	 *  may simply hold a pointer to them).</p>
 	 * 
-	 * @param source observations for the source variable
-	 * @param destination observations for the destination variable
-	 * @param conditionals 1D time series array for the conditional variables
-	 *        -- valid only if the calculator was initialised for a single
-	 *        conditional variable.
+	 * @param source time-series observations for the source variable
+	 * @param destination time-series of observations for the destination
+	 *  variable. Length must match <code>source</code>.
+	 * @param conditionals 1D time-series array for the conditional variables
+	 *        (indexed by time only) -- valid only if the calculator
+	 *        was initialised for a single conditional variable.
+	 *        Length must match <code>source</code>.
 	 * @param startTime first time index to take observations on
 	 * @param numTimeSteps number of time steps to use
 	 * @throws Exception for example if the calculator was not initialised for
@@ -312,20 +395,23 @@ public interface ConditionalTransferEntropyCalculator extends ChannelCalculatorC
 			int startTime, int numTimeSteps) throws Exception ;
 
 	/**
-	 * <p>Sets the single set of observations to compute the PDFs from.
+	 * <p>Sets the single set of observations to compute the PDFs from,
+	 * but only where these observations are indicated to be valid.
 	 * Cannot be called in conjunction with 
 	 * {@link #startAddObservations()}/{@link #addObservations(double[], double[])} /
 	 * {@link #finaliseAddObservations()}.</p>
 	 * 
-	 * @param source observations for the source variable
-	 * @param destination observations for the destination variable
-	 * @param conditionals 2D time series array for the conditional variables
-	 *        (first index is time, second index is variable number)
-	 * @param sourceValid time series (with time indices the same as source)
+	 * @param source time-series observations for the source variable
+	 * @param destination time-series of observations for the destination
+	 *  variable. Length must match <code>source</code>.
+	 * @param conditionals 2D time-series array for the conditional variables
+	 *        (first index is time, second index is variable number).
+	 *        Length must match <code>source</code>.
+	 * @param sourceValid time-series (with time indices the same as source)
 	 *  indicating whether the source at that point is valid.
-	 * @param destValid time series (with time indices the same as destination)
+	 * @param destValid time-series (with time indices the same as destination)
 	 *  indicating whether the destination at that point is valid.
-	 * @param conditionalsValid 2D time series (with time indices the same as conditionals)
+	 * @param conditionalsValid 2D time-series (with time indices the same as conditionals)
 	 *  indicating whether the conditional variables at that point are valid.
 	 * @throws Exception
 	 */
@@ -335,13 +421,18 @@ public interface ConditionalTransferEntropyCalculator extends ChannelCalculatorC
 
 	/**
 	 * Compute local conditional transfer entropy values for the
-	 *  observations in the given parameters,
+	 *  observations in the given time-series,
 	 *  using the PDFs computed from the previously supplied method calls.
 	 * 
-	 * @param newSourceObservations new observations for the source variable
-	 * @param newDestObservations new observations for the destination variable
-	 * @param newCondObservations new observations for the conditional variables
-	 * @return
+	 * @param newSourceObservations new time-series observations for the source variable
+	 * @param newDestObservations new time-series of observations for the destination
+	 *  variable. Length must match <code>source</code>.
+	 * @param newCondObservations new 2D time-series array for the conditional variables
+	 *        (first index is time, second index is variable number).
+	 *        Length must match <code>source</code>.
+	 * @return the time-series of local conditional TE values.
+	 *        First values will be set to zero until enough samples are
+	 *        accumulated to embed the variables as per the parameter settings.
 	 * @throws Exception
 	 */
 	public double[] computeLocalUsingPreviousObservations(
@@ -353,12 +444,16 @@ public interface ConditionalTransferEntropyCalculator extends ChannelCalculatorC
 	 *  observations in the given parameters,
 	 *  using the PDFs computed from the previously supplied method calls.
 	 * 
-	 * @param newSourceObservations new observations for the source variable
-	 * @param newDestObservations new observations for the destination variable
-	 * @param newCondObservations 1D time series array for the conditional variables
-	 *        -- valid only if the calculator was initialised for a single
-	 *        conditional variable.
-	 * @return
+	 * @param newSourceObservations new time-series observations for the source variable
+	 * @param newDestObservations new time-series of observations for the destination
+	 *  variable. Length must match <code>source</code>.
+	 * @param newCondObservations new 1D time-series array for the conditional variables
+	 *        (indexed by time only) -- valid only if the calculator
+	 *        was initialised for a single conditional variable.
+	 *        Length must match <code>source</code>.
+	 * @return the time-series of local conditional TE values.
+	 *        First values will be set to zero until enough samples are
+	 *        accumulated to embed the variables as per the parameter settings.
 	 * @throws Exception for example if the calculator was not initialised for
 	 *        a single conditional variable
 	 */

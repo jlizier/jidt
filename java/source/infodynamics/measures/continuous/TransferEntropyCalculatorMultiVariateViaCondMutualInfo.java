@@ -23,44 +23,56 @@ import java.util.Vector;
 import infodynamics.utils.MatrixUtils;
 
 /**
+ * A Multivariate Transfer Entropy (TE) calculator (implementing
+ * {@link TransferEntropyCalculatorMultiVariate})
+ * which is affected using a 
+ * given Conditional Mutual Information (MI) calculator (implementing
+ * {@link ConditionalMutualInfoCalculatorMultiVariate}) to make the calculations.
  * 
- * <p>Transfer entropy calculator for multivariate source and destination
- * which is implemented using a 
- * Conditional Mutual Information calculator.
+ * <p>Usage is as per the paradigm outlined for {@link TransferEntropyCalculatorMultiVariate},
+ * except that in the constructor(s) for this class the implementation for
+ * a {@link ConditionalMutualInfoCalculatorMultiVariate} must be supplied.
  * </p>
  * 
- * <p>This implementation inherits from the TransferEntropyCalculatorViaCondMutualInfo,
+ * <p>This class <i>may</i> be used directly, however users are advised that
+ * several child classes are available which already plug-in the various
+ * conditional MI estimators
+ * to provide TE calculators (taking specific caution associated with
+ * each type of estimator):</p>
+ * <ul>
+ * 	<li>{@link infodynamics.measures.continuous.gaussian.TransferEntropyCalculatorMultiVariateGaussian}</li>
+ * 	<li>{@link infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorMultiVariateKraskov}</li>
+ * </ul>
+ * 
+ * <p>This implementation inherits from the {@link TransferEntropyCalculatorViaCondMutualInfo},
  * so the univariate methods for adding observations etc are still available, however
  * they will throw Exceptions if this calculator was not initialised for single
  * dimensional data sets.
  * </p>
  * 
- * TODO Delete TransferEntropyCalculatorCommon once we've switched everything over to use this?
- * Might be useful to leave it after all, and move common functionality from here to there.
- * 
- * TODO Switch the properties like l etc into TransferEntropyCalculator
- * once all TE calculators follow this class.
- * 
- * @see "Schreiber, Physical Review Letters 85 (2) pp.461-464, 2000;
- *  <a href='http://dx.doi.org/10.1103/PhysRevLett.85.461'>download</a>
- *  (for definition of transfer entropy)"
- * @see "Lizier, Prokopenko and Zomaya, Physical Review E 77, 026110, 2008;
- * <a href='http://dx.doi.org/10.1103/PhysRevE.77.026110'>download</a>
- *  (for definition of <i>local</i> transfer entropy and qualification
- *  of naming it as <i>apparent</i> transfer entropy)"
- * @see "J.T. Lizier, J. Heinzle, A. Horstmann, J.-D. Haynes, M. Prokopenko,
- * Journal of Computational Neuroscience, vol. 30, pp. 85-107, 2011
- * <a href='http://dx.doi.org/10.1007/s10827-010-0271-2'>download</a>
- * (for definition of <i>multivariate</i> transfer entropy"
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>T. Schreiber, <a href="http://dx.doi.org/10.1103/PhysRevLett.85.461">
+ * "Measuring information transfer"</a>,
+ *  Physical Review Letters 85 (2) pp.461-464, 2000.</li>
+ *  <li>J. T. Lizier, M. Prokopenko and A. Zomaya,
+ *  <a href="http://dx.doi.org/10.1103/PhysRevE.77.026110">
+ *  "Local information transfer as a spatiotemporal filter for complex systems"</a>
+ *  Physical Review E 77, 026110, 2008.</li>
+ *  <li>J.T. Lizier, J. Heinzle, A. Horstmann, J.-D. Haynes, M. Prokopenko,
+ *  <a href="http://dx.doi.org/10.1007/s10827-010-0271-2">
+ *  "Multivariate information-theoretic measures reveal directed information
+ *  structure and task relevant changes in fMRI connectivity"</a>,
+ *  Journal of Computational Neuroscience, vol. 30, pp. 85-107, 2011.</li>
+ * </ul>
  *  
- * @see {@link TransferEntropyCalculatorViaCondMutualInfo}
- * @see {@link TransferEntropyCalculatorMultiVariate}
- * @see {@link TransferEntropyCalculator}
- * 
  * @author Joseph Lizier, <a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>
+ * @see TransferEntropyCalculatorViaCondMutualInfo
+ * @see TransferEntropyCalculatorMultiVariate
+ * @see TransferEntropyCalculator
  */
-public abstract class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
+public class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
 		extends TransferEntropyCalculatorViaCondMutualInfo
 		// which means we implement TransferEntropyCalculator 
 		implements TransferEntropyCalculatorMultiVariate {
@@ -74,11 +86,33 @@ public abstract class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
 	 */
 	protected int sourceDimensions = 1;
 
+	/**
+	 * Construct a transfer entropy calculator using an instance of
+	 * condMiCalculatorClassName as the underlying conditional mutual information calculator.
+	 * 
+	 * @param condMiCalculatorClassName fully qualified name of the class which must implement
+	 * 	{@link ConditionalMutualInfoCalculatorMultiVariate}
+	 * @throws InstantiationException if the given class cannot be instantiated
+	 * @throws IllegalAccessException if illegal access occurs while trying to create an instance
+	 *   of the class
+	 * @throws ClassNotFoundException if the given class is not found
+	 */
 	public TransferEntropyCalculatorMultiVariateViaCondMutualInfo(String condMiCalculatorClassName)
 			throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		super(condMiCalculatorClassName);
 	}
 
+	/**
+	 * Construct a transfer entropy calculator using an instance of
+	 * condMiCalcClass as the underlying conditional mutual information calculator.
+	 * 
+	 * @param condMiCalcClass the class which must implement
+	 * 	{@link ConditionalMutualInfoCalculatorMultiVariate}
+	 * @throws InstantiationException if the given class cannot be instantiated
+	 * @throws IllegalAccessException if illegal access occurs while trying to create an instance
+	 *   of the class
+	 * @throws ClassNotFoundException if the given class is not found
+	 */
 	public TransferEntropyCalculatorMultiVariateViaCondMutualInfo(Class<ConditionalMutualInfoCalculatorMultiVariate> condMiCalcClass)
 			throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		super(condMiCalcClass);
@@ -88,8 +122,8 @@ public abstract class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
 	 * Construct this calculator by passing in a constructed but not initialised
 	 * underlying Conditional Mutual information calculator.
 	 * 
-	 * @param condMiCalc
-	 * @throws Exception 
+	 * @param condMiCalc An instantiated conditional mutual information calculator.
+	 * @throws Exception if the supplied calculator has not yet been instantiated.
 	 */
 	public TransferEntropyCalculatorMultiVariateViaCondMutualInfo(ConditionalMutualInfoCalculatorMultiVariate condMiCalc) throws Exception {
 		super(condMiCalc);
@@ -98,6 +132,7 @@ public abstract class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ChannelCalculatorMultiVariate#initialise(int, int)
 	 */
+	@Override
 	public void initialise(int sourceDimensions, int destDimensions)
 			throws Exception {
 		initialise(sourceDimensions, destDimensions, k, k_tau, l, l_tau, delay);
@@ -106,6 +141,7 @@ public abstract class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.TransferEntropyCalculatorMultiVariate#initialise(int, int, int)
 	 */
+	@Override
 	public void initialise(int k, int sourceDimensions, int destDimensions)
 			throws Exception {
 		initialise(sourceDimensions, destDimensions, k, k_tau, l, l_tau, delay);
@@ -121,7 +157,11 @@ public abstract class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
 	}
 
 	/**
-	 * Initialise the calculator.
+	 * Initialise the calculator for re-use with new observations.
+	 * New embedding parameters, source and dest dimensions
+	 * and source-destination delay
+	 * may be supplied here; all other parameters
+	 * remain unchanged.
 	 * 
 	 * @param sourceDimensions dimensionality of the source variable
 	 * @param destDimensions dimensionality of the destination variable
@@ -157,18 +197,17 @@ public abstract class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
 	}
 
 	/**
-	 * <p>Sets the single set of observations to compute the PDFs from.
-	 * Cannot be called in conjunction with 
-	 * {@link #startAddObservations()}/{@link #addObservations(double[], double[])} /
-	 * {@link #finaliseAddObservations()}.</p>
-	 * 
-	 * <p>Can only be called on this multivariate calculator if the dimensions
+	 * <p>Sets a single set of <b>univariate</b> observations to compute the PDFs from.
+	 * Can only be called on this multivariate calculator if the dimensions
 	 * of both source and destination are 1, otherwise throws an exception</p>
+	 * 
+	 * {@inheritDoc}
 	 * 
 	 * @param source univariate observations for the source variable
 	 * @param destination univariate observations for the destination variable
-	 * @throws Exception
+	 * @throws Exception if initialised dimensions were not 1
 	 */
+	@Override
 	public void setObservations(double[] source, double[] destination) throws Exception {
 		
 		if ((sourceDimensions != 1) || (destDimensions != 1)) {
@@ -182,6 +221,7 @@ public abstract class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ChannelCalculatorMultiVariate#setObservations(double[][], double[][])
 	 */
+	@Override
 	public void setObservations(double[][] source, double[][] destination)
 			throws Exception {
 		if (source.length != destination.length) {
@@ -208,17 +248,18 @@ public abstract class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
 	}
 
 	/**
-	 * <p>Adds new observations for the PDFs, as specified in 
-	 * {@link ChannelCalculator#addObservations(double[], double[])}.</p>
-	 * 
-	 * <p>Can only be called on this multivariate calculator if the dimensions
+	 * <p>Adds a new set of <b>univariate</b> observations to compute the PDFs from.
+	 * Can only be called on this multivariate calculator if the dimensions
 	 * of both source and destination are 1, otherwise throws an exception</p>
+	 * 
+	 * {@inheritDoc}
 	 * 
 	 * @param source univariate observations for the source variable
 	 * @param destination univariate observations for the destination variable
-	 * @throws Exception
+	 * @throws Exception if initialised dimensions were not 1
 	 * @see {@link ChannelCalculator#addObservations(double[], double[])}
 	 */
+	@Override
 	public void addObservations(double[] source, double[] destination) throws Exception {
 
 		if ((sourceDimensions != 1) || (destDimensions != 1)) {
@@ -231,6 +272,7 @@ public abstract class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ChannelCalculatorMultiVariate#addObservations(double[][], double[][])
 	 */
+	@Override
 	public void addObservations(double[][] source, double[][] destination)
 			throws Exception {
 		if (source.length != destination.length) {
@@ -259,19 +301,18 @@ public abstract class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
 	}
 
 	/**
-	 * <p>Adds new observations for the PDFs, as specified in 
-	 * {@link ChannelCalculator#addObservations(double[], double[], int, int)}.</p>
-	 * 
-	 * <p>Can only be called on this multivariate calculator if the dimensions
+	 * <p>Adds a new sub-series of <b>univariate</b> observations to compute the PDFs from.
+	 * Can only be called on this multivariate calculator if the dimensions
 	 * of both source and destination are 1, otherwise throws an exception</p>
+	 * 
+	 * {@inheritDoc}
 	 * 
 	 * @param source univariate observations for the source variable
 	 * @param destination univariate observations for the destination variable
-	 * @param startTime time index to start taking the observations
-	 * @param numTimeSteps number of time steps including startTime to take for observations
-	 * @throws Exception
+	 * @throws Exception if initialised dimensions were not 1
 	 * @see {@link ChannelCalculator#addObservations(double[], double[], int, int)}
 	 */
+	@Override
 	public void addObservations(double[] source, double[] destination,
 			int startTime, int numTimeSteps) throws Exception {
 		if ((sourceDimensions != 1) || (destDimensions != 1)) {
@@ -284,6 +325,7 @@ public abstract class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ChannelCalculatorMultiVariate#addObservations(double[][], double[][], int, int)
 	 */
+	@Override
 	public void addObservations(double[][] source, double[][] destination,
 			int startTime, int numTimeSteps) throws Exception {
 		if (source.length != destination.length) {
@@ -299,19 +341,15 @@ public abstract class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
 	}
 
 	/**
-	 * <p>Sets new observations for the PDFs, as specified in 
-	 * {@link ChannelCalculator#setObservations(double[], double[], boolean[], boolean[])}.</p>
-	 * 
-	 * <p>Can only be called on this multivariate calculator if the dimensions
+	 * <p>Adds a new sub-series of <b>univariate</b> observations to compute the PDFs from.
+	 * Can only be called on this multivariate calculator if the dimensions
 	 * of both source and destination are 1, otherwise throws an exception</p>
+	 * 
+	 * {@inheritDoc}
 	 * 
 	 * @param source univariate observations for the source variable
 	 * @param destination univariate observations for the destination variable
-	 * @param sourceValid time series (with time indices the same as source)
-	 *  indicating whether the source at that point is valid.
-	 * @param destValid time series (with time indices the same as destination)
-	 *  indicating whether the destination at that point is valid.
-	 * @throws Exception
+	 * @throws Exception if initialised dimensions were not 1
 	 * @see {@link ChannelCalculator#setObservations(double[], double[], boolean[], boolean[])}
 	 */
 	public void setObservations(double[] source, double[] destination,
@@ -327,6 +365,7 @@ public abstract class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ChannelCalculatorMultiVariate#setObservations(double[][], double[][], boolean[], boolean[])
 	 */
+	@Override
 	public void setObservations(double[][] source, double[][] destination,
 			boolean[] sourceValid, boolean[] destValid) throws Exception {
 		
@@ -345,6 +384,7 @@ public abstract class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ChannelCalculatorMultiVariate#setObservations(double[][], double[][], boolean[][], boolean[][])
 	 */
+	@Override
 	public void setObservations(double[][] source, double[][] destination,
 			boolean[][] sourceValid, boolean[][] destValid) throws Exception {
 		boolean[] jointSourceValid = MatrixUtils.andRows(sourceValid);
@@ -354,19 +394,18 @@ public abstract class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
 
 	/**
 	 * <p>Computes the local values of the transfer entropy
-	 *  for each valid observation in the supplied observations,
-	 *  as specified in ...
-	 *  TODO I don't think this is specified in any interfaces yet ...?
-	 *  </p>
-	 *  
-	 * <p>Can only be called on this multivariate calculator if the dimensions
+	 *  for each valid observation in the supplied univariate observations
+	 * Can only be called on this multivariate calculator if the dimensions
 	 * of both source and destination are 1, otherwise throws an exception</p>
+	 * 
+	 * {@inheritDoc}
 	 * 
 	 * @param newSourceObservations univariate observations for the source variable
 	 * @param newDestObservations univariate observations for the destination variable
-	 * @throws Exception
+	 * @throws Exception if initialised dimensions were not 1
 	 */
-	public double[] computeLocalUsingPreviousObservations(double[] newSourceObservations, double[] newDestObservations) throws Exception {
+	public double[] computeLocalUsingPreviousObservations(double[] newSourceObservations,
+			double[] newDestObservations) throws Exception {
 
 		if ((sourceDimensions != 1) || (destDimensions != 1)) {
 			throw new Exception("Cannot call the univariate computeLocalUsingPreviousObservations if you " +
@@ -375,18 +414,9 @@ public abstract class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
 		return super.computeLocalUsingPreviousObservations(newSourceObservations, newDestObservations);
 	}
 	
-	/**
-	 * <p>Computes the local values of the transfer entropy
-	 *  for each valid observation in the supplied observations,
-	 *  as specified in ...
-	 *  TODO I don't think this is specified in any interfaces yet ...?
-	 *  </p>
-	 *  
-	 * @param newSourceObservations multivariate observations for the source variable
-	 * @param newDestObservations multivariate observations for the destination variable
-	 * @throws Exception
-	 */
-	public double[] computeLocalUsingPreviousObservations(double[][] newSourceObservations, double[][] newDestObservations) throws Exception {
+	@Override
+	public double[] computeLocalUsingPreviousObservations(double[][] newSourceObservations,
+			double[][] newDestObservations) throws Exception {
 		if (newSourceObservations.length != newDestObservations.length) {
 			throw new Exception(String.format("Source and destination lengths (%d and %d) must match!",
 					newSourceObservations.length, newDestObservations.length));

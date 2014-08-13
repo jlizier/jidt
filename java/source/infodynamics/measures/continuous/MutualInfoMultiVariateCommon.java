@@ -26,23 +26,31 @@ import java.util.Iterator;
 import java.util.Vector;
 
 /**
- * <p>Base class for implementations of {@link MutualInfoCalculatorMultiVariate},
- * e.g. kernel estimation, Kraskov style extensions.
- * It implements some common code to be used across mutual information calculators
+ * Implements {@link MutualInfoCalculatorMultiVariate} to provide a base
+ * class with common functionality for child class implementations of
+ * {@link MutualInfoCalculatorMultiVariate}
+ * via various estimators. 
+ * 
+ * <p>These various estimators include: e.g. box-kernel estimation, KSG estimators, etc
+ * (see the child classes linked above).
  * </p>
  * 
+ * <p>Usage is as outlined in {@link MutualInfoCalculatorMultiVariate}.</p>
  * 
- * @author Joseph Lizier, joseph.lizier at gmail.com
- *
- */
+  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
+*/
 public abstract class MutualInfoMultiVariateCommon implements
 		MutualInfoCalculatorMultiVariate {
 
 	/**
-	 * Number of dimenions for each of our multivariate data sets
+	 * Number of dimenions for our source multivariate data set
+	 */
+	protected int dimensionsSource = 1;
+	/**
+	 * Number of dimenions for our destination multivariate data set
 	 */
 	protected int dimensionsDest = 1;
-	protected int dimensionsSource = 1;
 	
 	/**
 	 * The set of source observations, retained in case the user wants to retrieve the local
@@ -67,7 +75,7 @@ public abstract class MutualInfoMultiVariateCommon implements
 	protected int totalObservations = 0;
 
 	/**
-	 * Store the last computed average
+	 * Store the last computed average MI
 	 */
 	protected double lastAverage;
 
@@ -84,22 +92,26 @@ public abstract class MutualInfoMultiVariateCommon implements
 
 	/**
 	 * Time difference from the source to the destination observations
-	 *  (i.e. destination lags the source by this time:
-	 *  	we compute I(x_{1,n}; x_{2,n+timeDiff})
+	 *  (ie destination lags the source by this time:
+	 *  	we compute I(source_{n}; dest_{n+timeDiff}).
 	 * (Note that our internal sourceObservations and destObservations
 	 *  are adjusted so that there is no timeDiff between them).
 	 */
 	protected int timeDiff = 0;
 
 	/**
-	 * Storage for source observations for addObservsations
+	 * Storage for source observations supplied via {@link #addObservations(double[][], double[][])}
+	 * type calls
 	 */
 	protected Vector<double[][]> vectorOfSourceObservations;
 	/**
-	 * Storage for destination observations for addObservsations
+	 * Storage for destination observations supplied via {@link #addObservations(double[][], double[][])}
+	 * type calls
 	 */
 	protected Vector<double[][]> vectorOfDestinationObservations;
-	
+	/**
+	 * Whether the user has supplied more than one (disjoint) set of samples
+	 */
 	protected boolean addedMoreThanOneObservationSet;
 
 	/* (non-Javadoc)
@@ -109,13 +121,6 @@ public abstract class MutualInfoMultiVariateCommon implements
 		initialise(dimensionsSource, dimensionsDest);
 	}
 
-	/**
-	 * Clear any previously supplied probability distributions and prepare
-	 * the calculator to be used again.
-	 * 
-	 * @param sourceDimensions number of joint variables in the source
-	 * @param destDimensions number of joint variables in the destination
-	 */
 	public void initialise(int sourceDimensions, int destDimensions) {
 		dimensionsSource = sourceDimensions;
 		dimensionsDest = destDimensions;
@@ -127,17 +132,24 @@ public abstract class MutualInfoMultiVariateCommon implements
 	}
 
 	/**
-	 * <p>Set the given property to the given value.
-	 * 	New property values are not guaranteed to take effect until the next call
+	 * Set properties for the calculator.
+	 * New property values are not guaranteed to take effect until the next call
 	 *  to an initialise method. 
-	 * These can include:
+	 * 
+	 * <p>Valid property names, and what their
+	 * values should represent, include:</p>
 	 * <ul>
-	 * 		<li>{@link MutualInfoCalculatorMultiVariate#PROP_TIME_DIFF}</li>
+	 * 		<li>{@link MutualInfoCalculatorMultiVariate#PROP_TIME_DIFF} --
+	 *  		Time difference between source and destination (0 by default).
+	 * 			Must be >= 0.
+	 * 		</li>
 	 * </ul>
 	 * 
+	 * <p>Unknown property values are ignored.</p>
+	 * 
 	 * @param propertyName name of the property
-	 * @param propertyValue value of the property.
-	 * @throws Exception if there is a problem with the supplied value
+	 * @param propertyValue value of the property
+	 * @throws Exception for invalid property values
 	 */
 	public void setProperty(String propertyName, String propertyValue)
 			throws Exception {
@@ -162,18 +174,6 @@ public abstract class MutualInfoMultiVariateCommon implements
 		}
 	}
 
-	/**
-	 * Provide the complete set of observations to use to compute the
-	 *  mutual information.
-	 * One cannot use the {@link #addObservations(double[][], double[][])}
-	 *  style methods after this without calling 
-	 *  {@link #initialise(int, int)} again first.
-	 * 
-	 * @param source time series of multivariate source observations (first
-	 *  index is time, second is variable number)
-	 * @param destination time series of multivariate destination observations (first
-	 *  index is time, second is variable number)
-	 */
 	public void setObservations(double[][] source, double[][] destination) throws Exception {
 		startAddObservations();
 		addObservations(source, destination);
@@ -181,23 +181,11 @@ public abstract class MutualInfoMultiVariateCommon implements
 		addedMoreThanOneObservationSet = false;
 	}
 
-	/**
-	 * Elect to add in the observations from several disjoint time series.
-	 *
-	 */
 	public void startAddObservations() {
 		vectorOfSourceObservations = new Vector<double[][]>();
 		vectorOfDestinationObservations = new Vector<double[][]>();
 	}
 	
-	/**
-	 * Add some more observations.
-	 * Note that the arrays source and destination must not be over-written by the user
-	 *  until after finaliseAddObservations() has been called.
-	 * 
-	 * @param source
-	 * @param destination
-	 */
 	public void addObservations(double[][] source, double[][] destination) throws Exception {
 		if (vectorOfSourceObservations == null) {
 			// startAddObservations was not called first
@@ -226,14 +214,6 @@ public abstract class MutualInfoMultiVariateCommon implements
 		}
 	}
 
-	/**
-	 * Add some more observations but only for the selected time steps.
-	 * 
-	 * @param source
-	 * @param destination
-	 * @param startTime first time index to take observations on
-	 * @param numTimeSteps number of time steps to use
-	 */
 	public void addObservations(double[][] source, double[][] destination,
 			int startTime, int numTimeSteps) throws Exception {
 		if (vectorOfSourceObservations == null) {
@@ -255,18 +235,6 @@ public abstract class MutualInfoMultiVariateCommon implements
 		}
 	}
 
-	/**
-	 * Set the observations, but only where both the source
-	 *  and destination time steps are valid.
-	 * 
-	 * 
-	 * @param source
-	 * @param destination
-	 * @param sourceValid whether the values for the source are valid at
-	 *  each time step
-	 * @param destValid whether the values for the destination are valid at
-	 *  each time step
-	 */
 	public void setObservations(double[][] source, double[][] destination,
 			boolean[] sourceValid, boolean[] destValid) throws Exception {
 		
@@ -282,18 +250,6 @@ public abstract class MutualInfoMultiVariateCommon implements
 		finaliseAddObservations();
 	}
 
-	/**
-	 * Set the observations, but only where all variables for both the source
-	 *  and destination time steps are valid.
-	 * 
-	 * 
-	 * @param source
-	 * @param destination
-	 * @param sourceValid whether each variable for the source are valid at
-	 *  each time step
-	 * @param destValid whether each variable for the destination are valid at
-	 *  each time step
-	 */
 	public void setObservations(double[][] source, double[][] destination,
 			boolean[][] sourceValid, boolean[][] destValid) throws Exception {
 
@@ -303,15 +259,16 @@ public abstract class MutualInfoMultiVariateCommon implements
 	}
 
 	/**
-	 * Finalise the addition of multiple observation sets.
+	 * Signal that the observations are now all added, PDFs can now be constructed.
 	 * 
-	 * This default implementation simply puts all of the observations into
+	 * <p>This default implementation simply puts all of the observations into
 	 *  the {@link #sourceObservations} and {@link #destObservations} arrays.
 	 * Usually child implementations will override this, call this implementation
 	 *  to perform the common processing, then perform their own processing.
+	 * </p>
+	 * 
 	 * @throws Exception Allow child classes to throw an exception if there
 	 *  is an issue detected specific to that calculator.
-	 * 
 	 */
 	public void finaliseAddObservations() throws Exception {
 		// First work out the size to allocate the joint vectors, and do the allocation:
@@ -344,20 +301,29 @@ public abstract class MutualInfoMultiVariateCommon implements
 	}
 	
 	/**
-	 * <p>Compute the significance of the mutual information of the previously supplied observations.
-	 * We destroy the p(x,y) correlations, while retaining the p(x), p(y) marginals, to check how
-	 *  significant this mutual information actually was.
-	 * This is in the spirit of Chavez et al. (see below), 
-	 *  which was performed for Transfer entropy.</p>
+	 * Generate a bootstrapped distribution of what the MI would look like,
+	 * under a null hypothesis that the source values of our
+	 * samples had no relation to the destination value.
 	 * 
-	 * <p>We permute the source variable against the destination
-	 *  (though in theory this doesn't matter for this function call).
+	 * <p>See Section II.E "Statistical significance testing" of 
+	 * the JIDT paper below for a description of how this is done for MI.
 	 * </p>
 	 * 
-	 * @param numPermutationsToCheck number of surrogate permutations to compute the distribution from
-	 * @return the proportion of MI scores from the distribution which have higher or equal MIs to ours.
-	 * @see "Chavez et. al., 'Statistical assessment of nonlinear causality:
-	 *  application to epileptic EEG signals', Journal of Neuroscience Methods 124 (2003) 113-128"
+	 * <p>Note that if several disjoint time-series have been added 
+	 * as observations using {@link #addObservations(double[])} etc.,
+	 * then these separate "trials" will be mixed up in the generation
+	 * of surrogates here.</p>
+	 * 
+	 * <p>This method (in contrast to {@link #computeSignificance(int[][])})
+	 * creates <i>random</i> shufflings of the next values for the surrogate MI
+	 * calculations.</p>
+	 * 
+	 * @param numPermutationsToCheck number of surrogate samples to bootstrap
+	 *  to generate the distribution.
+	 * @return the distribution of channel measure scores under this null hypothesis.
+	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
+	 *    toolkit for studying the dynamics of complex systems', 2014."
+	 * @throws Exception
 	 */
 	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception {
 		// Generate the re-ordered indices:
@@ -369,18 +335,29 @@ public abstract class MutualInfoMultiVariateCommon implements
 	}
 
 	/**
-	 * <p>Compute the significance of the mutual information of the previously supplied observations.
-	 * We destroy the p(x,y) correlations, while retaining the p(x), p(y) marginals, to check how
-	 *  significant this mutual information actually was.
-	 * This is in the spirit of Chavez et al. (see below), 
-	 *  which was performed for Transfer entropy.</p>
+	 * Generate a bootstrapped distribution of what the MI would look like,
+	 * under a null hypothesis that the source values of our
+	 * samples had no relation to the destination value.
+	 * 
+	 * <p>See Section II.E "Statistical significance testing" of 
+	 * the JIDT paper below for a description of how this is done for MI.
+	 * </p>
+	 * 
+	 * <p>Note that if several disjoint time-series have been added 
+	 * as observations using {@link #addObservations(double[])} etc.,
+	 * then these separate "trials" will be mixed up in the generation
+	 * of surrogates here.</p>
+	 * 
+	 * <p>This method (in contrast to {@link #computeSignificance(int)})
+	 * allows the user to specify how to construct the surrogates,
+	 * such that repeatable results may be obtained.</p>
 	 * 
 	 * <p>We provide a simple implementation which would be suitable for
 	 *  any child class, though the child class may prefer to make its
 	 *  own implementation to make class-specific optimisations.
 	 *  Child classes must implement {@link java.lang.Cloneable}
 	 *  for this method to be callable for them, and indeed implement
-	 *  the clone() method in a way that protects their structure
+	 *  a <code>clone()</code> method in a way that protects their structure
 	 *  from alteration by surrogate data being supplied to it.</p>
 	 *  
 	 * <p>We permute the source variable against the destination
@@ -388,10 +365,18 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 *  (though in theory this doesn't matter for this function call).
 	 * </p>
 	 * 
-	 * @param newOrderings the specific new orderings to use
-	 * @return the proportion of MI scores from the distribution which have higher or equal MIs to ours.
-	 * @see "Chavez et. al., 'Statistical assessment of nonlinear causality:
-	 *  application to epileptic EEG signals', Journal of Neuroscience Methods 124 (2003) 113-128"
+	 * @param newOrderings a specification of how to shuffle the next values
+	 *  to create the surrogates to generate the distribution with. The first
+	 *  index is the permutation number (i.e. newOrderings.length is the number
+	 *  of surrogate samples we use to bootstrap to generate the distribution here.)
+	 *  Each array newOrderings[i] should be an array of length N (where
+	 *  would be the value returned by {@link #getNumObservations()}),
+	 *  containing a permutation of the values in 0..(N-1).
+	 * @return the distribution of channel measure scores under this null hypothesis.
+	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
+	 *    toolkit for studying the dynamics of complex systems', 2014."
+	 * @throws Exception where the length of each permutation in newOrderings
+	 *   is not equal to the number N samples that were previously supplied.
 	 */
 	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings) throws Exception {
 		
@@ -418,19 +403,34 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 * <p>Compute the mutual information if the first (source) variable were
 	 *  ordered as per the ordering specified in newOrdering.</p>
 	 * 
+	 * <p>Note that if several disjoint time-series have been added 
+	 * as observations using {@link #addObservations(double[])} etc.,
+	 * then these separate "trials" will be mixed up in the generation
+	 * of a shuffled source series here.</p>
+	 * 
+	 * <p>This method is primarily intended for use in {@link #computeSignificance(int[][])}
+	 * however has been made public in case users wish to access it.
+	 * </p>
+	 * 
 	 * <p>We provide a simple implementation which would be suitable for
 	 *  any child class, though the child class may prefer to make its
 	 *  own implementation to make class-specific optimisations.
 	 *  Child classes must implement {@link java.lang.Cloneable}
 	 *  for this method to be callable for them, and indeed implement
-	 *  the clone() method in a way that protects their structure
+	 *  the <code>clone()</code> method in a way that protects their structure
 	 *  from alteration by surrogate data being supplied to it.</p>
 	 *  
-	 * <p>Child implementations must only over-write lastAverage if newOrdering is null</p>
+	 * <p>Child implementations must only over-write lastAverage
+	 * if <code>newOrdering</code> is null, which indicates that the original
+	 * ordering should be used (making this equivalent to a call to
+	 * {@link #computeAverageLocalOfObservations()}).</p>
 	 *  
-	 * @param newOrdering array of time indices with which to reorder the data. If null, then
-	 *   return the MI for the original ordering.
-	 * @return a surrogate MI evaluated for the given ordering of the source variable
+	 * @param newOrdering a specification of how to shuffle the source values
+	 *  to create a surrogate source time series.
+	 *  It is an array of length N (where
+	 *  would be the value returned by {@link #getNumObservations()}),
+	 *  containing a permutation of the values in 0..(N-1).
+	 * @return the surrogate MI score if the source values were shuffled as specified.
 	 * @throws Exception
 	 */
 	public double computeAverageLocalOfObservations(int[] newOrdering)
@@ -458,34 +458,40 @@ public abstract class MutualInfoMultiVariateCommon implements
 		return miSurrogateCalculator.computeAverageLocalOfObservations();
 	}
 
-	/**
-	 * Set whether debug messages will be displayed
-	 * 
-	 * @param debug debug setting
-	 */
 	public void setDebug(boolean debug) {
 		this.debug = debug;
 	}
 
 	/**
-	 * @return the previously computed average mutual information
+	 * Return the MI last calculated in a call to {@link #computeAverageLocalOfObservations()}
+	 * or {@link #computeLocalOfPreviousObservations()} after the previous
+	 * {@link #initialise()} call.
+	 * 
+	 * @return the last computed average mutual information
 	 */
 	public double getLastAverage() {
 		return lastAverage;
 	}
 
 	/**
-	 * @return the number of supplied observations
+	 * Get the number of samples to be used for the PDFs here 
+	 * which have been supplied by calls to
+	 * {@link #setObservations(double[][], double[][])},
+	 * {@link #addObservations(double[][], double[][])}
+	 * etc.
+	 * 
+	 * <p>Note that the number of samples may not be equal to the length of time-series
+	 * supplied (i.e. where a {@link MutualInfoCalculatorMultiVariate#PROP_TIME_DIFF}
+	 * is set).
+	 * </p>
+	 * 
 	 * @throws Exception if child class computes MI without explicit observations
+	 *  (e.g. {@link infodynamics.measures.continuous.gaussian.MutualInfoCalculatorMultiVariateGaussian})
 	 */
 	public int getNumObservations() throws Exception {
 		return totalObservations;
 	}
 
-	/**
-	 * @return whether the user has added multiple observation sets via the 
-	 * {@link #addObservations(double[][], double[][])} methods
-	 */
 	public boolean getAddedMoreThanOneObservationSet() {
 		return addedMoreThanOneObservationSet;
 	}
@@ -494,12 +500,14 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 * Compute a vector of start and end pairs of time points, between which we have
 	 *  valid series of both source and destinations.
 	 * 
-	 * Made public so it can be used if one wants to compute the number of
-	 *  observations prior to setting the observations.
+	 * <p>Made public so it can be used if one wants to compute the number of
+	 *  observations prior to setting the observations.</p>
 	 * 
-	 * @param sourceValid
-	 * @param destValid
-	 * @return
+	 * @param sourceValid a time series (with indices the same as observations)
+	 *  indicating whether the entry in observations at that index is valid for the source; 
+	 * @param destValid as described for <code>sourceValid</code>
+	 * @return a vector for start and end time pairs of valid series
+	 *  of observations.
 	 */
 	public Vector<int[]> computeStartAndEndTimePairs(boolean[] sourceValid, boolean[] destValid) {
 		// Scan along the data avoiding invalid values

@@ -23,31 +23,45 @@ import infodynamics.utils.MatrixUtils;
 
 import java.util.Vector;
 
-
 /**
+ * A Transfer Entropy (TE) calculator (implementing {@link TransferEntropyCalculator})
+ * which is affected using a 
+ * given Conditional Mutual Information (MI) calculator (implementing
+ * {@link ConditionalMutualInfoCalculatorMultiVariate}) to make the calculations.
  * 
- * <p>Transfer entropy calculator which is implemented using a 
- * Conditional Mutual Information calculator.
+ * <p>Usage is as per the paradigm outlined for {@link TransferEntropyCalculator},
+ * except that in the constructor(s) for this class the implementation for
+ * a {@link ConditionalMutualInfoCalculatorMultiVariate} must be supplied.
  * </p>
+ * 
+ * <p>This class <i>may</i> be used directly, however users are advised that
+ * several child classes are available which already plug-in the various
+ * conditional MI estimators
+ * to provide TE calculators (taking specific caution associated with
+ * each type of estimator):</p>
+ * <ul>
+ * 	<li>{@link infodynamics.measures.continuous.gaussian.TransferEntropyCalculatorGaussian}</li>
+ * 	<li>{@link infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov}</li>
+ * </ul>
  * 
  * TODO Delete TransferEntropyCalculatorCommon once we've switched everything over to use this?
  * Might be useful to leave it after all, and move common functionality from here to there.
  * 
- * TODO Switch the properties like l etc into TransferEntropyCalculator
- * once all TE calculators follow this class.
- * 
- * @see "Schreiber, Physical Review Letters 85 (2) pp.461-464, 2000;
- *  <a href='http://dx.doi.org/10.1103/PhysRevLett.85.461'>download</a>
- *  (for definition of transfer entropy)"
- * @see "Lizier, Prokopenko and Zomaya, Physical Review E 77, 026110, 2008;
- * <a href='http://dx.doi.org/10.1103/PhysRevE.77.026110'>download</a>
- *  (for definition of <i>local</i> transfer entropy and qualification
- *  of naming it as <i>apparent</i> transfer entropy)"
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>T. Schreiber, <a href="http://dx.doi.org/10.1103/PhysRevLett.85.461">
+ * "Measuring information transfer"</a>,
+ *  Physical Review Letters 85 (2) pp.461-464, 2000.</li>
+ *  <li>J. T. Lizier, M. Prokopenko and A. Zomaya,
+ *  <a href="http://dx.doi.org/10.1103/PhysRevE.77.026110">
+ *  "Local information transfer as a spatiotemporal filter for complex systems"</a>
+ *  Physical Review E 77, 026110, 2008.</li>
+ * </ul>
  *  
  * @author Joseph Lizier, <a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>
  */
-public abstract class TransferEntropyCalculatorViaCondMutualInfo implements
+public class TransferEntropyCalculatorViaCondMutualInfo implements
 		TransferEntropyCalculator {
 
 	/**
@@ -83,32 +97,16 @@ public abstract class TransferEntropyCalculatorViaCondMutualInfo implements
 	 */
 	protected int startTimeForFirstDestEmbedding;
 
+	/**
+	 * Whether we're in debugging mode
+	 */
 	protected boolean debug = false;
 
-	// TODO Move these properties up the TransferEntropyCalculator once all the calcs use them
-	
-	/**
-	 * Embedding delay for the destination past history vector
-	 */
-	public static final String K_TAU_PROP_NAME = "k_TAU";
-	/**
-	 * Embedding length for the source past history vector
-	 */
-	public static final String L_PROP_NAME = "l_HISTORY";
-	/**
-	 * Embedding delay for the source past history vector
-	 */
-	public static final String L_TAU_PROP_NAME = "l_TAU";
-	/**
-	 * Source-destination delay
-	 */
-	public static final String DELAY_PROP_NAME = "DELAY";
-	
 	/**
 	 * Construct a transfer entropy calculator using an instance of
 	 * condMiCalculatorClassName as the underlying conditional mutual information calculator.
 	 * 
-	 * @param condMiCalculatorClassName name of the class which must implement
+	 * @param condMiCalculatorClassName fully qualified name of the class which must implement
 	 * 	{@link ConditionalMutualInfoCalculatorMultiVariate}
 	 * @throws InstantiationException if the given class cannot be instantiated
 	 * @throws IllegalAccessException if illegal access occurs while trying to create an instance
@@ -169,20 +167,25 @@ public abstract class TransferEntropyCalculatorViaCondMutualInfo implements
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ChannelCalculatorCommon#initialise()
 	 */
+	@Override
 	public void initialise() throws Exception {
 		initialise(k, k_tau, l, l_tau, delay);
 	}
 	
+	@Override
 	public void initialise(int k) throws Exception {
 		initialise(k, k_tau, l, l_tau, delay);
 	}
 	
 	/**
-	 * Initialise the calculator
+	 * Initialise the calculator for re-use with new observations.
+	 * New embedding parameters and source-destination delay
+	 * may be supplied here; all other parameters
+	 * remain unchanged.
 	 * 
-	 * @param k Length of destination past history to consider
+	 * @param k embedding length of destination past history to consider
 	 * @param k_tau embedding delay for the destination variable
-	 * @param l length of source past history to consider
+	 * @param l embedding length of source past history to consider
 	 * @param l_tau embedding delay for the source variable
 	 * @param delay time lag between last element of source and destination next value
 	 */
@@ -210,23 +213,24 @@ public abstract class TransferEntropyCalculatorViaCondMutualInfo implements
 	}
 
 	/**
-	 * <p>Set the given property to the given value.
-	 * New property values are not guaranteed to take effect until the next call
+	 * Sets properties for the TE calculator.
+	 *  New property values are not guaranteed to take effect until the next call
 	 *  to an initialise method. 
-	 * These can include:
+	 *  
+	 * <p>Valid property names, and what their
+	 * values should represent, include:</p>
 	 * <ul>
-	 * 		<li>{@link #K_PROP_NAME}</li>
-	 * 		<li>{@link #K_TAU_PROP_NAME}</li>
-	 * 		<li>{@link #L_PROP_NAME}</li>
-	 * 		<li>{@link #L_TAU_PROP_NAME}</li>
-	 * 		<li>{@link #DELAY_PROP_NAME}</li>
+	 * 		<li>Any properties accepted by {@link TransferEntropyCalculator#setProperty(String, String)}</li>
+	 * 		<li>Or properties accepted by the underlying
+	 * 		{@link ConditionalMutualInfoCalculatorMultiVariate#setProperty(String, String)} implementation.</li>
 	 * </ul>
-	 * Or else it is assumed the property
-	 *  is for the underlying {@link ConditionalMutualInfoCalculatorMultiVariate#setProperty(String, String)} implementation.
+	 * <p><b>Note:</b> further properties may be defined by child classes.</p>
+	 * 
+	 * <p>Unknown property values are ignored.</p>
 	 * 
 	 * @param propertyName name of the property
 	 * @param propertyValue value of the property.
-	 * @throws Exception if there is a problem with the supplied value
+	 * @throws Exception if there is a problem with the supplied value.
 	 */
 	public void setProperty(String propertyName, String propertyValue) throws Exception {
 		boolean propertySet = true;
@@ -252,16 +256,7 @@ public abstract class TransferEntropyCalculatorViaCondMutualInfo implements
 		}
 	}
 
-	/**
-	 * <p>Sets the single set of observations to compute the PDFs from.
-	 * Cannot be called in conjunction with 
-	 * {@link #startAddObservations()}/{@link #addObservations(double[], double[])} /
-	 * {@link #finaliseAddObservations()}.</p>
-	 * 
-	 * @param source observations for the source variable
-	 * @param destination observations for the destination variable
-	 * @throws Exception
-	 */
+	@Override
 	public void setObservations(double[] source, double[] destination) throws Exception {
 		
 		if (source.length != destination.length) {
@@ -287,10 +282,12 @@ public abstract class TransferEntropyCalculatorViaCondMutualInfo implements
 		condMiCalc.setObservations(currentSourcePastVectors, currentDestNextVectors, currentDestPastVectors);
 	}
 
+	@Override
 	public void startAddObservations() {
 		condMiCalc.startAddObservations();
 	}
 	
+	@Override
 	public void addObservations(double[] source, double[] destination) throws Exception {
 		if (source.length != destination.length) {
 			throw new Exception(String.format("Source and destination lengths (%d and %d) must match!",
@@ -317,6 +314,7 @@ public abstract class TransferEntropyCalculatorViaCondMutualInfo implements
 		condMiCalc.addObservations(currentSourcePastVectors, currentDestNextVectors, currentDestPastVectors);
 	}
 
+	@Override
 	public void addObservations(double[] source, double[] destination,
 			int startTime, int numTimeSteps) throws Exception {
 		if (source.length != destination.length) {
@@ -331,10 +329,12 @@ public abstract class TransferEntropyCalculatorViaCondMutualInfo implements
 					    MatrixUtils.select(destination, startTime, numTimeSteps));
 	}
 
+	@Override
 	public void finaliseAddObservations() throws Exception {
 		condMiCalc.finaliseAddObservations();
 	}
 
+	@Override
 	public void setObservations(double[] source, double[] destination,
 			boolean[] sourceValid, boolean[] destValid) throws Exception {
 		
@@ -352,17 +352,18 @@ public abstract class TransferEntropyCalculatorViaCondMutualInfo implements
 
 	/**
 	 * Compute a vector of start and end pairs of time points, between which we have
-	 *  valid series of both source and destinations. (i.e. all points within the
+	 *  valid series of both source and destinations. (I.e. all points within the
 	 *  embedding vectors must be valid, even if the invalid points won't be included
 	 *  in any tuples)
 	 * 
-	 * Made public so it can be used if one wants to compute the number of
-	 *  observations prior to setting the observations.
+	 * <p>Made public so it can be used if one wants to compute the number of
+	 *  observations prior to setting the observations.</p>
 	 * 
-	 * @param sourceValid
-	 * @param destValid
-	 * @return
-	 * @throws Exception 
+	 * @param sourceValid a time series (with indices the same as observations)
+	 *  indicating whether the entry in observations at that index is valid for the source; 
+	 * @param destValid as described for <code>sourceValid</code>
+	 * @return a vector for start and end time pairs of valid series
+	 *  of observations.
 	 */
 	public Vector<int[]> computeStartAndEndTimePairs(boolean[] sourceValid, boolean[] destValid) throws Exception {
 		
@@ -441,19 +442,12 @@ public abstract class TransferEntropyCalculatorViaCondMutualInfo implements
 		return startAndEndTimePairs;
 	}
 	
+	@Override
 	public double computeAverageLocalOfObservations() throws Exception {
 		return condMiCalc.computeAverageLocalOfObservations();
 	}
 
-	/**
-	 * Returns a time series of local TE values.
-	 * Pads the first startTimeForFirstDestEmbedding elements with zeros (since local TE is undefined here)
-	 *  if only one time series of observations was used.
-	 * Otherwise, local values for all separate series are concatenated, and without
-	 *  padding of zeros at the start.
-	 *  
-	 * @return an array of local TE values of the previously submitted observations.
-	 */
+	@Override
 	public double[] computeLocalOfPreviousObservations() throws Exception {
 		double[] local = condMiCalc.computeLocalOfPreviousObservations();
 		if (!condMiCalc.getAddedMoreThanOneObservationSet()) {
@@ -465,7 +459,10 @@ public abstract class TransferEntropyCalculatorViaCondMutualInfo implements
 		}
 	}
 
-	public double[] computeLocalUsingPreviousObservations(double[] newSourceObservations, double[] newDestObservations) throws Exception {
+	@Override
+	public double[] computeLocalUsingPreviousObservations(
+			double[] newSourceObservations, double[] newDestObservations)
+					throws Exception {
 		if (newSourceObservations.length != newDestObservations.length) {
 			throw new Exception(String.format("Source and destination lengths (%d and %d) must match!",
 					newSourceObservations.length, newDestObservations.length));
@@ -495,28 +492,36 @@ public abstract class TransferEntropyCalculatorViaCondMutualInfo implements
 
 	}
 	
+	@Override
 	public EmpiricalMeasurementDistribution computeSignificance(
 			int numPermutationsToCheck) throws Exception {
-		return condMiCalc.computeSignificance(1, numPermutationsToCheck); // Reorder the source
+		// Reorder the source vectors in the surrogates, not the destination
+		return condMiCalc.computeSignificance(1, numPermutationsToCheck);
 	}
 
+	@Override
 	public EmpiricalMeasurementDistribution computeSignificance(
 			int[][] newOrderings) throws Exception {
-		return condMiCalc.computeSignificance(1, newOrderings); // Reorder the source
+		// Reorder the source vectors in the surrogates, not the destination
+		return condMiCalc.computeSignificance(1, newOrderings);
 	}
 
+	@Override
 	public double getLastAverage() {
 		return condMiCalc.getLastAverage();
 	}
 
+	@Override
 	public int getNumObservations() throws Exception {
 		return condMiCalc.getNumObservations();
 	}
 	
+	@Override
 	public boolean getAddedMoreThanOneObservationSet() {
 		return condMiCalc.getAddedMoreThanOneObservationSet();
 	}
 
+	@Override
 	public void setDebug(boolean debug) {
 		this.debug = debug;
 		condMiCalc.setDebug(debug);
