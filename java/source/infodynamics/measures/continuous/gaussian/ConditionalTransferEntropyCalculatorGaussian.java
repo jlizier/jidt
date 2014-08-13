@@ -23,65 +23,83 @@ import infodynamics.utils.AnalyticNullDistributionComputer;
 import infodynamics.utils.ChiSquareMeasurementDistribution;
 
 /**
- * 
- * <p>
- * Implements a conditional transfer entropy calculator using model of 
- * Gaussian variables with linear interactions.
- * This is equivalent (up to a multiplicative constant) to 
- * (a conditional) Granger causality (see Barnett et al., below).
- * This is achieved by plugging in {@link ConditionalMutualInfoCalculatorMultiVariateGaussian}
- * as the calculator into {@link ConditionalTransferEntropyCalculatorViaCondMutualInfo}.
- * </p>
- * 
- * <p>
- * Usage:
- * 	<ol>
- * 		<li>Construct: {@link #ConditionalTransferEntropyCalculatorGaussian()}</li>
- * 		<li>Set properties: {@link #setProperty(String, String)} for each relevant property, including those
- * 			of either {@link ConditionalTransferEntropyCalculatorViaCondMutualInfo#setProperty(String, String)}
- * 			or {@link ConditionalMutualInfoCalculatorMultiVariateGaussian#setProperty(String, String)}.</li>
- *		<li>Initialise: by calling one of {@link #initialise()} etc.</li>
- * 		<li>Add observations to construct the PDFs: {@link #setObservations(double[], double[], double[][])},
- * 			or [{@link #startAddObservations()},
- * 			{@link #addObservations(double[], double[], double[][])}*, {@link #finaliseAddObservations()}]
- *   		Note: If not using setObservations(), the results from computeLocal
- *   		will be concatenated directly, and getSignificance will mix up observations 
- *          from separate trials (added in separate {@link #addObservations(double[])} calls.</li> 
- * 		<li>Compute measures: e.g. {@link #computeAverageLocalOfObservations()} or
- * 			{@link #computeLocalOfPreviousObservations()} etc </li>
- * 	</ol>
- * </p>
- * 
- * @author Joseph Lizier, <a href="joseph.lizier at gmail.com">email</a>,
- * <a href="http://lizier.me/joseph/">www</a>
- * 
- * @see "Schreiber, Physical Review Letters 85 (2) pp.461-464 (2000);
- *  <a href='http://dx.doi.org/10.1103/PhysRevLett.85.461'>download</a>
- *  (for definition of transfer entropy)"
- * @see "Lizier, Prokopenko and Zomaya, Physical Review E 77, 026110 (2008);
- * <a href='http://dx.doi.org/10.1103/PhysRevE.77.026110'>download</a>
- *  (for the extension to <i>conditional</i> transfer entropy 
- *  or <i>complete</i> where all other causal sources are conditioned on,
- *  and <i>local</i> transfer entropy)"
- * @see "Lizier, Prokopenko and Zomaya, Chaos 20, 3, 037109 (2010);
- * <a href='http://dx.doi.org/10.1063/1.3486801'>download</a>
- *  (for further clarification on <i>conditional</i> transfer entropy 
- *  or <i>complete</i> where all other causal sources are conditioned on)"
- * @see "Lionel Barnett, Adam B. Barrett, Anil K. Seth, Physical Review Letters 103 (23) 238701, 2009;
- *  <a href='http://dx.doi.org/10.1103/physrevlett.103.238701'>download</a>
- *  (for direct relation between transfer entropy and Granger causality)"
+ * <p>Computes the differential conditional transfer entropy (TE) between two univariate
+ *  <code>double[]</code> time-series of observations
+ *  (implementing {@link ConditionalTransferEntropyCalculator}),
+ *  assuming that the probability distribution function for these observations is
+ *  a multivariate Gaussian distribution.
+ *  TE was defined by Schreiber, conditional TE by Lizier et al.,
+ *  and Kaiser and Schreiber showed how to compute
+ *  TE via the Gaussian assumption.
+ *  This estimator is realised here by plugging in
+ *  {@link ConditionalMutualInfoCalculatorMultiVariateGaussian}
+ *  as the calculator into the parent class
+ *  {@link ConditionalTransferEntropyCalculatorViaCondMutualInfo}.</p>
  *  
+ * <p>That is, this class implements a conditional TE calculator using model of 
+ * Gaussian variables with linear interactions, making it equivalent
+ * (up to a multiplicative constant) to the (partial) Granger causality (see Barnett et al below).
+ * </p> 
+ * 
+ * <p>Usage is as per the paradigm outlined for {@link ConditionalTransferEntropyCalculator},
+ * with:
+ * <ul>
+ * 	<li>The constructor step being a simple call to
+ * 		{@link #ConditionalTransferEntropyCalculatorGaussian()}.</li>
+ * 	<li>{@link #setProperty(String, String)} allowing properties defined for both
+ * 		{@link ConditionalTransferEntropyCalculator#setProperty(String, String)} and
+ *      {@link ConditionalMutualInfoCalculatorMultiVariateGaussian#setProperty(String, String)}
+ *      as outlined
+ *      in {@link ConditionalTransferEntropyCalculatorViaCondMutualInfo#setProperty(String, String)}).</li>
+ * 	<li>The user can call {@link #setCovariance(double[][], int)}
+ *     instead of supplying observations via {@link #setObservations(double[], double[], double[][])} or
+ *     {@link #addObservations(double[], double[], double[][])} etc.</li>
+ *  <li>Computed values are in <b>nats</b>, not bits!</li>
+ *  <li>Additional method {@link #computeSignificance()} to compute null distribution analytically.</li>
+ *  </ul>
+ * </p>
+ * 
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>T. Schreiber, <a href="http://dx.doi.org/10.1103/PhysRevLett.85.461">
+ * "Measuring information transfer"</a>,
+ *  Physical Review Letters 85 (2) pp.461-464, 2000.</li>
+ *  <li>L. Barnett, A. B. Barrett, A. K. Seth, <a href="http://dx.doi.org/10.1103/physrevlett.103.238701">
+ *  "Granger Causality and Transfer Entropy Are Equivalent for Gaussian Variables"</a>,
+ *  Physical Review Letters 103 (23) 238701, 2009;</li>
+ *  <li>A. Kaiser, T. Schreiber, <a href="http://dx.doi.org/10.1016/s0167-2789(02)00432-3">
+ *  "Information transfer in continuous processes"</a>,
+ *  Physica D, Vol. 166, No. 1-2., pp. 43-62 (2002).</li>
+ *  <li>J. T. Lizier, M. Prokopenko and A. Zomaya,
+ *  <a href="http://dx.doi.org/10.1103/PhysRevE.77.026110">
+ *  "Local information transfer as a spatiotemporal filter for complex systems"</a>
+ *  Physical Review E 77, 026110, 2008.</li>
+ *  <li>J. T. Lizier, M. Prokopenko and A. Zomaya,
+ *  <a href=http://dx.doi.org/10.1063/1.3486801">
+ *  "Information modification and particle collisions in distributed computation"</a>
+ *  Chaos 20, 3, 037109 (2010).</li>
+ * </ul>
+ * 
+ * @see <a href="http://mathworld.wolfram.com/DifferentialEntropy.html">Differential entropy for Gaussian random variables at Mathworld</a>
+ * @see <a href="http://en.wikipedia.org/wiki/Differential_entropy">Differential entropy for Gaussian random variables at Wikipedia</a>
+ * @see <a href="http://en.wikipedia.org/wiki/Multivariate_normal_distribution">Multivariate normal distribution on Wikipedia</a>
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  * @see ConditionalTransferEntropyCalculator
- *
+ * @see ConditionalMutualInfoCalculatorMultiVariateGaussian
  */
 public class ConditionalTransferEntropyCalculatorGaussian
 	extends ConditionalTransferEntropyCalculatorViaCondMutualInfo
 	implements AnalyticNullDistributionComputer {
 	
+	/**
+	 * Name of the Gaussian conditional MI calculator we will use 
+	 */
 	public static final String COND_MI_CALCULATOR_GAUSSIAN = ConditionalMutualInfoCalculatorMultiVariateGaussian.class.getName();
 	
 	/**
 	 * Creates a new instance of the Gaussian-estimate style conditional transfer entropy calculator
+	 * 
 	 * @throws ClassNotFoundException 
 	 * @throws IllegalAccessException 
 	 * @throws InstantiationException 
@@ -113,17 +131,31 @@ public class ConditionalTransferEntropyCalculatorGaussian
 	}
 
 	/**
-	 * <p>Compute the statistical significance of the TE 
-	 *  result analytically, without creating a distribution
-	 *  under the null hypothesis by bootstrapping.
-	 *  Computed using the corresponding method of the
-	 *  underlying 
-	 *  {@link ConditionalMutualInfoCalculatorMultiVariateGaussian}</p>
-	 *  
+	 * Generate an <b>analytic</b> distribution of what the 
+	 * conditional TE would look like,
+	 * under a null hypothesis that our source and destination
+	 * variables had no relation
+	 * (in the context of the conditional value).
+	 * This is performed without bootstrapping (which is done in
+	 * {@link #computeSignificance(int, int)} and {@link #computeSignificance(int, int[][])}).
+	 * The method is implemented using the corresponding method of the
+	 *  underlying {@link ConditionalMutualInfoCalculatorMultiVariateGaussian}
+	 * 
+	 * <p>See Section II.E "Statistical significance testing" of 
+	 * the JIDT paper below, and the other papers referenced in
+	 * {@link AnalyticNullDistributionComputer#computeSignificance()}
+	 * (in particular Geweke),
+	 * for a description of how this is done for TE and conditional MI.
+	 * Basically, the null distribution is a chi-square distribution.
+	 * </p>
+	 * 
+	 * @return ChiSquareMeasurementDistribution object which describes
+	 * the proportion of TE scores from the null distribution
+	 *  which have higher or equal conditional MIs to our actual value.
 	 * @see {@link ConditionalMutualInfoCalculatorMultiVariateGaussian#computeSignificance()}
-	 * @return ChiSquareMeasurementDistribution object 
-	 *  This object contains the proportion of TE scores from the distribution
-	 *  which have higher or equal TEs to ours.
+	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
+	 *    toolkit for studying the dynamics of complex systems', 2014."
+	 * @throws Exception
 	 */
 	public ChiSquareMeasurementDistribution computeSignificance()
 			throws Exception {

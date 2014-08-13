@@ -22,26 +22,32 @@ import infodynamics.measures.continuous.EntropyCalculatorMultiVariate;
 import infodynamics.utils.MatrixUtils;
 
 /**
- * <p>Computes the differential entropy of a given multivariate set of observations,
- *  assuming that the probability distribution function for these observations is
- *  a multivariate Gaussian distribution.</p>
- *  
- * <p>
- * Usage:
- * 	<ol>
- * 		<li>Construct</li>
- *		<li>initialise()</li>
- * 		<li>setObservations(), or setCovariance().</li> 
- * 		<li>computeAverageLocalOfObservations() to return the average differential
- *          entropy based on either the set variance or the variance of
- *          the supplied observations, or computeLocalUsingPrevious</li>
- * 	</ol>
+ * <p>Computes the differential entropy of a given multivariate set of observations
+ *  (implementing {@link EntropyCalculatorMultiVariate}, assuming that
+ *  the probability distribution function for these observations is Gaussian.</p>
+ *
+ * <p>Usage is as per the paradigm outlined for {@link EntropyCalculatorMultiVariate},
+ * with:
+ * <ul>
+ * 	<li>The constructor step being a simple call to {@link #EntropyCalculatorMultiVariateGaussian()}.</li>
+ * 	<li>The user can call {@link #setCovariance(double[][])} or
+ *     {@link #setCovarianceAndMeans(double[][], double[])}
+ *     instead of supplying observations via {@link #setObservations(double[])}.</li>
+ *  <li>Computed values are in <b>nats</b>, not bits!</li>
+ *  </ul>
  * </p>
  * 
- * @see Differential entropy for Gaussian random variables defined at 
- *      {@link http://mathworld.wolfram.com/DifferentialEntropy.html}
- * @author Joseph Lizier joseph.lizier_at_gmail.com
- *
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>T. M. Cover and J. A. Thomas, 'Elements of Information
+Theory' (John Wiley & Sons, New York, 1991).</li>
+    <li>Differential entropy for Gaussian random variables defined at 
+ *      <a href="http://mathworld.wolfram.com/DifferentialEntropy.html">MathWorld</a></li>
+ *  <li>Multivariate normal distribution on <a href="http://en.wikipedia.org/wiki/Multivariate_normal_distribution">Wikipedia</a></li>
+ * </ul>
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class EntropyCalculatorMultiVariateGaussian
 	implements EntropyCalculatorMultiVariate, Cloneable {
@@ -64,7 +70,7 @@ public class EntropyCalculatorMultiVariateGaussian
 	protected double[][] observations;
 	
 	/**
-	 * Number of dimenions for our multivariate data
+	 * Number of dimensions for our multivariate data
 	 */
 	protected int dimensions;
 	
@@ -73,20 +79,23 @@ public class EntropyCalculatorMultiVariateGaussian
 	 */
 	protected double detCovariance;
 
+	/**
+	 * Last average entropy we computed
+	 */
 	protected double lastAverage;
 	
+	/**
+	 * Whether we are in debug mode
+	 */
 	protected boolean debug;
 	
 	/**
-	 * Constructor
+	 * Construct an instance
 	 */
 	public EntropyCalculatorMultiVariateGaussian() {
 		// Nothing to do
 	}
 	
-	/**
-	 * Initialise the calculator ready for reuse
-	 */
 	public void initialise(int dimensions) {
 		means = null;
 		L = null;
@@ -96,10 +105,6 @@ public class EntropyCalculatorMultiVariateGaussian
 	}
 
 	/**
-	 * Provide the multivariate observations from which to compute the entropy
-	 * 
-	 * @param observations the observations to compute the entropy from.
-	 *        First index is time, second index is variable number.
 	 * @throws Exception where the observations do not match the expected number of 
 	 *  dimensions, or covariance matrix is not positive definite (reflecting 
 	 *  redundant variables in the observations)
@@ -125,7 +130,7 @@ public class EntropyCalculatorMultiVariateGaussian
 	 * <p>Note that without setting any observations, you cannot later
 	 *  call {@link #computeLocalOfPreviousObservations()}.</p>
 	 *  
-	 * @param covariance covariance matrix
+	 * @param covariance covariance matrix between the variables
 	 * @throws Exception if the covariance matrix does not match the dimensions supplied
 	 *  in {@link #initialise(int)}, is non-square, is asymmetric or is non-positive
 	 *  definite (i.e. there are redundant terms).
@@ -168,6 +173,9 @@ public class EntropyCalculatorMultiVariateGaussian
 	}
 
 	/**
+ 	 * Compute the entropy from the previously supplied observations, or
+	 * based on the supplied variance.
+	 * 
 	 * <p>The joint entropy for a multivariate Gaussian-distribution of dimension n
 	 *  with covariance matrix C is 0.5*\log_e{(2*pi*e)^n*|det(C)|},
 	 *  where det() is the matrix determinant of C.</p>
@@ -194,34 +202,19 @@ public class EntropyCalculatorMultiVariateGaussian
 	}
 
 	/**
-	 * <p>Set the given property to the given value.</p>
-	 * 
-	 * <p>There are currently no properties to set for this calculator</p>
-	 * 
-	 * @param propertyName name of the property
-	 * @param propertyValue value of the property.
-	 * @throws Exception
+	 * No properties are defined here, so this method will have no effect.
 	 */
 	public void setProperty(String propertyName, String propertyValue)
 			throws Exception {
 		// No properties to set here
 	}
 
-	/**
-	 * @return the lastAverage
-	 */
 	public double getLastAverage() {
 		return lastAverage;
 	}
 
 	/**
-	 * Compute the local entropy for each of the given supplied
-	 *  observations
-	 * 
-	 * @param states joint vectors of observations; first index
-	 *  is observation number, second is variable number.
 	 * @return an array of local values in nats (NOT bits).
-	 * @see <a href="http://en.wikipedia.org/wiki/Multivariate_normal_distribution">Multivariate normal distribution on Wikipedia</a>
 	 */
 	public double[] computeLocalUsingPreviousObservations(double[][] states)
 			throws Exception {
@@ -271,6 +264,11 @@ public class EntropyCalculatorMultiVariateGaussian
 		return localValues;
 	}
 
+	/**
+	 * @throws Exception if {@link #setCovariance(double[][])} or
+	 * {@link #setCovarianceAndMeans(double[][], double[])} were used previously instead
+	 * of {@link #setObservations(double[][])}
+	 */
 	public double[] computeLocalOfPreviousObservations() throws Exception {
 		if (observations == null) {
 			throw new Exception("Cannot compute local values since no observations were supplied");
@@ -278,10 +276,6 @@ public class EntropyCalculatorMultiVariateGaussian
 		return computeLocalUsingPreviousObservations(observations);
 	}
 
-	/**
-	 * @return the number of previously supplied observations for which
-	 *  the mutual information will be / was computed.
-	 */
 	public int getNumObservations() throws Exception {
 		if (observations == null) {
 			throw new Exception("Cannot return number of observations because either " +
