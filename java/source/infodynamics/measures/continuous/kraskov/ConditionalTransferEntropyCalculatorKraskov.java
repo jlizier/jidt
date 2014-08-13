@@ -25,62 +25,78 @@ import infodynamics.measures.continuous.ConditionalTransferEntropyCalculator;
 import infodynamics.measures.continuous.ConditionalTransferEntropyCalculatorViaCondMutualInfo;
 
 /**
+ * <p>Computes the differential conditional transfer entropy (TE) between two univariate
+ *  <code>double[]</code> time-series of observations
+ *  (implementing {@link ConditionalTransferEntropyCalculator}),
+ *  using Kraskov-Stoegbauer-Grassberger (KSG) estimation (see references below).
+ *  This estimator is realised here by plugging in
+ *  a {@link ConditionalMutualInfoCalculatorMultiVariateKraskov}
+ *  as the calculator into the parent class
+ *  {@link ConditionalTransferEntropyCalculatorViaCondMutualInfo}.</p>
+ *  
+ * <p>Crucially, the calculation is performed by examining
+ * neighbours in the full joint space (as specified by Frenzel and Pompe,
+ * and Gomez-Herrero et al.)
+ * rather than two MI calculators.</p>
  * 
- * <p>
- * Implements a conditional transfer entropy calculator using a conditional MI calculator
- * implementing the Kraskov-Grassberger estimator.
- * This is achieved by plugging in a {@link ConditionalMutualInfoCalculatorMultiVariateKraskov}
- * as the calculator into {@link TransferEntropyCalculatorViaCondMutualInfo}.
+ * <p>Usage is as per the paradigm outlined for {@link ConditionalTransferEntropyCalculator},
+ * with:
+ * <ul>
+ * 	<li>The constructor step is either a simple call to
+ * 		{@link #ConditionalTransferEntropyCalculatorKraskov()},
+ *      or else specifies which KSG algorithm to implement via
+ *      {@link #ConditionalTransferEntropyCalculatorKraskov(String)};</li>
+ * 	<li>{@link #setProperty(String, String)} allowing properties defined for both
+ * 		{@link ConditionalTransferEntropyCalculator#setProperty(String, String)} and
+ *      {@link ConditionalMutualInfoCalculatorMultiVariateKraskov#setProperty(String, String)}
+ *      as outlined
+ *      in {@link ConditionalTransferEntropyCalculatorViaCondMutualInfo#setProperty(String, String)});
+ *      as well as for {@link #PROP_KRASKOV_ALG_NUM}.</li>
+ *  <li>Computed values are in <b>nats</b>, not bits!</li>
+ *  </ul>
  * </p>
  * 
- * <p>
- * Usage:
- * 	<ol>
- * 		<li>Construct: {@link #ConditionalTransferEntropyCalculatorKraskov()}</li>
- * 		<li>Set properties: {@link #setProperty(String, String)} for each relevant property, including those
- * 			of either {@link ConditionalTransferEntropyCalculatorViaCondMutualInfo#setProperty(String, String)}
- * 			or {@link ConditionalMutualInfoCalculatorMultiVariateKraskov#setProperty(String, String)}.</li>
- *		<li>Initialise: by calling one of {@link #initialise()} etc.</li>
- * 		<li>Add observations to construct the PDFs: {@link #setObservations(double[], double[], double[][])},
- * 			or [{@link #startAddObservations()},
- * 			{@link #addObservations(double[])}*, {@link #finaliseAddObservations()}]
- *   		Note: If not using setObservations(), the results from computeLocal
- *   		will be concatenated directly, and getSignificance will mix up observations 
- *          from separate trials (added in separate {@link #addObservations(double[])} calls.</li> 
- * 		<li>Compute measures: e.g. {@link #computeAverageLocalOfObservations()} or
- * 			{@link #computeLocalOfPreviousObservations()} etc </li>
- * 	</ol>
- * </p>
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>T. Schreiber, <a href="http://dx.doi.org/10.1103/PhysRevLett.85.461">
+ * "Measuring information transfer"</a>,
+ *  Physical Review Letters 85 (2) pp.461-464, 2000.</li>
+ * 	<li>Frenzel and Pompe, <a href="http://dx.doi.org/10.1103/physrevlett.99.204101">
+ * 	"Partial Mutual Information for Coupling Analysis of Multivariate Time Series"</a>,
+ * 	Physical Review Letters, <b>99</b>, p. 204101+ (2007).</li>
+ * 	<li>G. Gomez-Herrero, W. Wu, K. Rutanen, M. C. Soriano, G. Pipa, and R. Vicente,
+ * 	<a href="http://arxiv.org/abs/1008.0539">
+ * 	"Assessing coupling dynamics from an ensemble of time series"</a>,
+ * 	arXiv:1008.0539 (2010).</li>
+ * 	<li>Kraskov, A., Stoegbauer, H., Grassberger, P., 
+ *   <a href="http://dx.doi.org/10.1103/PhysRevE.69.066138">"Estimating mutual information"</a>,
+ *   Physical Review E 69, (2004) 066138.</li>
+ *  <li>J. T. Lizier, M. Prokopenko and A. Zomaya,
+ *  <a href="http://dx.doi.org/10.1103/PhysRevE.77.026110">
+ *  "Local information transfer as a spatiotemporal filter for complex systems"</a>
+ *  Physical Review E 77, 026110, 2008.</li>
+ *  <li>J. T. Lizier, M. Prokopenko and A. Zomaya,
+ *  <a href=http://dx.doi.org/10.1063/1.3486801">
+ *  "Information modification and particle collisions in distributed computation"</a>
+ *  Chaos 20, 3, 037109 (2010).</li>
+ * </ul>
  * 
  * @author Joseph Lizier, <a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>
  * 
- * @see "Schreiber, Physical Review Letters 85 (2) pp.461-464 (2000);
- *  <a href='http://dx.doi.org/10.1103/PhysRevLett.85.461'>download</a>
- *  (for definition of transfer entropy)"
- * @see "Lizier, Prokopenko and Zomaya, Physical Review E 77, 026110 (2008);
- * <a href='http://dx.doi.org/10.1103/PhysRevE.77.026110'>download</a>
- *  (for the extension to <i>conditional</i> transfer entropy 
- *  or <i>complete</i> where all other causal sources are conditioned on,
- *  and <i>local</i> transfer entropy)"
- * @see "Lizier, Prokopenko and Zomaya, Chaos 20, 3, 037109 (2010);
- * <a href='http://dx.doi.org/10.1063/1.3486801'>download</a>
- *  (for further clarification on <i>conditional</i> transfer entropy 
- *  or <i>complete</i> where all other causal sources are conditioned on)"
- * @see "Kraskov, A., Stoegbauer, H., Grassberger, P., Physical Review E 69, (2004) 066138;
- *  <a href='http://dx.doi.org/10.1103/PhysRevE.69.066138'>download</a>
- *  (for introduction of Kraskov-Grassberger method for MI)"
- * @see "G. Gomez-Herrero, W. Wu, K. Rutanen, M. C. Soriano, G. Pipa, and R. Vicente,
- *    arXiv:1008.0539, 2010;
- *  <a href='http://arxiv.org/abs/1008.0539'>download</a>
- *  (for introduction of Kraskov-Grassberger technique to transfer entropy)"
  * @see ConditionalTransferEntropyCalculator
- *
+ * @see ConditionalMutualInfoCalculatorMultiVariateKraskov
  */
 public class ConditionalTransferEntropyCalculatorKraskov
 	extends ConditionalTransferEntropyCalculatorViaCondMutualInfo {
 
+	/**
+	 * Class name for KSG conditional MI estimator via KSG algorithm 1
+	 */
 	public static final String COND_MI_CALCULATOR_KRASKOV1 = ConditionalMutualInfoCalculatorMultiVariateKraskov1.class.getName();
+	/**
+	 * Class name for KSG conditional MI estimator via KSG algorithm 2
+	 */
 	public static final String COND_MI_CALCULATOR_KRASKOV2 = ConditionalMutualInfoCalculatorMultiVariateKraskov2.class.getName();
 	
 	/**
@@ -89,6 +105,9 @@ public class ConditionalTransferEntropyCalculatorKraskov
 	 */
 	public final static String PROP_KRASKOV_ALG_NUM = "ALG_NUM";
 	
+	/**
+	 * Which Kraskov algorithm number we are using
+	 */
 	protected int kraskovAlgorithmNumber = 1;
 	protected boolean algChanged = false;
 	/**
@@ -166,19 +185,31 @@ public class ConditionalTransferEntropyCalculatorKraskov
 	}
 
 	/**
-	 * Sets properties for the calculator.
-	 * Valid properties include:
+	 * Sets properties for the TE calculator.
+	 *  New property values are not guaranteed to take effect until the next call
+	 *  to an initialise method. 
+	 *  
+	 * <p>Valid property names, and what their
+	 * values should represent, include:</p>
 	 * <ul>
-	 * 	<li>{@link #PROP_KRASKOV_ALG_NUM} - which Kraskov algorithm number to use (1 or 2). Will only be applied at the next initialisation.</li>
+	 * 	<li>{@link #PROP_KRASKOV_ALG_NUM} -- which Kraskov algorithm
+	 * 	number to use (1 or 2). Will only be applied at the
+	 *  next initialisation.</li>
 	 *  <li>Any valid properties for {@link ConditionalTransferEntropyCalculatorViaCondMutualInfo#setProperty(String, String)}</li>
 	 * 	<li>Any valid properties for {@link ConditionalMutualInfoCalculatorMultiVariateKraskov#setProperty(String, String)}</li>
 	 * </ul>
-	 * One should set {@link ConditionalMutualInfoCalculatorMultiVariateKraskov#PROP_K} here, the number
-	 *  of neighbouring points one should count up to in determining the joint kernel size. 
+	 * <p>One should set {@link ConditionalMutualInfoCalculatorMultiVariateKraskov#PROP_K} here, the number
+	 *  of neighbouring points one should count up to in determining the joint kernel size.</p>
+	 * 
+	 * <p><b>Note:</b> further properties may be defined by child classes.</p>
+	 * 
+	 * <p>Unknown property values are ignored.</p>
 	 * 
 	 * @param propertyName name of the property
-	 * @param propertyValue value of the property (as a string)
+	 * @param propertyValue value of the property.
+	 * @throws Exception if there is a problem with the supplied value).
 	 */
+	@Override
 	public void setProperty(String propertyName, String propertyValue)
 			throws Exception {
 		if (propertyName.equalsIgnoreCase(PROP_KRASKOV_ALG_NUM)) {

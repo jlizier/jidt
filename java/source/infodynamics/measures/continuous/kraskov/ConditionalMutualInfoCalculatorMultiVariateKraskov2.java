@@ -71,17 +71,12 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 	protected static final double CUTOFF_MULTIPLIER = 1.5;
 	
 	/**
-	 * Compute what the average conditional MI would look like were the given
-	 *  time series reordered
-	 *  as per the array of time indices in reordering.
-	 * The user should ensure that all values 0..N-1 are represented exactly once in the
-	 *  array reordering and that no other values are included here. 
-	 * 
-	 * @param variableToReorder 1 for variable 1, 2 for variable 2
-	 * @param reordering the reordered time steps of the given variable
-	 * @return
-	 * @throws Exception
+	 * See description in {@link ConditionalMutualInfoCalculatorMultiVariate#computeAverageLocalOfObservations(int, int[])} 
+	 *   
+	 * If {@code reordering} is null, it is assumed there is no reordering of
+	 *  the given variable.
 	 */
+	@Override
 	public double computeAverageLocalOfObservations(int variableToReorder,
 			int[] reordering) throws Exception {
 		if (!tryKeepAllPairsNorms || (var1Observations.length > MAX_DATA_SIZE_FOR_KEEP_ALL_PAIRS_NORM)) {
@@ -260,6 +255,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 		return lastAverage;
 	}
 
+	@Override
 	public double computeAverageLocalOfObservations() throws Exception {
 		if (!tryKeepAllPairsNorms || (var1Observations.length > MAX_DATA_SIZE_FOR_KEEP_ALL_PAIRS_NORM)) {
 			return computeAverageLocalOfObservationsWhileComputingDistances();
@@ -387,12 +383,13 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 	}
 
 	/**
-	 * This method correctly computes the average local conditional MI, but recomputes the x and y and z
+	 * This method correctly computes the average conditional MI, but recomputes the
 	 *  distances between all tuples in time.
 	 * Kept here for cases where we have too many observations
 	 *  to keep the norm between all pairs, and for testing purposes.
 	 * 
-	 * @return
+	 * @see #computeAverageLocalOfObservations()
+	 * @return average conditional MI value in nats not bits
 	 * @throws Exception
 	 */
 	public double computeAverageLocalOfObservationsWhileComputingDistances() throws Exception {
@@ -514,6 +511,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 		return lastAverage;
 	}
 
+	@Override
 	public double[] computeLocalOfPreviousObservations() throws Exception {
 		int N = var1Observations.length; // number of observations
 		int cutoffForKthMinLinear = (int) (CUTOFF_MULTIPLIER * Math.log(N) / Math.log(2.0));
@@ -640,6 +638,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 		return localCondMi;
 	}
 
+	@Override
 	public String printConstants(int N) throws Exception {
 		String constants = String.format("digamma(k=%d)=%.3e",
 				k, MathsUtils.digamma(k));

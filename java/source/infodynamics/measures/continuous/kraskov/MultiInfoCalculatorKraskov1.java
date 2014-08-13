@@ -23,20 +23,32 @@ import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 
 /**
- * <p>Compute the Multi Info using the Kraskov estimation method.
- * Uses the first algorithm (defined on p.4/5 of the paper)</p>
- * @see "Estimating mutual information", Kraskov, A., Stogbauer, H., Grassberger, P., Physical Review E 69, (2004) 066138
- * @see http://dx.doi.org/10.1103/PhysRevE.69.066138
- * 
- * @author Joseph Lizier
+ * <p>Computes the differential multi-information of two given multivariate
+ *  sets of
+ *  observations (implementing {@link MultiInfoCalculator}),
+ *  using Kraskov-Stoegbauer-Grassberger (KSG) estimation (see Kraskov et al., below),
+ *  <b>algorithm 1</b>.
+ *  Most of the functionality is defined by the parent class 
+ *  {@link MultiInfoCalculatorKraskov}.</p>
  *
+ * <p>Usage is as per the paradigm outlined for {@link MultiInfoCalculator},
+ * and expanded on in {@link MultiInfoCalculatorKraskov}.
+ * </p>
+ *  
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>Kraskov, A., Stoegbauer, H., Grassberger, P., 
+ *   <a href="http://dx.doi.org/10.1103/PhysRevE.69.066138">"Estimating mutual information"</a>,
+ *   Physical Review E 69, (2004) 066138.</li>
+ * </ul>
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class MultiInfoCalculatorKraskov1
 	extends MultiInfoCalculatorKraskov {
 	
-	/**
-	 * Compute the average MI from the previously set observations
-	 */
+	@Override
 	public double computeAverageLocalOfObservations() throws Exception {
 		if (miComputed) {
 			return mi;
@@ -44,22 +56,7 @@ public class MultiInfoCalculatorKraskov1
 		return computeAverageLocalOfObservations(null);
 	}
 
-	/**
-	 * Compute what the average MI would look like were the 2nd, 3rd, etc time series reordered
-	 *  as per the array of time indices in reordering.
-	 * The user should ensure that all values 0..N-1 are represented exactly once in the
-	 *  array reordering and that no other values are included here. 
-	 * If reordering is null, it is assumed there is no reordering of
-	 *  the y variable.
-	 * 
-	 * @param reordering the specific new orderings to use. First index is the variable number
-	 *  (can be for all variables, or one less than all if the first is not to be reordered),
-	 *  second index is the time step, the value is the reordered time step to use
-	 *  for that variable at the given time step.
-	 *  If null, no reordering is performed.
-	 * @return
-	 * @throws Exception
-	 */
+	@Override
 	public double computeAverageLocalOfObservations(int[][] reordering) throws Exception {
 		if (V == 1) {
 			miComputed = true;
@@ -155,12 +152,13 @@ public class MultiInfoCalculatorKraskov1
 	}
 	
 	/**
-	 * This method correctly computes the average local MI, but recomputes the 
-	 *  distances for each marginal variable between all tuples in time.
+	 * This method correctly computes the average multi-info, but recomputes the
+	 *  marginal distances between all tuples in time.
 	 * Kept here for cases where we have too many observations
 	 *  to keep the norm between all pairs, and for testing purposes.
 	 * 
-	 * @return
+	 * @see #computeAverageLocalOfObservations()
+	 * @return average multi-info
 	 * @throws Exception
 	 */
 	public double computeAverageLocalOfObservationsWhileComputingDistances() throws Exception {
@@ -230,6 +228,7 @@ public class MultiInfoCalculatorKraskov1
 		return mi;
 	}
 
+	@Override
 	public double[] computeLocalOfPreviousObservations() throws Exception {
 		double[] localMi = new double[N];
 		int cutoffForKthMinLinear = (int) (Math.log(N) / Math.log(2.0));
@@ -306,6 +305,7 @@ public class MultiInfoCalculatorKraskov1
 		return localMi;
 	}
 
+	@Override
 	public String printConstants(int N) throws Exception {
 		String constants = String.format("digamma(k=%d)=%.3e + digamma(N=%d)=%.3e => %.3e",
 				k, MathsUtils.digamma(k), N, MathsUtils.digamma(N),

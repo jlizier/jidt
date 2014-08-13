@@ -22,48 +22,56 @@ import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 
 /**
- * <p>Compute the Conditional Mutual Info using the Kraskov estimation method,
- * as extended by Frenzel and Pompe.
- * Uses the first algorithm (defined at end of p.2 of the Kraskov paper)</p>
- * <p>Computes this directly looking at the marginal space for each variable, rather than
- * using the multi-info (or integration) in the marginal spaces.
- * </p>
- * @see "Estimating mutual information", Kraskov, A., Stogbauer, H., Grassberger, P., Physical Review E 69, (2004) 066138
- * http://dx.doi.org/10.1103/PhysRevE.69.066138
- * @see "Partial Mutual Information for Coupling Analysis of Multivariate Time Series", Frenzel and Pompe, 2007
- * 
- * @author Joseph Lizier
+ * <p>Computes the differential conditional mutual information of two multivariate
+ *  <code>double[][]</code> sets of observations, conditioned on another
+ *  (implementing {@link ConditionalMutualInfoCalculatorMultiVariate}),
+ *  using Kraskov-Stoegbauer-Grassberger (KSG) estimation (see references below)
+ *  <b>algorithm 1</b>.
+ *  Most of the functionality is defined by the parent class 
+ *  {@link ConditionalMutualInfoCalculatorMultiVariateKraskov}.</p>
  *
+ * <p>Crucially, the calculation is performed by examining
+ * neighbours in the full joint space (as specified by Frenzel and Pompe)
+ * rather than two MI calculators.</p>
+ *  
+ * <p>Usage is as per the paradigm outlined for {@link ConditionalMutualInfoCalculatorMultiVariate},
+ * and expanded on in {@link ConditionalMutualInfoCalculatorMultiVariateKraskov}.
+ * </p>
+ *  
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>Frenzel and Pompe, <a href="http://dx.doi.org/10.1103/physrevlett.99.204101">
+ * 	"Partial Mutual Information for Coupling Analysis of Multivariate Time Series"</a>,
+ * 	Physical Review Letters, <b>99</b>, p. 204101+ (2007).</li>
+ * 	<li>Kraskov, A., Stoegbauer, H., Grassberger, P., 
+ *   <a href="http://dx.doi.org/10.1103/PhysRevE.69.066138">"Estimating mutual information"</a>,
+ *   Physical Review E 69, (2004) 066138.</li>
+ * </ul>
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 	extends ConditionalMutualInfoCalculatorMultiVariateKraskov {
 	
-	// Multiplier used in hueristic for determining whether to use a linear search
-	//  for min kth element or a binary search.
+	/**
+	 * Multiplier used as hueristic for determining whether to use a linear search
+	 *  for kth nearest neighbour or a binary search.
+	 */
 	protected static final double CUTOFF_MULTIPLIER = 1.5;
 
-	/**
-	 * Compute the average conditional MI from the previously set observations
-	 */
+	@Override
 	public double computeAverageLocalOfObservations() throws Exception {
 		return computeAverageLocalOfObservations(1, null);
 	}
 
 	/**
-	 * Compute what the average conditional MI would look like were the given
-	 *  time series reordered
-	 *  as per the array of time indices in reordering.
-	 * The user should ensure that all values 0..N-1 are represented exactly once in the
-	 *  array reordering and that no other values are included here.
+	 * See description in {@link ConditionalMutualInfoCalculatorMultiVariate#computeAverageLocalOfObservations(int, int[])} 
 	 *   
-	 * If reordering is null, it is assumed there is no reordering of
+	 * If {@code reordering} is null, it is assumed there is no reordering of
 	 *  the given variable.
-	 * 
-	 * @param variableToReorder 1 for variable 1, 2 for variable 2
-	 * @param reordering the reordered time steps of the given variable
-	 * @return
-	 * @throws Exception
 	 */
+	@Override
 	public double computeAverageLocalOfObservations(int variableToReorder, 
 			int[] reordering) throws Exception {
 		if (!tryKeepAllPairsNorms || (var1Observations.length > MAX_DATA_SIZE_FOR_KEEP_ALL_PAIRS_NORM)) {
@@ -204,12 +212,13 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 	}
 	
 	/**
-	 * This method correctly computes the average local MI, but recomputes the x, y and z 
+	 * This method correctly computes the average conditional MI, but recomputes the
 	 *  distances between all tuples in time.
 	 * Kept here for cases where we have too many observations
 	 *  to keep the norm between all pairs, and for testing purposes.
 	 * 
-	 * @return
+	 * @see #computeAverageLocalOfObservations()
+	 * @return average conditional MI value in nats not bits
 	 * @throws Exception
 	 */
 	public double computeAverageLocalOfObservationsWhileComputingDistances() throws Exception {
@@ -294,6 +303,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 		return lastAverage;
 	}
 
+	@Override
 	public double[] computeLocalOfPreviousObservations() throws Exception {
 		int N = var1Observations.length; // number of observations
 		int cutoffForKthMinLinear = (int) (CUTOFF_MULTIPLIER * Math.log(N) / Math.log(2.0));
@@ -381,6 +391,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 		return localCondMi;
 	}
 
+	@Override
 	public String printConstants(int N) throws Exception {
 		String constants = String.format("digamma(k=%d)=%.3e",
 				k, MathsUtils.digamma(k));

@@ -20,47 +20,63 @@ package infodynamics.measures.continuous.kraskov;
 
 import infodynamics.measures.continuous.ActiveInfoStorageCalculator;
 import infodynamics.measures.continuous.ActiveInfoStorageCalculatorViaMutualInfo;
+import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 
 /**
+ * An Active Information Storage (AIS) calculator (implementing {@link ActiveInfoStorageCalculator})
+ * which is affected using a 
+ * Kraskov-Stoegbauer-Grassberger (KSG) Mutual Information (MI) calculator
+ * ({@link MutualInfoCalculatorMultiVariateKraskov}) to make the calculations.
  * 
  * <p>
- * Implements an active information storage calculator using Kraskov-Grassberger estimation.
- * This is achieved by plugging in {@link MutualInfoCalculatorMultiVariateKraskov1}
- * or {@link MutualInfoCalculatorMultiVariateKraskov2}
- * as the calculator into {@link ActiveInfoStorageCalculatorViaMutualInfo}.
+ * That is, this class implements an AIS calculator using the KSG nearest-neighbour approach.
+ * This is achieved by plugging in {@link MutualInfoCalculatorMultiVariateKraskov}
+ * as the calculator into the parent class {@link ActiveInfoStorageCalculatorViaMutualInfo}.
  * </p> 
  * 
- * <p>
- * Usage:
- * 	<ol>
- * 		<li>Construct: {@link #ActiveInfoStorageCalculatorKraskov()}</li>
- * 		<li>Set properties: {@link #setProperty(String, String)} for each relevant property, including those
- * 			of either {@link ActiveInfoStorageCalculatorViaMutualInfo#setProperty(String, String)}
- * 			or {@link MutualInfoCalculatorMultiVariateKraskov#setProperty(String, String)}.</li>
- *		<li>Initialise: by calling one of {@link #initialise()} etc.</li>
- * 		<li>Add observations to construct the PDFs: {@link #setObservations(double[])}, or [{@link #startAddObservations()},
- * 			{@link #addObservations(double[])}*, {@link #finaliseAddObservations()}]
- *   		Note: If not using setObservations(), the results from computeLocal
- *   		will be concatenated directly, and getSignificance will mix up observations 
- *          from separate trials (added in separate {@link #addObservations(double[])} calls.</li> 
- * 		<li>Compute measures: e.g. {@link #computeAverageLocalOfObservations()} or
- * 			{@link #computeLocalOfPreviousObservations()} etc </li>
- * 	</ol>
+ * <p>Usage is as per the paradigm outlined for {@link ActiveInfoStorageCalculator},
+ * with:
+ * <ul>
+ * 	<li>The constructor step is either a simple call to {@link #ActiveInfoStorageCalculatorKraskov()},
+ *      or else specifies which KSG algorithm to implement via {@link #ActiveInfoStorageCalculatorKraskov(int)}
+ *      or {@link #ActiveInfoStorageCalculatorKraskov(String)};</li>
+ * 	<li>{@link #setProperty(String, String)} allowing properties for
+ *      {@link MutualInfoCalculatorMultiVariateKraskov#setProperty(String, String)}
+ *      (except {@link MutualInfoCalculatorMultiVariate#PROP_TIME_DIFF} as outlined
+ *      in {@link ActiveInfoStorageCalculatorViaMutualInfo#setProperty(String, String)}).</li>
+ *  <li>Computed values are in <b>nats</b>, not bits!</li>
+ *  </ul>
  * </p>
  * 
- * @author Joseph Lizier
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>J.T. Lizier, M. Prokopenko and A.Y. Zomaya,
+ * 		<a href="http://dx.doi.org/10.1016/j.ins.2012.04.016">
+ * 		"Local measures of information storage in complex distributed computation"</a>,
+ * 		Information Sciences, vol. 208, pp. 39-54, 2012.</li>
+ * </ul>
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  * @see ActiveInfoStorageCalculator
- * @see ActiveInfoStorageCalculatorCorrelationIntegrals
+ * @see ActiveInfoStorageCalculatorViaMutualInfo
+ * @see MutualInfoCalculatorMultiVariateKraskov
  *
  */
 public class ActiveInfoStorageCalculatorKraskov
 	extends ActiveInfoStorageCalculatorViaMutualInfo {
 	
+	/**
+	 * Class name for KSG MI estimator via KSG algorithm 1
+	 */
 	public static final String MI_CALCULATOR_KRASKOV1 = MutualInfoCalculatorMultiVariateKraskov1.class.getName();
+	/**
+	 * Class name for KSG MI estimator via KSG algorithm 2
+	 */
 	public static final String MI_CALCULATOR_KRASKOV2 = MutualInfoCalculatorMultiVariateKraskov2.class.getName();
 		
 	/**
-	 * Creates a new instance of the Kraskov-Grassberger style active info storage calculator.
+	 * Creates a new instance of the Kraskov-Stoegbauer-Grassberger style AIS calculator.
 	 * 
 	 * Uses algorithm 2 by default.
 	 *
@@ -75,11 +91,11 @@ public class ActiveInfoStorageCalculatorKraskov
 	}
 
 	/**
-	 * Creates a new instance of the Kraskov-Grassberger style active info storage calculator,
-	 *  with the supplied MI calculator name
+	 * Creates a new instance of the Kraskov-Stoegbauer-Grassberger estimator for AIS,
+	 *  with the supplied MI calculator name.
 	 * 
 	 * @param calculatorName fully qualified name of the underlying MI class.
-	 *    Must be {@link #MI_CALCULATOR_KRASKOV1} or {@link #MI_CALCULATOR_KRASKOV2}
+	 *    Must be equal to {@link #MI_CALCULATOR_KRASKOV1} or {@link #MI_CALCULATOR_KRASKOV2}
 	 * @throws ClassNotFoundException 
 	 * @throws IllegalAccessException 
 	 * @throws InstantiationException 
@@ -95,10 +111,10 @@ public class ActiveInfoStorageCalculatorKraskov
 	}
 
 	/**
-	 * Creates a new instance of the Kraskov-Grassberger style active info storage calculator,
-	 *  with the supplied Kraskov-Grassberger MI algorithm number
+	 * Creates a new instance of the Kraskov-Stoegbauer-Grassberger estimator for AIS,
+	 *  with the supplied Kraskov-Stoegbauer-Grassberger MI algorithm number
 	 * 
-	 * @param algorithm either 1 or 2
+	 * @param algorithm must be either 1 or 2 for the first or second KSG algorithm
 	 * @throws ClassNotFoundException 
 	 * @throws IllegalAccessException 
 	 * @throws InstantiationException 
@@ -110,5 +126,4 @@ public class ActiveInfoStorageCalculatorKraskov
 			throw new ClassNotFoundException("Algorithm must be 1 or 2");
 		}
 	}
-
 }
