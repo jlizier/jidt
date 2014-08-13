@@ -23,24 +23,37 @@ import infodynamics.utils.EuclideanUtils;
 import infodynamics.utils.MathsUtils;
 
 /**
- * Compute the entropy using the Kozachenko estimation method.
- * See:
- * - "A statistical estimate for the entropy of a random vector"
- * 		Kozachenko, L., Leonenko, N.,
- * 		Problems of Information Transmission, 23 (1987) 9-16
- * - "Estimating mutual information"
- * 		Kraskov, A., Stogbauer, H., Grassberger, P.,
- * 		Physical Review E 69, (2004) 066138
- * - "Measuring Global Behaviour of Multi-Agent Systems from
- *  	Pair-Wise Mutual Information",
- *  	George Mathews, Hugh Durrant-Whyte, and Mikhail Prokopenko
+ * <p>Computes the differential entropy of a given set of observations
+ *  (implementing {@link EntropyCalculatorMultiVariate}, using 
+ *  the Kozachenko-Leonenko estimator.
+ *  For details, see references below.
+ *  This class computes it exactly as in the paper by Kraskov et al. below,
+ *  i.e. using natural units and twice the minimum distance.</p>
+ *  
+ * <p>Usage is as per the paradigm outlined for {@link EntropyCalculatorMultiVariate},
+ * with:
+ * <ul>
+ * 	<li>The constructor step being a simple call to {@link #EntropyCalculatorMultiVariateKozachenko()}.</li>
+ *  <li>An additional {@link #setObservations(double[][], double[][])} option;</li>
+ * </ul>
+ * </p>
  * 
- * This class computes it exactly as in "Estimating mutual information", i.e. using natural
- *  units and twice the minimum distance.
- *  Implementing this to check if our other implementation was correct.
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>Kozachenko, L., Leonenko, N., "A statistical estimate for the entropy of a random vector",
+ *   Problems of Information Transmission, 23 (1987) 9-16.</li>
+ * 	<li>Kraskov, A., Stoegbauer, H., Grassberger, P., 
+ *   <a href="http://dx.doi.org/10.1103/PhysRevE.69.066138">"Estimating mutual information"</a>,
+ *   Physical Review E 69, (2004) 066138.</li>
+ *  <li>George Mathews, Hugh Durrant-Whyte, and Mikhail Prokopenko,
+ *     <a href="http://dx.doi.org/10.1007/11554028_81">"Measuring Global Behaviour of Multi-Agent Systems from
+ *  	Pair-Wise Mutual Information"</a>, 
+ *      Knowledge-Based Intelligent Information and Engineering Systems,
+ *      Lecture Notes in Computer Science Volume 3684, 2005, pp 587-594.</li>
+ * </ul>
  * 
- * @author Joseph Lizier
- *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class EntropyCalculatorMultiVariateKozachenko  
 	implements EntropyCalculatorMultiVariate {
@@ -55,7 +68,9 @@ public class EntropyCalculatorMultiVariateKozachenko
 	
 	public static final double EULER_MASCHERONI_CONSTANT = 0.5772156;
 	
-		
+	/**
+	 * Construct an instance
+	 */
 	public EntropyCalculatorMultiVariateKozachenko() {
 		totalObservations = 0;
 		dimensions = 0;
@@ -71,8 +86,8 @@ public class EntropyCalculatorMultiVariateKozachenko
 		lastLocalEntropy = null;
 	}
 	
-	/* (non-Javadoc)
-	 * @see infodynamics.measures.continuous.EntropyCalculatorMultiVariate#setProperty(java.lang.String, java.lang.String)
+	/**
+	 * No properties are defined here, so this method will have no effect.
 	 */
 	public void setProperty(String propertyName, String propertyValue)
 			throws Exception {
@@ -93,9 +108,10 @@ public class EntropyCalculatorMultiVariateKozachenko
 	 *  joint time series without combining them into a single joint time
 	 *  series (we do the combining for them).
 	 * 
-	 * @param data1
-	 * @param data2
+	 * @param data1 first few variables in the joint data
+	 * @param data2 the other variables in the joint data
 	 * @throws Exception When the length of the two arrays of observations do not match.
+	 * @see #setObservations(double[][])
 	 */
 	public void setObservations(double[][] data1,
 			double[][] data2) throws Exception {
@@ -119,8 +135,6 @@ public class EntropyCalculatorMultiVariateKozachenko
 	}
 
 	/**
-	 * Computes average entropy of previously provided observations.
-	 * 
 	 * @return entropy in natural units
 	 */
 	public double computeAverageLocalOfObservations() {
@@ -159,8 +173,6 @@ public class EntropyCalculatorMultiVariateKozachenko
 	}
 
 	/**
-	 * Computes local entropies of given values, using previously provided observations.
-	 * 
 	 * @return local entropies in natural units
 	 */
 	public double[] computeLocalOfPreviousObservations() {
@@ -198,10 +210,16 @@ public class EntropyCalculatorMultiVariateKozachenko
 		return localEntropy;
 	}
 
+	/**
+	 * Not implemented yet
+	 */
 	public double[] computeLocalUsingPreviousObservations(double[][] states) throws Exception {
 		throw new Exception("Local method for other data not implemented");
 	}
 
+	/**
+	 * Not implemented yet
+	 */
 	public double[] computeLocalUsingPreviousObservations(double[][] states1, double[][] states2) throws Exception {
 		throw new Exception("Local method for other data not implemented");
 	}
