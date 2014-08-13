@@ -25,38 +25,36 @@ import infodynamics.utils.ChiSquareMeasurementDistribution;
 import infodynamics.utils.MatrixUtils;
 
 /**
- * <p>Computes the differential mutual information of two given multivariate sets of
- *  observations,
+ * <p>Computes the differential mutual information of two given multivariate
+ *  <code>double[][]</code> sets of
+ *  observations (implementing {@link MutualInfoCalculatorMultiVariate}),
  *  assuming that the probability distribution function for these observations is
  *  a multivariate Gaussian distribution.</p>
  *  
- * <p>
- * Usage:
- * 	<ol>
- * 		<li>Construct {@link #MutualInfoCalculatorMultiVariateLinearGaussian()}</li>
- *		<li>{@link #initialise(int, int)}</li>
- * 		<li>Set properties using {@link #setProperty(String, String)}</li>
- * 		<li>Provide the observations to the calculator using:
- * 			{@link #setObservations(double[][], double[][])}, or
- * 			{@link #setCovariance(double[][])}, or
- * 			a sequence of:
- * 			{@link #startAddObservations()},
- *          multiple calls to either {@link #addObservations(double[][], double[][])}
- *          or {@link #addObservations(double[][], double[][], int, int)}, and then
- *          {@link #finaliseAddObservations()}.</li>
- * 		<li>Compute the required information-theoretic results, primarily:
- * 			{@link #computeAverageLocalOfObservations()} to return the average differential
- *          entropy based on either the set variance or the variance of
- *          the supplied observations; or other calls to compute
- *          local values or statistical significance.</li>
- * 	</ol>
+ * <p>Usage is as per the paradigm outlined for {@link MutualInfoCalculatorMultiVariate},
+ * with:
+ * <ul>
+ * 	<li>The constructor step being a simple call to {@link #MutualInfoCalculatorMultiVariateGaussian()}.</li>
+ * 	<li>The user can call {@link #setCovariance(double[][], boolean)} or
+ *     {@link #setCovariance(double[][], int)} or {@link #setCovarianceAndMeans(double[][], double[], int)}
+ *     instead of supplying observations via {@link #setObservations(double[][], double[][])} or
+ *     {@link #addObservations(double[][], double[][])} etc.</li>
+ *  <li>Computed values are in <b>nats</b>, not bits!</li>
+ *  <li>Additional method {@link #computeSignificance()} to compute null distribution analytically.</li>
+ *  </ul>
  * </p>
+ * 
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>T. M. Cover and J. A. Thomas, 'Elements of Information
+Theory' (John Wiley & Sons, New York, 1991).</li>
+ * </ul>
  * 
  * @see <a href="http://mathworld.wolfram.com/DifferentialEntropy.html">Differential entropy for Gaussian random variables at Mathworld</a>
  * @see <a href="http://en.wikipedia.org/wiki/Differential_entropy">Differential entropy for Gaussian random variables at Wikipedia</a>
  * @see <a href="http://en.wikipedia.org/wiki/Multivariate_normal_distribution">Multivariate normal distribution on Wikipedia</a>
- * @author Joseph Lizier joseph.lizier_at_gmail.com
- *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class MutualInfoCalculatorMultiVariateGaussian 
 		extends MutualInfoMultiVariateCommon
@@ -90,23 +88,25 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	protected double[] means;
 
 	/**
-	 * Cached determinants of the covariance matrices
+	 * Cached determinant of the joint covariance matrix
 	 */
 	protected double detCovariance;
+	/**
+	 * Cached determinant of the source covariance matrix
+	 */
 	protected double detSourceCovariance;
+	/**
+	 * Cached determinant of the destination covariance matrix
+	 */
 	protected double detDestCovariance;
 	
+	/**
+	 * Construct an instance of the Gaussian MI calculator
+	 */
 	public MutualInfoCalculatorMultiVariateGaussian() {
 		// Nothing to do
 	}
 	
-	/**
-	 * Clear any previously supplied probability distributions and prepare
-	 * the calculator to be used again.
-	 * 
-	 * @param sourceDimensions number of joint variables in the source
-	 * @param destDimensions number of joint variables in the destination
-	 */
 	public void initialise(int sourceDimensions, int destDimensions) {
 		super.initialise(sourceDimensions, destDimensions);
 		L = null;
@@ -119,8 +119,6 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	}
 
 	/**
-	 * Finalise the addition of multiple observation sets.
-	 * 
 	 * @throws Exception if the observation variables are not linearly independent
 	 *  (leading to a non-positive definite covariance matrix).
 	 */
@@ -153,7 +151,9 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	 * <p>Set the covariance of the distribution for which we will compute the
 	 *  mutual information.</p>
 	 *  
-	 * <p>Note that without setting any observations, you cannot later
+	 * <p>This is an alternative to sequences of calls to {@link #setObservations(double[][], double[][])} or
+	 * {@link #addObservations(double[][], double[][])} etc.
+	 * Note that without setting any observations, you cannot later
 	 *  call {@link #computeLocalOfPreviousObservations()}, and without
 	 *  providing the means of the variables, you cannot later call
 	 *  {@link #computeLocalUsingPreviousObservations(double[][], double[][])}.</p>
@@ -179,13 +179,15 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	 * <p>Set the covariance of the distribution for which we will compute the
 	 *  mutual information.</p>
 	 *  
-	 * <p>Note that without setting any observations, you cannot later
+	 * <p>This is an alternative to sequences of calls to {@link #setObservations(double[][], double[][])} or
+	 * {@link #addObservations(double[][], double[][])} etc.
+	 * Note that without setting any observations, you cannot later
 	 *  call {@link #computeLocalOfPreviousObservations()}, and without
 	 *  providing the means of the variables, you cannot later call
 	 *  {@link #computeLocalUsingPreviousObservations(double[][], double[][])}.</p>
 	 * 
 	 * @param covariance covariance matrix of the source and destination
-	 *  variables, considered together (variable indices start with the source
+	 *  variables, considered jointly together (variable indices start with the source
 	 *  and continue into the destination).
 	 * @param determinedFromObservations whether the covariance matrix
 	 *  was determined internally from observations or not
@@ -231,7 +233,9 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	 * <p>Set the covariance of the distribution for which we will compute the
 	 *  mutual information.</p>
 	 * 
-	 * <p>Note that without setting any observations, you cannot later
+	 * <p>This is an alternative to sequences of calls to {@link #setObservations(double[][], double[][])} or
+	 * {@link #addObservations(double[][], double[][])} etc.
+	 * Note that without setting any observations, you cannot later
 	 *  call {@link #computeLocalOfPreviousObservations()}.</p>
 	 * 
 	 * @param covariance covariance matrix of the source and destination
@@ -249,6 +253,8 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	}
 
 	/**
+	 * Compute the MI from the supplied observations or covariances.
+	 * 
 	 * <p>The joint entropy for a multivariate Gaussian-distribution of dimension n
 	 *  with covariance matrix C is -0.5*\log_e{(2*pi*e)^n*|det(C)|},
 	 *  where det() is the matrix determinant of C.</p>
@@ -260,10 +266,10 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	 *  covariance is correct (i.e. we will not make a bias correction for limited
 	 *  observations here).</p>
 	 * 
-	 * @return the mutual information of the previously provided observations or from the
+	 * @return the MI of the previously provided observations or from the
 	 *  supplied covariance matrix, in nats (not bits!).
 	 *  Returns NaN if any of the determinants are zero
-	 *  (because this will make the denominator of the log zero)
+	 *  (because this will make the denominator of the log 0).
 	 */
 	public double computeAverageLocalOfObservations() throws Exception {
 		// Simple way:
@@ -281,10 +287,25 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	}
 
 	/**
-	 * <p>Compute the local or pointwise mutual information for each of the previously
-	 * supplied observations</p>
+	 * <p>Computes the local values of the MI,
+	 *  for each valid observation in the previously supplied observations
+	 *  (with PDFs computed using all of the previously supplied observation sets).</p>
+	 *  
+	 * <p>If the samples were supplied via a single call such as
+	 * {@link #setObservations(double[])},
+	 * then the return value is a single time-series of local
+	 * channel measure values corresponding to these samples.</p>
 	 * 
-	 * @return array of the local values in nats (not bits!)
+	 * <p>Otherwise where disjoint time-series observations were supplied using several 
+	 *  calls such as {@link addObservations(double[])}
+	 *  then the local values for each disjoint observation set will be appended here
+	 *  to create a single "time-series" return array.</p>
+	 * 
+	 * <p>If the user supplied covariance matrices rather than observations
+	 * then this method cannot be called.</p>
+	 * 
+	 * @return the "time-series" of local MIs in nats (not bits!)
+	 * @throws Exception
 	 */
 	public double[] computeLocalOfPreviousObservations() throws Exception {
 		// Cannot do if destObservations haven't been set
@@ -298,27 +319,27 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	}
 
 	/**
-	 * <p>Compute the statistical significance of the mutual information 
-	 *  result analytically, without creating a distribution
-	 *  under the null hypothesis by bootstrapping.</p>
-	 *
-	 * <p>Brillinger (see reference below) shows that under the null hypothesis
-	 *  of no source-destination relationship, the MI for two
-	 *  Gaussian distributions follows a chi-square distribution with
-	 *  degrees of freedom equal to the product of the number of variables
-	 *  in each joint variable.</p>
-	 *
-	 * @return ChiSquareMeasurementDistribution object 
-	 *  This object contains the proportion of MI scores from the distribution
-	 *  which have higher or equal MIs to ours.
-	 *  
-	 * @see Brillinger, "Some data analyses using mutual information",
-	 * {@link http://www.stat.berkeley.edu/~brill/Papers/MIBJPS.pdf}
-	 * @see Cheng et al., "Data Information in Contingency Tables: A
-	 *  Fallacy of Hierarchical Loglinear Models",
-	 *  {@link http://www.jds-online.com/file_download/112/JDS-369.pdf}
-	 * @see Barnett and Bossomaier, "Transfer Entropy as a Log-likelihood Ratio" 
-	 *  {@link http://arxiv.org/abs/1205.6339}
+	 * Generate an <b>analytic</b> distribution of what the MI would look like,
+	 * under a null hypothesis that our variables had no relation.
+	 * This is performed without bootstrapping (which is done in
+	 * {@link #computeSignificance(int)} and {@link #computeSignificance(int[][])}).
+	 * 
+	 * <p>See Section II.E "Statistical significance testing" of 
+	 * the JIDT paper below, and the other papers referenced in
+	 * {@link AnalyticNullDistributionComputer#computeSignificance()}
+	 * (in particular Brillinger and Geweke),
+	 * for a description of how this is done for MI.
+	 * Basically, the null distribution is a chi-square distribution 
+	 * with degrees of freedom equal to the product of the number of variables
+	 * in each joint variable 1 and 2.
+	 * </p>
+	 * 
+	 * @return ChiSquareMeasurementDistribution object which describes
+	 * the proportion of MI scores from the null distribution
+	 *  which have higher or equal MIs to our actual value.
+	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
+	 *    toolkit for studying the dynamics of complex systems', 2014."
+	 * @throws Exception
 	 */
 	public ChiSquareMeasurementDistribution computeSignificance() {
 		return new ChiSquareMeasurementDistribution(2*totalObservations*lastAverage,
@@ -326,8 +347,8 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	}
 	
 	/**
-	 * @return the number of previously supplied observations for which
-	 *  the mutual information will be / was computed.
+	 * @throws Exception where the user did not set observations 
+	 * but set covariance matrices instead.
 	 */
 	public int getNumObservations() throws Exception {
 		if (destObservations == null) {
@@ -339,11 +360,9 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	}
 
 	/**
-	 * Compute the mutual information if the first (source) variable were
-	 *  ordered as per the ordering specified in newOrdering
-	 * 
-	 * @param newOrdering array of time indices with which to reorder the data
-	 * @return a surrogate MI evaluated for the given ordering of the source variable
+	 * @return the MI under the new ordering, in nats (not bits!).
+	 *  Returns NaN if any of the determinants are zero
+	 *  (because this will make the denominator of the log 0).
 	 * @throws Exception if the user previously supplied covariance directly rather
 	 *  than by setting observations (this means we have no observations
 	 *  to reorder).
@@ -360,18 +379,14 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	}
 
 	/**
-	 * Compute the local mutual information for a new series of 
-	 *  observations, based on variances computed with the previously
-	 *  supplied observations.
-	 * 
-	 * @param newSourceObs provided source observations
-	 * @param newDestObs provided destination observations
 	 * @return the local values in nats (not bits).
 	 *  If the {@link MutualInfoCalculatorMultiVariate#PROP_TIME_DIFF}
 	 *  property was set to say k, then the local values align with the
 	 *  destination value (i.e. after the given delay k). As such, the
 	 *  first k values of the array will be zeros.  
-	 * @throws Exception
+	 * @throws Exception if means were not defined by supplying observations
+	 *  (eg via {@link #setObservations(double[][], double[][])} etc) 
+	 *  or calling {@link #setCovarianceAndMeans(double[][], double[])}
 	 */
 	public double[] computeLocalUsingPreviousObservations(double[][] newSourceObs,
 			double[][] newDestObs) throws Exception {
@@ -379,9 +394,13 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	}
 
 	/**
-	 * Compute the local mutual information for a new series of 
-	 *  observations, based on variances computed with the previously
-	 *  supplied observations.
+	 * Protected utility function to compute the local MI values for each of the
+	 * supplied samples in <code>newSourceObs</code> and <code>newDestObs</code>.
+	 * 
+	 * <p>PDFs are computed using all of the previously supplied
+	 * observations. <code>isPreviousObservations</code> indicates whether
+	 * those in <code>states1</code> and <code>states2</code>
+	 * were some of the previously supplied samples.</p>
 	 * 
 	 * @param newSourceObs provided source observations
 	 * @param newDestObs provided destination observations
@@ -397,8 +416,9 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	 *  first k values of the array will be zeros.
 	 * @see <a href="http://en.wikipedia.org/wiki/Multivariate_normal_distribution">Multivariate normal distribution on Wikipedia</a>
 	 * @see <a href="http://en.wikipedia.org/wiki/Positive-definite_matrix>"Positive definite matrix in Wikipedia"</a>
-	 * @throws Exception if means were not defined by {@link #setObservations(double[][], double[][])} etc
-	 *  or {@link #setCovarianceAndMeans(double[][], double[])}
+	 * @throws Exception if means were not defined by supplying observations
+	 *  (eg via {@link #setObservations(double[][], double[][])} etc) 
+	 *  or calling {@link #setCovarianceAndMeans(double[][], double[])}
 	 */
 	protected double[] computeLocalUsingPreviousObservations(double[][] newSourceObs,
 			double[][] newDestObs, boolean isPreviousObservations) throws Exception {

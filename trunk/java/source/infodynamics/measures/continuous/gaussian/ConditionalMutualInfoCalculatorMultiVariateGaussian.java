@@ -27,45 +27,40 @@ import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.NonPositiveDefiniteMatrixException;
 
 /**
- * <p>Computes the differential conditional mutual information of two given multivariate sets of
- *  observations,
+ * <p>Computes the differential conditional mutual information of two multivariate
+ *  <code>double[][]</code> sets of observations, conditioned on another
+ *  (implementing {@link ConditionalMutualInfoCalculatorMultiVariate}),
  *  assuming that the probability distribution function for these observations is
- *  a multivariate Gaussian distribution.</p>
+ *  a multivariate Gaussian distribution.
+ *  This is achieved by extending the common code base in {@link ConditionalMutualInfoMultiVariateCommon}.</p>
  *  
- * <p>
- * Usage:
- * 	<ol>
- * 		<li>Construct {@link #ConditionalMutualInfoCalculatorMultiVariateLinearGaussian()}</li>
- *		<li>{@link #initialise(int, int)}</li>
- * 		<li>Set properties using {@link #setProperty(String, String)}</li>
- * 		<li>Provide the observations to the calculator using:
- * 			{@link #setObservations(double[][], double[][])}, or
- * 			{@link #setCovariance(double[][])}, or
- * 			a sequence of:
- * 			{@link #startAddObservations()},
- *          multiple calls to either {@link #addObservations(double[][], double[][])}
- *          or {@link #addObservations(double[][], double[][], int, int)}, and then
- *          {@link #finaliseAddObservations()}.</li>
- * 		<li>Compute the required information-theoretic results, primarily:
- * 			{@link #computeAverageLocalOfObservations()} to return the average differential
- *          entropy based on either the set variance or the variance of
- *          the supplied observations; or other calls to compute
- *          local values or statistical significance.</li>
- * 	</ol>
+ * <p>Usage is as per the paradigm outlined for {@link ConditionalMutualInfoCalculatorMultiVariate},
+ * with:
+ * <ul>
+ * 	<li>The constructor step being a simple call to {@link #ConditionalMutualInfoCalculatorMultiVariateGaussian()}.</li>
+ *  <li>The property {@link ConditionalMutualInfoMultiVariateCommon#PROP_NORMALISE}
+ *     is set to false by default here (since this makes more sense for
+ *     linear-Gaussian analysis), which is different to the parent class.</li>
+ * 	<li>The user can call {@link #setCovariance(double[][], boolean)} or
+ *     {@link #setCovariance(double[][], int)} or {@link #setCovarianceAndMeans(double[][], double[], int)}
+ *     instead of supplying observations via {@link #setObservations(double[][], double[][], double[][])} or
+ *     {@link #addObservations(double[][], double[][], double[][])} etc.</li>
+ *  <li>Computed values are in <b>nats</b>, not bits!</li>
+ *  <li>Additional method {@link #computeSignificance()} to compute null distribution analytically.</li>
+ *  </ul>
  * </p>
  * 
- * <p>
- * Alters behaviour slightly from parent class {@link ConditionalMutualInfoMultiVariateCommon}
- * in that property {@link ConditionalMutualInfoMultiVariateCommon#PROP_NORMALISE}
- * is set to false by default here (since this makes more sense for
- * linear-Gaussian analysis). 
- * </p>
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>T. M. Cover and J. A. Thomas, 'Elements of Information
+Theory' (John Wiley & Sons, New York, 1991).</li>
+ * </ul>
  * 
  * @see <a href="http://mathworld.wolfram.com/DifferentialEntropy.html">Differential entropy for Gaussian random variables at Mathworld</a>
  * @see <a href="http://en.wikipedia.org/wiki/Differential_entropy">Differential entropy for Gaussian random variables at Wikipedia</a>
  * @see <a href="http://en.wikipedia.org/wiki/Multivariate_normal_distribution">Multivariate normal distribution on Wikipedia</a>
- * @author Joseph Lizier joseph.lizier_at_gmail.com
- *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class ConditionalMutualInfoCalculatorMultiVariateGaussian 
 		extends ConditionalMutualInfoMultiVariateCommon
@@ -102,27 +97,51 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 	protected double[] means;
 
 	/**
-	 * Cached determinants of the covariance matrices
+	 * Cached determinants of the joint covariance matrix
 	 */
 	protected double detCovariance;
+	/**
+	 * Cached determinants of the covariance matrix for
+	 *  variable 1 and conditional
+	 */
 	protected double det1cCovariance;
+	/**
+	 * Cached determinants of the covariance matrix for
+	 *  variable 2 and the conditional
+	 */
 	protected double det2cCovariance;
+	/**
+	 * Cached determinants of the covariance matrix
+	 *  for the conditional
+	 */
 	protected double detccCovariance;
 	
 	/**
-	 * Cache which sub-variables for each variable are a linearly-independent set
-	 *  and are used in the covariances
+	 * Cache the sub-variables which are a linearly-independent set
+	 *  (and so are used in the covariances) for variable 1
+	 */
+	protected int[] var1IndicesInCovariance;
+	/**
+	 * Cache the sub-variables which are a linearly-independent set
+	 *  (and so are used in the covariances) for variable 2
+	 */
+	protected int[] var2IndicesInCovariance;
+	/**
+	 * Cache the sub-variables which are a linearly-independent set
+	 *  (and so are used in the covariances) for the conditional
 	 */
 	protected int[] condIndicesInCovariance;
-	protected int[] var1IndicesInCovariance;
-	protected int[] var2IndicesInCovariance;
-	
+
+	/**
+	 * Construct an instance
+	 */
 	public ConditionalMutualInfoCalculatorMultiVariateGaussian() {
 		// Normalising data makes less sense for linear-Gaussian estimation,
 		//  so we turn this off by default.
 		normalise = false;
 	}
 	
+	@Override
 	public void initialise(int var1Dimensions, int var2Dimensions, int condDimensions) {
 		super.initialise(var1Dimensions, var2Dimensions, condDimensions);
 		L = null;
@@ -140,11 +159,10 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 	}
 
 	/**
-	 * Finalise the addition of multiple observation sets.
-	 * 
 	 * @throws Exception if the observation variables are not linearly independent
 	 *  (leading to a non-positive definite covariance matrix).
 	 */
+	@Override
 	public void finaliseAddObservations() throws Exception {
 
 		// Get the observations properly stored in the sourceObservations[][] and
@@ -181,10 +199,10 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 	 * <p>Note that without setting any observations, you cannot later
 	 *  call {@link #computeLocalOfPreviousObservations()}, and without
 	 *  providing the means of the variables, you cannot later call
-	 *  {@link #computeLocalUsingPreviousObservations(double[][], double[][])}.</p>
+	 *  {@link #computeLocalUsingPreviousObservations(double[][], double[][], double[][])}.</p>
 	 * 
 	 * @param covariance covariance matrix of var1, var2, conditional
-	 *  variables, considered together.
+	 *  variables, considered jointly together.
 	 * @param numObservations the number of observations that the covariance
 	 *  was determined from. This is used for later significance calculations
 	 * @throws Exception for covariance matrix not matching the expected dimensions,
@@ -202,10 +220,10 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 	 * <p>Note that without setting any observations, you cannot later
 	 *  call {@link #computeLocalOfPreviousObservations()}, and without
 	 *  providing the means of the variables, you cannot later call
-	 *  {@link #computeLocalUsingPreviousObservations(double[][], double[][])}.</p>
+	 *  {@link #computeLocalUsingPreviousObservations(double[][], double[][], double[][])}.</p>
 	 * 
 	 * @param covariance covariance matrix of var1, var2 and the conditional
-	 *  variables, considered together.
+	 *  variables, considered jointly together.
 	 * @param determinedFromObservations whether the covariance matrix
 	 *  was determined internally from observations or not
 	 * @throws Exception for covariance matrix not matching the expected dimensions,
@@ -348,15 +366,17 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 
 	/**
 	 * <p>Set the covariance of the distribution for which we will compute the
-	 *  mutual information.</p>
+	 *  mutual information, as well as the means for each variable.</p>
 	 * 
 	 * <p>Note that without setting any observations, you cannot later
-	 *  call {@link #computeLocalOfPreviousObservations()}.</p>
+	 *  call {@link #computeLocalOfPreviousObservations()}
+	 *  (but you can call
+	 *  {@link #computeLocalUsingPreviousObservations(double[][], double[][], double[][])}).</p>
 	 * 
 	 * @param covariance covariance matrix of var1, var2 and conditional
-	 *  variables, considered together.
+	 *  variables, considered jointly together.
 	 * @param means mean of var1, var2 and conditional variables (as per
-	 *  covariance)
+	 *  <code>covariance</code>)
 	 * @param numObservations the number of observations that the mean and covariance
 	 *  were determined from. This is used for later significance calculations
 	 */
@@ -368,6 +388,10 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 	}
 
 	/**
+	 * <p>Computes the local values of the conditional mutual information,
+	 *  for each valid observation in the previously supplied observations
+	 *  (with PDFs computed using all of the previously supplied observation sets).</p>
+	 *  
 	 * <p>The joint differential entropy for a multivariate Gaussian-distribution of dimension n
 	 *  with covariance matrix C is -0.5*\log_e{(2*pi*e)^n*|det(C)|},
 	 *  where det() is the matrix determinant of C.</p>
@@ -380,8 +404,8 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 	 *  covariance is correct (i.e. we will not make a bias correction for limited
 	 *  observations here).</p>
 	 * 
-	 * @return the mutual information of the previously provided observations or from the
-	 *  supplied covariance matrix, in nats (not bits!).
+	 * @return the conditional mutual information of the previously provided observations or from the
+	 *  supplied covariance matrix, in <b>nats</b> (not bits!).
 	 *  Returns NaN if any of the determinants are zero
 	 *  (because this will make the denominator of the log zero)
 	 */
@@ -437,10 +461,9 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 	}
 
 	/**
-	 * <p>Compute the local or pointwise mutual information for each of the previously
-	 * supplied observations</p>
-	 * 
 	 * @return array of the local values in nats (not bits!)
+	 * @throws Exception if the user had previously supplied covariances
+	 *  directly (ie had not supplied observations).
 	 */
 	public double[] computeLocalOfPreviousObservations() throws Exception {
 		// Cannot do if destObservations haven't been set
@@ -454,28 +477,30 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 	}
 
 	/**
-	 * <p>Compute the statistical significance of the conditional mutual information 
-	 *  result analytically, without creating a distribution
-	 *  under the null hypothesis by bootstrapping.</p>
-	 *
-	 * <p>Brillinger (see reference below) shows that under the null hypothesis
-	 *  of no source-destination relationship, the MI for two
-	 *  Gaussian distributions follows a chi-square distribution with
-	 *  degrees of freedom equal to the product of the number of variables
-	 *  in each joint variable.</p>
-	 *
-	 * @return ChiSquareMeasurementDistribution object 
-	 *  This object contains the proportion of MI scores from the distribution
-	 *  which have higher or equal MIs to ours.
-	 *  
-	 * @see Brillinger, "Some data analyses using mutual information",
-	 * {@link http://www.stat.berkeley.edu/~brill/Papers/MIBJPS.pdf}
-	 * @see Cheng et al., "Data Information in Contingency Tables: A
-	 *  Fallacy of Hierarchical Loglinear Models",
-	 *  {@link http://www.jds-online.com/file_download/112/JDS-369.pdf}
-	 * @see Barnett and Bossomaier, "Transfer Entropy as a Log-likelihood Ratio" 
-	 *  {@link http://arxiv.org/abs/1205.6339}
+	 * Generate an <b>analytic</b> distribution of what the conditional MI would look like,
+	 * under a null hypothesis that our variables had no relation
+	 * (in the context of the conditional value).
+	 * This is performed without bootstrapping (which is done in
+	 * {@link #computeSignificance(int, int)} and {@link #computeSignificance(int, int[][])}).
+	 * 
+	 * <p>See Section II.E "Statistical significance testing" of 
+	 * the JIDT paper below, and the other papers referenced in
+	 * {@link AnalyticNullDistributionComputer#computeSignificance()}
+	 * (in particular Geweke),
+	 * for a description of how this is done for conditional MI.
+	 * Basically, the null distribution is a chi-square distribution 
+	 * with degrees of freedom equal to the product of the number of variables
+	 * in each joint variable 1 and 2.
+	 * </p>
+	 * 
+	 * @return ChiSquareMeasurementDistribution object which describes
+	 * the proportion of conditional MI scores from the null distribution
+	 *  which have higher or equal conditional MIs to our actual value.
+	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
+	 *    toolkit for studying the dynamics of complex systems', 2014."
+	 * @throws Exception
 	 */
+	@Override
 	public ChiSquareMeasurementDistribution computeSignificance() throws Exception {
 		if (!condMiComputed) {
 			computeAverageLocalOfObservations();
@@ -491,10 +516,8 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 				var1IndicesInCovariance.length * var2IndicesInCovariance.length);
 	}
 	
-	
-	
-	/* (non-Javadoc)
-	 * @see infodynamics.measures.continuous.ConditionalMutualInfoMultiVariateCommon#computeSignificance(int, int)
+	/**
+	 * @throws Exception if user passed in covariance matrix rather than observations
 	 */
 	@Override
 	public EmpiricalMeasurementDistribution computeSignificance(
@@ -507,8 +530,8 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 		return super.computeSignificance(variableToReorder, numPermutationsToCheck);
 	}
 
-	/* (non-Javadoc)
-	 * @see infodynamics.measures.continuous.ConditionalMutualInfoMultiVariateCommon#computeSignificance(int, int[][])
+	/**
+	 * @throws Exception if user passed in covariance matrix rather than observations
 	 */
 	@Override
 	public EmpiricalMeasurementDistribution computeSignificance(
@@ -521,10 +544,6 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 		return super.computeSignificance(variableToReorder, newOrderings);
 	}
 
-	/**
-	 * @return the number of previously supplied observations for which
-	 *  the conditional mutual information will be / was computed.
-	 */
 	public int getNumObservations() throws Exception {
 		if (var2Observations == null) {
 			throw new Exception("Cannot return number of observations because either " +
@@ -535,11 +554,6 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 	}
 
 	/**
-	 * Compute the conditional mutual information if the given variable was
-	 *  ordered as per the ordering specified in newOrdering
-	 * 
-	 * @param newOrdering array of time indices with which to reorder the data
-	 * @return a surrogate conditional MI evaluated for the given ordering of the source variable
 	 * @throws Exception if the user previously supplied covariance directly rather
 	 *  than by setting observations (this means we have no observations
 	 *  to reorder).
@@ -556,35 +570,32 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 	}
 
 	/**
-	 * Compute the local conditional mutual information for a new series of 
-	 *  observations, based on variances computed with the previously
-	 *  supplied observations.
-	 * 
-	 * @param newVar1Obs provided variable 1 observations
-	 * @param newVar2Obs provided variable 2 observations
-	 * @param newCondObs provided conditional observations
-	 * @return the local values in nats (not bits).
+	 * @return the series of local conditional MI values in <b>nats</b> (not bits).
 	 * @throws Exception
 	 */
-	public double[] computeLocalUsingPreviousObservations(double[][] newVar1Obs,
-			double[][] newVar2Obs, double[][] newCondObs) throws Exception {
+	public double[] computeLocalUsingPreviousObservations(double[][] states1,
+			double[][] states2, double[][] condStates) throws Exception {
 		return computeLocalUsingPreviousObservations(
-				newVar1Obs, newVar2Obs, newCondObs, false);
+				states1, states2, condStates, false);
 	}
 
 	/**
-	 * Compute the local conditional mutual information for a new series of 
-	 *  observations, based on variances computed with the previously
-	 *  supplied observations.
+	 * Utility function to implement either {@link #computeLocalOfPreviousObservations()}
+	 * or {@link #computeLocalUsingPreviousObservations(double[][], double[][], double[][])}
+	 * depending on value of <code>isPreviousObservations</code>
 	 * 
 	 * @param newVar1Obs provided variable 1 observations
 	 * @param newVar2Obs provided variable 2 observations
 	 * @param newCondObs provided conditional observations
 	 * @param isPreviousObservations whether these are our previous
-	 *  observations - this determines whether to 
+	 *  observations - this determines whether we are implementing
+	 *  {@link #computeLocalOfPreviousObservations()} if true 
+	 *  or {@link #computeLocalUsingPreviousObservations(double[][], double[][], double[][])} 
+	 *  if false. Also indicates whether to 
 	 *  set the internal lastAverage field,
-	 *  which is returned by later calls to {@link #getLastAverage()}
-	 * @return the local values in nats (not bits).
+	 *  which is returned by later calls to {@link #getLastAverage()} 
+	 *  (in case of true).
+	 * @return the local conditional MI values in nats (not bits).
 	 * @see <a href="http://en.wikipedia.org/wiki/Multivariate_normal_distribution">Multivariate normal distribution on Wikipedia</a>
 	 * @see <a href="http://en.wikipedia.org/wiki/Positive-definite_matrix>"Positive definite matrix in Wikipedia"</a>
 	 * @throws Exception if means were not defined by {@link #setObservations(double[][], double[][])} etc

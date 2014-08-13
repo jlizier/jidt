@@ -20,38 +20,46 @@ package infodynamics.measures.continuous.gaussian;
 
 import infodynamics.measures.continuous.ActiveInfoStorageCalculator;
 import infodynamics.measures.continuous.ActiveInfoStorageCalculatorViaMutualInfo;
+import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 
 /**
+ * An Active Information Storage (AIS) calculator (implementing {@link ActiveInfoStorageCalculator})
+ * which is affected using a 
+ * Gaussian Mutual Information (MI) calculator
+ * ({@link MutualInfoCalculatorMultiVariateGaussian}) to make the calculations.
  * 
  * <p>
- * Implements an active information storage calculator using model of 
+ * That is, this class implements an AIS calculator using model of 
  * Gaussian variables with linear interactions.
  * This is achieved by plugging in {@link MutualInfoCalculatorMultiVariateGaussian}
- * as the calculator into {@link ActiveInfoStorageCalculatorViaMutualInfo}.
+ * as the calculator into the parent class {@link ActiveInfoStorageCalculatorViaMutualInfo}.
  * </p> 
  * 
- * <p>
- * Usage:
- * 	<ol>
- * 		<li>Construct: {@link #ActiveInfoStorageCalculatorGaussian()}</li>
- * 		<li>Set properties: {@link #setProperty(String, String)} for each relevant property, including those
- * 			of either {@link ActiveInfoStorageCalculatorViaMutualInfo#setProperty(String, String)}
- * 			or {@link MutualInfoCalculatorMultiVariateGaussian#setProperty(String, String)}.</li>
- *		<li>Initialise: by calling one of {@link #initialise()} etc.</li>
- * 		<li>Add observations to construct the PDFs: {@link #setObservations(double[])}, or [{@link #startAddObservations()},
- * 			{@link #addObservations(double[])}*, {@link #finaliseAddObservations()}]
- *   		Note: If not using setObservations(), the results from computeLocal
- *   		will be concatenated directly, and getSignificance will mix up observations 
- *          from separate trials (added in separate {@link #addObservations(double[])} calls.</li> 
- * 		<li>Compute measures: e.g. {@link #computeAverageLocalOfObservations()} or
- * 			{@link #computeLocalOfPreviousObservations()} etc </li>
- * 	</ol>
+ * <p>Usage is as per the paradigm outlined for {@link ActiveInfoStorageCalculator},
+ * with:
+ * <ul>
+ * 	<li>The constructor step being a simple call to {@link #ActiveInfoStorageCalculatorGaussian()}.</li>
+ * 	<li>{@link #setProperty(String, String)} allowing properties for
+ *      {@link MutualInfoCalculatorMultiVariateGaussian#setProperty(String, String)}
+ *      (except {@link MutualInfoCalculatorMultiVariate#PROP_TIME_DIFF} as outlined
+ *      in {@link ActiveInfoStorageCalculatorViaMutualInfo#setProperty(String, String)})</li>
+ *  <li>Computed values are in <b>nats</b>, not bits!</li>
+ *  </ul>
  * </p>
  * 
- * @author Joseph Lizier
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>J.T. Lizier, M. Prokopenko and A.Y. Zomaya,
+ * 		<a href="http://dx.doi.org/10.1016/j.ins.2012.04.016">
+ * 		"Local measures of information storage in complex distributed computation"</a>,
+ * 		Information Sciences, vol. 208, pp. 39-54, 2012.</li>
+ * </ul>
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  * @see ActiveInfoStorageCalculator
- * @see ActiveInfoStorageCalculatorCorrelationIntegrals
- *
+ * @see ActiveInfoStorageCalculatorViaMutualInfo
+ * @see MutualInfoCalculatorMultiVariateGaussian
  */
 public class ActiveInfoStorageCalculatorGaussian
 	extends ActiveInfoStorageCalculatorViaMutualInfo {
