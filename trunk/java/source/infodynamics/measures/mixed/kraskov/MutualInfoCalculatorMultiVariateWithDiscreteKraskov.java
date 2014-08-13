@@ -18,6 +18,7 @@
 
 package infodynamics.measures.mixed.kraskov;
 
+import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.measures.mixed.MutualInfoCalculatorMultiVariateWithDiscrete;
 import infodynamics.utils.EuclideanUtils;
 import infodynamics.utils.MathsUtils;
@@ -35,10 +36,13 @@ import infodynamics.utils.RandomGenerator;
  * where small K is used (e.g. for binary data splitting continuous into
  * two distinct groups, 1400 observations, K=4 has bias ~ -.35)</p>
  * 
- * @see "Estimating mutual information", Kraskov, A., Stogbauer, H., Grassberger, P., Physical Review E 69, (2004) 066138
- * @see http://dx.doi.org/10.1103/PhysRevE.69.066138
+ * <p>These calculators are <b>EXPERIMENTAL</b> -- not properly tested,
+ * and not well documented. The intended calling pattern is similar to
+ * {@link MutualInfoCalculatorMultiVariate}
+ * </p>
  * 
- * @author Joseph Lizier
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements MutualInfoCalculatorMultiVariateWithDiscrete {
 

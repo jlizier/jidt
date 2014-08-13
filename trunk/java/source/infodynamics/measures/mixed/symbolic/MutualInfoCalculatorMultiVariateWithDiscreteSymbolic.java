@@ -19,6 +19,7 @@
 package infodynamics.measures.mixed.symbolic;
 
 import infodynamics.measures.mixed.MutualInfoCalculatorMultiVariateWithDiscrete;
+import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.measures.discrete.MutualInformationCalculator;
 import infodynamics.utils.FirstIndexComparatorDouble;
 import infodynamics.utils.MathsUtils;
@@ -26,6 +27,15 @@ import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.RandomGenerator;
 
+/**
+ * <p>These calculators are <b>EXPERIMENTAL</b> -- not properly tested,
+ * and not well documented. The intended calling pattern is similar to
+ * {@link MutualInfoCalculatorMultiVariate}
+ * </p>
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
+ */
 public class MutualInfoCalculatorMultiVariateWithDiscreteSymbolic implements
 		MutualInfoCalculatorMultiVariateWithDiscrete {
 

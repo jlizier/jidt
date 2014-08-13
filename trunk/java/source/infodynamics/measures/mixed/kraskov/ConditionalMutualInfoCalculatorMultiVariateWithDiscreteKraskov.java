@@ -18,6 +18,7 @@
 
 package infodynamics.measures.mixed.kraskov;
 
+import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariate;
 import infodynamics.measures.mixed.ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSourceCommon;
 import infodynamics.utils.EuclideanUtils;
 import infodynamics.utils.MathsUtils;
@@ -34,10 +35,13 @@ import infodynamics.utils.MatrixUtils;
  * follows {#link ConditionalMutualInfoCalculatorMultiVariateKraskov2}.
  * </p>
  * 
- * @see "Estimating mutual information", Kraskov, A., Stogbauer, H., Grassberger, P., Physical Review E 69, (2004) 066138
- * @see http://dx.doi.org/10.1103/PhysRevE.69.066138
+ * <p>These calculators are <b>EXPERIMENTAL</b> -- not properly tested,
+ * and not well documented. The intended calling pattern is similar to
+ * {@link ConditionalMutualInfoCalculatorMultiVariate}
+ * </p>
  * 
- * @author Joseph Lizier
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteKraskov
 	extends ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSourceCommon

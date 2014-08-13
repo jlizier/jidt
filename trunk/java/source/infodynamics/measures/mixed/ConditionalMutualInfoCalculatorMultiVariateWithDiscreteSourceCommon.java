@@ -18,6 +18,7 @@
 
 package infodynamics.measures.mixed;
 
+import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariate;
 import infodynamics.measures.mixed.ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSource;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
@@ -31,7 +32,13 @@ import infodynamics.utils.RandomGenerator;
  *  conditioned on another vector of continuous variables Z.
  *  It implements common methods for child classes to build on</p>
  *  
- * @author Joseph Lizier
+ * <p>These calculators are <b>EXPERIMENTAL</b> -- not properly tested,
+ * and not well documented. The intended calling pattern is similar to
+ * {@link ConditionalMutualInfoCalculatorMultiVariate}
+ * </p>
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public abstract class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSourceCommon
 	implements ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSource {

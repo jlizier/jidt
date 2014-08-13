@@ -20,12 +20,22 @@ package infodynamics.measures.mixed.kernel;
 
 import java.util.Arrays;
 
+import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.measures.continuous.kernel.KernelEstimatorMultiVariate;
 import infodynamics.measures.mixed.MutualInfoCalculatorMultiVariateWithDiscrete;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.RandomGenerator;
 
+/**
+ * <p>These calculators are <b>EXPERIMENTAL</b> -- not properly tested,
+ * and not well documented. The intended calling pattern is similar to
+ * {@link MutualInfoCalculatorMultiVariate}
+ * </p>
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
+ */
 public class MutualInfoCalculatorMultiVariateWithDiscreteKernel implements
 	MutualInfoCalculatorMultiVariateWithDiscrete {
 
