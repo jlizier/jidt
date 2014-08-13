@@ -71,6 +71,7 @@
 
 	<!-- Make javadocs, excluding the classes we've derived from Apache Commons Math -->
 	<target name="javadocs" depends="compile" description="Make the javadocs for the toolkit">
+		<delete dir="${javadocsdir}"/>
 		<javadoc destdir="${javadocsdir}">
 			<fileset dir="${src}">
 				<include name="**/*.java"/>
@@ -78,6 +79,16 @@
 				<exclude name="**/commonsmath3/**/*.java"/>
 			</fileset>
 		</javadoc>
+		<!-- Change some of the style in the javadocs css for our lists: -->
+		<concat destfile="${javadocsdir}/stylesheet.css" append="true">
+		.block ul li {list-style:disc; margin-left: 20px;}
+		.block ol li {list-style:decimal; margin-left: 40px;}
+		.block ol li ol li {list-style:lower-alpha; margin-left: 40px;}
+		.block ol li ul li {list-style:disc; margin-left: 40px;}
+		.block ol li ul li ol li {list-style:lower-alpha; margin-left: 40px;}
+		.block ol li ol li ol li {list-style:lower-roman; margin-left: 40px;}
+		.block ul li ol li {list-style:decimal; margin-left: 20px;}
+		</concat>
 	</target>
 
 	<!-- Clean up -->
