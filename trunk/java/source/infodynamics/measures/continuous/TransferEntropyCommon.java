@@ -22,113 +22,93 @@ import infodynamics.utils.MatrixUtils;
 
 import java.util.Vector;
 
-
 /**
- * <p>Base class for implementations of the transfer entropy (see Schreiber, PRL, 2000)
- *  and local transfer entropy (see Lizier et al, PRE, 2008).
- *  We use the term <i>apparent</i> transfer entropy to mean that
- *  we compute the transfer that appears to come from a single
- *  source variable, without examining any other potential sources
- *  (see Lizier et al, PRE, 2008).</p>
+ * Implements {@link TransferEntropyCalculator} to provide a base
+ * class with common functionality for child class implementations of
+ * pairwise or apparent transfer entropy (TE), defined by {@link TransferEntropyCalculator},
+ * on <code>double[]</code> data via various estimators. 
  * 
- * <p>Specifically, this provides base implementations of the transfer entropy for 
- * <i>continuous</i>-valued variables (univariate).
- * It provides common code used in multiple child implementations.</p>
+ * <p>These various estimators include: e.g. box-kernel estimation, KSG estimators, etc
+ * (see the child classes linked above).
+ * </p>
  * 
- * @see "Schreiber, Physical Review Letters 85 (2) pp.461-464, 2000;
- *  <a href='http://dx.doi.org/10.1103/PhysRevLett.85.461'>download</a>
- *  (for definition of transfer entropy)"
- * @see "Lizier, Prokopenko and Zomaya, Physical Review E 77, 026110, 2008;
- * <a href='http://dx.doi.org/10.1103/PhysRevE.77.026110'>download</a>
- *  (for definition of <i>local</i> transfer entropy and qualification
- *  of naming it as <i>apparent</i> transfer entropy)"
- *  
- * @author Joseph Lizier, <a href="joseph.lizier at gmail.com">email</a>,
- * <a href="http://lizier.me/joseph/">www</a>
- */
+ * <p>Usage is as outlined in {@link TransferEntropyCalculator}.</p>
+ * 
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>T. Schreiber, <a href="http://dx.doi.org/10.1103/PhysRevLett.85.461">
+ * "Measuring information transfer"</a>,
+ *  Physical Review Letters 85 (2) pp.461-464, 2000.</li>
+ *  <li>J. T. Lizier, M. Prokopenko and A. Zomaya,
+ *  <a href="http://dx.doi.org/10.1103/PhysRevE.77.026110">
+ *  "Local information transfer as a spatiotemporal filter for complex systems"</a>
+ *  Physical Review E 77, 026110, 2008.</li>
+ * </ul>
+ *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
+*/
 public abstract class TransferEntropyCommon implements
 		TransferEntropyCalculator {
 
+	/**
+	 * Natural log of 2, cached
+	 */
 	protected final static double log2 = Math.log(2.0);
 	
 	/**
-	 * Length of past history to consider
+	 * Length of past destination history to consider (embedding length)
 	 */
 	protected int k;
+	/**
+	 * Total number of observations supplied.
+	 * Only valid after {@link #finaliseAddObservations()} is called.
+	 */
 	protected int totalObservations = 0;
+	/**
+	 * Whether to report debug messages or not
+	 */
 	protected boolean debug = false;
+	/**
+	 * Store the last computed average TE
+	 */
 	protected double lastAverage;
 
 	/**
-	 * Storage for source observations for addObservsations
+	 * Storage for source observations for {@link #addObservations(double[], double[])} etc
 	 */
 	protected Vector<double[]> vectorOfSourceObservations;
 	/**
-	 * Storage for destination observations for addObservsations
+	 * Storage for destination observations for {@link #addObservations(double[], double[])} etc
 	 */
 	protected Vector<double[]> vectorOfDestinationObservations;
 	
+	/**
+	 * Whether the user has supplied more than one (disjoint) set of samples
+	 */
 	protected boolean addedMoreThanOneObservationSet;
 
-	/**
-	 * Initialise the calculator, and call initialise() to complete
-	 * 
-	 * @param k Length of past history to consider
-	 */
+	@Override
 	public void initialise(int k) throws Exception {
 		this.k = k;
 		addedMoreThanOneObservationSet = false;
 		initialise();
 	}
 
-	/**
-	 * <p>Sets the single set of observations to compute the PDFs from.
-	 * Cannot be called in conjunction with 
-	 * {@link #startAddObservations()}/{@link #addObservations(double[], double[])} /
-	 * {@link #finaliseAddObservations()}.</p>
-	 * 
-	 * @param source observations for the source variable
-	 * @param destination observations for the destination variable
-	 * @throws Exception
-	 */
+	@Override
 	public void setObservations(double[] source, double[] destination) throws Exception {
 		startAddObservations();
 		addObservations(source, destination);
 		finaliseAddObservations();
 	}
 
-	/**
-	 * Elect to add in the observations from several disjoint time series.
-	 *
-	 */
+	@Override
 	public void startAddObservations() {
 		vectorOfSourceObservations = new Vector<double[]>();
 		vectorOfDestinationObservations = new Vector<double[]>();
 	}
 	
-	/**
-	 * <p>Adds a new set of observations to update the PDFs with - is
-	 * intended to be called multiple times.
-	 * Must be called after {@link #startAddObservations()}; call
-	 * {@link #finaliseAddObservations()} once all observations have
-	 * been supplied.</p>
-	 * 
-	 * <p><b>Important:</b> this does not append these observations to the previously
-	 *  supplied observations, but treats them independently - i.e. this
-	 *  will not join them up to examine k
-	 *  consecutive values in time (which would be an incorrect transfer entropy
-	 *  calculation, since the end of one observation set should not 
-	 *  necessarily be followed by the start of another).</p>
-	 *  
-	 * <p>Note that the arrays source and destination must not be over-written by the user
-	 *  until after finaliseAddObservations() has been called
-	 *  (they are not copied by this method necessarily, but the method
-	 *  may simply hold a pointer to them).</p>
-	 * 
-	 * @param source observations for the source variable
-	 * @param destination observations for the destination variable
-	 * @throws Exception
-	 */
+	@Override
 	public void addObservations(double[] source, double[] destination) throws Exception {
 		if (vectorOfSourceObservations == null) {
 			// startAddObservations was not called first
@@ -146,31 +126,7 @@ public abstract class TransferEntropyCommon implements
 		vectorOfDestinationObservations.add(destination);
 	}
 
-	/**
-	 * <p>Adds a new set of observations to update the PDFs with - is
-	 * intended to be called multiple times.
-	 * Must be called after {@link #startAddObservations()}; call
-	 * {@link #finaliseAddObservations()} once all observations have
-	 * been supplied.</p>
-	 * 
-	 * <p><b>Important:</b> this does not append these observations to the previously
-	 *  supplied observations, but treats them independently - i.e. this
-	 *  will not join them up to examine k
-	 *  consecutive values in time (which would be an incorrect transfer entropy
-	 *  calculation, since the end of one observation set should not 
-	 *  necessarily be followed by the start of another).</p>
-	 *  
-	 * <p>Note that the arrays source and destination must not be over-written by the user
-	 *  until after finaliseAddObservations() has been called
-	 *  (they are not copied by this method necessarily, but the method
-	 *  may simply hold a pointer to them).</p>
-	 * 
-	 * @param source observations for the source variable
-	 * @param destination observations for the destination variable
-	 * @param startTime first time index to take observations on
-	 * @param numTimeSteps number of time steps to use
-	 * @throws Exception
-	 */
+	@Override
 	public void addObservations(double[] source, double[] destination,
 			int startTime, int numTimeSteps) throws Exception {
 		if (vectorOfSourceObservations == null) {
@@ -189,20 +145,7 @@ public abstract class TransferEntropyCommon implements
 		vectorOfDestinationObservations.add(destToAdd);
 	}
 
-	/**
-	 * <p>Sets the single set of observations to compute the PDFs from.
-	 * Cannot be called in conjunction with 
-	 * {@link #startAddObservations()}/{@link #addObservations(double[], double[])} /
-	 * {@link #finaliseAddObservations()}.</p>
-	 * 
-	 * @param source observations for the source variable
-	 * @param destination observations for the destination variable
-	 * @param sourceValid time series (with time indices the same as source)
-	 *  indicating whether the source at that point is valid.
-	 * @param destValid time series (with time indices the same as destination)
-	 *  indicating whether the destination at that point is valid.
-	 * @throws Exception
-	 */
+	@Override
 	public void setObservations(double[] source, double[] destination,
 			boolean[] sourceValid, boolean[] destValid) throws Exception {
 		
@@ -220,14 +163,18 @@ public abstract class TransferEntropyCommon implements
 
 	/**
 	 * Compute a vector of start and end pairs of time points, between which we have
-	 *  valid series of both source and destinations.
+	 *  valid series of both source and destinations.  (I.e. all points within the
+	 *  embedding vectors must be valid, even if the invalid points won't be included
+	 *  in any tuples)
 	 * 
-	 * Made public so it can be used if one wants to compute the number of
-	 *  observations prior to setting the observations.
+	 * <p>Made public so it can be used if one wants to compute the number of
+	 *  observations prior to setting the observations.</p>
 	 * 
-	 * @param sourceValid
-	 * @param destValid
-	 * @return
+	 * @param sourceValid a time series (with indices the same as observations)
+	 *  indicating whether the entry in observations at that index is valid for the source; 
+	 * @param destValid as described for <code>sourceValid</code>
+	 * @return a vector for start and end time pairs of valid series
+	 *  of observations.
 	 */
 	public Vector<int[]> computeStartAndEndTimePairs(boolean[] sourceValid, boolean[] destValid) {
 		// Scan along the data avoiding invalid values
@@ -309,11 +256,11 @@ public abstract class TransferEntropyCommon implements
 	}
 	
 	/**
-	 * Generate a vector for each time step, containing the past k states of the destination.
+	 * Generate an embedding vector for each time step, containing the past k states of the destination.
 	 * Does not include a vector for the first k time steps.
 	 * 
-	 * @param destination
-	 * @return array of vectors for each time step
+	 * @param destination time series for the destination variable
+	 * @return array of embedding vectors for each time step (of length destination.length - k)
 	 */
 	protected double[][] makeJointVectorForPast(double[] destination) {
 		try {
@@ -328,22 +275,55 @@ public abstract class TransferEntropyCommon implements
 	}
 	
 	/**
-	 * Generate a vector for each time step, containing the past k states of
-	 *  the destination, and the current state.
+	 * Generate an embedding vector for each time step, containing the past k+1 states of
+	 *  the destination
 	 * Does not include a vector for the first k time steps.
 	 * 
-	 * @param destination
-	 * @return
+	 * @param destination time series for the destination variable
+	 * @return array of embedding vectors for each time step (of length destination.length - k)
 	 */
 	protected double[][] makeJointVectorForNextPast(double[] destination) {
 		// We want all delay vectors here
 		return MatrixUtils.makeDelayEmbeddingVector(destination, k+1);
 	}
 	
+	/**
+	 * Sets properties for the TE calculator.
+	 *  New property values are not guaranteed to take effect until the next call
+	 *  to an initialise method. 
+	 *  
+	 * <p>Valid property names, and what their
+	 * values should represent, include:</p>
+	 * <ul>
+	 * 		<li>{@link #K_PROP_NAME} -- specified by {@link TransferEntropyCalculator}</li>
+	 * </ul>
+	 * <p><b>However -- </b> any other properties specified by {@link TransferEntropyCalculator}
+	 *  (i.e. {@link #K_TAU_PROP_NAME}, {@link #L_PROP_NAME}, {@link #L_TAU_PROP_NAME} 
+	 *  or {@link #DELAY_PROP_NAME}) are not implemented and will cause 
+	 *  an exception to be thrown.</p>
+	 *  
+	 * <p>Unknown property values are otherwise ignored.</p>
+	 * 
+	 * <p><b>Note:</b> further properties may be defined by child classes.</p>
+	 * 
+	 * @param propertyName name of the property
+	 * @param propertyValue value of the property.
+	 * @throws Exception if there is a problem with the supplied value, 
+	 * or if the property is recognised but unsupported (as described above).
+	 */
+	@Override
 	public void setProperty(String propertyName, String propertyValue) throws Exception {
 		boolean propertySet = true;
 		if (propertyName.equalsIgnoreCase(K_PROP_NAME)) {
 			k = Integer.parseInt(propertyValue);
+		} else if (propertyName.equalsIgnoreCase(K_TAU_PROP_NAME)) {
+			throw new Exception("Unsupported property");
+		} else if (propertyName.equalsIgnoreCase(L_PROP_NAME)) {
+			throw new Exception("Unsupported property");
+		} else if (propertyName.equalsIgnoreCase(L_TAU_PROP_NAME)) {
+			throw new Exception("Unsupported property");
+		} else if (propertyName.equalsIgnoreCase(DELAY_PROP_NAME)) {
+			throw new Exception("Unsupported property");
 		} else {
 			// No property was set
 			propertySet = false;
@@ -354,18 +334,22 @@ public abstract class TransferEntropyCommon implements
 		}
 	}
 
+	@Override
 	public double getLastAverage() {
 		return lastAverage;
 	}
 
+	@Override
 	public int getNumObservations() {
 		return totalObservations;
 	}
 	
+	@Override
 	public void setDebug(boolean debug) {
 		this.debug = debug;
 	}
 
+	@Override
 	public boolean getAddedMoreThanOneObservationSet() {
 		return addedMoreThanOneObservationSet;
 	}

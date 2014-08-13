@@ -26,24 +26,35 @@ import java.util.Iterator;
 import java.util.Vector;
 
 /**
- * <p>Base class for implementations of {@link ConditionalMutualInfoCalculatorMultiVariate},
- * e.g. kernel estimation, Kraskov style extensions.
- * It implements some common code to be used across conditional 
- * mutual information calculators
+ * Implements {@link ConditionalMutualInfoCalculatorMultiVariate}
+ * to provide a base
+ * class with common functionality for child class implementations of
+ * {@link ConditionalMutualInfoCalculatorMultiVariate}
+ * via various estimators. 
+ * 
+ * <p>These various estimators include: e.g. box-kernel estimation, KSG estimators, etc
+ * (see the child classes linked above).
  * </p>
  * 
+ * <p>Usage is as outlined in {@link ConditionalMutualInfoCalculatorMultiVariate}.</p>
  * 
- * @author Joseph Lizier, joseph.lizier at gmail.com
- *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		ConditionalMutualInfoCalculatorMultiVariate {
 
 	/**
-	 * Number of dimenions for each of our multivariate data sets
+	 * Number of dimenions for variable 1
 	 */
 	protected int dimensionsVar1 = 1;
+	/**
+	 * Number of dimenions for variable 2
+	 */
 	protected int dimensionsVar2 = 1;
+	/**
+	 * Number of dimenions for the conditional variable
+	 */
 	protected int dimensionsCond = 1;
 	
 	/**
@@ -77,7 +88,7 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	protected int totalObservations = 0;
 
 	/**
-	 * Store the last computed average
+	 * Store the last computed average conditional MI
 	 */
 	protected double lastAverage;
 
@@ -93,37 +104,37 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	protected boolean debug;
 
 	/**
-	 * Storage for var1 observations for addObservsations
+	 * Storage for var1 observations supplied via
+	 * {@link #addObservations(double[][], double[][], double[][])} etc
 	 */
 	protected Vector<double[][]> vectorOfVar1Observations;
 	/**
-	 * Storage for var2 observations for addObservsations
+	 * Storage for var2 observations supplied via
+	 * {@link #addObservations(double[][], double[][], double[][])} etc
 	 */
 	protected Vector<double[][]> vectorOfVar2Observations;
 	/**
-	 * Storage for conditional variable observations for addObservsations
+	 * Storage for conditional variable observations supplied via
+	 * {@link #addObservations(double[][], double[][], double[][])} etc
 	 */
 	protected Vector<double[][]> vectorOfCondObservations;
 	
+	/**
+	 * Whether the user has added more than one disjoint observation set
+	 * via {@link #addObservations(double[][], double[][], double[][])} etc
+	 */
 	protected boolean addedMoreThanOneObservationSet;
 
 	/**
-	 * Property (settable via {@link #setProperty(String, String)})
-	 *  controlling whether the data is normalised or not (to mean 0,
+	 * Property name for 
+	 *  specifying whether the data is normalised or not (to mean 0,
 	 *  variance 1, for each of the multiple variables)
 	 *  before the calculation is made.
 	 */
 	public static final String PROP_NORMALISE = "NORMALISE";
 	protected boolean normalise = true;
 
-	/**
-	 * Clear any previously supplied probability distributions and prepare
-	 * the calculator to be used again.
-	 * 
-	 * @param var1Dimensions number of joint variables in variable 1
-	 * @param var2Dimensions number of joint variables in variable 2
-	 * @param condDimensions number of joint variables in the conditional
-	 */
+	@Override
 	public void initialise(int var1Dimensions, int var2Dimensions, int condDimensions) {
 		dimensionsVar1 = var1Dimensions;
 		dimensionsVar2 = var2Dimensions;
@@ -137,40 +148,33 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	}
 
 	/**
-	 * Sets common properties for the calculator.
+	 * Set properties for the calculator.
 	 * New property values are not guaranteed to take effect until the next call
 	 *  to an initialise method. 
-	 * Valid properties include:
+	 * 
+	 * <p>Valid property names, and what their
+	 * values should represent, include:</p>
 	 * <ul>
-	 *  <li>{@link #PROP_NORMALISE} - whether to normalise the individual
-	 *      variables (true by default, except for child class
+	 *  	<li>{@link #PROP_NORMALISE} - whether to normalise the individual
+	 *      variables to mean 0, standard deviation 1
+	 *      (true by default, except for child class
 	 *      {@link infodynamics.measures.continuous.gaussian.ConditionalMutualInfoCalculatorMultiVariateGaussian})</li>
 	 * </ul>
 	 * 
-	 * @param propertyName name of the property to set
-	 * @param propertyValue value to set on that property
+	 * <p>Unknown property values are ignored.</p>
+	 * 
+	 * @param propertyName name of the property
+	 * @param propertyValue value of the property
+	 * @throws Exception for invalid property values
 	 */
+	@Override
 	public void setProperty(String propertyName, String propertyValue) {
 		if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
 			normalise = Boolean.parseBoolean(propertyValue);
 		}
 	}
 
-	/**
-	 * Provide the complete set of observations to use to compute the
-	 *  mutual information.
-	 * One cannot use the
-	 *  {@link #addObservations(double[][], double[][], double[][])}
-	 *  style methods after this without calling 
-	 *  {@link #initialise(int, int, int)} again first.
-	 * 
-	 * @param var1 time series of multivariate variable 1 observations (first
-	 *  index is time, second is variable number)
-	 * @param var2 time series of multivariate variable 2 observations (first
-	 *  index is time, second is variable number)
-	 * @param cond time series of multivariate conditional variable observations (first
-	 *  index is time, second is variable number)
-	 */
+	@Override
 	public void setObservations(double[][] var1, double[][] var2,
 			double[][] cond) throws Exception {
 		startAddObservations();
@@ -179,16 +183,14 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		addedMoreThanOneObservationSet = false;
 	}
 
-	/**
-	 * Elect to add in the observations from several disjoint time series.
-	 *
-	 */
+	@Override
 	public void startAddObservations() {
 		vectorOfVar1Observations = new Vector<double[][]>();
 		vectorOfVar2Observations = new Vector<double[][]>();
 		vectorOfCondObservations = new Vector<double[][]>();
 	}
 	
+	@Override
 	public void addObservations(double[][] var1, double[][] var2,
 			double[][] cond) throws Exception {
 		if (vectorOfVar1Observations == null) {
@@ -219,6 +221,7 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		}
 	}
 
+	@Override
 	public void addObservations(double[][] var1, double[][] var2,
 			double[][] cond,
 			int startTime, int numTimeSteps) throws Exception {
@@ -235,6 +238,7 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		addObservations(var1ToAdd, var2ToAdd, condToAdd);
 	}
 
+	@Override
 	public void setObservations(double[][] var1, double[][] var2,
 			double[][] cond,
 			boolean[] var1Valid, boolean[] var2Valid,
@@ -253,6 +257,7 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		finaliseAddObservations();
 	}
 
+	@Override
 	public void setObservations(double[][] var1, double[][] var2,
 			double[][] cond,
 			boolean[][] var1Valid, boolean[][] var2Valid,
@@ -265,7 +270,7 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	}
 
 	/**
-	 * Finalise the addition of multiple observation sets.
+	 * Signal that the observations are now all added, PDFs can now be constructed.
 	 * 
 	 * This default implementation simply puts all of the observations into
 	 *  the {@link #var1Observations}, {@link #var2Observations} 
@@ -275,8 +280,8 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	 *  
 	 * @throws Exception Allow child classes to throw an exception if there
 	 *  is an issue detected specific to that calculator.
-	 * 
 	 */
+	@Override
 	public void finaliseAddObservations() throws Exception {
 		// First work out the size to allocate the joint vectors, and do the allocation:
 		totalObservations = 0;
@@ -320,22 +325,7 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		vectorOfCondObservations = null;
 	}
 	
-	/**
-	 * Compute the significance of the conditional mutual information of the previously supplied observations.
-	 * We destroy the p(x,y,z) correlations, by permuting the given variable,
-	 *  while retaining the joint distribution of the other variable
-	 *  and the conditional, and the marginal distribution of the
-	 *  permuted variable. This checks how
-	 *  significant this conditional mutual information actually was.
-	 *  
-	 * This is in the spirit of Chavez et. al., "Statistical assessment of nonlinear causality:
-	 *  application to epileptic EEG signals", Journal of Neuroscience Methods 124 (2003) 113-128
-	 *  which was performed for Transfer entropy.
-	 * 
-	 * @param variableToReorder 1 for variable 1, 2 for variable 2
-	 * @param numPermutationsToCheck
-	 * @return the proportion of cond MI scores from the distribution which have higher or equal MIs to ours.
-	 */
+	@Override
 	public EmpiricalMeasurementDistribution computeSignificance(
 			int variableToReorder, int numPermutationsToCheck) throws Exception {
 		// Generate the re-ordered indices:
@@ -349,26 +339,19 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	}
 
 	/**
-	 * <p>As per {@link #computeSignificance(int, int)} but supplies
-	 *  the re-orderings of the observations of the named variable.</p>
+	 * <p>As described in
+	 * {@link ConditionalMutualInfoCalculatorMultiVariate#computeSignificance(int, int[][])}
+	 * </p>
 	 * 
-	 * <p>We provide a simple implementation which would be suitable for
+	 * <p>Here we provide a simple implementation which would be suitable for
 	 *  any child class, though the child class may prefer to make its
 	 *  own implementation to make class-specific optimisations.
 	 *  Child classes must implement {@link java.lang.Cloneable}
 	 *  for this method to be callable for them, and indeed implement
 	 *  the clone() method in a way that protects their structure
 	 *  from alteration by surrogate data being supplied to it.</p>
-	 * 
-	 * @param variableToReorder 1 for variable 1, 2 for variable 2
-	 * @param newOrderings first index is permutation number, i.e. newOrderings[i]
-	 * 		is an array of 1 permutation of 0..n-1, where there were n observations.
-	 * 		If the length of each permutation in newOrderings
-	 * 		is not equal to numObservations, an Exception is thrown. 
-	 * @param newOrderings the specific new orderings to use
-	 * @return
-	 * @throws Exception
 	 */
+	@Override
 	public EmpiricalMeasurementDistribution computeSignificance(
 			int variableToReorder, int[][] newOrderings) throws Exception {
 		
@@ -414,11 +397,9 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	}
 
 	/**
-	 * <p>Compute the mutual information if the given variable were
-	 *  ordered as per the ordering specified in newOrdering.
-	 *  The user should ensure that all values 0..N-1 are represented exactly once in the
-	 *  array reordering and that no other values are included here.
-	 *  </p>
+	 * <p>As described in
+	 * {@link ConditionalMutualInfoCalculatorMultiVariate#computeAverageLocalOfObservations(int, int[])}
+	 * </p>
 	 * 
 	 * <p>We provide a simple implementation which would be suitable for
 	 *  any child class, though the child class may prefer to make its
@@ -427,12 +408,8 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	 *  for this method to be callable for them, and indeed implement
 	 *  the clone() method in a way that protects their structure
 	 *  from alteration by surrogate data being supplied to it.</p>
-	 *  
-	 * @param variableToReorder 1 for variable 1, 2 for variable 2
-	 * @param newOrdering array of time indices with which to reorder the data
-	 * @return a surrogate MI evaluated for the given ordering of the source variable
-	 * @throws Exception
 	 */
+	@Override
 	public double computeAverageLocalOfObservations(int variableToReorder, int[] newOrdering)
 			throws Exception {
 		// Take a clone of the object to compute the MI of the surrogates:
@@ -461,26 +438,15 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		return miSurrogateCalculator.computeAverageLocalOfObservations();
 	}
 
-	/**
-	 * Set whether debug messages will be displayed
-	 * 
-	 * @param debug debug setting
-	 */
+	@Override
 	public void setDebug(boolean debug) {
 		this.debug = debug;
 	}
 
-	/**
-	 * @return the previously computed average mutual information
-	 */
 	public double getLastAverage() {
 		return lastAverage;
 	}
 
-	/**
-	 * @return the number of supplied observations
-	 * @throws Exception if child class computes MI without explicit observations
-	 */
 	public int getNumObservations() throws Exception {
 		return totalObservations;
 	}
@@ -492,12 +458,15 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	 * Made public so it can be used if one wants to compute the number of
 	 *  observations prior to setting the observations.
 	 * 
-	 * @param var1Valid
-	 * @param var2Valid
-	 * @return
+	 * @param var1Valid a series (indexed by observation number or time)
+	 *  indicating whether the entry in observations at that index is valid for variable 1; 
+	 * @param var2Valid as described for <code>var1Valid</code>
+	 * @param condValid as described for <code>var1Valid</code>
+	 * @return a vector for start and end time pairs of valid series
+	 *  of observations.
 	 */
 	public Vector<int[]> computeStartAndEndTimePairs(
-			boolean[] var1Valid, boolean[] var2Valid, boolean[] var3Valid) {
+			boolean[] var1Valid, boolean[] var2Valid, boolean[] condValid) {
 		// Scan along the data avoiding invalid values
 		int startTime = 0;
 		int endTime = 0;
@@ -507,7 +476,7 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 			if (lookingForStart) {
 				// Precondition: startTime holds a candidate start time
 				//  (var1 value is at startTime == t)
-				if (var1Valid[t] && var2Valid[t] && var3Valid[t]) {
+				if (var1Valid[t] && var2Valid[t] && condValid[t]) {
 					// This point is OK at the variables
 					// Set a candidate endTime
 					endTime = t;
@@ -530,7 +499,7 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 				//  endTime holds a candidate end time
 				// Check if we can include the current time step
 				boolean terminateSequence = false;
-				if (var1Valid[t] && var2Valid[t] && var3Valid[t]) {
+				if (var1Valid[t] && var2Valid[t] && condValid[t]) {
 					// We can extend
 					endTime = t;
 				} else {
@@ -558,6 +527,7 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariate#getAddedMoreThanOneObservationSet()
 	 */
+	@Override
 	public boolean getAddedMoreThanOneObservationSet() {
 		return addedMoreThanOneObservationSet;
 	}	
