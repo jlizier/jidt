@@ -22,38 +22,55 @@ import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 
 /**
- * @author Joseph Lizier
+ * A base class for calculators computing measures which
+ * require knowledge of the embedded past state of a univariate
+ * discrete (ie int[]) variable.
  * 
- * Info theoretic measure calculator base class for 
- *  measures which require the context of the past
- *  history of the destination variable.
+ * Usage is as per {@link InfoMeasureCalculator}, but with some
+ * extra utility functions provided for computing embedding vectors.
  * 
- * Usage:
- * 1. Continuous accumulation of observations before computing :
- *   Call: a. initialise()
- *         b. addObservations() several times over
- *         c. computeLocalFromPreviousObservations() or computeAverageLocalOfObservations()
- * 2. Standalone computation from a single set of observations:
- *   Call: computeLocal() or computeAverageLocal()
- * 
- * @author Joseph Lizier
- * joseph.lizier at gmail.com
- * http://lizier.me/joseph/
- *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public abstract class ContextOfPastMeasureCalculator extends
 		InfoMeasureCalculator {
 
-	protected int k = 0; // history length k.
+	/**
+	 * History length for the embedding
+	 */
+	protected int k = 0;
+	/**
+	 * Do not create storage
+	 * 		for observations of the embedded past
+	 */
 	protected boolean noObservationStorage = false;
+	/**
+	 * Counts of (next,embedded_past) tuples
+	 */
 	protected int[][] nextPastCount = null; // Count for (i[t+1], i[t]) tuples
+	/**
+	 * Counts of (embedded_past) tuples
+	 */
 	protected int[] pastCount = null; // Count for i[t]
+	/**
+	 * Counts of (next) observations
+	 */
 	protected int[] nextCount = null; // count for i[t+1]
-	protected int[] maxShiftedValue = null; // states * (base^(k-1))
+	/**
+	 * Cached value maxShiftedValue[i] is i * (base^(k-1))
+	 */
+	protected int[] maxShiftedValue = null; // 
+	/**
+	 * Cached value of base^k
+	 */
 	protected int base_power_k = 0;
 
 	/**
-	 * @param base
+	 * Construct an instance
+	 * 
+	 * @param base number of quantisation levels for each variable.
+	 *        E.g. binary variables are in base-2.
+	 * @param history embedding length
 	 */
 	public ContextOfPastMeasureCalculator(int base, int history) {
 		this(base, history, false);
@@ -64,9 +81,12 @@ public abstract class ContextOfPastMeasureCalculator extends
 	 * In general, only needs to be explicitly called if child classes
 	 *  do not wish to create the observation arrays.
 	 * 
-	 * @param base
-	 * @param history
-	 * @param dontCreateObsStorage
+	 * @param base number of quantisation levels for each variable.
+	 *        E.g. binary variables are in base-2.
+	 * @param history embedding length
+	 * @param dontCreateObsStorage do not create storage
+	 * 		for observations of the embedded past (as the child
+	 * 		class is signalling that it does not need it)
 	 */
 	protected ContextOfPastMeasureCalculator(int base, int history, boolean dontCreateObsStorage) {
 		super(base);
@@ -100,12 +120,7 @@ public abstract class ContextOfPastMeasureCalculator extends
 		}
 	}
 	
-	/**
-	 * Initialise calculator, preparing to take observation sets in
-	 * Should be called prior to any of the addObservations() methods.
-	 * You can reinitialise without needing to create a new object.
-	 *
-	 */
+	@Override
 	public void initialise() {
 		super.initialise();
 		
@@ -117,12 +132,15 @@ public abstract class ContextOfPastMeasureCalculator extends
 	}
 	
 	/**
-	 * Utility function to compute the combined past values of x up to and including time step t
+	 * Utility function to compute the combined embedded
+	 * past values of x up to and including time step t
 	 *  (i.e. (x_{t-k+1}, ... ,x_{t-1},x_{t}))
 	 * 
-	 * @param x
-	 * @param t
-	 * @return
+	 * @param x time-series data
+	 * @param t compute embedding vector up to and
+	 *  including index t
+	 * @return int value representing the embedding vector
+	 *  translated into a unique integer
 	 */
 	public int computePastValue(int[] x, int t) {
 		int pastVal = 0;
@@ -134,37 +152,50 @@ public abstract class ContextOfPastMeasureCalculator extends
 	}
 
 	/**
-	 * Utility function to compute the combined past values of x up to and including time step t
+	 * Utility function to compute the combined embedded
+	 * past values of x up to and including time step t
 	 *  (i.e. (x_{t-k+1}, ... ,x_{t-1},x_{t}))
+	 * where x is a column in data 
 	 * 
-	 * @param x
-	 * @param agentNumber
-	 * @param t
-	 * @return
+	 * @param data multivariate time-series data
+	 *  (first index is time, second is variable number)
+	 * @param columnNumber which column to embed
+	 * @param t compute embedding vector up to and
+	 *  including index t
+	 * @return int value representing the embedding vector
+	 *  translated into a unique integer
 	 */
-	public int computePastValue(int[][] x, int agentNumber, int t) {
+	public int computePastValue(int[][] data, int columnNumber, int t) {
 		int pastVal = 0;
 		for (int p = 0; p < k; p++) {
 			pastVal *= base;
-			pastVal += x[t - k + 1 + p][agentNumber];
+			pastVal += data[t - k + 1 + p][columnNumber];
 		}
 		return pastVal;
 	}
 
 	/**
-	 * Utility function to compute the combined past values of x up to and including time step t
+	 * Utility function to compute the combined embedded 
+	 * past values of x up to and including time step t
 	 *  (i.e. (x_{t-k+1}, ... ,x_{t-1},x_{t}))
+	 * where x is a time-series for a given row and
+	 * column in data 
 	 * 
-	 * @param x
-	 * @param agentNumber
-	 * @param t
-	 * @return
+	 * @param data multivariate time-series data
+	 *  (first index is time, second is row number for the variable
+	 *   and third is column number for the variable)
+	 * @param rowNumber row number of the variable to embed
+	 * @param columnNumber column number of the variable to embed
+	 * @param t compute embedding vector up to and
+	 *  including index t
+	 * @return int value representing the embedding vector
+	 *  translated into a unique integer
 	 */
-	public int computePastValue(int[][][] x, int agentRow, int agentColumn, int t) {
+	public int computePastValue(int[][][] data, int rowNumber, int columnNumber, int t) {
 		int pastVal = 0;
 		for (int p = 0; p < k; p++) {
 			pastVal *= base;
-			pastVal += x[t - k + 1 + p][agentRow][agentColumn];
+			pastVal += data[t - k + 1 + p][rowNumber][columnNumber];
 		}
 		return pastVal;
 	}

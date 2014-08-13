@@ -19,18 +19,48 @@
 package infodynamics.measures.discrete;
 
 /**
- * Compute average and local entropy rates
- * 
- * Usage:
- * 1. Continuous accumulation of observations:
- *   Call: a. initialise()
- *         b. addObservations() several times over
- *         c. computeLocalFromPreviousObservations()
- * 2. Standalone:
- *   Call: localActiveInformation()
- * 
- * @author Joseph Lizier
+ * <p>Entropy rate calculator for univariate discrete (int[]) data
+ * (ie computes entropy over blocks of consecutive states in time).
+ * Implements entropy rate as entropy of next state
+ * conditional on the embedded past (as per the alternative
+ * definition used by Crutchfield and Feldman, see below)
+ * rather than the limiting rate of block entropy over block size.</p>
  *
+ * <p>Usage of the class is intended to follow this paradigm:</p>
+ * <ol>
+ * 		<li>Construct the calculator: {@link #EntropyRateCalculator(int, int)};</li>
+ *		<li>Initialise the calculator using {@link #initialise()};</li>
+ * 		<li>Provide the observations/samples for the calculator
+ *      	to set up the PDFs, using one or more calls to
+ * 			sets of {@link #addObservations(int[])} methods, then</li>
+ * 		<li>Compute the required quantities, being one or more of:
+ * 			<ul>
+ * 				<li>the average entropy: {@link #computeAverageLocalOfObservations()};</li>
+ * 				<li>local entropy values, such as {@link #computeLocal(int[])};</li>
+ * 				<li>and variants of these.</li>
+ * 			</ul>
+ * 		</li>
+ * 		<li>As an alternative to steps 3 and 4, the user may undertake
+ * 			standalone computation from a single set of observations, via
+ *  		e.g.: {@link #computeLocal(int[])},
+ *  		{@link #computeAverageLocal(int[])} etc.</li>
+ * 		<li>
+ * 		Return to step 2 to re-use the calculator on a new data set.
+ * 		</li>
+ * 	</ol>
+ * 
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>T. M. Cover and J. A. Thomas, 'Elements of Information
+Theory' (John Wiley & Sons, New York, 1991).</li>
+ * 	<li>J. P. Crutchfield, D. P. Feldman,
+ *  <a href="http://dx.doi.org/10.1063/1.1530990">
+ * 	"Regularities Unseen, Randomness Observed: Levels of Entropy Convergence"</a>,
+ *  Chaos, Vol. 13, No. 1. (2003), pp. 25-54.</li>
+ * </ul>
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class EntropyRateCalculator extends SingleAgentMeasureInContextOfPastCalculator {
 
@@ -40,26 +70,54 @@ public class EntropyRateCalculator extends SingleAgentMeasureInContextOfPastCalc
 	 * 
 	 * @param base
 	 * @param history
-	 * 
+	 * @deprecated
 	 * @return
 	 */
 	public static EntropyRateCalculator newInstance(int base, int history) {
 		return new EntropyRateCalculator(base, history);
 	}
 	
+	/**
+	 * Construct a new instance
+	 * 
+	 * @param base number of symbols for each variable.
+	 *        E.g. binary variables are in base-2.
+	 * @param history embedded history length of the destination to condition on -
+	 *        this is k in Schreiber's notation.
+	 */
 	public EntropyRateCalculator(int base, int history) {
-		
 		super(base, history);
-
 	}		
 	
-	/**
- 	 * Add observations in to our estimates of the pdfs.
- 	 * This call suitable only for homogeneous agents, as all
- 	 *  agents will contribute to single pdfs.
-	 *
-	 * @param states 1st index is time, 2nd index is agent number
-	 */
+	@Override
+	public void addObservations(int[] states) {
+		int rows = states.length;
+		// increment the count of observations:
+		observations += (rows - k); 
+		
+		// Initialise and store the current previous value for each column
+		int prevVal = 0; 
+		for (int p = 0; p < k; p++) {
+			prevVal *= base;
+			prevVal += states[p];
+		}
+		
+		// 1. Count the tuples observed
+		int nextVal;
+		for (int r = k; r < rows; r++) {
+			// Add to the count for this particular transition:
+			// (cell's assigned as above)
+			nextVal = states[r];
+			nextPastCount[nextVal][prevVal]++;
+			pastCount[prevVal]++;
+			// Update the previous value:
+			prevVal -= maxShiftedValue[states[r-k]];
+			prevVal *= base;
+			prevVal += states[r];
+		}
+	}
+
+	@Override
 	public void addObservations(int states[][]) {
 		int rows = states.length;
 		int columns = states[0].length;
@@ -93,13 +151,7 @@ public class EntropyRateCalculator extends SingleAgentMeasureInContextOfPastCalc
 		}		
 	}
 	
-	/**
- 	 * Add observations in to our estimates of the pdfs.
- 	 * This call suitable only for homogeneous agents, as all
- 	 *  agents will contribute to single pdfs.
-	 *
-	 * @param states 1st index is time, 2nd and 3rd index give the 2D agent number
-	 */
+	@Override
 	public void addObservations(int states[][][]) {
 		int timeSteps = states.length;
 		if (timeSteps == 0) {
@@ -144,14 +196,7 @@ public class EntropyRateCalculator extends SingleAgentMeasureInContextOfPastCalc
 		}		
 	}
 
-	/**
- 	 * Add observations for a single agent of the multi-agent system
- 	 *  to our estimates of the pdfs.
- 	 * This call should be made as opposed to addObservations(int states[][])
- 	 *  for computing active info for heterogeneous agents.
-	 *
-	 * @param states 1st index is time, 2nd index is agent number
-	 */
+	@Override
 	public void addObservations(int states[][], int col) {
 		int rows = states.length;
 		// increment the count of observations:
@@ -180,14 +225,7 @@ public class EntropyRateCalculator extends SingleAgentMeasureInContextOfPastCalc
 		}
 	}
 
-	/**
- 	 * Add observations for a single agent of the multi-agent system
- 	 *  to our estimates of the pdfs.
- 	 * This call should be made as opposed to addObservations(int states[][][])
- 	 *  for computing active info for heterogeneous agents.
-	 *
-	 * @param states 1st index is time, 2nd and 3rd index give the 2D agent number
-	 */
+	@Override
 	public void addObservations(int states[][][], int agentIndex1, int agentIndex2) {
 		int timeSteps = states.length;
 		// increment the count of observations:
@@ -216,12 +254,7 @@ public class EntropyRateCalculator extends SingleAgentMeasureInContextOfPastCalc
 		}
 	}
 
-	/**
-	 * Returns the average local active information storage from
-	 *  the observed values which have been passed in previously. 
-	 *  
-	 * @return
-	 */
+	@Override
 	public double computeAverageLocalOfObservations() {
 		double entRate = 0.0;
 		double entRateCont = 0.0;
@@ -257,15 +290,48 @@ public class EntropyRateCalculator extends SingleAgentMeasureInContextOfPastCalc
 		return entRate;
 	}
 	
-	/**
-	 * Computes local entropy rate for the given
-	 *  states, using pdfs built up from observations previously
-	 *  sent in via the addObservations method 
-	 * This method to be used for homogeneous agents only
-	 *  
-	 * @param states 1st index is time, 2nd index is agent number
-	 * @return
-	 */
+	@Override
+	public double[] computeLocalFromPreviousObservations(int[] states) {
+		int rows = states.length;
+
+		// Allocate for all rows even though we'll leave the first ones as zeros
+		double[] localEntRate = new double[rows];
+		average = 0;
+		max = 0;
+		min = 0;
+
+		// Initialise and store the current previous value for each column
+		int prevVal = 0;
+		for (int p = 0; p < k; p++) {
+			prevVal *= base;
+			prevVal += states[p];
+		}
+		
+		int nextVal;
+		double logTerm = 0.0;
+		for (int r = k; r < rows; r++) {
+			nextVal = states[r];
+			logTerm = ( (double) nextPastCount[nextVal][prevVal] ) /
+			  		  ( (double) pastCount[prevVal] );
+			// Entropy rate takes the negative log:
+			localEntRate[r] = - Math.log(logTerm) / log_2;
+			average += localEntRate[r];
+			if (localEntRate[r] > max) {
+				max = localEntRate[r];
+			} else if (localEntRate[r] < min) {
+				min = localEntRate[r];
+			}
+			// Update the previous value:
+			prevVal -= maxShiftedValue[states[r-k]];
+			prevVal *= base;
+			prevVal += states[r];
+		}
+		average = average/(double) (rows - k);
+		
+		return localEntRate;
+	}
+
+	@Override
 	public double[][] computeLocalFromPreviousObservations(int states[][]){
 		int rows = states.length;
 		int columns = states[0].length;
@@ -308,19 +374,10 @@ public class EntropyRateCalculator extends SingleAgentMeasureInContextOfPastCalc
 		}
 		average = average/(double) (columns * (rows - k));
 		
-		return localEntRate;
-		
+		return localEntRate;		
 	}
 	
-	/**
-	 * Computes local entropy rate for the given
-	 *  states, using pdfs built up from observations previously
-	 *  sent in via the addObservations method 
-	 * This method to be used for homogeneous agents only
-	 *  
-	 * @param states 1st index is time, 2nd and 3rd index give the 2D agent number
-	 * @return
-	 */
+	@Override
 	public double[][][] computeLocalFromPreviousObservations(int states[][][]){
 		int timeSteps = states.length;
 		int agentRows = states[0].length;
@@ -370,18 +427,9 @@ public class EntropyRateCalculator extends SingleAgentMeasureInContextOfPastCalc
 		average = average/(double) (agentRows * agentColumns * (timeSteps - k));
 		
 		return localEntRate;
-		
 	}
 
-	/**
-	 * Computes local entropy rate for the given
-	 *  states, using pdfs built up from observations previously
-	 *  sent in via the addObservations method 
-	 * This method is suitable for heterogeneous agents
-	 *  
-	 * @param states 1st index is time, 2nd index is agent number
-	 * @return
-	 */
+	@Override
 	public double[] computeLocalFromPreviousObservations(int states[][], int col){
 		int rows = states.length;
 		//int columns = states[0].length;
@@ -424,15 +472,7 @@ public class EntropyRateCalculator extends SingleAgentMeasureInContextOfPastCalc
 		
 	}
 
-	/**
-	 * Computes local entropy rate for the given
-	 *  states, using pdfs built up from observations previously
-	 *  sent in via the addObservations method 
-	 * This method is suitable for heterogeneous agents
-	 *  
-	 * @param states 1st index is time, 2nd and 3rd index give the 2D agent number
-	 * @return
-	 */
+	@Override
 	public double[] computeLocalFromPreviousObservations(int states[][][], int agentIndex1, int agentIndex2){
 		int timeSteps = states.length;
 		//int columns = states[0].length;
@@ -473,5 +513,5 @@ public class EntropyRateCalculator extends SingleAgentMeasureInContextOfPastCalc
 		
 		return localEntRate;
 		
-	}	
+	}
 }

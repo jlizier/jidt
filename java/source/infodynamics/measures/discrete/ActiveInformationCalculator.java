@@ -19,100 +19,83 @@
 package infodynamics.measures.discrete;
 
 import infodynamics.utils.EmpiricalMeasurementDistribution;
-import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.RandomGenerator;
 
 /**
- * Usage:
- * 1. Continuous accumulation of observations:
- *   Call: a. initialise()
- *         b. addObservations() several times over
- *         c. computeLocalFromPreviousObservations()
- * 2. Standalone:
- *   Call: localActiveInformation()
- * 
- * @author Joseph Lizier
+ * <p>Active Information Storage  calculator for univariate discrete (int[]) data.
+ * See definition of Active Information Storage (AIS) by Lizier et al. below.
+ * Basically, AIS is the mutual information between the past <i>state</i>
+ * of a time-series process <i>X</i> and its next value. The past <i>state</i> at time <code>n</code>
+ * is represented by an embedding vector of <code>k</code> values from <code>X_n</code> backwards,
+ * each separated by <code>\tau</code> steps, giving
+ * <code><b>X^k_n</b> = [ X_{n-(k-1)\tau}, ... , X_{n-\tau}, X_n]</code>.
+ * We call <code>k</code> the embedding dimension, and <code>\tau</code>
+ * the embedding delay (only delay = 1 is implemented at the moment).
+ * AIS is then the mutual information between <b>X^k_n</b> and X_{n+1}.</p>
  *
+ * <p>Usage of the class is intended to follow this paradigm:</p>
+ * <ol>
+ * 		<li>Construct the calculator: {@link #ActiveInformationCalculator(int, int)};</li>
+ *		<li>Initialise the calculator using {@link #initialise()};</li>
+ * 		<li>Provide the observations/samples for the calculator
+ *      	to set up the PDFs, using one or more calls to
+ * 			sets of {@link #addObservations(int[])} methods, then</li>
+ * 		<li>Compute the required quantities, being one or more of:
+ * 			<ul>
+ * 				<li>the average entropy: {@link #computeAverageLocalOfObservations()};</li>
+ * 				<li>local entropy values, such as {@link #computeLocal(int[])};</li>
+ * 				<li>and variants of these.</li>
+ * 			</ul>
+ * 		</li>
+ * 		<li>As an alternative to steps 3 and 4, the user may undertake
+ * 			standalone computation from a single set of observations, via
+ *  		e.g.: {@link #computeLocal(int[])},
+ *  		{@link #computeAverageLocal(int[])} etc.</li>
+ * 		<li>
+ * 		Return to step 2 to re-use the calculator on a new data set.
+ * 		</li>
+ * 	</ol>
+ * 
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>J.T. Lizier, M. Prokopenko and A.Y. Zomaya,
+ * 		<a href="http://dx.doi.org/10.1016/j.ins.2012.04.016">
+ * 		"Local measures of information storage in complex distributed computation"</a>,
+ * 		Information Sciences, vol. 208, pp. 39-54, 2012.</li>
+ * </ul>
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
-public class ActiveInformationCalculator {
+public class ActiveInformationCalculator extends SingleAgentMeasureInContextOfPastCalculator {
 
-	private double average = 0.0;
-	private double max = 0.0;
-	private double min = 0.0;
-	private int observations = 0;
-	private int k = 0; // history length k.
-	private int base = 0; // number of individual states.
-	private int[][]	jointCount = null; // Count for (i[t+1], i[t]) tuples
-	private int[] prevCount = null; // Count for i[t]		
-	private int[] nextCount = null; // Count for i[t+1]
-	private int[] maxShiftedValue = null; // states * (base^(history-1))
-	
-	private int base_power_k = 0;
-	private double log_base = 0;
-	
 	/**
 	 * User was formerly forced to create new instances through this factory method.
 	 * Retained for backwards compatibility.
 	 * 
 	 * @param base
 	 * @param history
-	 * 
+	 * @deprecated
 	 * @return
 	 */
 	public static ActiveInformationCalculator newInstance(int base, int history) {
 		return new ActiveInformationCalculator(base, history);
 	}
 	
+	/**
+	 * Construct a new instance
+	 * 
+	 * @param base number of symbols for each variable.
+	 *        E.g. binary variables are in base-2.
+	 * @param history embedded history length of the destination to condition on -
+	 *        this is k in Schreiber's notation.
+	 */
 	public ActiveInformationCalculator(int base, int history) {
-		super();
-		
-		this.base = base;
-		k = history;
-		base_power_k = MathsUtils.power(base, k);
-		log_base = Math.log(base);
-		
-		if (history < 1) {
-			throw new RuntimeException("History k " + history + " is not >= 1 for Active info storage Calculator");
-		}
-		if (k > Math.log(Integer.MAX_VALUE) / log_base) {
-			throw new RuntimeException("Base and history combination too large");
-		}
-
-		// Create storage for counts of observations
-		jointCount = new int[base][base_power_k];
-		prevCount = new int[base_power_k];
-		nextCount = new int[base];
-
-		// Create constants for tracking prevValues
-		maxShiftedValue = new int[base];
-		for (int v = 0; v < base; v++) {
-			maxShiftedValue[v] = v * MathsUtils.power(base, k-1);
-		}
+		super(base, history);
 	}
 
-	/**
-	 * Initialise calculator, preparing to take observation sets in
-	 * Should be called prior to any of the addObservations() methods.
-	 * You can reinitialise without needing to create a new object.
-	 *
-	 */
-	public void initialise(){
-		average = 0.0;
-		max = 0.0;
-		min = 0.0;
-		observations = 0;
-		
-		MatrixUtils.fill(jointCount, 0);
-		MatrixUtils.fill(prevCount, 0);
-		MatrixUtils.fill(nextCount, 0);
-	}
-		
-	/**
- 	 * Add observations in to our estimates of the pdfs.
-	 *
-	 * @param states time series of agent states
-	 */
+	@Override
 	public void addObservations(int states[]) {
 		int timeSteps = states.length;
 		// increment the count of observations:
@@ -130,8 +113,8 @@ public class ActiveInformationCalculator {
 		for (int t = k; t < timeSteps; t++) {
 			// Add to the count for this particular transition:
 			nextVal = states[t];
-			jointCount[nextVal][prevVal]++;
-			prevCount[prevVal]++;
+			nextPastCount[nextVal][prevVal]++;
+			pastCount[prevVal]++;
 			nextCount[nextVal]++;					
 			// Update the previous value:
 			prevVal -= maxShiftedValue[states[t-k]];
@@ -140,13 +123,7 @@ public class ActiveInformationCalculator {
 		}		
 	}
 
-	/**
- 	 * Add observations in to our estimates of the pdfs.
- 	 * This call suitable only for homogeneous agents, as all
- 	 *  agents will contribute to single pdfs.
-	 *
-	 * @param states 1st index is time, 2nd index is agent number
-	 */
+	@Override
 	public void addObservations(int states[][]) {
 		int rows = states.length;
 		int columns = states[0].length;
@@ -170,8 +147,8 @@ public class ActiveInformationCalculator {
 				// Add to the count for this particular transition:
 				// (cell's assigned as above)
 				nextVal = states[r][c];
-				jointCount[nextVal][prevVal[c]]++;
-				prevCount[prevVal[c]]++;
+				nextPastCount[nextVal][prevVal[c]]++;
+				pastCount[prevVal[c]]++;
 				nextCount[nextVal]++;					
 				// Update the previous value:
 				prevVal[c] -= maxShiftedValue[states[r-k][c]];
@@ -181,13 +158,7 @@ public class ActiveInformationCalculator {
 		}		
 	}
 
-	/**
- 	 * Add observations in to our estimates of the pdfs.
- 	 * This call suitable only for homogeneous agents, as all
- 	 *  agents will contribute to single pdfs.
-	 *
-	 * @param states 1st index is time, 2nd and 3rd index give the 2D agent number
-	 */
+	@Override
 	public void addObservations(int states[][][]) {
 		int timeSteps = states.length;
 		if (timeSteps == 0) {
@@ -221,8 +192,8 @@ public class ActiveInformationCalculator {
 					// Add to the count for this particular transition:
 					// (cell's assigned as above)
 					nextVal = states[t][r][c];
-					jointCount[nextVal][prevVal[r][c]]++;
-					prevCount[prevVal[r][c]]++;
+					nextPastCount[nextVal][prevVal[r][c]]++;
+					pastCount[prevVal[r][c]]++;
 					nextCount[nextVal]++;					
 					// Update the previous value:
 					prevVal[r][c] -= maxShiftedValue[states[t-k][r][c]];
@@ -233,14 +204,7 @@ public class ActiveInformationCalculator {
 		}		
 	}
 
-	/**
- 	 * Add observations for a single agent of the multi-agent system
- 	 *  to our estimates of the pdfs.
- 	 * This call should be made as opposed to addObservations(int states[][])
- 	 *  for computing active info for heterogeneous agents.
-	 *
-	 * @param states 1st index is time, 2nd index is agent number
-	 */
+	@Override
 	public void addObservations(int states[][], int col) {
 		int rows = states.length;
 		// increment the count of observations:
@@ -260,8 +224,8 @@ public class ActiveInformationCalculator {
 			// Add to the count for this particular transition:
 			// (cell's assigned as above)
 			nextVal = states[r][col];
-			jointCount[nextVal][prevVal]++;
-			prevCount[prevVal]++;
+			nextPastCount[nextVal][prevVal]++;
+			pastCount[prevVal]++;
 			nextCount[nextVal]++;					
 			// Update the previous value:
 			prevVal -= maxShiftedValue[states[r-k][col]];
@@ -270,14 +234,7 @@ public class ActiveInformationCalculator {
 		}
 	}
 
-	/**
- 	 * Add observations for a single agent of the multi-agent system
- 	 *  to our estimates of the pdfs.
- 	 * This call should be made as opposed to addObservations(int states[][])
- 	 *  for computing active info for heterogeneous agents.
-	 *
-	 * @param states 1st index is time, 2nd and 3rd index give the 2D agent number
-	 */
+	@Override
 	public void addObservations(int states[][][], int agentIndex1, int agentIndex2) {
 		int timeSteps = states.length;
 		// increment the count of observations:
@@ -297,8 +254,8 @@ public class ActiveInformationCalculator {
 			// Add to the count for this particular transition:
 			// (cell's assigned as above)
 			nextVal = states[t][agentIndex1][agentIndex2];
-			jointCount[nextVal][prevVal]++;
-			prevCount[prevVal]++;
+			nextPastCount[nextVal][prevVal]++;
+			pastCount[prevVal]++;
 			nextCount[nextVal]++;					
 			// Update the previous value:
 			prevVal -= maxShiftedValue[states[t-k][agentIndex1][agentIndex2]];
@@ -307,12 +264,7 @@ public class ActiveInformationCalculator {
 		}
 	}
 
-	/**
-	 * Returns the average local active information storage from
-	 *  the observed values which have been passed in previously. 
-	 *  
-	 * @return
-	 */
+	@Override
 	public double computeAverageLocalOfObservations() {
 		double mi = 0.0;
 		double miCont = 0.0;
@@ -324,9 +276,9 @@ public class ActiveInformationCalculator {
 			double p_next = (double) nextCount[nextVal] / (double) observations;
 			for (int prevVal = 0; prevVal < base_power_k; prevVal++) {
 				// compute p_prev
-				double p_prev = (double) prevCount[prevVal] / (double) observations;
+				double p_prev = (double) pastCount[prevVal] / (double) observations;
 				// compute p(prev, next)
-				double p_joint = (double) jointCount[nextVal][prevVal] / (double) observations;
+				double p_joint = (double) nextPastCount[nextVal][prevVal] / (double) observations;
 				// Compute MI contribution:
 				if (p_joint > 0.0) {
 					double logTerm = p_joint / (p_next * p_prev);
@@ -352,7 +304,7 @@ public class ActiveInformationCalculator {
 	 * Returns the average local entropy rate from
 	 *  the observed values which have been passed in previously. 
 	 *  
-	 * @return
+	 * @return average entropy rate
 	 */
 	public double computeAverageLocalEntropyRateOfObservations() {
 		double entRate = 0.0;
@@ -361,9 +313,9 @@ public class ActiveInformationCalculator {
 		for (int nextVal = 0; nextVal < base; nextVal++) {
 			for (int prevVal = 0; prevVal < base_power_k; prevVal++) {
 				// compute p_prev
-				double p_prev = (double) prevCount[prevVal] / (double) observations;
+				double p_prev = (double) pastCount[prevVal] / (double) observations;
 				// compute p(prev, next)
-				double p_joint = (double) jointCount[nextVal][prevVal] / (double) observations;
+				double p_joint = (double) nextPastCount[nextVal][prevVal] / (double) observations;
 				// Compute entropy rate contribution:
 				if (p_joint > 0.0) {
 					double logTerm = p_joint / p_prev;
@@ -382,29 +334,24 @@ public class ActiveInformationCalculator {
 	
 	/**
 	 * Computes local active info storage for the given (single)
-	 *  specific values
+	 *  specific values.
 	 *  
-	 * @param destNext
-	 * @param destPast
-	 * @param sourceCurrent
-	 * @return
+	 * See {@link TransferEntropyCalculator#getPastCount(int)} for how the
+	 *  joint embedded values representing the past are calculated.
+	 * 
+	 * @param next next value of the variable
+	 * @param past int representing the joint state of the past of the variable x[n]^k
+	 * @return local active info storage value
 	 */
 	public double computeLocalFromPreviousObservations(int next, int past){
-		double logTerm = ( (double) jointCount[next][past] ) /
+		double logTerm = ( (double) nextPastCount[next][past] ) /
 		  ( (double) nextCount[next] *
-			(double) prevCount[past] );
+			(double) pastCount[past] );
 		logTerm *= (double) observations;
 		return Math.log(logTerm) / log_base;
 	}
 
-	/**
-	 * Computes local active information storage for the given
-	 *  states, using pdfs built up from observations previously
-	 *  sent in via the addObservations method 
-	 *  
-	 * @param states time series of states
-	 * @return
-	 */
+	@Override
 	public double[] computeLocalFromPreviousObservations(int states[]){
 		int timeSteps = states.length;
 
@@ -425,9 +372,9 @@ public class ActiveInformationCalculator {
 		double logTerm = 0.0;
 		for (int t = k; t < timeSteps; t++) {
 			nextVal = states[t];
-			logTerm = ( (double) jointCount[nextVal][prevVal] ) /
+			logTerm = ( (double) nextPastCount[nextVal][prevVal] ) /
 			  		  ( (double) nextCount[nextVal] *
-			  			(double) prevCount[prevVal] );
+			  			(double) pastCount[prevVal] );
 			// Now account for the fact that we've
 			//  just used counts rather than probabilities,
 			//  and we've got two counts on the bottom
@@ -451,15 +398,7 @@ public class ActiveInformationCalculator {
 		
 	}
 
-	/**
-	 * Computes local active information storage for the given
-	 *  states, using pdfs built up from observations previously
-	 *  sent in via the addObservations method 
-	 * This method to be used for homogeneous agents only
-	 *  
-	 * @param states 1st index is time, 2nd index is agent number
-	 * @return
-	 */
+	@Override
 	public double[][] computeLocalFromPreviousObservations(int states[][]){
 		int rows = states.length;
 		int columns = states[0].length;
@@ -484,9 +423,9 @@ public class ActiveInformationCalculator {
 		for (int r = k; r < rows; r++) {
 			for (int c = 0; c < columns; c++) {
 				nextVal = states[r][c];
-				logTerm = ( (double) jointCount[nextVal][prevVal[c]] ) /
+				logTerm = ( (double) nextPastCount[nextVal][prevVal[c]] ) /
 				  		  ( (double) nextCount[nextVal] *
-				  			(double) prevCount[prevVal[c]] );
+				  			(double) pastCount[prevVal[c]] );
 				// Now account for the fact that we've
 				//  just used counts rather than probabilities,
 				//  and we've got two counts on the bottom
@@ -511,15 +450,7 @@ public class ActiveInformationCalculator {
 		
 	}
 	
-	/**
-	 * Computes local active information storage for the given
-	 *  states, using pdfs built up from observations previously
-	 *  sent in via the addObservations method 
-	 * This method to be used for homogeneous agents only
-	 *  
-	 * @param states 1st index is time, 2nd and 3rd index give the 2D agent number
-	 * @return
-	 */
+	@Override
 	public double[][][] computeLocalFromPreviousObservations(int states[][][]){
 		int timeSteps = states.length;
 		int agentRows = states[0].length;
@@ -548,9 +479,9 @@ public class ActiveInformationCalculator {
 			for (int r = 0; r < agentRows; r++) {
 				for (int c = 0; c < agentColumns; c++) {
 					nextVal = states[t][r][c];
-					logTerm = ( (double) jointCount[nextVal][prevVal[r][c]] ) /
+					logTerm = ( (double) nextPastCount[nextVal][prevVal[r][c]] ) /
 					  		  ( (double) nextCount[nextVal] *
-					  			(double) prevCount[prevVal[r][c]] );
+					  			(double) pastCount[prevVal[r][c]] );
 					// Now account for the fact that we've
 					//  just used counts rather than probabilities,
 					//  and we've got two counts on the bottom
@@ -575,15 +506,7 @@ public class ActiveInformationCalculator {
 		return localActive;
 	}
 
-	/**
-	 * Computes local active information storage for the given
-	 *  states, using pdfs built up from observations previously
-	 *  sent in via the addObservations method 
-	 * This method is suitable for heterogeneous agents
-	 *  
-	 * @param states 1st index is time, 2nd index is agent number
-	 * @return
-	 */
+	@Override
 	public double[] computeLocalFromPreviousObservations(int states[][], int col){
 		int rows = states.length;
 		//int columns = states[0].length;
@@ -605,9 +528,9 @@ public class ActiveInformationCalculator {
 		double logTerm = 0.0;
 		for (int r = k; r < rows; r++) {
 			nextVal = states[r][col];
-			logTerm = ( (double) jointCount[nextVal][prevVal] ) /
+			logTerm = ( (double) nextPastCount[nextVal][prevVal] ) /
 			  		  ( (double) nextCount[nextVal] *
-			  			(double) prevCount[prevVal] );
+			  			(double) pastCount[prevVal] );
 			// Now account for the fact that we've
 			//  just used counts rather than probabilities,
 			//  and we've got two counts on the bottom
@@ -631,16 +554,9 @@ public class ActiveInformationCalculator {
 		
 	}
 	
-	/**
-	 * Computes local active information storage for the given
-	 *  states, using pdfs built up from observations previously
-	 *  sent in via the addObservations method 
-	 * This method is suitable for heterogeneous agents
-	 *  
-	 * @param states 1st index is time, 2nd and 3rd index give the 2D agent number
-	 * @return
-	 */
-	public double[] computeLocalFromPreviousObservations(int states[][][], int agentIndex1, int agentIndex2){
+	@Override
+	public double[] computeLocalFromPreviousObservations(int states[][][],
+			int agentIndex1, int agentIndex2){
 		int timeSteps = states.length;
 		//int columns = states[0].length;
 
@@ -661,9 +577,9 @@ public class ActiveInformationCalculator {
 		double logTerm = 0.0;
 		for (int t = k; t < timeSteps; t++) {
 			nextVal = states[t][agentIndex1][agentIndex2];
-			logTerm = ( (double) jointCount[nextVal][prevVal] ) /
+			logTerm = ( (double) nextPastCount[nextVal][prevVal] ) /
 			  		  ( (double) nextCount[nextVal] *
-			  			(double) prevCount[prevVal] );
+			  			(double) pastCount[prevVal] );
 			// Now account for the fact that we've
 			//  just used counts rather than probabilities,
 			//  and we've got two counts on the bottom
@@ -688,207 +604,29 @@ public class ActiveInformationCalculator {
 	}
 
 	/**
-	 * Standalone routine to 
-	 * compute local active information storage across an
-	 *  array of the states of homogeneous agents
-	 * Return an array of local values.
-	 * First history rows are zeros
+	 * Generate a bootstrapped distribution of what the AIS would look like,
+	 * under a null hypothesis that the past <code>k</code> values of our
+	 * samples had no relation to the next value.
 	 * 
-	 * @param history - parameter k
-	 * @param maxEmbeddingLength - base of the states
-	 * @param states - time series array of states
-	 * @return
-	 */
-	public double[] computeLocal(int states[]) {
-		
-		initialise();
-		addObservations(states);
-		return computeLocalFromPreviousObservations(states);
-	}
-
-	/**
-	 * Standalone routine to 
-	 * compute local active information storage across a 2D spatiotemporal
-	 *  array of the states of homogeneous agents
-	 * Return a 2D spatiotemporal array of local values.
-	 * First history rows are zeros
+	 * <p>See Section II.E "Statistical significance testing" of 
+	 * the JIDT paper below for a description of how this is done for 
+	 * an MI (like the AIS).
+	 * </p>
 	 * 
-	 * @param history - parameter k
-	 * @param maxEmbeddingLength - base of the states
-	 * @param states - 2D array of states
-	 * @return
-	 */
-	public double[][] computeLocal(int states[][]) {
-		
-		initialise();
-		addObservations(states);
-		return computeLocalFromPreviousObservations(states);
-	}
-	
-	/**
-	 * Standalone routine to 
-	 * compute local active information storage across a 2D spatiotemporal
-	 *  array of the states of homogeneous agents
-	 * Return a 2D spatiotemporal array of local values.
-	 * First history rows are zeros
+	 * <p>Note that if several disjoint time-series have been added 
+	 * as observations using {@link #addObservations(int[], int[])} etc.,
+	 * then these separate "trials" will be mixed up in the generation
+	 * of surrogates here.</p>
 	 * 
-	 * @param history - parameter k
-	 * @param maxEmbeddingLength - base of the states
-	 * @param states - array of states - 1st dimension is time, 2nd and 3rd are agent indices
-	 * @return
-	 */
-	public double[][][] computeLocal(int states[][][]) {
-		
-		initialise();
-		addObservations(states);
-		return computeLocalFromPreviousObservations(states);
-	}
-
-	/**
-	 * Standalone routine to 
-	 * compute average local active information storage across an
-	 *  array of the states of homogeneous agents
-	 * Return the averagen
+	 * <p>This method (in contrast to {@link #computeSignificance(int[][])})
+	 * creates <i>random</i> shufflings of the next values for the surrogate AIS
+	 * calculations.</p>
 	 * 
-	 * @param history - parameter k
-	 * @param maxEmbeddingLength - base of the states
-	 * @param states - narray of states
-	 * @return
-	 */
-	public double computeAverageLocal(int states[]) {
-		
-		initialise();
-		addObservations(states);
-		return computeAverageLocalOfObservations();
-	}
-
-	/**
-	 * Standalone routine to 
-	 * compute average local active information storage across a 2D spatiotemporal
-	 *  array of the states of homogeneous agents
-	 * Return the average
-	 * This method to be called for homogeneous agents only
-	 * 
-	 * @param history - parameter k
-	 * @param maxEmbeddingLength - base of the states
-	 * @param states - 2D array of states
-	 * @return
-	 */
-	public double computeAverageLocal(int states[][]) {
-		
-		initialise();
-		addObservations(states);
-		return computeAverageLocalOfObservations();
-	}
-
-	/**
-	 * Standalone routine to 
-	 * compute average local active information storage across a 2D spatiotemporal
-	 *  array of the states of homogeneous agents
-	 * Return the average
-	 * This method to be called for homogeneous agents only
-	 * 
-	 * @param history - parameter k
-	 * @param maxEmbeddingLength - base of the states
-	 * @param states - array of states - 1st dimension is time, 2nd and 3rd are agent indices
-	 * @return
-	 */
-	public double computeAverageLocal(int states[][][]) {
-		
-		initialise();
-		addObservations(states);
-		return computeAverageLocalOfObservations();
-	}
-
-	/**
-	 * Standalone routine to 
-	 * compute local active information storage for one agent in a 2D spatiotemporal
-	 *  array of the states of agents
-	 * Return a 2D spatiotemporal array of local values.
-	 * First history rows are zeros
-	 * This method should be used for heterogeneous agents
-	 * 
-	 * @param history - parameter k
-	 * @param maxEmbeddingLength - base of the states
-	 * @param states - 2D array of states
-	 * @param col - column number of the agent in the states array
-	 * @return
-	 */
-	public double[] computeLocal(int states[][], int col) {
-		
-		initialise();
-		addObservations(states, col);
-		return computeLocalFromPreviousObservations(states, col);
-	}
-	
-	/**
-	 * Standalone routine to 
-	 * compute local active information storage for one agent in a 2D spatiotemporal
-	 *  array of the states of agents
-	 * Return a 2D spatiotemporal array of local values.
-	 * First history rows are zeros
-	 * This method should be used for heterogeneous agents
-	 * 
-	 * @param history - parameter k
-	 * @param maxEmbeddingLength - base of the states
-	 * @param states - array of states - 1st dimension is time, 2nd and 3rd are agent indices
-	 * @param agentIndex1 row index of agent
-	 * @param agentIndex2 column index of agent
-	 * @return
-	 */
-	public double[] computeLocal(int states[][][], int agentIndex1, int agentIndex2) {
-		
-		initialise();
-		addObservations(states, agentIndex1, agentIndex2);
-		return computeLocalFromPreviousObservations(states, agentIndex1, agentIndex2);
-	}
-
-	/**
-	 * Standalone routine to 
-	 * compute average local active information storage 
-	 * for a single agent
-	 * Returns the average
-	 * This method suitable for heterogeneous agents
-	 * 
-	 * @param history - parameter k
-	 * @param maxEmbeddingLength - base of the states
-	 * @param states - 2D array of states
-	 * @param col - column number of the agent in the states array
-	 * @return
-	 */
-	public double computeAverageLocal(int states[][], int col) {
-		
-		initialise();
-		addObservations(states, col);
-		return computeAverageLocalOfObservations();
-	}
-
-	/**
-	 * Standalone routine to 
-	 * compute average local active information storage 
-	 * for a single agent
-	 * Returns the average
-	 * This method suitable for heterogeneous agents
-	 * 
-	 * @param history - parameter k
-	 * @param maxEmbeddingLength - base of the states
-	 * @param states - array of states - 1st dimension is time, 2nd and 3rd are agent indices
-	 * @param agentIndex1 row index of agent
-	 * @param agentIndex2 column index of agent
-	 * @return
-	 */
-	public double computeAverageLocal(int states[][][], int agentIndex1, int agentIndex2) {
-		
-		initialise();
-		addObservations(states, agentIndex1, agentIndex2);
-		return computeAverageLocalOfObservations();
-	}
-
-	/**
-	 * Compute the significance of obtaining the given average from the given observations
-	 * 
-	 * @param numPermutationsToCheck number of new orderings of the source values to compare against
-	 * @return
+	 * @param numPermutationsToCheck number of surrogate samples to bootstrap
+	 *  to generate the distribution.
+	 * @return the distribution of AIS scores under this null hypothesis.
+	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
+	 *    toolkit for studying the dynamics of complex systems', 2014."
 	 */
 	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) {
 		RandomGenerator rg = new RandomGenerator();
@@ -898,10 +636,38 @@ public class ActiveInformationCalculator {
 	}
 	
 	/**
-	 * Compute the significance of obtaining the given average from the given observations
+	 * Generate a bootstrapped distribution of what the AIS would look like,
+	 * under a null hypothesis that the previous <code>k</code> values of our
+	 * samples had no relation to the next value in the time-series.
 	 * 
-	 * @param newOrderings the reorderings to use
-	 * @return
+	 * <p>See Section II.E "Statistical significance testing" of 
+	 * the JIDT paper below for a description of how this is done for AIS 
+	 * as a mutual information. Basically, the marginal PDFs
+	 * of the past <code>k</code> values, and that of the next value, 
+	 * are preserved, while their joint PDF is destroyed, and the 
+	 * distribution of AIS under these conditions is generated.</p>
+	 * 
+	 * <p>Note that if several disjoint time-series have been added 
+	 * as observations using {@link #addObservations(double[])} etc.,
+	 * then these separate "trials" will be mixed up in the generation
+	 * of surrogates here.</p>
+	 * 
+	 * <p>This method (in contrast to {@link #computeSignificance(int)})
+	 * allows the user to specify how to construct the surrogates,
+	 * such that repeatable results may be obtained.</p>
+	 * 
+	 * @param newOrderings a specification of how to shuffle the next values
+	 *  to create the surrogates to generate the distribution with. The first
+	 *  index is the permutation number (i.e. newOrderings.length is the number
+	 *  of surrogate samples we use to bootstrap to generate the distribution here.)
+	 *  Each array newOrderings[i] should be an array of length N (where
+	 *  would be the value returned by {@link #getNumObservations()}),
+	 *  containing a permutation of the values in 0..(N-1).
+	 * @return the distribution of AIS scores under this null hypothesis.
+	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
+	 *    toolkit for studying the dynamics of complex systems', 2014."
+	 * @throws Exception where the length of each permutation in newOrderings
+	 *   is not equal to the number N samples that were previously supplied.
 	 */
 	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings) {
 		double actualMI = computeAverageLocalOfObservations();
@@ -913,8 +679,8 @@ public class ActiveInformationCalculator {
 		int[] nextValues = new int[observations];
 		int t_prev = 0;
 		int t_next = 0;
-		for (int prevVal = 0; prevVal < prevCount.length; prevVal++) {
-			int numberOfSamplesPrev = prevCount[prevVal];
+		for (int prevVal = 0; prevVal < pastCount.length; prevVal++) {
+			int numberOfSamplesPrev = pastCount[prevVal];
 			MatrixUtils.fill(prevValues, prevVal, t_prev, numberOfSamplesPrev);
 			t_prev += numberOfSamplesPrev;
 		}
@@ -928,7 +694,7 @@ public class ActiveInformationCalculator {
 		ais2 = new ActiveInformationCalculator(base, k);
 		ais2.initialise();
 		ais2.observations = observations;
-		ais2.prevCount = prevCount;
+		ais2.pastCount = pastCount;
 		ais2.nextCount = nextCount;
 		int countWhereMIIsMoreSignificantThanOriginal = 0;
 		EmpiricalMeasurementDistribution measDistribution = new EmpiricalMeasurementDistribution(numPermutationsToCheck);
@@ -936,9 +702,9 @@ public class ActiveInformationCalculator {
 			// Generate a new re-ordered data set for the next variable
 			int[] newDataNext = MatrixUtils.extractSelectedTimePoints(nextValues, newOrderings[p]);
 			// compute the joint probability distribution
-			MatrixUtils.fill(ais2.jointCount, 0);
+			MatrixUtils.fill(ais2.nextPastCount, 0);
 			for (int t = 0; t < observations; t++) {
-				ais2.jointCount[newDataNext[t]][prevValues[t]]++;
+				ais2.nextPastCount[newDataNext[t]][prevValues[t]]++;
 			}
 			// And get an MI value for this realisation:
 			double newMI = ais2.computeAverageLocalOfObservations();
@@ -955,20 +721,8 @@ public class ActiveInformationCalculator {
 		return measDistribution;
 	}
 
-	public double getLastAverage() {
-		return average;
-	}
-
-	public double getLastMax() {
-		return max;
-	}
-
-	public double getLastMin() {
-		return min;
-	}
-	
 	/**
-	 * Writes the current probability distribution functions 
+	 * Debug method to write the current probability distribution functions 
 	 *  
 	 * @return
 	 */
@@ -982,9 +736,9 @@ public class ActiveInformationCalculator {
 			double p_next = (double) nextCount[nextVal] / (double) observations;
 			for (int prevVal = 0; prevVal < base_power_k; prevVal++) {
 				// compute p_prev
-				double p_prev = (double) prevCount[prevVal] / (double) observations;
+				double p_prev = (double) pastCount[prevVal] / (double) observations;
 				// compute p(prev, next)
-				double p_joint = (double) jointCount[nextVal][prevVal] / (double) observations;
+				double p_joint = (double) nextPastCount[nextVal][prevVal] / (double) observations;
 				// Compute MI contribution:
 				if (p_joint * p_next * p_prev > 0.0) {
 					double logTerm = p_joint / (p_next * p_prev);
@@ -1006,12 +760,17 @@ public class ActiveInformationCalculator {
 	}
 
 	/**
-	 * Utility function to compute the combined past values of x up to and including time step t
+	 * Utility function to compute a unique number to represent the
+	 * combined past values of x up to and including time step t:
 	 *  (i.e. (x_{t-k+1}, ... ,x_{t-1},x_{t}))
 	 * 
-	 * @param x
-	 * @param t
-	 * @return
+	 * See {@link TransferEntropyCalculator#getPastCount(int)} for
+	 *  how the joint value representing the past is calculated.
+	 * 
+	 * @param x time series
+	 * @param t time step at which to compute the combined past
+	 * @return an int representing the joint state of the past of x, x[t]^k
+	 * 
 	 */
 	public int computePastValue(int[] x, int t) {
 		int pastVal = 0;
@@ -1023,37 +782,53 @@ public class ActiveInformationCalculator {
 	}
 
 	/**
-	 * Utility function to compute the combined past values of x up to and including time step t
+	 * Utility function to compute a unique number to represent the
+	 * combined past values of x (which is a column in data)
+	 * up to and including time step t:
 	 *  (i.e. (x_{t-k+1}, ... ,x_{t-1},x_{t}))
 	 * 
-	 * @param x
-	 * @param agentNumber
-	 * @param t
-	 * @return
+	 * See {@link TransferEntropyCalculator#getPastCount(int)} for
+	 *  how the joint value representing the past is calculated.
+	 *  
+	 * @param data 2D time series, first index is time,
+	 *    second is variable number
+	 * @param column column of data which is variable x
+	 * @param t time step at which to compute the combined past
+	 * @return an int representing the joint state of the past of x, x[t]^k
 	 */
-	public int computePastValue(int[][] x, int agentNumber, int t) {
+	public int computePastValue(int[][] data, int column, int t) {
 		int pastVal = 0;
 		for (int p = 0; p < k; p++) {
 			pastVal *= base;
-			pastVal += x[t - k + 1 + p][agentNumber];
+			pastVal += data[t - k + 1 + p][column];
 		}
 		return pastVal;
 	}
 
 	/**
-	 * Utility function to compute the combined past values of x up to and including time step t
+	 * Utility function to compute a unique number to represent the
+	 * combined past values of x (which is a variable in data)
+	 * up to and including time step t:
 	 *  (i.e. (x_{t-k+1}, ... ,x_{t-1},x_{t}))
 	 * 
-	 * @param x
-	 * @param agentNumber
-	 * @param t
-	 * @return
+	 * See {@link TransferEntropyCalculator#getPastCount(int)} for
+	 *  how the joint value representing the past is calculated.
+	 *  
+	 * @param data 3D time series, first index is time,
+	 *    second is variable row number, third is variable column number
+	 * @param agentRow row of data for variable x
+	 * @param agentColumn column of data for variable x
+	 * @param t time step at which to compute the combined past
+	 * @return an int representing the joint state of the past of x, x[t]^k
+	 * Utility function to compute the combined past values of x up to and including time step t
+	 *  (i.e. (x_{t-k+1}, ... ,x_{t-1},x_{t}))
 	 */
-	public int computePastValue(int[][][] x, int agentRow, int agentColumn, int t) {
+	public int computePastValue(int[][][] data, int agentRow,
+			int agentColumn, int t) {
 		int pastVal = 0;
 		for (int p = 0; p < k; p++) {
 			pastVal *= base;
-			pastVal += x[t - k + 1 + p][agentRow][agentColumn];
+			pastVal += data[t - k + 1 + p][agentRow][agentColumn];
 		}
 		return pastVal;
 	}

@@ -19,59 +19,111 @@
 package infodynamics.measures.discrete;
 
 /**
- * Combines functionality for single agents with functionality
- * required in the context of the past.
+ * A base class for calculators computing measures for
+ * a single variable which
+ * require knowledge of the embedded past state of a univariate
+ * discrete (ie int[]) variable.
  * 
- * @author Joseph Lizier
- *
+ * <p>This combines functionality for single agents from
+ * {@link SingleAgentMeasure} with functionality
+ * required in the context of the past provided by
+ * {@link ContextOfPastMeasureCalculator}.</p>
+ * 
+ * <p>Usage is as defined in {@link InfoMeasureCalculator}, with
+ * extra methods for supplying observations and making 
+ * calculations defined in {@link SingleAgentMeasure}</p>.
+ * 
+ * <p>Users should not need to deal with this class directly;
+ * it is simply used to gather common functionality for several
+ * child classes.
+ * </p>
+ * 
+ * TODO Make the Active info storage and entropy calculators inherit from this
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public abstract class SingleAgentMeasureInContextOfPastCalculator extends
 		ContextOfPastMeasureCalculator implements SingleAgentMeasure {
 
+	/**
+	 * Construct the calculator
+	 * 
+	 * @param base number of quantisation levels for each variable.
+	 *        E.g. binary variables are in base-2.
+	 * @param history embedding length
+	 */
 	public SingleAgentMeasureInContextOfPastCalculator(int base, int history) {
 		super(base, history);
 	}
+	
+	@Override
+	public final double[] computeLocal(int[] states) {
+		initialise();
+		addObservations(states);
+		return computeLocalFromPreviousObservations(states);
+	}
 
+	@Override
 	public final double[][] computeLocal(int[][] states) {
 		initialise();
 		addObservations(states);
 		return computeLocalFromPreviousObservations(states);
 	}
 
+	@Override
 	public final double[][][] computeLocal(int[][][] states) {
 		initialise();
 		addObservations(states);
 		return computeLocalFromPreviousObservations(states);
 	}
 
+	@Override
+	public final double computeAverageLocal(int[] states) {
+		initialise();
+		addObservations(states);
+		return computeAverageLocalOfObservations();
+	}	
+
+	@Override
 	public final double computeAverageLocal(int[][] states) {
 		initialise();
 		addObservations(states);
 		return computeAverageLocalOfObservations();
 	}
 
+	@Override
 	public final double computeAverageLocal(int[][][] states) {
 		initialise();
 		addObservations(states);
 		return computeAverageLocalOfObservations();
 	}
 
-	public final double[] computeLocalAtAgent(int[][] states, int col) {
+	@Override
+	public final double[] computeLocal(int[][] states, int col) {
 		initialise();
 		addObservations(states, col);
 		return computeLocalFromPreviousObservations(states, col);
 	}
 
-	public final double[] computeLocalAtAgent(int[][][] states, int index1, int index2) {
+	@Override
+	public final double[] computeLocal(int[][][] states, int index1, int index2) {
 		initialise();
 		addObservations(states, index1, index2);
 		return computeLocalFromPreviousObservations(states, index1, index2);
 	}
 
-	public final double computeAverageLocalAtAgent(int[][] states, int col) {
+	@Override
+	public final double computeAverageLocal(int[][] states, int col) {
 		initialise();
 		addObservations(states, col);
 		return computeAverageLocalOfObservations();
 	}
-
+	
+	@Override
+	public final double computeAverageLocal(int[][][] states, int index1, int index2) {
+		initialise();
+		addObservations(states, index1, index2);
+		return computeAverageLocalOfObservations();
+	}
 }

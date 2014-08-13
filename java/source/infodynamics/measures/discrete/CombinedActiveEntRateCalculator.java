@@ -22,18 +22,21 @@ import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 
 /**
- * A combined calculator for the active information, entropy rate and entropy.
+ * A combined calculator for the active information,
+ * entropy rate and entropy.
  * 
- * Usage:
- * 1. Continuous accumulation of observations:
- *   Call: a. initialise()
- *         b. addObservations() several times over
- *         c. computeLocalFromPreviousObservations()
- * 2. Standalone:
- *   Call: localActiveInformation()
+ * <p>This class is preliminary, so the Javadocs are incomplete --
+ * please see {@link ActiveInformationCalculator},
+ * {@link EntropyRateCalculator} and {@link EntropyCalculator}
+ * for documentation on the corresponding functions
+ * and typical usage pattern.
+ * </p>
  * 
- * @author Joseph Lizier
- *
+ * TODO Make this inherit from {@link SingleAgentMeasureInContextOfPastCalculator}
+ * like {@link ActiveInformationCalculator} and fix the Javadocs
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class CombinedActiveEntRateCalculator {
 
@@ -523,12 +526,5 @@ public class CombinedActiveEntRateCalculator {
 	}
 	public double getLastMinEntropy() {
 		return minEntropy;
-	}
-	
-	// Compute the metrics in several different ways over test data.
-	// Designed to be called from a JUnit test.
-	public double[][] test() {
-		// TODO
-		return null;
 	}
 }

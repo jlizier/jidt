@@ -23,18 +23,51 @@ import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.RandomGenerator;
 
-
 /**
- * <p>Implements <i>conditional</i> transfer entropy,
- * and <i>local conditional</i> transfer entropy
- * (see Lizier et al., PRE, 2008, and Lizier et al., Chaos, 2010).
- * This class can be used for to compute <i>complete</i> transfer entropy 
- *  (see Lizier et al, PRE, 2008) which conditions on <b>all</b> 
- *  other causal information contributors to the destination.</p>
- *  
- * <p>Specifically, this implements the complete transfer entropy for 
- * <i>discrete</i>-valued variables.</p>
- *
+ * <p>Implements <b>conditional transfer entropy</b>
+ * for univariate discrete time-series data.
+ * That is, it is applied to <code>int[]</code> data, indexed
+ * by time.
+ * See Schreiber below for the definition of transfer entropy,
+ * and Lizier et al (2008, 2010). for the definition of local transfer entropy
+ * and conditional TE, which is TE conditioned on one or 
+ * more other potential sources.
+ * This is also called complete TE when all other causal sources
+ * are conditioned on.
+ * </p>
+ * 
+ * <p>
+ * Usage of the child classes implementing this interface is intended to follow this paradigm:
+ * </p>
+ * <ol>
+ * 		<li>Construct the calculator via
+ * 			{@link #ConditionalTransferEntropyCalculator(int, int, int)};</li>
+ *		<li>Initialise the calculator using
+ *			{@link #initialise()};</li>
+ * 		<li>Provide the observations/samples for the calculator
+ *      	to set up the PDFs, using one or more calls to
+ * 			the set of {@link #addObservations(int[], int[], int[])} methods, then</li>
+ * 		<li>Compute the required quantities, being one or more of:
+ * 			<ul>
+ * 				<li>the average TE: {@link #computeAverageLocalOfObservations()};</li>
+ * 				<li>the local TE values for these samples: {@link #computeLocalOfPreviousObservations()}</li>
+ * 				<li>local TE values for a specific set of samples: e.g.
+ * 				{@link #computeLocalFromPreviousObservations(int[], int[])} etc.</li>
+ * 				<li>the distribution of TE values under the null hypothesis
+ * 					of no relationship between source and
+ * 					destination values: {@link #computeSignificance(int)} or
+ * 					{@link #computeSignificance(int[][])}.</li>
+ * 			</ul>
+ * 		</li>
+ * 		<li>As an alternative to steps 3 and 4, the user may undertake
+ * 			standalone computation from a single set of observations, via
+ *  		e.g.: {@link #computeLocal(int[], int[])} or
+ *  		{@link #computeAverageLocal(int[][], int)}.</li>
+ * 		<li>
+ * 		Return to step 2 to re-use the calculator on a new data set.
+ * 		</li>
+ * 	</ol>
+ * 
  * <p>
  * The conditional sources (specified using either their
  *  offsets from the destination variable or their absolute column numbers
@@ -43,53 +76,34 @@ import infodynamics.utils.RandomGenerator;
  *  be incorrect.
  * </p>
  * 
- * <p>Ideally, this class would extend ContextOfPastMeasure, however
+ * <p><i>Note for developers</i>: Ideally, this class would extend ContextOfPastMeasure, however
  *  by conditioning on other info contributors, we need to alter
  *  the arrays pastCount and nextPastCount to consider all
  *  conditioned variables (i.e. other sources) also.
  * </p>
  * 
- * <p>Usage:
- * <ol>
- * 	<li>Construct: {@link #CompleteTransferEntropyCalculator(int, int)}</li>
- * 	<li>Initialise: {@link #initialise()}</li>
- *  <li>Either:
- *  	<ol>
- *  	<li>Continuous accumulation of observations then measurement; call:
- *  		<ol>
- *  			<li>{@link #addObservations(int[][], int, int[])} or related calls
- *         several times over - <b>note:</b> each method call adding 
- *         observations can be viewed as updating the PDFs; they do not
- *         append the separate time series (this would be incorrect behaviour
- *         for the transfer entropy, since the start of one time series
- *         is not necessarily related to the end of the other).</li>
- *   			<li>The compute relevant quantities, e.g.
- *   	   {@link #computeLocalFromPreviousObservations(int[][], int, int[])} or
- *         {@link #computeAverageLocalOfObservations()}</li>
- *       	</ol>
- * 		<li>or Standalone computation from a single set of observations;
- *   call e.g.: {@link #computeLocal(int[][], int, int[])} or
- *   {@link #computeAverageLocal(int[][], int, int, int[])}.>/li>
- *     </ol>
- * </ol>
- * </p>
+ * TODO Add methods for passing in single time series.
+ * This is done for addObservations, but not other routines.
  * 
- * @see "Schreiber, Physical Review Letters 85 (2) pp.461-464, 2000;
- *  <a href='http://dx.doi.org/10.1103/PhysRevLett.85.461'>download</a>
- *  (for definition of transfer entropy)"
- * @see "Lizier, Prokopenko and Zomaya, Physical Review E 77, 026110, 2008;
- * <a href='http://dx.doi.org/10.1103/PhysRevE.77.026110'>download</a>
- *  (for definition of <i>local</i> transfer entropy and 
- *  <i>complete</i> transfer entropy)"
- * @see "Lizier, Prokopenko and Zomaya, Chaos vol. 20, no. 3, 037109, 2010;
- * <a href='http://dx.doi.org/10.1063/1.3486801'>download</a>
- *  (for definition of <i>conditional</i> transfer entropy)"
- *  
- * @author Joseph Lizier, <a href="joseph.lizier at gmail.com">email</a>,
- * <a href="http://lizier.me/joseph/">www</a>
+ * TODO Implement AnalyticNullDistributionComputer
  * 
- * TODO Add methods for passing in single time series
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>T. Schreiber, <a href="http://dx.doi.org/10.1103/PhysRevLett.85.461">
+ * "Measuring information transfer"</a>,
+ *  Physical Review Letters 85 (2) pp.461-464, 2000.</li>
+ *  <li>J. T. Lizier, M. Prokopenko and A. Zomaya,
+ *  <a href="http://dx.doi.org/10.1103/PhysRevE.77.026110">
+ *  "Local information transfer as a spatiotemporal filter for complex systems"</a>
+ *  Physical Review E 77, 026110, 2008.</li>
+ *  <li>J. T. Lizier, M. Prokopenko and A. Zomaya,
+ *  <a href=http://dx.doi.org/10.1063/1.3486801">
+ *  "Information modification and particle collisions in distributed computation"</a>
+ *  Chaos 20, 3, 037109 (2010).</li>
+ * </ul>
  *
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator {
 
@@ -116,7 +130,7 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 	 * @param base
 	 * @param history
 	 * @param numOtherInfoContributors
-	 * 
+	 * @deprecated
 	 * @return
 	 */
 	public static ConditionalTransferEntropyCalculator
@@ -138,13 +152,15 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 	}
 	
 	/**
+	 * Construct a new instance
 	 * 
-	 * 
-	 * @param base
-	 * @param history
+	 * @param base number of symbols for each variable.
+	 *        E.g. binary variables are in base-2.
+	 * @param history embedded history length of the destination to condition on -
+	 *        this is k in Schreiber's notation.
 	 * @param numOtherInfoContributors number of information contributors
-	 *   (other than the past of the destination, if history < 1,
-	 *   of the source) to condition on.
+	 *   (other than the past of the destination
+	 *   or the source) to condition on.
 	 */
 	public ConditionalTransferEntropyCalculator
 		(int base, int history, int numOtherInfoContributors) {
@@ -188,12 +204,7 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 		}
 	}
 
-	/**
-	 * Initialise calculator, preparing to take observation sets in
-	 * Should be called prior to any of the addObservations() methods.
-	 * You can reinitialise without needing to create a new object.
-	 *
-	 */
+	@Override
 	public void initialise(){
 		super.initialise();
 		
@@ -204,11 +215,16 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 	}
 	
 	/**
- 	 * Add observations for a single source-destination-conditionals set
+ 	 * Add observations for source-destination-conditionals time-series
  	 *  to our estimates of the pdfs.
+ 	 *  
 	 * @param source source time series
-	 * @param dest destination time series
-	 * @param conditionals conditionals multivariate time series
+	 * @param dest destination time series. Must be of same length as
+	 *   source.
+	 * @param conditionals conditionals multivariate time series,
+	 *  indexed first by time, then by variable number.
+	 *  Must be of same length in time as source, and must be
+	 *  {@link #numOtherInfoContributors} conditionals here.
 	 */
 	public void addObservations(int[] source, int[] dest, int[][] conditionals)
 		throws Exception {
@@ -272,10 +288,16 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
  	 * {@link MatrixUtils#computeCombinedValues(int[][], int)}. This cannot be
  	 * checked here however, so use at your own risk!
  	 * </p>
+ 	 * 
 	 * @param source source time series
-	 * @param dest destination time series
-	 * @param conditionals conditionals univariate time series - it is assumed
-	 *  that the user has combined the values of the multivariate conditionals time series
+	 * @param dest destination time series. Must be of same length as
+	 *   source.
+	 * @param conditionals conditionals univariate time series,
+	 *  indexed first by time, then by variable number.
+	 *  Must be of same length in time as source, and we must have
+	 *  either {@link #numOtherInfoContributors}=1, or the user has
+	 *  combined the values of the multivariate conditionals time series
+	 *  into single (unique) values at each time step (this is not checked however).
 	 */
 	public void addObservations(int[] source, int[] dest, int[] conditionals)
 		throws Exception {
@@ -321,22 +343,42 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 	}
 
 	/**
- 	 * Add observations in to our estimates of the pdfs.
+ 	 * Add observations in to our estimates of the pdfs
+ 	 * from a multivariate time-series of homogeneous variables.
  	 * This call suitable only for homogeneous agents, as all
  	 *  agents will contribute to single pdfs, and all are assumed
  	 *  to have other info contributors at same offsets.
  	 * 
-	 * @param states
-	 * @param j - number of columns to compute transfer entropy across
-	 * 	(i.e. src i-j, dest i: transfer is j cells to the right) 
-	 * @param otherSourcesToDestOffsets offsets of the other information contributors.
+	 * @param states multivariate time series, indexed first by time
+	 *  then by variable number.
+	 * @param j number of columns to compute transfer entropy across
+	 * 	(i.e. for each destination variable i, we have a source
+	 *  at i-j, dest i: transfer is j cells to the right) 
+	 * @param otherSourcesToDestOffsets offsets of the other information contributors
+	 *        from each destination.
 	 *        (i.e. offsets from each other information source to the destination -
-	 *        offset is signed the same way as j!)
+	 *        the offset is signed the same way as j!)
 	 *        othersOffsets is permitted to include j, it will be ignored.
 	 */
 	public void addObservations(int states[][], int j, int otherSourcesToDestOffsets[]) {
 		addObservations(states, j, otherSourcesToDestOffsets, false);
 	}
+	/**
+	 * Private method to implement {@link #addObservations(int[][], int, int[])}
+	 * 
+	 * @param states multivariate time series, indexed first by time
+	 *  then by variable number.
+	 * @param j number of columns to compute transfer entropy across
+	 * 	(i.e. for each destination variable i, we have a source
+	 *  at i-j, dest i: transfer is j cells to the right) 
+	 * @param otherSourcesToDestOffsets offsets of the other information contributors
+	 *        from each destination.
+	 *        (i.e. offsets from each other information source to the destination -
+	 *        the offset is signed the same way as j!)
+	 *        othersOffsets is permitted to include j, it will be ignored.
+	 * @param cleanedOthers whether it has been checked if j is included in otherSourcesToDestOffsets
+	 *  or not
+	 */
 	private void addObservations(int states[][], int j, int otherSourcesToDestOffsets[], boolean cleanedOthers) {
 		
 		int[] cleanedOthersOffsets;
@@ -392,16 +434,36 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 	}
 	
 	/**
- 	 * Add observations for a single source-destination pair of the multi-agent system
+ 	 * Add observations for a single source-destination-conditionals set of the
+ 	 *  multivariate time series.
  	 *  to our estimates of the pdfs.
  	 * This call should be made as opposed to addObservations(int states[][])
  	 *  for computing active info for heterogeneous agents.
 	 *
-	 * @param states
+	 * @param states multivariate time series, indexed first by time
+	 *  then by variable number.
+	 * @param sourceCol column index of the source
+	 * @param destCol column index of the destination
+	 * @param othersAbsolute column indices of the conditional variables.
+	 *  othersAbsolute is permitted to include sourceCol or destCol (if k>0),
+	 *  they will be ignored.
 	 */
 	public void addObservations(int states[][], int sourceCol, int destCol, int[] othersAbsolute) {
 		addObservations(states, sourceCol, destCol, othersAbsolute, false);
 	}
+	/**
+	 * Private method to implement {@link #addObservations(int[][], int, int, int[])}
+	 * 
+	 * @param states multivariate time series, indexed first by time
+	 *  then by variable number.
+	 * @param sourceCol column index of the source
+	 * @param destCol column index of the destination
+	 * @param othersAbsolute column indices of the conditional variables.
+	 *  othersAbsolute is permitted to include sourceCol or destCol (if k>0),
+	 *  they will be ignored.
+	 * @param cleanedOthers whether it has been checked if othersAbsolute
+	 *  contains sourceCol or destCol
+	 */
 	private void addObservations(int states[][], int sourceCol, int destCol, int[] othersAbsolute, boolean cleanedOthers) {
 
 		int[] cleanedOthersAbsolute;
@@ -451,12 +513,7 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 		}
 	}
 
-	/**
-	 * Returns the average local transfer entropy from
-	 *  the observed values which have been passed in previously. 
-	 *  
-	 * @return
-	 */
+	@Override
 	public double computeAverageLocalOfObservations() {
 		double te = 0.0;
 		double teCont = 0.0;
@@ -508,14 +565,27 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 	}
 	
 	/**
-	 * Compute the significance of obtaining the given average TE from the given observations
+	 * Generate a bootstrapped distribution of what the 
+	 * conditional TE would look like,
+	 * under a null hypothesis that the source values of our
+	 * samples had no relation to the destination value
+	 * (in the context of the destination past and conditionals).
 	 * 
-	 * 	This is as per Chavez et. al., "Statistical assessment of nonlinear causality:
-	 *  application to epileptic EEG signals", Journal of Neuroscience Methods 124 (2003) 113-128.
-	 *  except that we've using conditional/complete TE here.
-	 *
-	 * @param numPermutationsToCheck number of new orderings of the source values to compare against
-	 * @return
+	 * <p>See Section II.E "Statistical significance testing" of 
+	 * the JIDT paper below for a description of how this is done for MI,
+	 * conditional MI and TE.
+	 * </p>
+	 * 
+	 * <p>Note that if several disjoint time-series have been added 
+	 * as observations using {@link #addObservations(int[], int[])} etc.,
+	 * then these separate "trials" will be mixed up in the generation
+	 * of surrogates here.</p>
+	 * 
+	 * @param numPermutationsToCheck number of surrogate samples to bootstrap
+	 *  to generate the distribution.
+	 * @return the distribution of conditional TE scores under this null hypothesis.
+	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
+	 *    toolkit for studying the dynamics of complex systems', 2014."
 	 */
 	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) {
 		double actualTE = computeAverageLocalOfObservations();
@@ -604,26 +674,47 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 	}
 	
 	/**
-	 * Computes local complete transfer entropy for the given
+	 * Computes local conditional transfer entropy for the given
 	 *  states, using pdfs built up from observations previously
 	 *  sent in via the addObservations method.
 	 * This method to be used for homogeneous agents only
 	 *  
-	 * @param states 2D multivariate time series of states
-	 * @param j - number of columns to compute transfer entropy across
-	 *  i.e. offset of destination from the source
-	 * 	(i.e. src i-j, dest i: transfer is j cells to the right) 
-	 * @param otherSourcesToDestOffsets offsets of the other information contributors.
+	 * @param states multivariate time series, indexed first by time
+	 *  then by variable number.
+	 * @param j number of columns to compute transfer entropy across
+	 * 	(i.e. for each destination variable i, we have a source
+	 *  at i-j, dest i: transfer is j cells to the right) 
+	 * @param otherSourcesToDestOffsets offsets of the other information contributors
+	 *        from each destination.
 	 *        (i.e. offsets from each other information source to the destination -
-	 *        offset is signed the same way as j!)
+	 *        the offset is signed the same way as j!)
 	 *        othersOffsets is permitted to include j, it will be ignored.
-	 * @return
+	 * @return 2D time-series of local conditional TE values (indexed 
+	 *  as per states)
 	 */
 	public double[][] computeLocalFromPreviousObservations
 		(int states[][], int j, int otherSourcesToDestOffsets[]){
 		
 		return computeLocalFromPreviousObservations(states, j, otherSourcesToDestOffsets, false);
 	}
+	/**
+	 * Private method to implement {@link #computeLocalFromPreviousObservations(int[][], int, int[])}
+	 * 
+	 * @param states multivariate time series, indexed first by time
+	 *  then by variable number.
+	 * @param j number of columns to compute transfer entropy across
+	 * 	(i.e. for each destination variable i, we have a source
+	 *  at i-j, dest i: transfer is j cells to the right) 
+	 * @param otherSourcesToDestOffsets offsets of the other information contributors
+	 *        from each destination.
+	 *        (i.e. offsets from each other information source to the destination -
+	 *        the offset is signed the same way as j!)
+	 *        othersOffsets is permitted to include j, it will be ignored.
+	 * @param cleanedOthers whether it has been checked if j is included in otherSourcesToDestOffsets
+	 *  or not
+	 * @return 2D time-series of local conditional TE values (indexed 
+	 *  as per states)
+	 */
 	private double[][] computeLocalFromPreviousObservations
 		(int states[][], int j, int othersOffsets[], boolean cleanedOthers){
 		
@@ -697,14 +788,34 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 	 *  sent in via the addObservations method.
 	 * This method is suitable for heterogeneous agents
 	 *  
-	 * @param states
-	 * @return
+	 * @param states multivariate time series, indexed first by time
+	 *  then by variable number.
+	 * @param sourceCol column index of the source
+	 * @param destCol column index of the destination
+	 * @param othersAbsolute column indices of the conditional variables.
+	 *  othersAbsolute is permitted to include sourceCol or destCol (if k>0),
+	 *  they will be ignored.
+	 * @return time-series of local conditional TE values
 	 */
 	public double[] computeLocalFromPreviousObservations
 		(int states[][], int sourceCol, int destCol, int[] othersAbsolute){
 		
 		return computeLocalFromPreviousObservations(states, sourceCol, destCol, othersAbsolute, false);
 	}
+	/**
+	 * Private method to implement {@link #computeLocalFromPreviousObservations(int[][], int, int, int[])}
+	 * 
+	 * @param states multivariate time series, indexed first by time
+	 *  then by variable number.
+	 * @param sourceCol column index of the source
+	 * @param destCol column index of the destination
+	 * @param othersAbsolute column indices of the conditional variables.
+	 *  othersAbsolute is permitted to include sourceCol or destCol (if k>0),
+	 *  they will be ignored.
+	 * @param cleanedOthers whether it has been checked if othersAbsolute
+	 *  contains sourceCol or destCol
+	 * @return time-series of local conditional TE values
+	 */
 	private double[] computeLocalFromPreviousObservations
 		(int states[][], int sourceCol, int destCol, int[] othersAbsolute, boolean cleanedOthers){
 
@@ -770,17 +881,24 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 
 	/**
 	 * Standalone routine to 
-	 * compute local transfer entropy across a 2D spatiotemporal
+	 * compute local conditional transfer entropy across a 2D spatiotemporal
 	 *  array of the states of homogeneous agents
 	 * Return a 2D spatiotemporal array of local values.
 	 * First history rows are zeros
 	 * This method to be called for homogeneous agents only
 	 * 
-	 * @param states - 2D array of states
-	 * @param j - TE across j cells to the right
-	 * @param otherSourcesToDestOffsets - column offsets from other causal info contributors
-	 *  to the destination
-	 * @return
+	 * @param states multivariate time series, indexed first by time
+	 *  then by variable number.
+	 * @param j number of columns to compute transfer entropy across
+	 * 	(i.e. for each destination variable i, we have a source
+	 *  at i-j, dest i: transfer is j cells to the right) 
+	 * @param otherSourcesToDestOffsets offsets of the other information contributors
+	 *        from each destination.
+	 *        (i.e. offsets from each other information source to the destination -
+	 *        the offset is signed the same way as j!)
+	 *        othersOffsets is permitted to include j, it will be ignored.
+	 * @return 2D time-series of local conditional TE values (indexed 
+	 *  as per states)
 	 */
 	public double[][] computeLocal(int states[][], int j, int[] otherSourcesToDestOffsets) {
 		
@@ -792,16 +910,22 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 	
 	/**
 	 * Standalone routine to 
-	 * compute average local transfer entropy across a 2D spatiotemporal
+	 * compute average conditional transfer entropy across a 2D spatiotemporal
 	 *  array of the states of homogeneous agents
 	 * Return the average
 	 * This method to be called for homogeneous agents only
 	 * 
-	 * @param states - 2D array of states
-	 * @param j - TE across j cells to the right
-	 * @param otherSourcesToDestOffsets - column offsets from other causal info contributors
-	 *  to the destination
-	 * @return
+	 * @param states multivariate time series, indexed first by time
+	 *  then by variable number.
+	 * @param j number of columns to compute transfer entropy across
+	 * 	(i.e. for each destination variable i, we have a source
+	 *  at i-j, dest i: transfer is j cells to the right) 
+	 * @param otherSourcesToDestOffsets offsets of the other information contributors
+	 *        from each destination.
+	 *        (i.e. offsets from each other information source to the destination -
+	 *        the offset is signed the same way as j!)
+	 *        othersOffsets is permitted to include j, it will be ignored.
+	 * @return average conditional TE from these observations
 	 */
 	public double computeAverageLocal(int states[][], int j, int[] otherSourcesToDestOffsets) {
 		
@@ -812,17 +936,21 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 
 	/**
 	 * Standalone routine to 
-	 * compute local transfer entropy across a 2D spatiotemporal
-	 *  array of the states of homogeneous agents
+	 * compute local conditional transfer entropy for a specific set of
+	 * source-destination-conditionals in a multivariate time-series.
 	 * Return a 2D spatiotemporal array of local values.
-	 * First history rows are zeros
-	 * This method suitable for heterogeneous agents
+	 * First history rows are zeros.
+	 * This method suitable for heterogeneous agents.
 	 * 
-	 * @param states - 2D array of states
-	 * @param sourceCol - column index for the source agent
-	 * @param destCol - column index for the destination agent
-	 * @param othersAbsolute - column indices for other causal info contributors
-	 * @return
+	 * @param states multivariate time series, indexed first by time
+	 *  then by variable number.
+	 * @param sourceCol column index of the source
+	 * @param destCol column index of the destination
+	 * @param othersAbsolute column indices of the conditional variables.
+	 *  othersAbsolute is permitted to include sourceCol or destCol (if k>0),
+	 *  they will be ignored.
+	 * @return time-series of local conditional TE values for these 
+	 *  observations
 	 */
 	public double[] computeLocal(int states[][], int sourceCol, int destCol, int[] othersAbsolute) {
 		
@@ -835,16 +963,18 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 
 	/**
 	 * Standalone routine to 
-	 * compute average local transfer entropy across a 2D spatiotemporal
-	 *  array of the states of homogeneous agents
-	 * Returns the average
+	 * compute average conditional transfer entropy for a specific set of
+	 * source-destination-conditionals in a multivariate time-series.
 	 * This method suitable for heterogeneous agents
 	 * 
-	 * @param states - 2D array of states
-	 * @param sourceCol - column index for the source agent
-	 * @param destCol - column index for the destination agent
-	 * @param othersAbsolute - column indices for other causal info contributors
-	 * @return
+	 * @param states multivariate time series, indexed first by time
+	 *  then by variable number.
+	 * @param sourceCol column index of the source
+	 * @param destCol column index of the destination
+	 * @param othersAbsolute column indices of the conditional variables.
+	 *  othersAbsolute is permitted to include sourceCol or destCol (if k>0),
+	 *  they will be ignored.
+	 * @return average conditional transfer entropy for these observations
 	 */
 	public double computeAverageLocal(int states[][], int sourceCol, int destCol, int[] othersAbsolute) {
 		
@@ -854,15 +984,19 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 	}
 	
 	/**
-	 * Counts the information contributors to this node which
-	 * are not equal to the source to dest offset j or the node itself (offset 0,
-	 * node itself not included only when removeDest is set to true)
+	 * Counts the unique information contributors to this node which
+	 * are not equal to the source at offset j from the destination,
+	 * or the node itself (offset 0,
+	 * node itself not included only when removeDest is set to true).
+	 * 
+	 * <p>This is primarily intended for use inside the method, but
+	 * made public as a utility.</p>
 	 * 
 	 * @param otherSourcesToDestOffsets array of offsets of the destination from each source
 	 * @param j offset of the destination from the source
 	 * @param removeDest remove the destination itself from the count
 	 *     of offset others.
-	 * @return
+	 * @return the number of unique such sources
 	 */
 	public static int countOfOffsetOthers(int[] otherSourcesToDestOffsets, int j,
 			boolean removeDest) {
@@ -881,12 +1015,15 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 	 * are not equal to src or the node itself (offset 0,
 	 * node itself not included only when removeDest is set to true)
 	 * 
-	 * @param others
-	 * @param src
-	 * @param dest
+	 * <p>This is primarily intended for use inside the method, but
+	 * made public as a utility.</p>
+	 * 
+	 * @param others array of source indices
+	 * @param src current source index we are considering
+	 * @param dest current dest index we are considering
 	 * @param removeDest remove the destination itself from the count
 	 *     of absolute others.
-	 * @return
+	 * @return the number of unique such sources
 	 */
 	public static int countOfAbsoluteOthers(int[] others, int src, int dest,
 			boolean removeDest) {
@@ -908,7 +1045,8 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 	 * @param j offset from the source to the destination
 	 * @param removeDest remove the destination itself from the count
 	 *     of absolute others.
-	 * @return
+	 * @return whether the number of such sources matches what we expect
+	 * @throws Exception if the number of such sources does not match.
 	 */
 	public boolean confirmEnoughOffsetOthers(int[] othersOffsets, int j,
 			boolean removeDest) {
@@ -923,12 +1061,13 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 	 * Check that the supplied array of absolutes as other info 
 	 * contributors is long enough compared to our expectation
 	 * 
-	 * @param othersAbsolute
-	 * @param src
-	 * @param dest
+	 * @param othersAbsolute array of source indices
+	 * @param src current source index we are considering
+	 * @param dest current dest index we are considering
 	 * @param removeDest remove the destination itself from the count
 	 *     of absolute others.
-	 * @return
+	 * @return whether the number of such sources matches what we expect
+	 * @throws Exception if the number of such sources does not match.
 	 */
 	public boolean confirmEnoughAbsoluteOthers(int[] othersAbsolute, int src,
 			int dest, boolean removeDest) {
@@ -951,7 +1090,8 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 	 *           other sources (if it is there). Should not be done
 	 *           if k == 0 (because then the destination is not included
 	 *           in the past history)
-	 * @return
+	 * @return othersOffsets with entries for the offending 
+	 *  contributors removed (i.e. array may be shortened)
 	 */
 	public int[] cleanOffsetOthers(int[] othersOffsets, int j, boolean removeDest) {
 		int[] cleaned = new int[numOtherInfoContributors];
@@ -984,14 +1124,15 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 	 * removed only if removeDest is true).
 	 * Checks that there are enough other information contributors.
 	 * 
-	 * @param others
-	 * @param src
-	 * @param dest
+	 * @param others array of source indices
+	 * @param src current source index we are considering
+	 * @param dest current dest index we are considering
 	 * @param removeDest Remove the destination itself from the cleaned
 	 *           other sources (if it is there). Should not be done
 	 *           if k == 0 (because then the destination is not included
 	 *           in the past history)
-	 * @return
+	 * @return others with entries for the offending 
+	 *  contributors removed (i.e. array may be shortened)
 	 */
 	public int[] cleanAbsoluteOthers(int[] others, int src, int dest,
 			boolean removeDest) {

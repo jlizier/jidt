@@ -22,37 +22,64 @@ import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 
 /**
- * <p>Implements the Predictive information (see Bialek et al. below)
- * form of the Excess Entropy (see Crutchfield et al. below),
- * i.e. the mutual information I(x_{n+1}^{(k+)};x_{n}^{(k)}) between
- * k-length blocks in the past up to time n, (x_{n}^{(k)}), and in the future
- * from time n+1, x_{n+1}^{(k+)}</p>
+ * <p> Predictive information calculator for univariate discrete (int[]) data.
+ * See definition of Predictive information (PI) by Bialek et al. below,
+ * also is a form of the Excess Entropy (see Crutchfield and Feldman below),
+ * Basically, PI is the mutual information between the past <i>state</i>
+ * of a time-series process <i>X</i> and its future <i>state</i>.
+ * The past <i>state</i> at time <code>n</code>
+ * is represented by an embedding vector of <code>k</code> values from <code>X_n</code> backwards,
+ * each separated by <code>\tau</code> steps, giving
+ * <code><b>X^k_n</b> = [ X_{n-(k-1)\tau}, ... , X_{n-\tau}, X_n]</code>.
+ * We call <code>k</code> the embedding dimension, and <code>\tau</code>
+ * the embedding delay (only delay = 1 is implemented at the moment).
+ * The future <i>state</i> at time <code>n</code>
+ * is defined similarly into the future:
+ * each separated by <code>\tau</code> steps, giving
+ * <code><b>X^k+_n</b> = [ X_{n+1}, X_{n+\tau}, X_{n+(k-1)\tau}]</code>.
+ * PI is then the mutual information between <b>X^k_n</b> and <b>X^k+_n</b>.</p>
  * 
- * <p>Usage:
+ * <p>Usage of the class is intended to follow this paradigm:</p>
  * <ol>
- * 	<li>Continuous accumulation of observations - call:
- * 		<ol>
- * 			<li>initialise()</li>
- * 			<li>addObservations() several times over</li>
- *         	<li>computeLocalFromPreviousObservations()</li>
- *      </ol></li>
- * 	<li>Standalone - call:
- * 		<ol>
- * 			<li>localActiveInformation()</li>
- * 		</ol></li>
- * </ol>
+ * 		<li>Construct the calculator: {@link #PredictiveInformationCalculator(int, int)};</li>
+ *		<li>Initialise the calculator using {@link #initialise()};</li>
+ * 		<li>Provide the observations/samples for the calculator
+ *      	to set up the PDFs, using one or more calls to
+ * 			sets of {@link #addObservations(int[])} methods, then</li>
+ * 		<li>Compute the required quantities, being one or more of:
+ * 			<ul>
+ * 				<li>the average entropy: {@link #computeAverageLocalOfObservations()};</li>
+ * 				<li>local entropy values, such as {@link #computeLocal(int[])};</li>
+ * 				<li>and variants of these.</li>
+ * 			</ul>
+ * 		</li>
+ * 		<li>As an alternative to steps 3 and 4, the user may undertake
+ * 			standalone computation from a single set of observations, via
+ *  		e.g.: {@link #computeLocal(int[])},
+ *  		{@link #computeAverageLocal(int[])} etc.</li>
+ * 		<li>
+ * 		Return to step 2 to re-use the calculator on a new data set.
+ * 		</li>
+ * 	</ol>
  * 
- * @author Joseph Lizier joseph.lizier at gmail.com
+ * <p>TODO Inherit from {@link SingleAgentMeasureInContextOfPastCalculator}
+ *  as {@link ActiveInformationCalculator} does; Tidy up the Javadocs for
+ *  the methods, which are somewhat preliminary</p>
  * 
- * @see <a href="http://dx.doi.org/10.1016/S0378-4371(01)00444-7">
- *  Bialek, W., Nemenman, I., and Tishby, N. (2001)
- *  Complexity through nonextensivity. Physica A, 302, 89-99.</a>
- * @see <a href="http://dx.doi.org/10.1063/1.1530990">
- * 	Crutchfield, J. P. and Feldman, D. P. (2003) Regularities
- * 	unseen, randomness observed: Levels of entropy convergence.
- *  Chaos, 13, 25-54.</a>
- *  
- *
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>Bialek, W., Nemenman, I., and Tishby, N.,
+ *  <a href="http://dx.doi.org/10.1016/S0378-4371(01)00444-7">
+ * 	"Complexity through nonextensivity"</a>,
+ *  Physica A, 302, 89-99. (2001).</li>
+ * 	<li>J. P. Crutchfield, D. P. Feldman,
+ *  <a href="http://dx.doi.org/10.1063/1.1530990">
+ * 	"Regularities Unseen, Randomness Observed: Levels of Entropy Convergence"</a>,
+ *  Chaos, Vol. 13, No. 1. (2003), pp. 25-54.</li>
+ * </ul>
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class PredictiveInformationCalculator {
 
@@ -76,13 +103,21 @@ public class PredictiveInformationCalculator {
 	 * 
 	 * @param numDiscreteValues Number of discrete values (e.g. 2 for binary states)
 	 * @param blockLength
-	 * 
+	 * @deprecated
 	 * @return
 	 */
 	public static PredictiveInformationCalculator newInstance(int numDiscreteValues, int blockLength) {
 		return new PredictiveInformationCalculator(numDiscreteValues, blockLength);
 	}
 	
+	/**
+	 * Construct a new instance
+	 * 
+	 * @param numDiscreteValues number of quantisation levels for each variable.
+	 *        E.g. binary variables are in base-2.
+	 * @param blockLength embedded history length of the past and future to use -
+	 *        this is k in Schreiber's notation.
+	 */
 	public PredictiveInformationCalculator(int numDiscreteValues, int blockLength) {
 		super();
 		

@@ -26,25 +26,48 @@ import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.RandomGenerator;
 
 /**
- * Implements conditional mutual information
+ * <p>Conditional Mutual information (MI) calculator for univariate discrete (int[]) data.</p>
  * 
- * Usage:
- * 1. Continuous accumulation of observations before computing :
- *   Call: a. initialise()
- *         b. addObservations() several times over
- *         c. computeLocalFromPreviousObservations() or computeAverageLocalOfObservations()
- * 2. Standalone computation from a single set of observations:
- *   Call: computeLocal() or computeAverageLocal()
+ * <p>Usage of the class is intended to follow this paradigm:</p>
+ * <ol>
+ * 		<li>Construct the calculator:
+ * 			{@link #ConditionalMutualInformationCalculator(int, int, int)};</li>
+ *		<li>Initialise the calculator using {@link #initialise()};</li>
+ * 		<li>Provide the observations/samples for the calculator
+ *      	to set up the PDFs, using one or more calls to
+ * 			sets of {@link #addObservations(int[], int[], int[])} methods, then</li>
+ * 		<li>Compute the required quantities, being one or more of:
+ * 			<ul>
+ * 				<li>the average MI: {@link #computeAverageLocalOfObservations()};</li>
+ * 				<li>local MI values, such as
+ * 				{@link #computeLocalFromPreviousObservations(int[], int[], int[])};</li>
+ * 				<li>comparison to null distribution, such as
+ * 				{@link #computeSignificance()};</li>
+ * 				<li>and variants of these.</li>
+ * 			</ul>
+ * 		</li>
+ * 		<li>As an alternative to steps 3 and 4, the user may undertake
+ * 			standalone computation from a single set of observations, via
+ *  		e.g.: {@link #computeLocal(int[], int[], int[])}.</li>
+ * 		<li>
+ * 		Return to step 2 to re-use the calculator on a new data set.
+ * 		</li>
+ * 	</ol>
  * 
- * @author Joseph Lizier
- * joseph.lizier at gmail.com
- * http://lizier.me/joseph/
- *
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li>T. M. Cover and J. A. Thomas, 'Elements of Information
+Theory' (John Wiley & Sons, New York, 1991).</li>
+ * </ul>
+ * 
+ * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+ * <a href="http://lizier.me/joseph/">www</a>)
  */
-public class ConditionalMutualInformationCalculator extends InfoMeasureCalculator implements AnalyticNullDistributionComputer {
+public class ConditionalMutualInformationCalculator
+	extends InfoMeasureCalculator implements AnalyticNullDistributionComputer {
 
 	/**
-	 * Store the bases for each variable
+	 * Store the number of symbols for each variable
 	 */
 	protected int base1;
 	protected int base2;
@@ -61,16 +84,26 @@ public class ConditionalMutualInformationCalculator extends InfoMeasureCalculato
 	 * User was formerly forced to create new instances through this factory method.
 	 * Retained for backwards compatibility.
 	 * 
-	 * @param base1 base of first MI variable
-	 * @param base2 base of second MI variable
-	 * @param condBase base of conditional variable
-	 * 
-	 * @return
+	 * @param base1 number of symbols for first variable.
+	 *        E.g. binary variables are in base-2.
+	 * @param base2 number of symbols for second variable.
+	 * @param condBase number of symbols for conditional variable.
+	 * @deprecated As of JIDT 1.0, call {@link #ConditionalMutualInformationCalculator(int, int, int)}
+	 * 				directly.
+	 * @return new calculator object
 	 */
 	public static ConditionalMutualInformationCalculator newInstance(int base1, int base2, int condBase) {
 		return new ConditionalMutualInformationCalculator(base1, base2, condBase);
 	}
 
+	/**
+	 * Construct a new instance
+	 * 
+	 * @param base1 number of symbols for first variable.
+	 *        E.g. binary variables are in base-2.
+	 * @param base2 number of symbols for second variable.
+	 * @param condBase number of symbols for conditional variable.
+	 */
 	public ConditionalMutualInformationCalculator(int base1, int base2, int condBase) {
 
 		// Create super object, just with first base
@@ -88,12 +121,7 @@ public class ConditionalMutualInformationCalculator extends InfoMeasureCalculato
 		condCount = new int[condBase];
 	}
 
-	/**
-	 * Initialise calculator, preparing to take observation sets in
-	 * Should be called prior to any of the addObservations() methods.
-	 * You can reinitialise without needing to create a new object.
-	 *
-	 */
+	@Override
 	public void initialise(){
 		super.initialise();
 		
@@ -106,12 +134,13 @@ public class ConditionalMutualInformationCalculator extends InfoMeasureCalculato
 	}
 		
 	/**
- 	 * Add observations for the given var1,var2,cond tuples of the multi-agent system
+ 	 * Add observations for the given var1,var2,cond tuples
+ 	 *  of the variables
  	 *  to our estimates of the pdfs.
 	 *
-	 * @param var1 values for the first variable
-	 * @param var2 values for the second variable
-	 * @param cond values for the conditional variable
+	 * @param var1 series of values for the first variable
+	 * @param var2 series of values for the second variable
+	 * @param cond series of values for the conditional variable
 	 */
 	public void addObservations(int var1[], int var2[], int cond[]) {
 		int rows = var1.length;
@@ -129,14 +158,15 @@ public class ConditionalMutualInformationCalculator extends InfoMeasureCalculato
 	}
 
 	/**
- 	 * Add observations for the given var1,var2,cond tuples of the multi-agent system
+ 	 * Add observations for the given var1,var2,cond tuples
+ 	 *  of the variables
  	 *  to our estimates of the pdfs.
  	 * This method signature allows applications using byte data (to save memory)
  	 *  to operate correctly.
 	 *
-	 * @param var1 values for the first variable
-	 * @param var2 values for the second variable
-	 * @param cond values for the conditional variable
+	 * @param var1 series of values for the first variable
+	 * @param var2 series of values for the second variable
+	 * @param cond series of values for the conditional variable
 	 */
 	public void addObservations(byte var1[], byte var2[], byte cond[]) {
 		int rows = var1.length;
@@ -154,14 +184,16 @@ public class ConditionalMutualInformationCalculator extends InfoMeasureCalculato
 	}
 
 	/**
- 	 * Add observations for the given var1,var2,cond tuples of the multi-agent system
+ 	 * Add observations for the given var1,var2,cond tuples
+ 	 *  of the variables
  	 *  to our estimates of the pdfs, only when those observations are confirmed
  	 *  as valid.
 	 *
-	 * @param var1 values for the first variable
-	 * @param var2 values for the second variable
-	 * @param cond values for the conditional variable
-	 * @param valid whether each observation is valid to be counted in the PDFs
+	 * @param var1 series of values for the first variable
+	 * @param var2 series of values for the second variable
+	 * @param cond series of values for the conditional variable
+	 * @param valid series of whether each observation is valid
+	 * 	to be counted in the PDFs
 	 */
 	public void addObservations(int var1[], int var2[], int cond[],
 			boolean[] valid) {
@@ -182,16 +214,18 @@ public class ConditionalMutualInformationCalculator extends InfoMeasureCalculato
 	}
 
 	/**
- 	 * Add observations for the given var1,var2,cond tuples of the multi-agent system
+ 	 * Add observations for the given var1,var2,cond tuples
+ 	 *  of the variables
  	 *  to our estimates of the pdfs, only when those observations are confirmed
  	 *  as valid.
  	 * This method signature allows applications using byte data (to save memory)
  	 *  to operate correctly.
 	 *
-	 * @param var1 values for the first variable
-	 * @param var2 values for the second variable
-	 * @param cond values for the conditional variable
-	 * @param valid whether each observation is valid to be counted in the PDFs
+	 * @param var1 series of values for the first variable
+	 * @param var2 series of values for the second variable
+	 * @param cond series of values for the conditional variable
+	 * @param valid whether each observation is valid
+	 * 	to be counted in the PDFs
 	 */
 	public void addObservations(byte var1[], byte var2[], byte cond[],
 			boolean[] valid) {
@@ -212,12 +246,19 @@ public class ConditionalMutualInformationCalculator extends InfoMeasureCalculato
 	}
 
 	/**
- 	 * Add observations for the given var1,var2,cond tuples of the multi-agent system
+ 	 * Add observations for the given var1,var2,cond tuples
+ 	 * 	of the variables
  	 *  to our estimates of the pdfs.
+ 	 * This method signature allows multiple trials to have their
+ 	 *  observations added to the PDFs by one method call.
 	 *
-	 * @param var1 values for the first variable
-	 * @param var2 values for the second variable
-	 * @param cond values for the conditional variable
+	 * @param var1 series of values for the first variable;
+	 *   first index is time or observation number, second
+	 *   index is trial (a second observation number if you will)
+	 * @param var2 series of values for the second variable,
+	 * 	indexed as per var1
+	 * @param cond series of values for the conditional variable,
+	 * 	indexed as per var1
 	 */
 	public void addObservations(int var1[][], int var2[][], int cond[][]) {
 		int rows = var1.length;
@@ -237,12 +278,7 @@ public class ConditionalMutualInformationCalculator extends InfoMeasureCalculato
 		}
 	}
 
-	/**
-	 * Returns the average local conditional MI from
-	 *  the observed values which have been passed in previously. 
-	 *  
-	 * @return
-	 */
+	@Override
 	public double computeAverageLocalOfObservations() {
 		double condMi = 0.0;
 		double condMiCont = 0.0;
@@ -329,10 +365,10 @@ public class ConditionalMutualInformationCalculator extends InfoMeasureCalculato
 	 *  states, using pdfs built up from observations previously
 	 *  sent in via the addObservations method.
 	 *  
-	 * @param var1 values for the first variable
-	 * @param var2 values for the second variable
-	 * @param cond values for the conditional variable
-	 * @return
+	 * @param var1 series of values for the first variable
+	 * @param var2 series of values for the second variable
+	 * @param cond series of values for the conditional variable
+	 * @return series of local conditional MI values
 	 */
 	public double[] computeLocalFromPreviousObservations(int var1[], int var2[], int cond[]){
 		int rows = var1.length;
@@ -367,12 +403,29 @@ public class ConditionalMutualInformationCalculator extends InfoMeasureCalculato
 	}
 
 	/**
-	 * Compute the significance of obtaining the given average from the given observations,
-	 * assuming that the temporal relationship between variable1 and variable2-conditional
-	 * was destroyed, while variable2-conditional relationship was retained.
+	 * Generate a bootstrapped distribution of what the conditional MI would look like,
+	 * under a null hypothesis that the source values of our
+	 * samples had no relation to the destination value (in the
+	 * context of the conditional).
 	 * 
-	 * @param numPermutationsToCheck number of new orderings of the variable1 to compare against
-	 * @return
+	 * <p>See Section II.E "Statistical significance testing" of 
+	 * the JIDT paper below for a description of how this is done for MI,
+	 * conditional MI and TE.
+	 * <b>Note that this method currently fixes the relationship
+	 * between variable 2 and the conditional, and shuffles
+	 * variable 1 with respect to these.</b>
+	 * </p>
+	 * 
+	 * <p>Note that if several disjoint time-series have been added 
+	 * as observations using {@link #addObservations(int[], int[])} etc.,
+	 * then these separate "trials" will be mixed up in the generation
+	 * of surrogates here.</p>
+	 * 
+	 * @param numPermutationsToCheck number of surrogate samples to bootstrap
+	 *  to generate the distribution.
+	 * @return the distribution of conditional MI scores under this null hypothesis.
+	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
+	 *    toolkit for studying the dynamics of complex systems', 2014."
 	 */
 	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) {
 		RandomGenerator rg = new RandomGenerator();
@@ -382,16 +435,46 @@ public class ConditionalMutualInformationCalculator extends InfoMeasureCalculato
 	}
 	
 	/**
-	 * Compute the significance of obtaining the given average from the given observations,
-	 * assuming that the temporal relationship between variable1 and variable2-conditional
-	 * was detroyed, while variable2-conditional relationship was retained.
+	 * Generate a bootstrapped distribution of what the conditional MI would look like,
+	 * under a null hypothesis that the source values of our
+	 * samples had no relation to the destination values.
 	 * 
+	 * <p>See Section II.E "Statistical significance testing" of 
+	 * the JIDT paper below for a description of how this is done for  
+	 * a conditional mutual information. Basically, the marginal PDFs
+	 * of each marginal
+	 * are preserved, while their joint PDF is destroyed, and the 
+	 * distribution of conditional MI under these conditions is generated.
+	 * <b>Note that this method currently fixes the relationship
+	 * between variable 2 and the conditional, and shuffles
+	 * variable 1 with respect to these.</b>
+	 * </p>
 	 * TODO Need to alter the method signature to allow callers to specify
 	 * which variable is shuffled. (Note to self: when doing this, will
 	 * need to update machine learning code to the new method signature)
 	 * 
-	 * @param newOrderings the reorderings for variable1 to use
-	 * @return
+	 * <p>Note that if several disjoint time-series have been added 
+	 * as observations using {@link #addObservations(double[])} etc.,
+	 * then these separate "trials" will be mixed up in the generation
+	 * of surrogates here.</p>
+	 * 
+	 * <p>This method (in contrast to {@link #computeSignificance(int)})
+	 * allows the user to specify how to construct the surrogates,
+	 * such that repeatable results may be obtained.</p>
+	 * 
+	 * @param newOrderings a specification of how to shuffle the values
+	 *  of variable 1
+	 *  to create the surrogates to generate the distribution with. The first
+	 *  index is the permutation number (i.e. newOrderings.length is the number
+	 *  of surrogate samples we use to bootstrap to generate the distribution here.)
+	 *  Each array newOrderings[i] should be an array of length N (where
+	 *  would be the value returned by {@link #getNumObservations()}),
+	 *  containing a permutation of the values in 0..(N-1).
+	 * @return the distribution of conditional MI scores under this null hypothesis.
+	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
+	 *    toolkit for studying the dynamics of complex systems', 2014."
+	 * @throws Exception where the length of each permutation in newOrderings
+	 *   is not equal to the number N samples that were previously supplied.
 	 */
 	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings) {
 		
@@ -456,38 +539,7 @@ public class ConditionalMutualInformationCalculator extends InfoMeasureCalculato
 		return measDistribution;
 	}
 
-	/**
-	 * <p>Compute the statistical significance of the conditional mutual information 
-	 *  result analytically, without creating a distribution
-	 *  under the null hypothesis by bootstrapping.</p>
-	 *
-	 * <p>Brillinger (see reference below) showed that under the null hypothesis
-	 *  of no source-destination relationship, the MI for two
-	 *  discrete distributions follows a chi-square distribution with
-	 *  degrees of freedom equal to the product of the number of discrete values
-	 *  minus one, for each variable.</p>
-	 *  
-	 * <p>Cheng extend this to show that for conditional MI, the number of
-	 *  degrees of freedom for this distribution is:
-	 *  (base1 - 1)*(base2 - 1)*condBase
-	 * </p>
-	 * 
-	 * <p>Barnett and Bossomaier later echoed this for the transfer entropy
-	 *  (which is of course a conditional MI)
-	 * </p>
-	 *
-	 * @return ChiSquareMeasurementDistribution object 
-	 *  This object contains the proportion of conditional MI scores from the distribution
-	 *  which have higher or equal conditional MIs to ours.
-	 *  
-	 * @see Brillinger, "Some data analyses using mutual information",
-	 * {@link http://www.stat.berkeley.edu/~brill/Papers/MIBJPS.pdf}
-	 * @see Cheng et al., "Data Information in Contingency Tables: A
-	 *  Fallacy of Hierarchical Loglinear Models",
-	 *  {@link http://www.jds-online.com/file_download/112/JDS-369.pdf}
-	 * @see Barnett and Bossomaier, "Transfer Entropy as a Log-likelihood Ratio" 
-	 *  {@link http://arxiv.org/abs/1205.6339}
-	 */
+	@Override
 	public AnalyticMeasurementDistribution computeSignificance() {
 		if (!condMiComputed) {
 			computeAverageLocalOfObservations();
@@ -498,13 +550,13 @@ public class ConditionalMutualInformationCalculator extends InfoMeasureCalculato
 
 	/**
 	 * Standalone routine to 
-	 * compute local conditional MI across given variables.
+	 * compute local conditional MI for given variables.
 	 * Return a temporal array of local values.
 	 * 
-	 * @param var1 values for the first variable
-	 * @param var2 values for the second variable
-	 * @param cond values for the conditional variable
-	 * @return
+	 * @param var1 series of values for the first variable
+	 * @param var2 series of values for the second variable
+	 * @param cond series of values for the conditional variable
+	 * @return series of local conditional MI values
 	 */
 	public double[] computeLocal(int var1[], int var2[], int cond[]) {
 		
@@ -515,13 +567,12 @@ public class ConditionalMutualInformationCalculator extends InfoMeasureCalculato
 
 	/**
 	 * Standalone routine to 
-	 * compute local conditional MI across given variables.
-	 * Returns the average
+	 * compute average conditional MI for a given set of variables.
 	 * 
-	 * @param var1 values for the first variable
-	 * @param var2 values for the second variable
-	 * @param cond values for the conditional variable
-	 * @return
+	 * @param var1 series of values for the first variable
+	 * @param var2 series of values for the second variable
+	 * @param cond series of values for the conditional variable
+	 * @return average conditional MI for these values
 	 */
 	public double computeAverageLocal(int var1[], int var2[], int cond[]) {
 		
