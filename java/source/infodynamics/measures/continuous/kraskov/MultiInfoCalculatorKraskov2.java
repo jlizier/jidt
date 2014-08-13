@@ -18,6 +18,7 @@
 
 package infodynamics.measures.continuous.kraskov;
 
+import infodynamics.measures.continuous.MultiInfoCalculator;
 import infodynamics.utils.EuclideanUtils;
 import infodynamics.utils.FirstIndexComparatorDouble;
 import infodynamics.utils.MathsUtils;

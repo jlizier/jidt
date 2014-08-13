@@ -19,6 +19,7 @@
 package infodynamics.measures.continuous.gaussian;
 
 import infodynamics.measures.continuous.TransferEntropyCalculator;
+import infodynamics.measures.continuous.TransferEntropyCalculatorMultiVariate;
 import infodynamics.measures.continuous.TransferEntropyCalculatorMultiVariateViaCondMutualInfo;
 import infodynamics.measures.continuous.TransferEntropyCalculatorViaCondMutualInfo;
 import infodynamics.utils.AnalyticNullDistributionComputer;
