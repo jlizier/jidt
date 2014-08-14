@@ -29,8 +29,8 @@ public class TransferEntropyTester extends TestCase {
 		int[] source = rand.generateRandomInts(100, 2);
 		int[] dest = source;
 		
-		TransferEntropyCalculator teCalc =
-				new TransferEntropyCalculator(2, 1);
+		TransferEntropyCalculatorDiscrete teCalc =
+				new TransferEntropyCalculatorDiscrete(2, 1);
 		teCalc.initialise();
 		teCalc.addObservations(source, dest);
 		double result = teCalc.computeAverageLocalOfObservations();
@@ -53,15 +53,15 @@ public class TransferEntropyTester extends TestCase {
 		
 		// with k=1, we won't see the self-predictability of the dest
 		//  and will assume all info is in TE
-		TransferEntropyCalculator teCalc =
-				new TransferEntropyCalculator(2, 1);
+		TransferEntropyCalculatorDiscrete teCalc =
+				new TransferEntropyCalculatorDiscrete(2, 1);
 		teCalc.initialise();
 		teCalc.addObservations(source, dest);
 		double result = teCalc.computeAverageLocalOfObservations();
 		assertEquals(1, result, 0.0000001);
 		
 		// with k=2, we will see the self-predictability of the dest
-		teCalc = new TransferEntropyCalculator(2, 2);
+		teCalc = new TransferEntropyCalculatorDiscrete(2, 2);
 		teCalc.initialise();
 		teCalc.addObservations(source, dest);
 		result = teCalc.computeAverageLocalOfObservations();
@@ -78,7 +78,7 @@ public class TransferEntropyTester extends TestCase {
 				dest2[t] = 1;
 			}
 		}
-		teCalc = new TransferEntropyCalculator(2, 1, 2);
+		teCalc = new TransferEntropyCalculatorDiscrete(2, 1, 2);
 		teCalc.initialise();
 		teCalc.addObservations(dest2, dest2);
 		result = teCalc.computeAverageLocalOfObservations();
