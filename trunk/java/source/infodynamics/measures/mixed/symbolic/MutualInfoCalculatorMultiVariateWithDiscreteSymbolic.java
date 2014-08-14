@@ -20,7 +20,7 @@ package infodynamics.measures.mixed.symbolic;
 
 import infodynamics.measures.mixed.MutualInfoCalculatorMultiVariateWithDiscrete;
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
-import infodynamics.measures.discrete.MutualInformationCalculator;
+import infodynamics.measures.discrete.MutualInformationCalculatorDiscrete;
 import infodynamics.utils.FirstIndexComparatorDouble;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
@@ -40,7 +40,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteSymbolic implements
 		MutualInfoCalculatorMultiVariateWithDiscrete {
 
 	// The calculator used to do the grunt work
-	protected MutualInformationCalculator miCalc;
+	protected MutualInformationCalculatorDiscrete miCalc;
 	
 	protected int dimensions;
 	
@@ -92,7 +92,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteSymbolic implements
 		
 		// Make the base the maximum of the number of combinations of orderings of the
 		//  continuous variables and the discrete base.
-		miCalc = new MutualInformationCalculator(baseToUse,0);
+		miCalc = new MutualInformationCalculatorDiscrete(baseToUse,0);
 		miCalc.initialise();
 	}
 

@@ -30,7 +30,7 @@ import infodynamics.utils.MatrixUtils;
  *
  * <p>Usage of the class is intended to follow this paradigm:</p>
  * <ol>
- * 		<li>Construct the calculator: {@link #BlockEntropyCalculator(int, int)};</li>
+ * 		<li>Construct the calculator: {@link #BlockEntropyCalculatorDiscrete(int, int)};</li>
  *		<li>Initialise the calculator using {@link #initialise()};</li>
  * 		<li>Provide the observations/samples for the calculator
  *      	to set up the PDFs, using one or more calls to
@@ -60,7 +60,7 @@ Theory' (John Wiley & Sons, New York, 1991).</li>
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public class BlockEntropyCalculator extends EntropyCalculator {
+public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 
 	/**
 	 * Number of consecutive time-steps to compute entropy over.
@@ -78,8 +78,8 @@ public class BlockEntropyCalculator extends EntropyCalculator {
 	 * @param base
 	 * @deprecated
 	 */
-	public static EntropyCalculator newInstance(int blocksize, int base) {
-		return new BlockEntropyCalculator(blocksize, base);
+	public static EntropyCalculatorDiscrete newInstance(int blocksize, int base) {
+		return new BlockEntropyCalculatorDiscrete(blocksize, base);
 	}
 	
 	/**
@@ -89,7 +89,7 @@ public class BlockEntropyCalculator extends EntropyCalculator {
 	 * @param base number of quantisation levels for each variable.
 	 *        E.g. binary variables are in base-2.
 	 */
-	public BlockEntropyCalculator(int blocksize, int base) {
+	public BlockEntropyCalculatorDiscrete(int blocksize, int base) {
 
 		super(base);
 		

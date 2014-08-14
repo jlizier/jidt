@@ -18,8 +18,9 @@
 
 package infodynamics.measures.continuous.symbolic;
 
+import infodynamics.measures.continuous.TransferEntropyCalculator;
 import infodynamics.measures.continuous.TransferEntropyCommon;
-import infodynamics.measures.discrete.TransferEntropyCalculator;
+import infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete;
 import infodynamics.utils.FirstIndexComparatorDouble;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
@@ -68,12 +69,12 @@ import java.util.Vector;
  */
 public class TransferEntropyCalculatorSymbolic
 		extends TransferEntropyCommon
-		implements infodynamics.measures.continuous.TransferEntropyCalculator {
+		implements TransferEntropyCalculator {
 
 	/**
 	 * The discrete calculator used to do the grunt work
 	 */
-	protected TransferEntropyCalculator teCalc;
+	protected TransferEntropyCalculatorDiscrete teCalc;
 
 	protected int maxEmbeddingLength; // = Max(l,k)
 	// l will default to the value of k unless l gets explicitly set
@@ -177,7 +178,7 @@ public class TransferEntropyCalculatorSymbolic
 		// The discrete calculator only uses a history of 1 here - k is built into
 		//  the permutations
 		int base = Math.max(destPermutationIds.length, sourcePermutationIds.length);
-		teCalc = TransferEntropyCalculator.newInstance(base, 1);
+		teCalc = TransferEntropyCalculatorDiscrete.newInstance(base, 1);
 		teCalc.initialise();
 	}
 

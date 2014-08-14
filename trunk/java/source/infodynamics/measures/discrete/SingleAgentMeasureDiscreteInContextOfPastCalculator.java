@@ -25,13 +25,13 @@ package infodynamics.measures.discrete;
  * discrete (ie int[]) variable.
  * 
  * <p>This combines functionality for single agents from
- * {@link SingleAgentMeasure} with functionality
+ * {@link SingleAgentMeasureDiscrete} with functionality
  * required in the context of the past provided by
- * {@link ContextOfPastMeasureCalculator}.</p>
+ * {@link ContextOfPastMeasureCalculatorDiscrete}.</p>
  * 
- * <p>Usage is as defined in {@link InfoMeasureCalculator}, with
+ * <p>Usage is as defined in {@link InfoMeasureCalculatorDiscrete}, with
  * extra methods for supplying observations and making 
- * calculations defined in {@link SingleAgentMeasure}</p>.
+ * calculations defined in {@link SingleAgentMeasureDiscrete}</p>.
  * 
  * <p>Users should not need to deal with this class directly;
  * it is simply used to gather common functionality for several
@@ -43,8 +43,8 @@ package infodynamics.measures.discrete;
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public abstract class SingleAgentMeasureInContextOfPastCalculator extends
-		ContextOfPastMeasureCalculator implements SingleAgentMeasure {
+public abstract class SingleAgentMeasureDiscreteInContextOfPastCalculator extends
+		ContextOfPastMeasureCalculatorDiscrete implements SingleAgentMeasureDiscrete {
 
 	/**
 	 * Construct the calculator
@@ -53,7 +53,7 @@ public abstract class SingleAgentMeasureInContextOfPastCalculator extends
 	 *        E.g. binary variables are in base-2.
 	 * @param history embedding length
 	 */
-	public SingleAgentMeasureInContextOfPastCalculator(int base, int history) {
+	public SingleAgentMeasureDiscreteInContextOfPastCalculator(int base, int history) {
 		super(base, history);
 	}
 	

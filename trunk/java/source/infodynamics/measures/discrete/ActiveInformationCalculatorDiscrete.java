@@ -36,7 +36,7 @@ import infodynamics.utils.RandomGenerator;
  *
  * <p>Usage of the class is intended to follow this paradigm:</p>
  * <ol>
- * 		<li>Construct the calculator: {@link #ActiveInformationCalculator(int, int)};</li>
+ * 		<li>Construct the calculator: {@link #ActiveInformationCalculatorDiscrete(int, int)};</li>
  *		<li>Initialise the calculator using {@link #initialise()};</li>
  * 		<li>Provide the observations/samples for the calculator
  *      	to set up the PDFs, using one or more calls to
@@ -68,7 +68,7 @@ import infodynamics.utils.RandomGenerator;
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public class ActiveInformationCalculator extends SingleAgentMeasureInContextOfPastCalculator {
+public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscreteInContextOfPastCalculator {
 
 	/**
 	 * User was formerly forced to create new instances through this factory method.
@@ -79,8 +79,8 @@ public class ActiveInformationCalculator extends SingleAgentMeasureInContextOfPa
 	 * @deprecated
 	 * @return
 	 */
-	public static ActiveInformationCalculator newInstance(int base, int history) {
-		return new ActiveInformationCalculator(base, history);
+	public static ActiveInformationCalculatorDiscrete newInstance(int base, int history) {
+		return new ActiveInformationCalculatorDiscrete(base, history);
 	}
 	
 	/**
@@ -91,7 +91,7 @@ public class ActiveInformationCalculator extends SingleAgentMeasureInContextOfPa
 	 * @param history embedded history length of the destination to condition on -
 	 *        this is k in Schreiber's notation.
 	 */
-	public ActiveInformationCalculator(int base, int history) {
+	public ActiveInformationCalculatorDiscrete(int base, int history) {
 		super(base, history);
 	}
 
@@ -336,7 +336,7 @@ public class ActiveInformationCalculator extends SingleAgentMeasureInContextOfPa
 	 * Computes local active info storage for the given (single)
 	 *  specific values.
 	 *  
-	 * See {@link TransferEntropyCalculator#getPastCount(int)} for how the
+	 * See {@link TransferEntropyCalculatorDiscrete#getPastCount(int)} for how the
 	 *  joint embedded values representing the past are calculated.
 	 * 
 	 * @param next next value of the variable
@@ -690,8 +690,8 @@ public class ActiveInformationCalculator extends SingleAgentMeasureInContextOfPa
 			t_next += numberOfSamplesNext;
 		}
 		
-		ActiveInformationCalculator ais2;
-		ais2 = new ActiveInformationCalculator(base, k);
+		ActiveInformationCalculatorDiscrete ais2;
+		ais2 = new ActiveInformationCalculatorDiscrete(base, k);
 		ais2.initialise();
 		ais2.observations = observations;
 		ais2.pastCount = pastCount;
@@ -764,7 +764,7 @@ public class ActiveInformationCalculator extends SingleAgentMeasureInContextOfPa
 	 * combined past values of x up to and including time step t:
 	 *  (i.e. (x_{t-k+1}, ... ,x_{t-1},x_{t}))
 	 * 
-	 * See {@link TransferEntropyCalculator#getPastCount(int)} for
+	 * See {@link TransferEntropyCalculatorDiscrete#getPastCount(int)} for
 	 *  how the joint value representing the past is calculated.
 	 * 
 	 * @param x time series
@@ -787,7 +787,7 @@ public class ActiveInformationCalculator extends SingleAgentMeasureInContextOfPa
 	 * up to and including time step t:
 	 *  (i.e. (x_{t-k+1}, ... ,x_{t-1},x_{t}))
 	 * 
-	 * See {@link TransferEntropyCalculator#getPastCount(int)} for
+	 * See {@link TransferEntropyCalculatorDiscrete#getPastCount(int)} for
 	 *  how the joint value representing the past is calculated.
 	 *  
 	 * @param data 2D time series, first index is time,
@@ -811,7 +811,7 @@ public class ActiveInformationCalculator extends SingleAgentMeasureInContextOfPa
 	 * up to and including time step t:
 	 *  (i.e. (x_{t-k+1}, ... ,x_{t-1},x_{t}))
 	 * 
-	 * See {@link TransferEntropyCalculator#getPastCount(int)} for
+	 * See {@link TransferEntropyCalculatorDiscrete#getPastCount(int)} for
 	 *  how the joint value representing the past is calculated.
 	 *  
 	 * @param data 3D time series, first index is time,

@@ -28,7 +28,7 @@ package infodynamics.measures.discrete;
  *
  * <p>Usage of the class is intended to follow this paradigm:</p>
  * <ol>
- * 		<li>Construct the calculator: {@link #EntropyRateCalculator(int, int)};</li>
+ * 		<li>Construct the calculator: {@link #EntropyRateCalculatorDiscrete(int, int)};</li>
  *		<li>Initialise the calculator using {@link #initialise()};</li>
  * 		<li>Provide the observations/samples for the calculator
  *      	to set up the PDFs, using one or more calls to
@@ -62,7 +62,7 @@ Theory' (John Wiley & Sons, New York, 1991).</li>
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public class EntropyRateCalculator extends SingleAgentMeasureInContextOfPastCalculator {
+public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInContextOfPastCalculator {
 
 	/**
 	 * User was formerly forced to create new instances through this factory method.
@@ -73,8 +73,8 @@ public class EntropyRateCalculator extends SingleAgentMeasureInContextOfPastCalc
 	 * @deprecated
 	 * @return
 	 */
-	public static EntropyRateCalculator newInstance(int base, int history) {
-		return new EntropyRateCalculator(base, history);
+	public static EntropyRateCalculatorDiscrete newInstance(int base, int history) {
+		return new EntropyRateCalculatorDiscrete(base, history);
 	}
 	
 	/**
@@ -85,7 +85,7 @@ public class EntropyRateCalculator extends SingleAgentMeasureInContextOfPastCalc
 	 * @param history embedded history length of the destination to condition on -
 	 *        this is k in Schreiber's notation.
 	 */
-	public EntropyRateCalculator(int base, int history) {
+	public EntropyRateCalculatorDiscrete(int base, int history) {
 		super(base, history);
 	}		
 	

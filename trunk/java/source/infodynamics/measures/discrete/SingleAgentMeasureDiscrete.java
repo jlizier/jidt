@@ -25,7 +25,7 @@ package infodynamics.measures.discrete;
  * adding observations and calculating
  * local and average values, etc. 
  * 
- * <p>Usage is as per {@link InfoMeasureCalculator}, with
+ * <p>Usage is as per {@link InfoMeasureCalculatorDiscrete}, with
  * many methods for supplying observations and making 
  * calculations defined here.</p>
  * 
@@ -34,13 +34,13 @@ package infodynamics.measures.discrete;
  * ContextOfPastCalculator, and since java doesn't allow multiple
  * inheritance, one of them has to miss out.
  * To get around this, we combine the two in
- * {@link SingleAgentMeasureInContextOfPastCalculator}.
+ * {@link SingleAgentMeasureDiscreteInContextOfPastCalculator}.
  * </p>
  * 
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public interface SingleAgentMeasure {
+public interface SingleAgentMeasureDiscrete {
 
 	/**
  	 * Add observations in to our estimates of the pdfs.

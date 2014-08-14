@@ -26,19 +26,19 @@ import infodynamics.utils.MatrixUtils;
  * entropy rate and entropy.
  * 
  * <p>This class is preliminary, so the Javadocs are incomplete --
- * please see {@link ActiveInformationCalculator},
- * {@link EntropyRateCalculator} and {@link EntropyCalculator}
+ * please see {@link ActiveInformationCalculatorDiscrete},
+ * {@link EntropyRateCalculatorDiscrete} and {@link EntropyCalculatorDiscrete}
  * for documentation on the corresponding functions
  * and typical usage pattern.
  * </p>
  * 
- * TODO Make this inherit from {@link SingleAgentMeasureInContextOfPastCalculator}
- * like {@link ActiveInformationCalculator} and fix the Javadocs
+ * TODO Make this inherit from {@link SingleAgentMeasureDiscreteInContextOfPastCalculator}
+ * like {@link ActiveInformationCalculatorDiscrete} and fix the Javadocs
  * 
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public class CombinedActiveEntRateCalculator {
+public class CombinedActiveEntRateCalculatorDiscrete {
 
 	private double averageActive = 0.0;
 	private double maxActive = 0.0;
@@ -71,7 +71,7 @@ public class CombinedActiveEntRateCalculator {
 		public double[] localEntropy;
 	}
 
-	public CombinedActiveEntRateCalculator() {
+	public CombinedActiveEntRateCalculatorDiscrete() {
 		super();
 	}
 

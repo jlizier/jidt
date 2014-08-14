@@ -35,7 +35,7 @@ import java.util.Properties;
  * </p>
  * <ol>
  * 		<li>Construct the calculator via
- * 			{@link #SeparableInfoCalculator(int, int, int)};</li>
+ * 			{@link #SeparableInfoCalculatorDiscrete(int, int, int)};</li>
  *		<li>Initialise the calculator using
  *			{@link #initialise()};</li>
  * 		<li>Provide the observations/samples for the calculator
@@ -73,7 +73,7 @@ import java.util.Properties;
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
+public class SeparableInfoCalculatorDiscrete extends ContextOfPastMeasureCalculatorDiscrete {
 
 	protected int numSources = 0;
 	protected int base_power_sources = 0;
@@ -117,7 +117,7 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 	 * 
 	 * @return
 	 */
-	public static SeparableInfoCalculator
+	public static SeparableInfoCalculatorDiscrete
 		newInstance(int base, int history, int numInfoContributors) {
 		
 		if (history < 1) {
@@ -131,10 +131,10 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 		if (!FORCE_DIRECT_CALC &&
 				(MathsUtils.power(base,numInfoContributors + history + 1)
 				> MAX_CONFIGS_FOR_DIRECT_CALC)) {
-			return new SeparableInfoCalculatorByAddition
+			return new SeparableInfoDiscreteCalculatorByAddition
 				(base, history, numInfoContributors);
 		} else {
-			return new SeparableInfoCalculator
+			return new SeparableInfoCalculatorDiscrete
 					(base, history, numInfoContributors);
 		}
 	}
@@ -150,7 +150,7 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 	 *   (other than the past of the destination
 	 *   or the source) to condition on.
 	 */
-	public SeparableInfoCalculator
+	public SeparableInfoCalculatorDiscrete
 		(int base, int history, int numInfoContributors) {
 		this(base, history, numInfoContributors, false);
 	}
@@ -168,7 +168,7 @@ public class SeparableInfoCalculator extends ContextOfPastMeasureCalculator {
 	 * @param dontCreateObsStorage indicates that storage for
 	 *  observations should not be created.
 	 */
-	protected SeparableInfoCalculator
+	protected SeparableInfoCalculatorDiscrete
 		(int base, int history, int numInfoContributors, boolean dontCreateObsStorage) {
 
 		super(base, history, dontCreateObsStorage);

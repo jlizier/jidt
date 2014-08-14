@@ -30,8 +30,8 @@ import infodynamics.utils.RandomGenerator;
  * 
  * <p>Usage of the class is intended to follow this paradigm:</p>
  * <ol>
- * 		<li>Construct the calculator: {@link #MutualInformationCalculator(int)}
- * 			or {@link #MutualInformationCalculator(int, int)};</li>
+ * 		<li>Construct the calculator: {@link #MutualInformationCalculatorDiscrete(int)}
+ * 			or {@link #MutualInformationCalculatorDiscrete(int, int)};</li>
  *		<li>Initialise the calculator using {@link #initialise()};</li>
  * 		<li>Provide the observations/samples for the calculator
  *      	to set up the PDFs, using one or more calls to
@@ -63,8 +63,8 @@ Theory' (John Wiley & Sons, New York, 1991).</li>
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public class MutualInformationCalculator extends InfoMeasureCalculator 
-	implements ChannelCalculator, AnalyticNullDistributionComputer {
+public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDiscrete 
+	implements ChannelCalculatorDiscrete, AnalyticNullDistributionComputer {
 
 	private int timeDiff = 0;
 	private int[][]	jointCount = null; // Count for (i[t-timeDiff], j[t]) tuples
@@ -81,7 +81,7 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 	 *        E.g. binary variables are in base-2.
 	 * @throws Exception
 	 */
-	public MutualInformationCalculator(int base) throws Exception {
+	public MutualInformationCalculatorDiscrete(int base) throws Exception {
 		this(base, 0);
 	}
 	
@@ -94,7 +94,7 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 	 *   MI for given time series
 	 * @throws Exception when timeDiff < 0
 	 */
-	public MutualInformationCalculator(int base, int timeDiff) throws Exception {
+	public MutualInformationCalculatorDiscrete(int base, int timeDiff) throws Exception {
 		super(base);
 		if (timeDiff < 0) {
 			throw new Exception("timeDiff must be >= 0");
@@ -275,9 +275,9 @@ public class MutualInformationCalculator extends InfoMeasureCalculator
 			t_j += numberOfSamplesJ;
 		}
 		
-		MutualInformationCalculator mi2;
+		MutualInformationCalculatorDiscrete mi2;
 		try {
-			mi2 = new MutualInformationCalculator(base, timeDiff);
+			mi2 = new MutualInformationCalculatorDiscrete(base, timeDiff);
 		} catch (Exception e) {
 			// The only possible exception is if timeDiff < 0, which 
 			// it cannot be. Shut down the JVM
