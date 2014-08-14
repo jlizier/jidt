@@ -37,7 +37,7 @@ destArray = [0] + sourceArray[0:99];
 sourceArray2 = [random.randint(0,1) for r in xrange(100)]
 
 # Create a TE calculator and run it:
-teCalcClass = JPackage("infodynamics.measures.discrete").TransferEntropyCalculator
+teCalcClass = JPackage("infodynamics.measures.discrete").TransferEntropyCalculatorDiscrete
 teCalc = teCalcClass(2,1)
 teCalc.initialise()
 # Since we have simple arrays of ints, we can directly pass these in:
@@ -79,7 +79,7 @@ twoDTimeSeriesPython.append(row2)
 twoDTimeSeriesJavaInt = JArray(JInt, 2)(twoDTimeSeriesPython); # 2 indicating 2D array
 
 # Create a TE calculator and run it:
-teCalcClass = JPackage("infodynamics.measures.discrete").TransferEntropyCalculator
+teCalcClass = JPackage("infodynamics.measures.discrete").TransferEntropyCalculatorDiscrete
 teCalc = teCalcClass(2,1)
 teCalc.initialise()
 # Add observations of transfer across one cell to the right per time step:
@@ -203,7 +203,7 @@ for j in range(1,numObservations):
 	destArray.append([sourceArray[j-1][0], xor(sourceArray[j-1][0], sourceArray[j-1][1])])
 
 # Create a TE calculator and run it:
-teCalcClass = JPackage("infodynamics.measures.discrete").TransferEntropyCalculator
+teCalcClass = JPackage("infodynamics.measures.discrete").TransferEntropyCalculatorDiscrete
 teCalc = teCalcClass(4,1)
 teCalc.initialise()
 # We need to construct the joint values of the dest and source before we pass them in,
