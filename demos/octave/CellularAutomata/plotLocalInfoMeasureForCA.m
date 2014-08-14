@@ -139,7 +139,7 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 	if ((ischar(measureId) && (strcmpi('active', measureId) || strcmpi('all', measureId))) || ...
 	    (not(ischar(measureId)) && ((measureId == 0) || (measureId == -1))))
 		% Compute active information storage
-		activeCalc = javaObject('infodynamics.measures.discrete.ActiveInformationCalculator', base, measureParams.k);
+		activeCalc = javaObject('infodynamics.measures.discrete.ActiveInformationCalculatorDiscrete', base, measureParams.k);
 		activeCalc.initialise();
 		activeCalc.addObservations(caStatesJInts);
 		avActive = activeCalc.computeAverageLocalOfObservations();
@@ -172,7 +172,7 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 		if (measureParams.j == 0)
 			error('Cannot compute transfer entropy from a cell to itself (setting measureParams.j == 0)');
 		end
-		transferCalc = javaObject('infodynamics.measures.discrete.TransferEntropyCalculator', base, measureParams.k);
+		transferCalc = javaObject('infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete', base, measureParams.k);
 		transferCalc.initialise();
 		transferCalc.addObservations(caStatesJInts, measureParams.j);
 		avTransfer = transferCalc.computeAverageLocalOfObservations();
@@ -205,7 +205,7 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 		if (measureParams.j == 0)
 			error('Cannot compute transfer entropy from a cell to itself (setting measureParams.j == 0)');
 		end
-		transferCalc = javaObject('infodynamics.measures.discrete.ConditionalTransferEntropyCalculator', ...
+		transferCalc = javaObject('infodynamics.measures.discrete.ConditionalTransferEntropyCalculatorDiscrete', ...
 			base, measureParams.k, neighbourhood - 2);
 		transferCalc.initialise();
 		% Offsets of all parents can be included here - even 0 and j, these will be eliminated internally:
@@ -238,7 +238,7 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 	if ((ischar(measureId) && (strcmpi('separable', measureId) || strcmpi('all', measureId))) || ...
 	    (not(ischar(measureId)) && ((measureId == 3) || (measureId == -1))))
 		% Compute separable information
-		separableCalc = javaObject('infodynamics.measures.discrete.SeparableInfoCalculator', ...
+		separableCalc = javaObject('infodynamics.measures.discrete.SeparableInfoCalculatorDiscrete', ...
 			base, measureParams.k, neighbourhood - 1);
 		separableCalc.initialise();
 		% Offsets of all parents can be included here - even 0 and j, these will be eliminated internally:
@@ -271,7 +271,7 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 	if ((ischar(measureId) && (strcmpi('entropy', measureId) || strcmpi('all', measureId))) || ...
 	    (not(ischar(measureId)) && ((measureId == 4) || (measureId == -1))))
 		% Compute entropy
-		entropyCalc = javaObject('infodynamics.measures.discrete.EntropyCalculator', ...
+		entropyCalc = javaObject('infodynamics.measures.discrete.EntropyCalculatorDiscrete', ...
 			base);
 		entropyCalc.initialise();
 		entropyCalc.addObservations(caStatesJInts);
@@ -303,7 +303,7 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 	if ((ischar(measureId) && (strcmpi('entropyrate', measureId) || strcmpi('all', measureId))) || ...
 	    (not(ischar(measureId)) && ((measureId == 5) || (measureId == -1))))
 		% Compute entropy rate
-		entRateCalc = javaObject('infodynamics.measures.discrete.EntropyRateCalculator', base, measureParams.k);
+		entRateCalc = javaObject('infodynamics.measures.discrete.EntropyRateCalculatorDiscrete', base, measureParams.k);
 		entRateCalc.initialise();
 		entRateCalc.addObservations(caStatesJInts);
 		avEntRate = entRateCalc.computeAverageLocalOfObservations();
@@ -333,7 +333,7 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 	if ((ischar(measureId) && (strcmpi('excess', measureId) || strcmpi('all', measureId))) || ...
 	    (not(ischar(measureId)) && ((measureId == 6) || (measureId == -1))))
 		% Compute excess entropy
-		excessEntropyCalc = javaObject('infodynamics.measures.discrete.PredictiveInformationCalculator', base, measureParams.k);
+		excessEntropyCalc = javaObject('infodynamics.measures.discrete.PredictiveInformationCalculatorDiscrete', base, measureParams.k);
 		excessEntropyCalc.initialise();
 		excessEntropyCalc.addObservations(caStatesJInts);
 		avExcessEnt = excessEntropyCalc.computeAverageLocalOfObservations();

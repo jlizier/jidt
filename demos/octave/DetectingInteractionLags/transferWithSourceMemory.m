@@ -95,7 +95,7 @@ function transferWithSourceMemory(savePlot)
 		y = [rand() < 0.5; x1(1:N)];
 		
 		% Compute TEs
-		teCalc = javaObject('infodynamics.measures.discrete.TransferEntropyCalculator', 4, 1);
+		teCalc = javaObject('infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete', 4, 1);
 		teCalc.initialise();
 		teCalc.addObservations(x, y);
 		teXnToYnplus1(deltaIndex) = teCalc.computeAverageLocalOfObservations();
@@ -104,7 +104,7 @@ function transferWithSourceMemory(savePlot)
 		teXnminus1ToYnplus1(deltaIndex) = teCalc.computeAverageLocalOfObservations();
 		
 		% Compute MITs using a conditional TE calculator, adding the past of the source to the conditionals
-		compTeCalc = javaObject('infodynamics.measures.discrete.ConditionalTransferEntropyCalculator', 4, 1, 1);
+		compTeCalc = javaObject('infodynamics.measures.discrete.ConditionalTransferEntropyCalculatorDiscrete', 4, 1, 1);
 		compTeCalc.initialise();
 		% We need to additionally condition on the past of X:
 		compTeCalc.addObservations(octaveToJavaIntArray(x(2:length(x))), ...

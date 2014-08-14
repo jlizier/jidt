@@ -20,7 +20,7 @@ package infodynamics.demos;
 
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.RandomGenerator;
-import infodynamics.measures.discrete.TransferEntropyCalculator;
+import infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete;
 
 /**
  * 
@@ -58,8 +58,8 @@ public class Example8TeContinuousDataByBinning {
 		int[] binnedDest = MatrixUtils.discretise(destArray, numDiscreteLevels);
 		
 		// Create a TE calculator and run it:
-		TransferEntropyCalculator teCalc=
-                new TransferEntropyCalculator(numDiscreteLevels, 1);
+		TransferEntropyCalculatorDiscrete teCalc=
+                new TransferEntropyCalculatorDiscrete(numDiscreteLevels, 1);
 		teCalc.initialise();
 		teCalc.addObservations(binnedSource, binnedDest);
 		double result = teCalc.computeAverageLocalOfObservations();

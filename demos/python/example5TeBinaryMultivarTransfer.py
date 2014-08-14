@@ -40,7 +40,7 @@ for j in range(1,numObservations):
 	destArray.append([sourceArray[j-1][0], xor(sourceArray[j-1][0], sourceArray[j-1][1])])
 
 # Create a TE calculator and run it:
-teCalcClass = JPackage("infodynamics.measures.discrete").TransferEntropyCalculator
+teCalcClass = JPackage("infodynamics.measures.discrete").TransferEntropyCalculatorDiscrete
 teCalc = teCalcClass(4,1)
 teCalc.initialise()
 # We need to construct the joint values of the dest and source before we pass them in,
