@@ -1,4 +1,4 @@
-#summary One-sentence summary of this page.
+#summary Demonstration of analytic and null distributions of surrogates under null hypothesis for Mutual Information
 #labels examples,octave,matlab
 
 [Demos] > Null distributions
