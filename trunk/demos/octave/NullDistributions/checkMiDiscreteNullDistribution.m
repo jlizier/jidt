@@ -41,7 +41,7 @@ function [mis] = checkMiDiscreteNullDistribution(repeats, observations, bias1, b
 		% 1. We can let the toolkit compute the distribution of MIs for us,
 		%  by first supplying the variables with the correct bias.
 		% It is NOT recommended to use this approach however, as described in the header comments.
-		miCalc=javaObject('infodynamics.measures.discrete.MutualInformationCalculator', 2);
+		miCalc=javaObject('infodynamics.measures.discrete.MutualInformationCalculatorDiscrete', 2);
 		x = [zeros(1,observations*bias1) ones(1,observations*(1-bias1))]; % Create data with exact bias
 		y = [zeros(1,observations*bias2) ones(1,observations*(1-bias2))]; % Create data with exact bias
 		fprintf('Creating surrogates from x and y of lengths %d and %d with biases %.3f and %.3f \n', length(x), length(y), sum(x == 0)/length(x), sum(y == 0)/length(y));
@@ -53,7 +53,7 @@ function [mis] = checkMiDiscreteNullDistribution(repeats, observations, bias1, b
 		% OR
 		% 2. We could compute the bootstrapped distribution of MIs by bootstrapping ourselves:
 		mis = zeros(1, repeats);
-		miCalc=javaObject('infodynamics.measures.discrete.MutualInformationCalculator', 2);
+		miCalc=javaObject('infodynamics.measures.discrete.MutualInformationCalculatorDiscrete', 2);
 		for s = 1 : repeats
 			x = (rand(1,observations) < bias1)*1; % Create data with sampled bias
 			y = (rand(1,observations) < bias2)*1; % Create data with sampled bias

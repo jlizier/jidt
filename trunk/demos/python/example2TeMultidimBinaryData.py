@@ -44,7 +44,7 @@ twoDTimeSeriesPython.append(row2)
 twoDTimeSeriesJavaInt = JArray(JInt, 2)(twoDTimeSeriesPython); # 2 indicating 2D array
 
 # Create a TE calculator and run it:
-teCalcClass = JPackage("infodynamics.measures.discrete").TransferEntropyCalculator
+teCalcClass = JPackage("infodynamics.measures.discrete").TransferEntropyCalculatorDiscrete
 teCalc = teCalcClass(2,1)
 teCalc.initialise()
 # Add observations of transfer across one cell to the right per time step:

@@ -33,7 +33,7 @@ sourceArray2=(rand(numObservations,2)>0.5)*1;
 %  and an XOR of the two bits of the source in bit 2:
 destArray = [0, 0; sourceArray(1:numObservations-1, 1), xor(sourceArray(1:numObservations-1, 1), sourceArray(1:numObservations-1, 2))];
 % Create a TE calculator and run it:
-teCalc=javaObject('infodynamics.measures.discrete.TransferEntropyCalculator', 4, 1);
+teCalc=javaObject('infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete', 4, 1);
 teCalc.initialise();
 % We need to construct the joint values of the dest and source before we pass them in,
 %  and need to use the matrix conversion routine when calling from Matlab/Octave:
