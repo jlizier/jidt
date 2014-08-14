@@ -31,7 +31,7 @@ public class ConditionalMutualInformationTester extends TestCase {
 	
 	public void testComputeSignificanceInt() {
 		// Just making sure that no exception is thrown
-		ConditionalMutualInformationCalculator condMiCalc = new ConditionalMutualInformationCalculator(2, 2, 2);
+		ConditionalMutualInformationCalculatorDiscrete condMiCalc = new ConditionalMutualInformationCalculatorDiscrete(2, 2, 2);
 		int[] x1 = rand.generateRandomInts(numObservations, 2);
 		int[] x2 = rand.generateRandomInts(numObservations, 2);
 		int[] cond = rand.generateRandomInts(numObservations, 2);
@@ -42,7 +42,7 @@ public class ConditionalMutualInformationTester extends TestCase {
 	}
 
 	public void testComputeLocalsGivesCorrectAverage() {
-		ConditionalMutualInformationCalculator condMiCalc = new ConditionalMutualInformationCalculator(2, 2, 2);
+		ConditionalMutualInformationCalculatorDiscrete condMiCalc = new ConditionalMutualInformationCalculatorDiscrete(2, 2, 2);
 		int[] x1 = rand.generateRandomInts(numObservations, 2);
 		int[] x2 = rand.generateRandomInts(numObservations, 2);
 		int[] cond = rand.generateRandomInts(numObservations, 2);
@@ -58,7 +58,7 @@ public class ConditionalMutualInformationTester extends TestCase {
 	}
 
 	public void testSetDebug() {
-		ConditionalMutualInformationCalculator condMiCalc = new ConditionalMutualInformationCalculator(2, 2, 2);
+		ConditionalMutualInformationCalculatorDiscrete condMiCalc = new ConditionalMutualInformationCalculatorDiscrete(2, 2, 2);
 		assertFalse(condMiCalc.debug);
 		condMiCalc.setDebug(true);
 		assertTrue(condMiCalc.debug);

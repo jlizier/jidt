@@ -23,7 +23,7 @@ import junit.framework.TestCase;
 public class MutualInformationTester extends TestCase {
 
 	public void testFullyDependent() throws Exception {
-		MutualInformationCalculator miCalc = new MutualInformationCalculator(2, 0);
+		MutualInformationCalculatorDiscrete miCalc = new MutualInformationCalculatorDiscrete(2, 0);
 		
 		// X2 is a copy of X1 - MI should be 1 bit
 		miCalc.initialise();
@@ -41,7 +41,7 @@ public class MutualInformationTester extends TestCase {
 	}
 	
 	public void testIndependent() throws Exception {
-		MutualInformationCalculator miCalc = new MutualInformationCalculator(2, 0);
+		MutualInformationCalculatorDiscrete miCalc = new MutualInformationCalculatorDiscrete(2, 0);
 		
 		// X2 is unrelated to X1 - MI should be 0 bits
 		miCalc.initialise();
@@ -51,7 +51,7 @@ public class MutualInformationTester extends TestCase {
 	}
 
 	public void testXor() throws Exception {
-		MutualInformationCalculator miCalc = new MutualInformationCalculator(2, 0);
+		MutualInformationCalculatorDiscrete miCalc = new MutualInformationCalculatorDiscrete(2, 0);
 		
 		int[] X1 = new int[] {0, 0, 1, 1};
 		int[] X2 = new int[] {0, 1, 0, 1};
@@ -70,7 +70,7 @@ public class MutualInformationTester extends TestCase {
 		assertEquals(0.0, miX2Y, 0.000001);
 		
 		// Y is fully determined from X1, X2 - MI should be 1 bits
-		MutualInformationCalculator miCalcBase4 = new MutualInformationCalculator(4, 0);
+		MutualInformationCalculatorDiscrete miCalcBase4 = new MutualInformationCalculatorDiscrete(4, 0);
 		int[] X12 = new int[] {0, 1, 2, 3};
 		miCalcBase4.initialise();
 		miCalcBase4.addObservations(X12, Y);
@@ -80,7 +80,7 @@ public class MutualInformationTester extends TestCase {
 	}
 	
 	public void test3Xor() throws Exception {
-		MutualInformationCalculator miCalc = new MutualInformationCalculator(2, 0);
+		MutualInformationCalculatorDiscrete miCalc = new MutualInformationCalculatorDiscrete(2, 0);
 		
 		int[] X1 = new int[] {0, 1, 0, 1, 0, 1, 0, 1};
 		int[] X2 = new int[] {0, 0, 1, 1, 0, 0, 1, 1};
@@ -106,7 +106,7 @@ public class MutualInformationTester extends TestCase {
 		assertEquals(0.0, miX3Y, 0.000001);
 
 		// Y is independent of X1, X2 - MI should be 0 bits
-		MutualInformationCalculator miCalcBase4 = new MutualInformationCalculator(4, 0);
+		MutualInformationCalculatorDiscrete miCalcBase4 = new MutualInformationCalculatorDiscrete(4, 0);
 		int[] X12 = new int[] {0, 1, 2, 3, 0, 1, 2, 3};
 		miCalcBase4.initialise();
 		miCalcBase4.addObservations(X12, Y);
@@ -115,7 +115,7 @@ public class MutualInformationTester extends TestCase {
 		assertEquals(0.0, miX12Y, 0.000001);
 		
 		// Y is fully determined from X1, X2, X3 - MI should be 1 bits
-		MutualInformationCalculator miCalcBase8 = new MutualInformationCalculator(8, 0);
+		MutualInformationCalculatorDiscrete miCalcBase8 = new MutualInformationCalculatorDiscrete(8, 0);
 		int[] X123 = new int[] {0, 1, 2, 3, 4, 5, 6, 7};
 		miCalcBase8.initialise();
 		miCalcBase8.addObservations(X123, Y);
