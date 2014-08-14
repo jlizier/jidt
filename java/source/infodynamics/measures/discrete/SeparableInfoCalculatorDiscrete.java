@@ -131,7 +131,7 @@ public class SeparableInfoCalculatorDiscrete extends ContextOfPastMeasureCalcula
 		if (!FORCE_DIRECT_CALC &&
 				(MathsUtils.power(base,numInfoContributors + history + 1)
 				> MAX_CONFIGS_FOR_DIRECT_CALC)) {
-			return new SeparableInfoDiscreteCalculatorByAddition
+			return new SeparableInfoCalculatorDiscreteByAddition
 				(base, history, numInfoContributors);
 		} else {
 			return new SeparableInfoCalculatorDiscrete
