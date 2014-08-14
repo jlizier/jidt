@@ -2,7 +2,7 @@
  * This package contains Java Interfaces for each of the
  * information dynamics measures as applied to 
  * mixed continuous-discrete data
- * (i.e. double[] or double[][] data mixed with int[]
+ * (ie double[] or double[][] data mixed with int[]
  * or int[][] data).
  * 
  * <p>Subpackages provides various estimator types which implement
