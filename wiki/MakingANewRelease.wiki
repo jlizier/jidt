@@ -1,0 +1,16 @@
+#summary Process to follow on making a new release of JIDT
+#labels Phase-Implementation,developers
+
+= Introduction =
+
+This page, intended for developers, outlines the process we follow in making a new release of JIDT:
+
+ # Check the PDFs for all Demos in the repository are up to date
+ # Update build.xml for the new version number
+ # Update readme.txt with release notes etc
+ # Build the releases in a clean svn download
+ # Post the code to lizier.me, make new counter files, ready and chmod them via ssh access.
+ # Link to the new code on the [Downloads] page, [Installation] page and the front page of the google code site
+ # Update the news on the front page about the release and with release notes
+ # Mail the mailing list
+ # Tweet about the new release
