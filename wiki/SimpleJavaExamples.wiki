@@ -25,7 +25,7 @@ This page contains the following code examples:
 {{{
 // Requires the following imports before the class definition:
 // import infodynamics.utils.RandomGenerator;
-// import infodynamics.measures.discrete.TransferEntropyCalculator;
+// import infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete;
 
 int arrayLengths = 100;
 RandomGenerator rg = new RandomGenerator();
@@ -38,8 +38,8 @@ System.arraycopy(sourceArray, 0, destArray, 1, arrayLengths - 1);
 int[] sourceArray2 = rg.generateRandomInts(arrayLengths, 2);
 
 // Create a TE calculator and run it:
-TransferEntropyCalculator teCalc=
-		new TransferEntropyCalculator(2, 1);
+TransferEntropyCalculatorDiscrete teCalc=
+		new TransferEntropyCalculatorDiscrete(2, 1);
 teCalc.initialise();
 teCalc.addObservations(sourceArray, destArray);
 double result = teCalc.computeAverageLocalOfObservations();
@@ -60,7 +60,7 @@ This example shows how to handle multidimensional arrays where we pool the obser
 {{{
 // Requires the following imports before the class definition:
 // import infodynamics.utils.RandomGenerator;
-// import infodynamics.measures.discrete.TransferEntropyCalculator;
+// import infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete;
 
 int timeSteps = 2;
 int variables = 100;
@@ -76,8 +76,8 @@ twoDTimeSeries[1][0] = twoDTimeSeries[0][variables - 1];
 System.arraycopy(twoDTimeSeries[0], 0, twoDTimeSeries[1], 1, variables - 1);
 
 // Create a TE calculator and run it:
-TransferEntropyCalculator teCalc=
-		new TransferEntropyCalculator(2, 1);
+TransferEntropyCalculatorDiscrete teCalc=
+		new TransferEntropyCalculatorDiscrete(2, 1);
 teCalc.initialise();
 // Add observations of transfer across one cell to the right (j=1)
 //  per time step:
@@ -201,7 +201,7 @@ double[] localTE = teCalc.computeLocalOfPreviousObservations();
 // Requires the following imports before the class definition:
 // import infodynamics.utils.MatrixUtils;
 // import infodynamics.utils.RandomGenerator;
-// import infodynamics.measures.discrete.TransferEntropyCalculator;
+// import infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete;
 
 // Generate some random binary data.
 int timeSeriesLength = 100;
@@ -221,8 +221,8 @@ for (int r = 1; r < timeSeriesLength; r++) {
 
 // Create a TE calculator and run it.
 // Need to represent 4-state variables for the joint destination variable
-TransferEntropyCalculator teCalc=
-		new TransferEntropyCalculator(4, 1);
+TransferEntropyCalculatorDiscrete teCalc=
+		new TransferEntropyCalculatorDiscrete(4, 1);
 teCalc.initialise();
 
 // We need to construct the joint values of the dest and source before we pass them in:
@@ -377,7 +377,7 @@ System.out.printf("TE result %.4f nats; expected to be close to " +
 
 {{{
 // Requires the following imports before the class definition:
-// import infodynamics.measures.discrete.TransferEntropyCalculator;
+// import infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete;
 // import infodynamics.utils.MatrixUtils;
 // import infodynamics.utils.RandomGenerator;
 
@@ -400,8 +400,8 @@ int[] binnedSource = MatrixUtils.discretise(sourceArray, numDiscreteLevels);
 int[] binnedDest = MatrixUtils.discretise(destArray, numDiscreteLevels);
 
 // Create a TE calculator and run it:
-TransferEntropyCalculator teCalc =
-    new TransferEntropyCalculator(numDiscreteLevels, 1);
+TransferEntropyCalculatorDiscrete teCalc =
+    new TransferEntropyCalculatorDiscrete(numDiscreteLevels, 1);
 teCalc.initialise();
 teCalc.addObservations(binnedSource, binnedDest);
 double result = teCalc.computeAverageLocalOfObservations();
