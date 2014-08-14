@@ -115,7 +115,7 @@ Notices for this software are found in the notices/JAMA directory.
  Release notes
 ===============
 
-v1.0 14/8/2014 at r432
+v1.0 14/8/2014 at r434
 ----------------------
 Added the draft of the paper on the toolkit to the release;
 Javadocs made ready for release;
