@@ -14,7 +14,7 @@ As described below, this software was used to make the comparisons of transfer e
 Momentary information transfer was presented in the following paper:
  * B. Pompe and J. Runge, "Momentary information transfer as a coupling measure of time series", Physical Review E 83, 051122 (2011).
 
-The results lead to the conclusions that:
+The results from Wibral et al. lead to the conclusions that:
  # the TE is most suitable for investigating source-destination lags, showing that the MIT can be deceived by source memory, and also
  # that symbolic TE can miss important components of information in an interaction.
 
@@ -24,7 +24,7 @@ It is found at `demos/octave/DetectingInteractionLags` in the svn or full distri
 
 == Test case Ia -- Source with memory ==
 
-As described in the paper above, we use the following model to construct a sample source-destination interaction in the presence of source memory:
+As described in the paper above, we use the following model to construct a sample source-destination interaction for discrete data in the presence of source memory:
  # `X_{n} = f( X_{n-1} )`, where `f()` is a noisy function (defined below), with the noise representing new information entering the source;
  # ` Y_{n+1} = X_{n}`, `Y_{n+1}` copies directly from `X_{n}`.
 `X` and `Y` are sampled from the set `{0,1,2,3}`, and f() is defined in terms of `p(X_{n+1} | X_{n})` as a function of noise `η` (ref. Table 1 of Wibral et al. above):
@@ -88,5 +88,5 @@ TE(X->Y,delay=3) = 0.4772 nats (+/- std 0.0358, stderr 0.0011) or 0.6885 bits
 
 *As hypothesised*, we find that _this more accurate estimator is indeed able to accurately identify the correct lag of 2 as having larger transfer entropy here_. This corresponds to the theoretical proof in Wibral et al. that the TE will be maximised at the correct source-lag delay for this type of bidirectional coupling.
 
-*Footnote*: In the Wibral et al. paper, we conclude that the Pompe and Runge result was likely to be "an artifact of their symbolic mapping approach: symbolic mapping may be a useful technique to handle small data sets, but it certainly removes parts of the information about the processes, and this information may well be relevant."
+*Footnote*: In the Wibral et al. paper, we conclude that the Pompe and Runge result was likely to be _"an artifact of their symbolic mapping approach: symbolic mapping may be a useful technique to handle small data sets, but it certainly removes parts of the information about the processes, and this information may well be relevant."_
 The main clue is that their measurement of MIT was significantly non-zero with lag 1, whilst intuitively it should be zero for lag 1, since that source variable should not be able to add any information about the destination (which is completely determined by its past and the source at lag 2, both of which MIT conditions out). The source at lag 1 is only seen to add information because they estimated it using ordinal values, which for this process appears to leave uncertainty regarding the ordinal position of the next state of the destination given the ordinal relationships amongst its past and the source at lag 2. Some information regarding this uncertainty seems to be provided by the far past of the destination which is directly coupled to the source at lag 1 via a lag 5 relationship. This information is useful because of the _memory_ within the destination variable. In a similar fashion, the transfer entropy at lag 1 contains much information about what the source causally added at lag 2 (because of strong memory in the source). But it also contains more information about the far past of Y (beyond the history or embedding length 1 used for the measure) which can be helpful to decode the process Y symbolically (when there may be uncertainty remaining in the previous step of Y). If one is using ordinal relationships, it appears that this information is more strongly contained in the source at lag 1 than at lag 2.
