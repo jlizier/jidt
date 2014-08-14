@@ -1,7 +1,7 @@
 Java Information Dynamics Toolkit (JIDT)
 Copyright (C) 2012 Joseph T. Lizier
 
-Version @VERSION@
+Version @VERSION@ (see release notes below)
 
 JIDT provides a standalone, open source code Java implementation (usable in Matlab, Octave and Python) of information-theoretic measures of distributed computation in complex systems: i.e. information storage, transfer and modification.
 
@@ -111,6 +111,62 @@ Notices and license for this software are found in the notices/JAMA directory.
 The project includes adapted code from the octave-java package of the Octave-Forge project -- http://octave.sourceforge.net/java/
 Notices for this software are found in the notices/JAMA directory.
 
+===============
+ Release notes
+===============
+
+v1.0 14/8/2014 at r432
+----------------------
+Added the draft of the paper on the toolkit to the release;
+Javadocs made ready for release;
+Switched source->destination arguments for discrete TE calculators to be with source first in line with continuous calculators;
+Renamed all discrete calculators to have Discrete suffix -- TE and conditional TE calculators also renamed to remove "Apparent" prefix and change "Complete" to "Conditional";
+Kraskov estimators now using 4 nearest neighbours by default;
+Unit test for Gaussian TE against ChaLearn Granger causality measurement;
+Added Schreiber TE demos; Interregional transfer demos; documentation for Interaction lag demos; added examples 7 and 8 to Simple Java demos;
+Added property to add noise to data for Kraskov MI;
+Added derivation of Apache Commons Math code for chi square distribution, and included relevant notices in our release;
+Inserted translation class for arrays between Octave and Java;
+Added analytic statistical significance calculation to Gaussian calculators and discrete TE;
+Corrected Kraskov algorithm 2 for conditional MI to follow equation in Wibral et al. 2014.
+
+
+v0.2.0 20/4/2014 at r284
+------------------------
+Rearchitected (most) Transfer Entropy and Multivariate TE calculators to use an underlying conditional mutual information calculator, and have arbitrary embedding delay, source-dest delay;
+this includes moving Kraskov-Grassberger Transfer Entropy calculator to use a single conditional mutual information estimator instead of two mutual information estimators;
+Rearchitected (most) Active Information Storage calculators to use an underlying mutual information calculator;
+Added Conditional Transfer Entropy calculators using underlying conditional mutual information calculators;
+Moved mixed discrete-continuous calculators to a new "mixed" package;
+bug fixes. 
+
+v0.1.4 11/9/2013 at r241
+------------------------
+added scripts to generate CA figures for 2013 book chapters;
+added general Java demo code;
+added Python demo code;
+made Octave/Matlab demos and CA demos properly compatible for Matlab;
+added extra Octave/Matlab general demos;
+added more unit tests for MI and conditional MI calculators, including against results from Wibral's TRENTOOL;
+bug fixes. 
+
+v0.1.3 13/1/2013 at r151
+------------------------
+existing Octave/Matlab demo code made compatible with Matlab;
+several bug fixes, including using max norm by default in Kraskov calculator (instead of requiring this to be set explicitly);
+more unit tests (including against results from Kraskov's own MI implementation) 
+
+v0.1.2 19/11/2012 at r116
+-------------------------
+Includes demo code for two newly submitted papers
+
+v0.1.1 31/10/2012 at r104
+------------------------
+No notes
+
+v0.1 24/10/2012 at r65?
+------------------------
+First distribution
 
 =============
 
