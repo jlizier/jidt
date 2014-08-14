@@ -37,7 +37,7 @@ sourceArray=(rand(100,1)>0.5)*1;
 destArray = [0; sourceArray(1:99)];
 sourceArray2=(rand(100,1)>0.5)*1;
 % Create a TE calculator and run it:
-teCalc=javaObject('infodynamics.measures.discrete.TransferEntropyCalculator', 2, 1);
+teCalc=javaObject('infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete', 2, 1);
 teCalc.initialise();
 % Since we have simple arrays of doubles, we can directly pass these in:
 teCalc.addObservations(sourceArray, destArray);
@@ -74,7 +74,7 @@ twoDTimeSeriesOctave(2, :) = [twoDTimeSeriesOctave(1,100), twoDTimeSeriesOctave(
 twoDTimeSeriesJavaInt = octaveToJavaIntMatrix(twoDTimeSeriesOctave);
 
 % Create a TE calculator and run it:
-teCalc=javaObject('infodynamics.measures.discrete.TransferEntropyCalculator', 2, 1);
+teCalc=javaObject('infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete', 2, 1);
 teCalc.initialise();
 % Add observations of transfer across one cell to the right per time step:
 teCalc.addObservations(twoDTimeSeriesJavaInt, 1);
@@ -165,7 +165,7 @@ sourceArray2=(rand(numObservations,2)>0.5)*1;
 %  and an XOR of the two bits of the source in bit 2:
 destArray = [0, 0; sourceArray(1:numObservations-1, 1), xor(sourceArray(1:numObservations-1, 1), sourceArray(1:numObservations-1, 2))];
 % Create a TE calculator and run it:
-teCalc=javaObject('infodynamics.measures.discrete.TransferEntropyCalculator', 4, 1);
+teCalc=javaObject('infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete', 4, 1);
 teCalc.initialise();
 % We need to construct the joint values of the dest and source before we pass them in,
 %  and need to use the matrix conversion routine when calling from Matlab/Octave:
