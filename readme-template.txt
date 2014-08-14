@@ -1,8 +1,14 @@
-Java Information Dynamics Toolkit
+Java Information Dynamics Toolkit (JIDT)
 Copyright (C) 2012 Joseph T. Lizier
 
 Version @VERSION@
 
+JIDT provides a standalone, open source code Java implementation (usable in Matlab, Octave and Python) of information-theoretic measures of distributed computation in complex systems: i.e. information storage, transfer and modification.
+
+This includes implementations for:
+- both discrete and continuous-valued variables, principally for the measures transfer entropy, mutual information and active information storage;
+- using various types of estimators (e.g. Kraskov-Stögbauer-Grassberger estimators, kernel estimation, linear-Gaussian).
+    
 =============
    License
 =============
@@ -19,14 +25,6 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-=============
-  Citation
-=============
-
-Please cite your use of this toolkit as:
-
-Joseph T. Lizier, "JIDT: An information-theoretic toolkit for studying the dynamics of complex systems", 2012, https://code.google.com/p/information-dynamics-toolkit/
 
 =============
    Website
@@ -65,6 +63,8 @@ Further, they will soon be posted on the web.
 
 Further documentation is provided by the Usage examples below.
 
+You can also join our email discussion group jidt-discuss at http://groups.google.com/d/forum/jidt-discuss
+
 =============
     Usage
 =============
@@ -81,9 +81,21 @@ Several sets of demonstration code are distributed with the toolkit:
  
  e. demos/octave/SchreiberTransferEntropyExamples -- recreates the transfer entropy examples in Schreiber's original paper presenting this measure; shows the correct parameter settings to reproduce these results  -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/SchreiberTeDemos
  
- f. demos/octave/DetectingInteractionLags -- brief examples using the transfer entropy to examine source-delay interaction lags. Documentation to come soon; in the interim, see header comments in the .m files.
+ f. demos/octave/DetectingInteractionLags -- demonstration of using the transfer entropy with source-destination lags; the demo is run under Octave or Matlab -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/DetectingInteractionLags
 
- g. java/unittests -- the JUnit test cases for the Java toolkit are included in the distribution -- these case also be browsed to see simple use cases for the various calculators in the toolkit -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/JUnitTestCases
+ g. demos/java/InterregionalTransfer -- higher level example using collective transfer entropy to infer effective connections between "regions" of data -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/InterregionalTransfer
+
+ h. demos/octave/NullDistributions --  investigating the correspondence between analytic and bootstrapped distributions for TE and MI under null hypotheses of no relationship; the demo is run under Octave or Matlab -- see description at https://code.google.com/p/information-dynamics-toolkit/wiki/NullDistributions
+
+ i. java/unittests -- the JUnit test cases for the Java toolkit are included in the distribution -- these case also be browsed to see simple use cases for the various calculators in the toolkit -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/JUnitTestCases
+
+=============
+  Citation
+=============
+
+Please cite your use of this toolkit as:
+
+Joseph T. Lizier, "JIDT: An information-theoretic toolkit for studying the dynamics of complex systems", 2012, arXiv:<INSERT_NUMBER>
 
 =============
    Notices
