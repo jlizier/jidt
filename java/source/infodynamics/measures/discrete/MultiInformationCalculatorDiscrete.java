@@ -31,7 +31,7 @@ import infodynamics.utils.MatrixUtils;
  * <p>Usage of the class is intended to follow this paradigm:</p>
  * <ol>
  * 		<li>Construct the calculator:
- * 			{@link #MultiInformationCalculator(int, int)};</li>
+ * 			{@link #MultiInformationCalculatorDiscrete(int, int)};</li>
  *		<li>Initialise the calculator using {@link #initialise()};</li>
  * 		<li>Provide the observations/samples for the calculator
  *      	to set up the PDFs, using one or more calls to
@@ -59,7 +59,7 @@ import infodynamics.utils.MatrixUtils;
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public class MultiInformationCalculator extends InfoMeasureCalculator {
+public class MultiInformationCalculatorDiscrete extends InfoMeasureCalculatorDiscrete {
 	
 	private int[]	jointCount = null; // jointCount[jointState]
 	private int[][] marginalCounts = null; // marginalCounts[marginalIndex][state]
@@ -76,7 +76,7 @@ public class MultiInformationCalculator extends InfoMeasureCalculator {
 	 * @numVars numbers of joint variables that multi-info
 	 *     will be computed over.
 	 */
-	public MultiInformationCalculator(int base, int numVars) {
+	public MultiInformationCalculatorDiscrete(int base, int numVars) {
 		super(base);
 		this.numVars = numVars;
 		jointStates = MathsUtils.power(base, numVars);

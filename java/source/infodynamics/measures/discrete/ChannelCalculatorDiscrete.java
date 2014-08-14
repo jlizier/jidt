@@ -54,7 +54,7 @@ import infodynamics.utils.EmpiricalMeasurementDistribution;
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public interface ChannelCalculator {
+public interface ChannelCalculatorDiscrete {
 
 	/**
 	 * Initialise the calculator for (re-)use, with the existing

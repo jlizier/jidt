@@ -31,7 +31,7 @@ import infodynamics.utils.RandomGenerator;
  * <p>Usage of the class is intended to follow this paradigm:</p>
  * <ol>
  * 		<li>Construct the calculator:
- * 			{@link #ConditionalMutualInformationCalculator(int, int, int)};</li>
+ * 			{@link #ConditionalMutualInformationCalculatorDiscrete(int, int, int)};</li>
  *		<li>Initialise the calculator using {@link #initialise()};</li>
  * 		<li>Provide the observations/samples for the calculator
  *      	to set up the PDFs, using one or more calls to
@@ -63,8 +63,8 @@ Theory' (John Wiley & Sons, New York, 1991).</li>
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public class ConditionalMutualInformationCalculator
-	extends InfoMeasureCalculator implements AnalyticNullDistributionComputer {
+public class ConditionalMutualInformationCalculatorDiscrete
+	extends InfoMeasureCalculatorDiscrete implements AnalyticNullDistributionComputer {
 
 	/**
 	 * Store the number of symbols for each variable
@@ -92,8 +92,8 @@ public class ConditionalMutualInformationCalculator
 	 * 				directly.
 	 * @return new calculator object
 	 */
-	public static ConditionalMutualInformationCalculator newInstance(int base1, int base2, int condBase) {
-		return new ConditionalMutualInformationCalculator(base1, base2, condBase);
+	public static ConditionalMutualInformationCalculatorDiscrete newInstance(int base1, int base2, int condBase) {
+		return new ConditionalMutualInformationCalculatorDiscrete(base1, base2, condBase);
 	}
 
 	/**
@@ -104,7 +104,7 @@ public class ConditionalMutualInformationCalculator
 	 * @param base2 number of symbols for second variable.
 	 * @param condBase number of symbols for conditional variable.
 	 */
-	public ConditionalMutualInformationCalculator(int base1, int base2, int condBase) {
+	public ConditionalMutualInformationCalculatorDiscrete(int base1, int base2, int condBase) {
 
 		// Create super object, just with first base
 		super(base1);
@@ -505,8 +505,8 @@ public class ConditionalMutualInformationCalculator
 		//  time series of var1Values, to bootstrap the distribution
 		//  of conditional MI values under the null hypothesis.
 				
-		ConditionalMutualInformationCalculator condMi2 =
-				new ConditionalMutualInformationCalculator(base1, base2, condBase);
+		ConditionalMutualInformationCalculatorDiscrete condMi2 =
+				new ConditionalMutualInformationCalculatorDiscrete(base1, base2, condBase);
 		condMi2.initialise();
 		// Set up the joint counts which remain the same under reordering
 		//  of variable 1:

@@ -48,7 +48,7 @@ package infodynamics.measures.discrete;
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public abstract class InfoMeasureCalculator {
+public abstract class InfoMeasureCalculatorDiscrete {
 
 	/**
 	 * Last computed average of the measure
@@ -103,7 +103,7 @@ public abstract class InfoMeasureCalculator {
 	 * @param base number of quantisation levels for each variable.
 	 *        E.g. binary variables are in base-2.
 	 */
-	protected InfoMeasureCalculator(int base) {
+	protected InfoMeasureCalculatorDiscrete(int base) {
 		
 		this.base = base;
 		log_base = Math.log(base);

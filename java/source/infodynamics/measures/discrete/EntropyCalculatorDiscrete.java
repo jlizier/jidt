@@ -25,7 +25,7 @@ import infodynamics.utils.MatrixUtils;
  * 
  * <p>Usage of the class is intended to follow this paradigm:</p>
  * <ol>
- * 		<li>Construct the calculator: {@link #EntropyCalculator(int)};</li>
+ * 		<li>Construct the calculator: {@link #EntropyCalculatorDiscrete(int)};</li>
  *		<li>Initialise the calculator using {@link #initialise()};</li>
  * 		<li>Provide the observations/samples for the calculator
  *      	to set up the PDFs, using one or more calls to
@@ -55,8 +55,8 @@ Theory' (John Wiley & Sons, New York, 1991).</li>
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public class EntropyCalculator extends InfoMeasureCalculator
-				implements SingleAgentMeasure
+public class EntropyCalculatorDiscrete extends InfoMeasureCalculatorDiscrete
+				implements SingleAgentMeasureDiscrete
 {
 
 	protected int[] stateCount = null; // Count for i[t]
@@ -72,15 +72,15 @@ public class EntropyCalculator extends InfoMeasureCalculator
 	 * @deprecated
 	 * @return a new EntropyCalculator
 	 */
-	public static EntropyCalculator newInstance(int base, int blocksize) {
+	public static EntropyCalculatorDiscrete newInstance(int base, int blocksize) {
 		if (blocksize > 1) {
-			return BlockEntropyCalculator.newInstance(blocksize, base);
+			return BlockEntropyCalculatorDiscrete.newInstance(blocksize, base);
 		} else {
-			return EntropyCalculator.newInstance(base);
+			return EntropyCalculatorDiscrete.newInstance(base);
 		}
 	}
-	public static EntropyCalculator newInstance(int base) {
-		return new EntropyCalculator(base);
+	public static EntropyCalculatorDiscrete newInstance(int base) {
+		return new EntropyCalculatorDiscrete(base);
 	}
 	
 	/**
@@ -89,7 +89,7 @@ public class EntropyCalculator extends InfoMeasureCalculator
 	 * @param base number of quantisation levels for each variable.
 	 *        E.g. binary variables are in base-2.
 	 */
-	public EntropyCalculator(int base) {
+	public EntropyCalculatorDiscrete(int base) {
 
 		super(base);
 		

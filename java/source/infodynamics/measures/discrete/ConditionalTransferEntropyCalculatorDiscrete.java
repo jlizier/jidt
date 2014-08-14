@@ -41,7 +41,7 @@ import infodynamics.utils.RandomGenerator;
  * </p>
  * <ol>
  * 		<li>Construct the calculator via
- * 			{@link #ConditionalTransferEntropyCalculator(int, int, int)};</li>
+ * 			{@link #ConditionalTransferEntropyCalculatorDiscrete(int, int, int)};</li>
  *		<li>Initialise the calculator using
  *			{@link #initialise()};</li>
  * 		<li>Provide the observations/samples for the calculator
@@ -105,7 +105,7 @@ import infodynamics.utils.RandomGenerator;
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator {
+public class ConditionalTransferEntropyCalculatorDiscrete extends InfoMeasureCalculatorDiscrete {
 
 	protected int k = 0; // history length k.
 	protected int base_power_k = 0;
@@ -133,10 +133,10 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 	 * @deprecated
 	 * @return
 	 */
-	public static ConditionalTransferEntropyCalculator
+	public static ConditionalTransferEntropyCalculatorDiscrete
 		newInstance(int base, int history, int numOtherInfoContributors) {
 		
-		return new ConditionalTransferEntropyCalculator
+		return new ConditionalTransferEntropyCalculatorDiscrete
 					(base, history, numOtherInfoContributors);
 		
 		// Old code for an attempted optimisation:
@@ -162,7 +162,7 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 	 *   (other than the past of the destination
 	 *   or the source) to condition on.
 	 */
-	public ConditionalTransferEntropyCalculator
+	public ConditionalTransferEntropyCalculatorDiscrete
 		(int base, int history, int numOtherInfoContributors) {
 
 		super(base);
@@ -640,7 +640,7 @@ public class ConditionalTransferEntropyCalculator extends InfoMeasureCalculator 
 		// (Not necessary to check for distinct random perturbations)
 		int[][] newOrderings = rg.generateRandomPerturbations(observations, numPermutationsToCheck);
 
-		ConditionalTransferEntropyCalculator cte = newInstance(base, k, numOtherInfoContributors);
+		ConditionalTransferEntropyCalculatorDiscrete cte = newInstance(base, k, numOtherInfoContributors);
 		cte.initialise();
 		cte.observations = observations;
 		cte.pastOthersCount = pastOthersCount;

@@ -41,7 +41,8 @@ import infodynamics.utils.MatrixUtils;
  * 
  * <p>Usage of the class is intended to follow this paradigm:</p>
  * <ol>
- * 		<li>Construct the calculator: {@link #PredictiveInformationCalculator(int, int)};</li>
+ * 		<li>Construct the calculator:
+ * 			{@link #PredictiveInformationCalculatorDiscrete(int, int)};</li>
  *		<li>Initialise the calculator using {@link #initialise()};</li>
  * 		<li>Provide the observations/samples for the calculator
  *      	to set up the PDFs, using one or more calls to
@@ -62,8 +63,8 @@ import infodynamics.utils.MatrixUtils;
  * 		</li>
  * 	</ol>
  * 
- * <p>TODO Inherit from {@link SingleAgentMeasureInContextOfPastCalculator}
- *  as {@link ActiveInformationCalculator} does; Tidy up the Javadocs for
+ * <p>TODO Inherit from {@link SingleAgentMeasureDiscreteInContextOfPastCalculator}
+ *  as {@link ActiveInformationCalculatorDiscrete} does; Tidy up the Javadocs for
  *  the methods, which are somewhat preliminary</p>
  * 
  * <p><b>References:</b><br/>
@@ -81,7 +82,7 @@ import infodynamics.utils.MatrixUtils;
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public class PredictiveInformationCalculator {
+public class PredictiveInformationCalculatorDiscrete {
 
 	private double average = 0.0;
 	private double max = 0.0;
@@ -106,8 +107,8 @@ public class PredictiveInformationCalculator {
 	 * @deprecated
 	 * @return
 	 */
-	public static PredictiveInformationCalculator newInstance(int numDiscreteValues, int blockLength) {
-		return new PredictiveInformationCalculator(numDiscreteValues, blockLength);
+	public static PredictiveInformationCalculatorDiscrete newInstance(int numDiscreteValues, int blockLength) {
+		return new PredictiveInformationCalculatorDiscrete(numDiscreteValues, blockLength);
 	}
 	
 	/**
@@ -118,7 +119,7 @@ public class PredictiveInformationCalculator {
 	 * @param blockLength embedded history length of the past and future to use -
 	 *        this is k in Schreiber's notation.
 	 */
-	public PredictiveInformationCalculator(int numDiscreteValues, int blockLength) {
+	public PredictiveInformationCalculatorDiscrete(int numDiscreteValues, int blockLength) {
 		super();
 		
 		this.numDiscreteValues = numDiscreteValues;

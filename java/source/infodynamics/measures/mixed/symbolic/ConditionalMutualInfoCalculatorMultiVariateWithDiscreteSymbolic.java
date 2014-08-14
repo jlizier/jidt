@@ -20,7 +20,7 @@ package infodynamics.measures.mixed.symbolic;
 
 import infodynamics.measures.mixed.ConditionalMutualInfoCalculatorMultiVariateWithDiscrete;
 import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariate;
-import infodynamics.measures.discrete.ConditionalMutualInformationCalculator;
+import infodynamics.measures.discrete.ConditionalMutualInformationCalculatorDiscrete;
 import infodynamics.utils.FirstIndexComparatorDouble;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
@@ -40,7 +40,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSymbolic imp
 		ConditionalMutualInfoCalculatorMultiVariateWithDiscrete {
 
 	// The calculator used to do the grunt work
-	protected ConditionalMutualInformationCalculator condMiCalc;
+	protected ConditionalMutualInformationCalculatorDiscrete condMiCalc;
 	
 	protected int dimensions;
 	
@@ -84,7 +84,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSymbolic imp
 			idToPermutationIndex[permutationIds[idIndex]] = idIndex;
 		}
 		
-		condMiCalc = ConditionalMutualInformationCalculator.newInstance(permutationIds.length, base, condBase);
+		condMiCalc = ConditionalMutualInformationCalculatorDiscrete.newInstance(permutationIds.length, base, condBase);
 		condMiCalc.initialise();
 	}
 

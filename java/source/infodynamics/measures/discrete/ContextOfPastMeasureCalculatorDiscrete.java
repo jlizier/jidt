@@ -26,14 +26,14 @@ import infodynamics.utils.MatrixUtils;
  * require knowledge of the embedded past state of a univariate
  * discrete (ie int[]) variable.
  * 
- * Usage is as per {@link InfoMeasureCalculator}, but with some
+ * Usage is as per {@link InfoMeasureCalculatorDiscrete}, but with some
  * extra utility functions provided for computing embedding vectors.
  * 
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public abstract class ContextOfPastMeasureCalculator extends
-		InfoMeasureCalculator {
+public abstract class ContextOfPastMeasureCalculatorDiscrete extends
+		InfoMeasureCalculatorDiscrete {
 
 	/**
 	 * History length for the embedding
@@ -72,7 +72,7 @@ public abstract class ContextOfPastMeasureCalculator extends
 	 *        E.g. binary variables are in base-2.
 	 * @param history embedding length
 	 */
-	public ContextOfPastMeasureCalculator(int base, int history) {
+	public ContextOfPastMeasureCalculatorDiscrete(int base, int history) {
 		this(base, history, false);
 	}
 
@@ -88,7 +88,7 @@ public abstract class ContextOfPastMeasureCalculator extends
 	 * 		for observations of the embedded past (as the child
 	 * 		class is signalling that it does not need it)
 	 */
-	protected ContextOfPastMeasureCalculator(int base, int history, boolean dontCreateObsStorage) {
+	protected ContextOfPastMeasureCalculatorDiscrete(int base, int history, boolean dontCreateObsStorage) {
 		super(base);
 
 		k = history;

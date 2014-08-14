@@ -43,8 +43,8 @@ import infodynamics.utils.RandomGenerator;
  * Usage of the child classes implementing this interface is intended to follow this paradigm:
  * </p>
  * <ol>
- * 		<li>Construct the calculator via {@link #TransferEntropyCalculator(int, int)}
- * 			or {@link #TransferEntropyCalculator(int, int, int)};</li>
+ * 		<li>Construct the calculator via {@link #TransferEntropyCalculatorDiscrete(int, int)}
+ * 			or {@link #TransferEntropyCalculatorDiscrete(int, int, int)};</li>
  *		<li>Initialise the calculator using
  *			{@link #initialise()};</li>
  * 		<li>Provide the observations/samples for the calculator
@@ -87,8 +87,8 @@ import infodynamics.utils.RandomGenerator;
  * @author Joseph Lizier, <a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>
  */
-public class TransferEntropyCalculator extends ContextOfPastMeasureCalculator 
-	implements ChannelCalculator, AnalyticNullDistributionComputer {
+public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalculatorDiscrete 
+	implements ChannelCalculatorDiscrete, AnalyticNullDistributionComputer {
 
 	/**
 	 * Counts of (source,dest_next,dest_embedded_past) tuples
@@ -143,9 +143,9 @@ public class TransferEntropyCalculator extends ContextOfPastMeasureCalculator
 	 * @return a new TransferEntropyCalculator object
 	 * @deprecated
 	 */
-	public static TransferEntropyCalculator newInstance(int base, int destHistoryEmbedLength) {
+	public static TransferEntropyCalculatorDiscrete newInstance(int base, int destHistoryEmbedLength) {
 		
-		return new TransferEntropyCalculator(base, destHistoryEmbedLength);
+		return new TransferEntropyCalculatorDiscrete(base, destHistoryEmbedLength);
 
 		// Old code for an attempted optimisation:
 		/*
@@ -165,7 +165,7 @@ public class TransferEntropyCalculator extends ContextOfPastMeasureCalculator
 	 * @param destHistoryEmbedLength embedded history length of the destination to condition on -
 	 *        this is k in Schreiber's notation.
 	 */
-	public TransferEntropyCalculator(int base, int destHistoryEmbedLength) {
+	public TransferEntropyCalculatorDiscrete(int base, int destHistoryEmbedLength) {
 
 		super(base, destHistoryEmbedLength);
 		base_power_l = MathsUtils.power(base, sourceHistoryEmbedLength);
@@ -196,7 +196,7 @@ public class TransferEntropyCalculator extends ContextOfPastMeasureCalculator
 	 * @param sourceHistoryEmbeddingLength embedded history length of the source to include -
 	 *        this is l in Schreiber's notation.
 	 */
-	public TransferEntropyCalculator(int base, int destHistoryEmbedLength, int sourceHistoryEmbeddingLength) {
+	public TransferEntropyCalculatorDiscrete(int base, int destHistoryEmbedLength, int sourceHistoryEmbeddingLength) {
 
 		super(base, destHistoryEmbedLength);
 		this.sourceHistoryEmbedLength = sourceHistoryEmbeddingLength;
@@ -910,7 +910,7 @@ public class TransferEntropyCalculator extends ContextOfPastMeasureCalculator
 	 * Returns the average active information storage from
 	 *  the observed values which have been passed in previously. 
 	 *  
-	 * @see ActiveInformationCalculator
+	 * @see ActiveInformationCalculatorDiscrete
 	 */
 	public double computeAverageActiveInfoStorageOfObservations() {
 		double active = 0.0;
@@ -1003,7 +1003,7 @@ public class TransferEntropyCalculator extends ContextOfPastMeasureCalculator
 		//  of resources here, but there's not much other choice. A better solution
 		//  will come when we switch to an underlying conditional MI calculator, with separate
 		//  bases for each variable, and just use its computeSignificance() method.
-		TransferEntropyCalculator ate2 = new TransferEntropyCalculator(base_power_l, k, 1);
+		TransferEntropyCalculatorDiscrete ate2 = new TransferEntropyCalculatorDiscrete(base_power_l, k, 1);
 		ate2.initialise();
 		ate2.observations = observations;
 		ate2.pastCount = pastCount;
