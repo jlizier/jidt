@@ -95,7 +95,7 @@ Several sets of demonstration code are distributed with the toolkit:
 
 Please cite your use of this toolkit as:
 
-Joseph T. Lizier, "JIDT: An information-theoretic toolkit for studying the dynamics of complex systems", 2012, arXiv:<INSERT_NUMBER>
+Joseph T. Lizier, "JIDT: An information-theoretic toolkit for studying the dynamics of complex systems", 2014, arXiv:1408.3270
 
 =============
    Notices
