@@ -1,27 +1,36 @@
 #summary How to use the toolkit in R
+#labels R
 
 = Introduction =
 
-Coming soon ...
+The java code from this toolkit can easily be used in R. First we describe calling Java code from R, then specifically describe the use of this toolkit.
 
-Install rJava http://www.rforge.net/rJava/ 
-Run `install.packages("rJava")` in R.
-See further installation notes at http://www.rforge.net/rJava/ if required (e.g. to enable Java in R)
+Several longer examples of using the toolkit in Python can be viewed at [R_Examples].
 
-Installation is failing this way ...
+= Using Java objects in R =
 
-Trying to install via ubuntu package manager -- recommended on http://stackoverflow.com/questions/3311940/r-rjava-package-install-failing that this solves some issues that installing from within R does not: package name is `r-cran-rjava`
+[http://www.rforge.net/rJava/ rJava] offers a standard R package for an R to Java interface. It can easily be installed from CRAN ([http://cran.r-project.org/ Comprehensive R Archive Network]), and is also packaged for ubuntu (my platform of choice). Further details on rJava are available at http://cran.r-project.org/web/packages/rJava/rJava.pdf
 
-Got some errors on trying to load rJava.
+As such, we only describe using JIDT in R via rJava here, though it may be possible with other mechanisms.
 
-So 
-Ran `sudo R CMD javareconf` in my shell.
-Library loaded ok after that.
+= Using rJava =
 
-Didn't need to clear JAVA_HOME as some pages suggest.
+The first step is to install rJava.
+This may be done by either:
+ # Running `install.packages("rJava")` inside R; or
+ # Installing rJava via your OS package manager: for me on ubuntu, this was `sudo apt-get install r-cran-rjava`.
+Getting rJava working on ubuntu 12.04 only worked for me via the ubuntu package manager (apparently the installation via the ubuntu package manager solves some issues that installing from R does not - see [http://stackoverflow.com/questions/3311940/r-rjava-package-install-failing here] for more details).
 
-Gotchas:
-- Make sure to set the working directory so that relative classpath can be used
-- integer arguments to methods need to be passed as 1L etc
+One or more post installation steps may then be required: for me on ubuntu, this was to run `sudo R CMD javareconf` in my shell (without having done this, I experienced some errors on trying to load rJava in R). I did not need to clear JAVA_HOME as some pages suggest.
+See further installation notes at http://www.rforge.net/rJava/
 
-See http://cran.r-project.org/web/packages/rJava/rJava.pdf for further help
+You can then run your Java code fairly simply in R with rJava:
+ # Load the rJava library: `library("rJava")`
+ # Start the JVM: `.jinit()`
+ # Tell the JVM where our `infodynamics.jar` file is, using e.g. `.jaddClassPath("PATH/infodynamics.jar")`. Note that if you wish to use a relative path to the jar you will need to have set the working directory in your R environment, either with `setwd()` or via your R GUI.
+ # Create an instance of the calculator you wish to use, e.g. `teCalc<-.jnew("infodynamics/measures/discrete/TransferEntropyCalculatorDiscrete", 2L, 1L)`. Notice first that the separator for package names to be used here is `/` rather than `.` as is normally used in Java. Next, notice that numeric integer arguments must have the `L` suffix to explicitly cast them as integers (otherwise R casts these as doubles and cannot locate the Java method with the matching signature).
+ # Call methods on the object, e.g. `.jcall(teCalc,"V","addObservations",sourceArray, destArray)`. Notice here how the second argument to the `.jcall` method specifies the return type for the method (here `"V"` for void) -- see the full list of these at http://www.rforge.net/rJava/
+
+Array conversion
+
+FILL THIS OUT -- see .jarray
