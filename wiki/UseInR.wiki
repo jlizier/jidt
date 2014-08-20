@@ -5,7 +5,7 @@
 
 The java code from this toolkit can easily be used in R. First we describe calling Java code from R, then specifically describe the use of this toolkit.
 
-Several longer examples of using the toolkit in Python can be viewed at [R_Examples].
+Several longer examples of using the toolkit in R can be viewed at [R_Examples].
 
 = Using Java objects in R =
 
