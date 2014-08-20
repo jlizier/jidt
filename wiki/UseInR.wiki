@@ -1,0 +1,27 @@
+#summary How to use the toolkit in R
+
+= Introduction =
+
+Coming soon ...
+
+Install rJava http://www.rforge.net/rJava/ 
+Run `install.packages("rJava")` in R.
+See further installation notes at http://www.rforge.net/rJava/ if required (e.g. to enable Java in R)
+
+Installation is failing this way ...
+
+Trying to install via ubuntu package manager -- recommended on http://stackoverflow.com/questions/3311940/r-rjava-package-install-failing that this solves some issues that installing from within R does not: package name is `r-cran-rjava`
+
+Got some errors on trying to load rJava.
+
+So 
+Ran `sudo R CMD javareconf` in my shell.
+Library loaded ok after that.
+
+Didn't need to clear JAVA_HOME as some pages suggest.
+
+Gotchas:
+- Make sure to set the working directory so that relative classpath can be used
+- integer arguments to methods need to be passed as 1L etc
+
+See http://cran.r-project.org/web/packages/rJava/rJava.pdf for further help
