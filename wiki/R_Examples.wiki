@@ -1,0 +1,43 @@
+#summary Examples of using the toolkit in R
+#labels R,examples
+
+[Demos] > Python code examples
+
+= R code examples =
+
+This page describes a basic set of demonstration scripts for using the toolkit in R. The .r files can be found at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Fr demos/r] in the svn or main distributions (from V1.1 release).
+
+Please see UseInR for instructions on how to begin using the java toolkit from inside R.
+
+Note that these examples use [http://jpype.sourceforge.net/ JPype] -- you will need to alter them if you want to use another Python-Java interface.
+
+This page contains the following code examples:
+  * [#Example_1_-_Transfer_entropy_on_binary_data Example 1 - Transfer entropy on binary data]
+  * [#Example_2_-_Transfer_entropy_on_multidimensional_binary_data Example 2 - Transfer entropy on multidimensional binary data]
+  * [#Example_3_-_Transfer_entropy_on_continuous_data_using_kernel_est Example 3 - Transfer entropy on continuous data using kernel estimators]
+  * [#Example_4_-_Transfer_entropy_on_continuous_data_using_Kraskov_es Example 4 - Transfer entropy on continuous data using Kraskov estimators]
+  * [#Example_5_-_Multivariate_transfer_entropy_on_binary_data Example 5 - Multivariate transfer entropy on binary data]
+
+= UseInR =
+
+Install rJava http://www.rforge.net/rJava/ 
+Run `install.packages("rJava")` in R.
+See further installation notes at http://www.rforge.net/rJava/ if required (e.g. to enable Java in R)
+
+Installation is failing this way ...
+
+Trying to install via ubuntu package manager -- recommended on http://stackoverflow.com/questions/3311940/r-rjava-package-install-failing that this solves some issues that installing from within R does not
+
+Got some errors on trying to load rJava.
+
+So 
+Ran `sudo R CMD javareconf` in my shell.
+Library loaded ok after that.
+
+Didn't need to clear JAVA_HOME as some pages suggest.
+
+Gotchas:
+- classpath must be a full path, as it seems to be relative to the location of rJava
+- integer arguments to methods need to be passed as 1L etc
+
+See http://cran.r-project.org/web/packages/rJava/rJava.pdf for further help
