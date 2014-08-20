@@ -1,43 +1,51 @@
 #summary Examples of using the toolkit in R
 #labels R,examples
 
-[Demos] > Python code examples
+[Demos] > R code examples
 
 = R code examples =
 
 This page describes a basic set of demonstration scripts for using the toolkit in R. The .r files can be found at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Fr demos/r] in the svn or main distributions (from V1.1 release).
 
-Please see UseInR for instructions on how to begin using the java toolkit from inside R.
+Please see [UseInR] for instructions on how to begin using the java toolkit from inside R.
 
-Note that these examples use [http://jpype.sourceforge.net/ JPype] -- you will need to alter them if you want to use another Python-Java interface.
+Note that these examples use the [http://www.rforge.net/rJava/ rJava] R library -- you will need to alter them if you want to use another R-Java interface (though I believe this is the standard one).
 
 This page contains the following code examples:
   * [#Example_1_-_Transfer_entropy_on_binary_data Example 1 - Transfer entropy on binary data]
-  * [#Example_2_-_Transfer_entropy_on_multidimensional_binary_data Example 2 - Transfer entropy on multidimensional binary data]
-  * [#Example_3_-_Transfer_entropy_on_continuous_data_using_kernel_est Example 3 - Transfer entropy on continuous data using kernel estimators]
-  * [#Example_4_-_Transfer_entropy_on_continuous_data_using_Kraskov_es Example 4 - Transfer entropy on continuous data using Kraskov estimators]
-  * [#Example_5_-_Multivariate_transfer_entropy_on_binary_data Example 5 - Multivariate transfer entropy on binary data]
 
-= UseInR =
+= Example 1 - Transfer entropy on binary data =
 
-Install rJava http://www.rforge.net/rJava/ 
-Run `install.packages("rJava")` in R.
-See further installation notes at http://www.rforge.net/rJava/ if required (e.g. to enable Java in R)
+[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/r/example1TeBinaryData.r example1TeBinaryData.r] - Simple transfer entropy (TE) calculation on binary data using the discrete TE calculator:
 
-Installation is failing this way ...
+{{{
+# Load the rJava library and start the JVM
+library("rJava")
+.jinit()
 
-Trying to install via ubuntu package manager -- recommended on http://stackoverflow.com/questions/3311940/r-rjava-package-install-failing that this solves some issues that installing from within R does not
+# Change location of jar to match yours:
+#  IMPORTANT -- If using the default below, make sure you have set the working directory
+#   in R (e.g. with setwd()) to the location of this file (i.e. demos/r) !!
+#  Otherwise you will need to supply an absolute path here
+.jaddClassPath("../../infodynamics.jar")
 
-Got some errors on trying to load rJava.
+# Generate some random binary data:
+sourceArray<-sample(0:1, 100, replace="TRUE")
+destArray<-c(0L, sourceArray[1:99]); # Need 0L to keep as integer array
+sourceArray2<-sample(0:1, 100, replace="TRUE")
 
-So 
-Ran `sudo R CMD javareconf` in my shell.
-Library loaded ok after that.
+# Create a TE calculator and run it:
+teCalc<-.jnew("infodynamics/measures/discrete/TransferEntropyCalculatorDiscrete", 2L, 1L)
+.jcall(teCalc,"V","initialise") # V for void return value
+# Since we have simple arrays of ints, we can directly pass these in:
+.jcall(teCalc,"V","addObservations",sourceArray, destArray)
 
-Didn't need to clear JAVA_HOME as some pages suggest.
+print("For copied source, result should be close to 1 bit : ")
+.jcall(teCalc,"D","computeAverageLocalOfObservations")
 
-Gotchas:
-- classpath must be a full path, as it seems to be relative to the location of rJava
-- integer arguments to methods need to be passed as 1L etc
-
-See http://cran.r-project.org/web/packages/rJava/rJava.pdf for further help
+# Now look at the unrelated source:
+.jcall(teCalc,"V","initialise") # V for void return value
+.jcall(teCalc,"V","addObservations",sourceArray2, destArray)
+print("For random source, result should be close to 0 bits: ")
+.jcall(teCalc,"D","computeAverageLocalOfObservations")
+}}}
