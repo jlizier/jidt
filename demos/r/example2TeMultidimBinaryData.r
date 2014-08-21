@@ -16,9 +16,9 @@
 ##  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ##
 
-# = Example 1 - Transfer entropy on binary data =
+# = Example 2 - Transfer entropy on multidimensional binary data =
 
-# Simple transfer entropy (TE) calculation on binary data using the discrete TE calculator:
+# Simple transfer entropy (TE) calculation on multidimensional binary data using the discrete TE calculator.
 
 # Load the rJava library and start the JVM
 library("rJava")
@@ -29,22 +29,19 @@ library("rJava")
 #   in R (e.g. with setwd()) to the location of this file (i.e. demos/r) !!
 .jaddClassPath("../../infodynamics.jar")
 
-# Generate some random binary data:
-sourceArray<-sample(0:1, 100, replace="TRUE")
-destArray<-c(0L, sourceArray[1:99]); # Need 0L to keep as integer array
-sourceArray2<-sample(0:1, 100, replace="TRUE")
+# Create many columns in a multidimensional array (2 rows by 100 columns),
+#  where the next time step (row 2) copies the value of the column on the left
+#  from the previous time step (row 1):
+twoDTimeSeriesRtime1 <- sample(0:1, 100, replace="TRUE")
+twoDTimeSeriesRtime2 <- c(twoDTimeSeriesRtime1[100], twoDTimeSeriesRtime1[1:99])
+twoDTimeSeriesR <- rbind(twoDTimeSeriesRtime1, twoDTimeSeriesRtime2)
 
 # Create a TE calculator and run it:
 teCalc<-.jnew("infodynamics/measures/discrete/TransferEntropyCalculatorDiscrete", 2L, 1L)
 .jcall(teCalc,"V","initialise") # V for void return value
-.jcall(teCalc,"V","addObservations",sourceArray, destArray)
-
-result1 <- .jcall(teCalc,"D","computeAverageLocalOfObservations")
-cat("For copied source, result should be close to 1 bit : ", result1, "\n")
-
-# Now look at the unrelated source:
-.jcall(teCalc,"V","initialise") # V for void return value
-.jcall(teCalc,"V","addObservations",sourceArray2, destArray)
-result2 <- .jcall(teCalc,"D","computeAverageLocalOfObservations")
-cat("For random source, result should be close to 0 bits: ", result2, "\n")
+# Add observations of transfer across one cell to the right per time step:
+twoDTimeSeriesJava <- .jarray(twoDTimeSeriesR, "[I", dispatch=TRUE)
+.jcall(teCalc,"V","addObservations", twoDTimeSeriesJava, 1L)
+result2D <- .jcall(teCalc,"D","computeAverageLocalOfObservations")
+cat("The result should be close to 1 bit here, since we are executing copy operations of what is effectively a random bit to each cell here: ", result2D, "\n")
 
