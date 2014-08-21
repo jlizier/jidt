@@ -80,7 +80,7 @@ teCalc<-.jnew("infodynamics/measures/discrete/TransferEntropyCalculatorDiscrete"
 twoDTimeSeriesJava <- .jarray(twoDTimeSeriesR, "[I", dispatch=TRUE)
 .jcall(teCalc,"V","addObservations", twoDTimeSeriesJava, 1L)
 result2D <- .jcall(teCalc,"D","computeAverageLocalOfObservations")
-cat('The result should be close to 1 bit here, since we are executing copy operations of what is effectively a random bit to each cell here: ', result2D, "\n")
+cat("The result should be close to 1 bit here, since we are executing copy operations of what is effectively a random bit to each cell here: ", result2D, "\n")
 }}}
 
 = Example 3 - Transfer entropy on continuous data using kernel estimators =
@@ -100,9 +100,9 @@ library("rJava")
 # Generate some random normalised data.
 numObservations<-1000
 covariance<-0.4
-sourceArray<-runif(numObservations, 0, 1)
-destArray = c(0, covariance*sourceArray[1:numObservations-1] + (1-covariance)*runif(numObservations-1, 0, 1))
-sourceArray2<-runif(numObservations, 0, 1) # Uncorrelated source
+sourceArray<-rnorm(numObservations)
+destArray = c(0, covariance*sourceArray[1:numObservations-1] + (1-covariance)*rnorm(numObservations-1, 0, 1))
+sourceArray2<-rnorm(numObservations) # Uncorrelated source
 
 # Create a TE calculator and run it:
 teCalc<-.jnew("infodynamics/measures/continuous/kernel/TransferEntropyCalculatorKernel")
