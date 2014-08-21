@@ -3,6 +3,7 @@
  * Getting started
   * [Downloads]
   * [Installation]
+  * Documentation
   * [Demos]
  * [Demos]
   * SimpleJavaExamples
