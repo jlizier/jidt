@@ -16,9 +16,9 @@
 ##  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ##
 
-# = Example 3 - Transfer entropy on continuous data using kernel estimators =
+# = Example 4 - Transfer entropy on continuous data using Kraskov estimators =
 
-# Simple transfer entropy (TE) calculation on continuous-valued data using the (box) kernel-estimator TE calculator.
+# Simple transfer entropy (TE) calculation on continuous-valued data using the Kraskov-estimator TE calculator.
 
 # Load the rJava library and start the JVM
 library("rJava")
@@ -36,18 +36,23 @@ sourceArray<-rnorm(numObservations)
 destArray = c(0, covariance*sourceArray[1:numObservations-1] + (1-covariance)*rnorm(numObservations-1, 0, 1))
 sourceArray2<-rnorm(numObservations) # Uncorrelated source
 
-# Create a TE calculator and run it:
-teCalc<-.jnew("infodynamics/measures/continuous/kernel/TransferEntropyCalculatorKernel")
-.jcall(teCalc,"V","setProperty", "NORMALISE", "true") # Normalise the individual variables
-.jcall(teCalc,"V","initialise", 1L, 0.5) # Use history length 1 (Schreiber k=1), kernel width of 0.5 normalised units
-.jcall(teCalc,"V","setObservations", sourceArray, destArray)
-# For copied source, should give something close to expected value for correlated Gaussians:
-result <- .jcall(teCalc,"D","computeAverageLocalOfObservations")
-cat("TE result ",  result, "bits; expected to be close to ", log(1/(1-covariance^2))/log(2), " bits for these correlated Gaussians but biased upwards\n")
+# Create a TE calculator:
+teCalc<-.jnew("infodynamics/measures/continuous/kraskov/TransferEntropyCalculatorKraskov")
+.jcall(teCalc,"V","setProperty", "k", "4") # Use Kraskov parameter K=4 for 4 nearest points
 
+# Perform calculation with correlated source:
+.jcall(teCalc,"V","initialise", 1L) # Use history length 1 (Schreiber k=1)
+.jcall(teCalc,"V","setObservations", sourceArray, destArray)
+result <- .jcall(teCalc,"D","computeAverageLocalOfObservations")
+# Note that the calculation is a random variable (because the generated
+#  data is a set of random variables) - the result will be of the order
+#  of what we expect, but not exactly equal to it; in fact, there will
+#  be a large variance around it.
+cat("TE result ",  result, "nats; expected to be close to ", log(1/(1-covariance^2)), " nats for these correlated Gaussians\n")
+
+# Perform calculation with uncorrelated source:
 .jcall(teCalc,"V","initialise") # Initialise leaving the parameters the same
 .jcall(teCalc,"V","setObservations", sourceArray2, destArray)
-# For random source, it should give something close to 0 bits
 result2 <- .jcall(teCalc,"D","computeAverageLocalOfObservations")
-cat("TE result ",  result2, "bits; expected to be close to 0 bits for uncorrelated Gaussians but will be biased upwards\n")
+cat("TE result ",  result2, "nats; expected to be close to 0 nats for uncorrelated Gaussians\n")
 

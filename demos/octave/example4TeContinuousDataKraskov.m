@@ -31,8 +31,8 @@ destArray = [0; covariance*sourceArray(1:numObservations-1) + (1-covariance)*ran
 sourceArray2=randn(numObservations, 1); % Uncorrelated source
 % Create a TE calculator and run it:
 teCalc=javaObject('infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov');
-teCalc.initialise(1); % Use history length 1 (Schreiber k=1)
 teCalc.setProperty('k', '4'); % Use Kraskov parameter K=4 for 4 nearest points
+teCalc.initialise(1); % Use history length 1 (Schreiber k=1)
 % Perform calculation with correlated source:
 teCalc.setObservations(sourceArray, destArray);
 result = teCalc.computeAverageLocalOfObservations();
