@@ -1,5 +1,5 @@
 #summary How to install and start using the toolkit
-#labels Phase-Deploy,Featured
+#labels Phase-Deploy,Featured,documentation
 
 = Introduction =
 
@@ -20,7 +20,7 @@ None! You don't need any other downloads to start using this code (unless you wa
 
 There are only dependencies if:
  # You don't have java installed - download it from [http://www.java.com/]
- # You wish to (re-)build the project using the build.xml script - this requires [http://ant.apache.org/ ant]
+ # You wish to (re-)build the project (if you're changing the source files or using an svn checkout) using the `build.xml` script - this requires [http://ant.apache.org/ ant]
  # You wish to run the JUnit test cases - this requires [http://www.junit.org/ JUnit] - for how to run JUnit with our ant script see [JUnitTestCases]
 
 = Install =
