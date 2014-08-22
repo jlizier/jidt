@@ -45,3 +45,9 @@ result2 = teCalc.computeAverageLocalOfObservations();
 fprintf('TE result %.4f bits; expected to be close to 0 bits for uncorrelated Gaussians but will be biased upwards\n', ...
     result2);
 
+% We can get insight into the bias by examining the null distribution:
+nullDist = teCalc.computeSignificance(100);
+fprintf(['Null distribution for unrelated source and destination ', ...
+	'(i.e. the bias) has mean %.4f and standard deviation %.4f\n'], ...
+	nullDist.getMeanOfDistribution(), nullDist.getStdOfDistribution());
+

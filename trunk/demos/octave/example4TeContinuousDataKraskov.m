@@ -48,4 +48,9 @@ teCalc.setObservations(sourceArray2, destArray);
 result2 = teCalc.computeAverageLocalOfObservations();
 fprintf('TE result %.4f nats; expected to be close to 0 nats for these uncorrelated Gaussians\n', result2);
 
+% We can also compute the local TE values for the time-series samples here:
+%  (See more about utility of local TE in the CA demos)
+localTE = teCalc.computeLocalOfPreviousObservations();
+fprintf('Notice that the mean of locals, %.4f nats, equals the previous result\n', ...
+	sum(javaMatrixToOctave(localTE))/(numObservations-1));
 
