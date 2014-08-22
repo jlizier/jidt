@@ -112,6 +112,12 @@ teCalc.setObservations(sourceArray2, destArray);
 result2 = teCalc.computeAverageLocalOfObservations();
 fprintf('TE result %.4f bits; expected to be close to 0 bits for uncorrelated Gaussians but will be biased upwards\n', ...
     result2);
+
+% We can get insight into the bias by examining the null distribution:
+nullDist = teCalc.computeSignificance(100);
+fprintf(['Null distribution for unrelated source and destination ', ...
+	'(i.e. the bias) has mean %.4f and standard deviation %.4f\n'], ...
+	nullDist.getMeanOfDistribution(), nullDist.getStdOfDistribution());
 }}}
 
 = Example 4 - Transfer entropy on continuous data using Kraskov estimators =
@@ -146,6 +152,12 @@ teCalc.initialise(); % Initialise leaving the parameters the same
 teCalc.setObservations(sourceArray2, destArray);
 result2 = teCalc.computeAverageLocalOfObservations();
 fprintf('TE result %.4f nats; expected to be close to 0 nats for these uncorrelated Gaussians\n', result2);
+
+% We can also compute the local TE values for the time-series samples here:
+%  (See more about utility of local TE in the CA demos)
+localTE = teCalc.computeLocalOfPreviousObservations();
+fprintf('Notice that the mean of locals, %.4f nats, equals the previous result\n', ...
+	sum(javaMatrixToOctave(localTE))/(numObservations-1));
 }}}
 
 = Example 5 - Multivariate transfer entropy on binary data =
