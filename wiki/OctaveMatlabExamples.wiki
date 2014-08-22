@@ -186,7 +186,7 @@ fprintf('\nThe result for random source is inflated towards 0.3 due to finite ob
 = Example 6 - Dynamic dispatch with Mutual info calculator =
 
 [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/java/infodynamics/demos/octave/example6DynamicCallingMutualInfo.m example6DynamicCallingMutualInfo.m] - This example shows how to write Matlab/Octave code to take advantage of the common interfaces defined for various information-theoretic calculators.
-Here, we use the common form of the infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate interface (which is never named here) to write common code into which we can plug one of three concrete implementations (kernel estimator, Kraskov estimator or linear-Gaussian estimator) by dynamically supplying the class name of the concrete implementation.
+Here, we use the common form of the `infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate` interface (which is never named here) to write common code into which we can plug one of three concrete implementations (kernel estimator, Kraskov estimator or linear-Gaussian estimator) by dynamically supplying the class name of the concrete implementation.
 
 {{{
 % Change location of jar to match yours:
