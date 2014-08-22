@@ -36,4 +36,4 @@ That's it.
 
 = Usage =
 
-See [Demos] for some guided examples on using the code.
+See [Documentation] and [Demos] for some guided examples on getting started and using the code.
