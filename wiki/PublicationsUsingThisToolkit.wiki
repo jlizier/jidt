@@ -1,7 +1,12 @@
 #summary List of publications including results which were produced using this toolkit
 #labels examples
 
+The publication introducing JIDT is:
+  * J. T. Lizier, [http://arxiv.org/abs/1408.3270 "JIDT: An information-theoretic toolkit for studying the dynamics of complex systems"] arXiv:1408.3270, 2014.
+
 = My publications =
+
+My publications using results produced by JIDT include:
 
   * X. R. Wang, J. T. Lizier, T. Nowotny, A. Z. Berna, M. Prokopenko, S. C. Trowell, [http://dx.doi.org/10.1371/journal.pone.0089840 "Feature Selection for Chemical Sensor Arrays Using Mutual Information"], PLoS ONE 9(3): e89840.
   * C. Gomez, J.T. Lizier, M. Schaum, P. Wollstadt, C. Gruetzner, P. Uhlhaas, C. Freitag, S. Schlitt, S. Boelte, R. Hornero and M. Wibral, [http://dx.doi.org/10.3389/fninf.2014.00009 "Reduced predictable information in brain signals in autism spectrum disorder"], Frontiers in Neuroinformatics, vol. 8, no. 9, 2014.
@@ -21,7 +26,7 @@ Other articles where we used the toolkit but didn't cite it (usually because the
 
 = Publications by other authors =
 
-Publications by other authors using this toolkit to produce results:
+Publications by other authors using JIDT to produce results include:
 
   * S. Dasgupta, F. Woergoetter, P. Manoonpong, [http://dx.doi.org/10.1007/s12530-013-9080-y "Information dynamics based self-adaptive reservoir for delay temporal memory tasks"], Evolving Systems, 4(4), pp 235-249, 2013.
   * J. Boedecker, A. Lazar, O. Obst, A. Zeman, [http://prokopenko.net/abstracts/Boedecker-etal.pdf "Effects of STDP and Intrinsic Plasticity on Information Dynamics in a Self-Organising Recurrent Neural Network"], Sixth International Workshop on Guided Self-Organizationl, 2013. (abstract)
