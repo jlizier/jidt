@@ -4,10 +4,11 @@
 = Demos =
 
 Several sets of demonstration code are distributed with the toolkit. Links to their wiki pages and their location in the distribution are given below:
-  * SimpleJavaExamples -- `demos/java` -- basic examples using the Java toolkit;
-  * OctaveMatlabExamples -- `demos/octave` -- basic examples on using the Java toolkit from Octave or Matlab environments - these mirror the SimpleJavaExamples;
-  * PythonExamples -- `demos/python` -- basic examples on using the Java toolkit from Python using the JPype interface - these mirror the SimpleJavaExamples;
-  * [R_Examples] -- `demos/r` -- basic examples on using the Java toolkit from R using the rJava interface - these mirror the SimpleJavaExamples;
+  * SimpleJavaExamples -- `demos/java` -- a set of basic examples using the Java toolkit;
+  * Several demo sets mirror the `SimpleJavaExamples` to demonstrate the use of the toolkit in non-Java environments:
+   * OctaveMatlabExamples -- `demos/octave` -- basic examples on using the Java toolkit from Octave or Matlab environments;
+   * PythonExamples -- `demos/python` -- basic examples on using the Java toolkit from Python using the JPype interface;
+   * [R_Examples] -- `demos/r` -- basic examples on using the Java toolkit from R using the rJava interface;
   * SchreiberTeDemos -- `demos/octave/SchreiberTransferEntropyExamples` -- using the toolkit to reproduce the transfer entropy examples originally included in Schreiber's 2000 paper introducing transfer entropy;
   * CellularAutomataDemos -- `demos/octave/CellularAutomata` -- using the Java toolkit to plot local information dynamics profiles in cellular automata; the demo is run under Octave or Matlab;
   * DetectingInteractionLags -- `demos/octave/DetectingInteractionLags` -- demonstration of using the transfer entropy with source-destination lags; the demo is run under Octave or Matlab;
@@ -18,4 +19,4 @@ You can also review the [JUnitTestCases] -- the test cases for the Java toolkit 
 
 = Extras = 
 
-You may also be interested in several [Extras extra] features that the toolkit has (in addition to the information dynamics calculators) ...
+You may also be interested in several [Extras extra] features that the toolkit has (in addition to the information dynamics calculators); e.g. Octave text file format reading and writing, matrix manipulation, mathematical functions, etc.
