@@ -1,31 +1,34 @@
 #summary Navigation sidebar for the wiki pages
 
+ * [https://code.google.com/p/information-dynamics-toolkit/ Home]
  * Getting started
   * [Downloads]
   * [Installation]
-  * Documentation
+  * [Documentation]
   * [Demos]
+ * ImplementedMeasures
  * [Demos]
-  * SimpleJavaExamples
-  * OctaveMatlabExamples
-  * PythonExamples
-  * [R_Examples]
-  * CellularAutomataDemos
-  * SchreiberTeDemos
-  * DetectingInteractionLags
-  * NullDistributions
-  * InterregionalTransfer
- * In non-Java enviornments
-  * UseInOctaveMatlab
-   * OctaveJavaArrayConversion
-  * UseInPython
-  * [UseInR]
+  * [SimpleJavaExamples Simple Java demos]
+  * Non-Java environments
+   * [OctaveMatlabExamples Matlab/Octave demos]
+   * [PythonExamples Python demos]
+   * [R_Examples R demos]
+  * [CellularAutomataDemos Cellular Automata]
+  * [SchreiberTeDemos Schreiber Transfer entropy demos]
+  * [DetectingInteractionLags Detecting interaction lags]
+  * [NullDistributions Null distributions]
+  * [InterregionalTransfer Interregional transfer]
+ * Non-Java environments
+  * [UseInOctaveMatlab Matlab/Octave]
+   * [OctaveJavaArrayConversion Array conversion to/from Octave]
+  * [UseInPython Python]
+  * [UseInR R]
+ * [FAQs]
  * Miscellaneous
-  * RelatedToolkits
-  * ImplementedMeasures
-  * RoadMap
-  * [FAQs]
-  * PublicationsUsingThisToolkit
-  * [Extras]
+  * [RelatedToolkits Related toolkits]
+  * [RoadMap Road map for new features]
+  * [Extras Extra features]
  * For serious developers!
-  * [JUnitTestCases]
+  * [JUnitTestCases unit tests]
+  * [AntScripts ant scripts]
+ * [PublicationsUsingThisToolkit Publications resulting]
