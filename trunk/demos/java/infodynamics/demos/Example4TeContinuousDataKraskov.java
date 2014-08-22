@@ -18,6 +18,7 @@
 
 package infodynamics.demos;
 
+import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.RandomGenerator;
 import infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov;
 
@@ -78,7 +79,9 @@ public class Example4TeContinuousDataKraskov {
 		
 		// We can also compute the local TE values for the time-series samples here:
 		//  (See more about utility of local TE in the CA demos)
-		@SuppressWarnings("unused")
 		double[] localTE = teCalc.computeLocalOfPreviousObservations();
+		System.out.printf("Notice that the mean of locals, %.4f nats," +
+				" equals the previous result\n",
+				MatrixUtils.sum(localTE)/(double)(numObservations-1));
 	}
 }

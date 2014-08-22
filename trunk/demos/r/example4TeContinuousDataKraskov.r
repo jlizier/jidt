@@ -56,3 +56,9 @@ cat("TE result ",  result, "nats; expected to be close to ", log(1/(1-covariance
 result2 <- .jcall(teCalc,"D","computeAverageLocalOfObservations")
 cat("TE result ",  result2, "nats; expected to be close to 0 nats for uncorrelated Gaussians\n")
 
+# We can also compute the local TE values for the time-series samples here:
+#  (See more about utility of local TE in the CA demos)
+localTE <- .jcall(teCalc,"[D","computeLocalOfPreviousObservations")
+cat("Notice that the mean of locals", sum(localTE)/(numObservations-1),
+	"nats equals the above result\n")
+

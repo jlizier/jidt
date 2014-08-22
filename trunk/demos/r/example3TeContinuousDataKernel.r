@@ -51,3 +51,10 @@ cat("TE result ",  result, "bits; expected to be close to ", log(1/(1-covariance
 result2 <- .jcall(teCalc,"D","computeAverageLocalOfObservations")
 cat("TE result ",  result2, "bits; expected to be close to 0 bits for uncorrelated Gaussians but will be biased upwards\n")
 
+# We can get insight into the bias by examining the null distribution:
+nullDist <- .jcall(teCalc,"Linfodynamics/utils/EmpiricalMeasurementDistribution;",
+		"computeSignificance", 100L)
+cat("Null distribution for unrelated source and destination",
+    "(i.e. the bias) has mean", .jcall(nullDist, "D", "getMeanOfDistribution"),
+    "bits and standard deviation", .jcall(nullDist, "D", "getStdOfDistribution"), "\n")
+
