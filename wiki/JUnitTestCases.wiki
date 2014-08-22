@@ -7,16 +7,16 @@ The full distribution also includes the JUnit test cases used to test the java c
 
 = Location =
 
-The java source code for the unit tests is at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fjava%2Funittests java/unittests].
+The java source code for the unit tests is at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fjava%2Funittests java/unittests] in the distribution.
 
 = Dependencies =
 
 To run the JUnit test cases, you will need to have a junit.jar file on your classpath, either:
   * in your IDE if you're running the junit test cases there; or
-  * supplied to {{{ant}}} if you're running the junit test cases via our {{{build.xml}}} ant file - see the [http://ant.apache.org/manual/Tasks/junit.html JUnit task] in the ant documentation for more information on how the junit.jar could be supplied to ant. The {{{build.xml}}} file is currently implementing option 1 from that page - the required jar files are in {{{ANT_HOME/lib}}}. (I have the {{{ant}}} and {{{junit}}} packages installed on ubuntu 12.04, which already puts those jars in the location I am referencing).
+  * supplied to {{{ant}}} if you're running the junit test cases via our {{{build.xml}}} ant file as described at AntScripts -- see the [http://ant.apache.org/manual/Tasks/junit.html JUnit task] in the ant documentation for more information on how the junit.jar could be supplied to ant. The {{{build.xml}}} file is currently implementing option 1 from that page - the required jar files are in {{{ANT_HOME/lib}}}. (I have the {{{ant}}} and {{{junit}}} packages installed on ubuntu 12.04, which already puts those jars in the location I am referencing).
 
 I've been using ant 3.8.2; it does not appear to be compatible with later versions.
 
 = Running via ant =
 
-Make sure that junit.jar is available to ant, as above. Then in the main distribution directory run: {{{ant junit}}}. This compiles and then runs the unit tests.
+Make sure that junit.jar is available to ant, as above. Then in the main distribution directory as described at AntScripts run: {{{ant junit}}}. This compiles and then runs the unit tests.
