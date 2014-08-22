@@ -190,7 +190,9 @@ System.out.printf("TE result %.4f nats; expected to be close to " +
 // We can also compute the local TE values for the time-series samples here:
 //  (See more about utility of local TE in the CA demos)
 double[] localTE = teCalc.computeLocalOfPreviousObservations();
-
+System.out.printf("Notice that the mean of locals, %.4f nats," +
+	" equals the previous result\n",
+	MatrixUtils.sum(localTE)/(double)(numObservations-1));
 }}}
 
 = Example 5 - Multivariate transfer entropy on binary data =
