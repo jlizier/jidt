@@ -25,14 +25,13 @@
 %  one of three concrete implementations (kernel estimator, Kraskov estimator or
 %  linear-Gaussian estimator) by dynamically supplying the class name of
 %  the concrete implementation.
-%
-% This is the Octave/Matlab equivalent to the demos/java/lateBindingDemo
 
 % Change location of jar to match yours:
 javaaddpath('../../infodynamics.jar');
 
 %---------------------
-% 1. Properties for the calculation (these are dynamically changeable):
+% 1. Properties for the calculation (these are dynamically changeable, you could
+%    load them in from another properties file):
 % The name of the data file (relative to this directory)
 datafile = '../data/4ColsPairedNoisyDependence-1.txt';
 % List of column numbers for variables 1 and 2:
@@ -43,7 +42,7 @@ variable2Columns = [3,4];
 %  infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate
 %  which we wish to use for the calculation.
 % Note that one could use any of the following calculators (try them all!):
-%  implementingClass = 'infodynamics.measures.continuous.kraskov.MutualInfoCalculatorMultiVariateKraskov1'; % MI([1,2], [3,4]) = 0.35507
+%  implementingClass = 'infodynamics.measures.continuous.kraskov.MutualInfoCalculatorMultiVariateKraskov1'; % MI([1,2], [3,4]) = 0.36353
 %  implementingClass = 'infodynamics.measures.continuous.kernel.MutualInfoCalculatorMultiVariateKernel';
 %  implementingClass = 'infodynamics.measures.continuous.gaussian.MutualInfoCalculatorMultiVariateGaussian';
 implementingClass = 'infodynamics.measures.continuous.kraskov.MutualInfoCalculatorMultiVariateKraskov1';
