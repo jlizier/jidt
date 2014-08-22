@@ -120,6 +120,13 @@ cat("TE result ",  result, "bits; expected to be close to ", log(1/(1-covariance
 # For random source, it should give something close to 0 bits
 result2 <- .jcall(teCalc,"D","computeAverageLocalOfObservations")
 cat("TE result ",  result2, "bits; expected to be close to 0 bits for uncorrelated Gaussians but will be biased upwards\n")
+
+# We can get insight into the bias by examining the null distribution:
+nullDist <- .jcall(teCalc,"Linfodynamics/utils/EmpiricalMeasurementDistribution;",
+		"computeSignificance", 100L)
+cat("Null distribution for unrelated source and destination",
+    "(i.e. the bias) has mean", .jcall(nullDist, "D", "getMeanOfDistribution"),
+    "bits and standard deviation", .jcall(nullDist, "D", "getStdOfDistribution"), "\n")
 }}}
 
 = Example 4 - Transfer entropy on continuous data using Kraskov estimators =
@@ -162,6 +169,12 @@ cat("TE result ",  result, "nats; expected to be close to ", log(1/(1-covariance
 .jcall(teCalc,"V","setObservations", sourceArray2, destArray)
 result2 <- .jcall(teCalc,"D","computeAverageLocalOfObservations")
 cat("TE result ",  result2, "nats; expected to be close to 0 nats for uncorrelated Gaussians\n")
+
+# We can also compute the local TE values for the time-series samples here:
+#  (See more about utility of local TE in the CA demos)
+localTE <- .jcall(teCalc,"[D","computeLocalOfPreviousObservations")
+cat("Notice that the mean of locals", sum(localTE)/(numObservations-1),
+	"nats equals the above result\n")
 }}}
 
 = Example 5 - Multivariate transfer entropy on binary data =
