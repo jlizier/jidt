@@ -19,15 +19,15 @@ See all distributions and brief descriptions at [Downloads].
 None! You don't need any other downloads to start using this code _in general_.
 
 There are only dependencies if:
- # You don't have java installed - download it from [http://java.com/].
- # You wish to (re-)build the project (if you're changing the source files or using an svn checkout) using the `build.xml` script - this requires [http://ant.apache.org/ ant]. See AntScripts for build instructions.
- # You wish to run the JUnit test cases - this requires [http://www.junit.org/ JUnit] - for how to run JUnit with our ant script see [JUnitTestCases]
+ # You don't have java installed - download it from [http://java.com/];
+ # You wish to (re-)build the project (if you're changing the source files or using an svn checkout) using the `build.xml` script - this requires [http://ant.apache.org/ ant]. See AntScripts for build instructions;
+ # You wish to run the JUnit test cases - this requires [http://www.junit.org/ JUnit] - for how to run JUnit with our ant script see [JUnitTestCases] and AntScripts;
  # Additional preparation may be required to use JIDT in GNU Octave or Python; see UseInOctaveMatlab or UseInPython respectively.
 
 = Install =
 
 If you have one of the distributions:
- # Unzip the distribution to a location of your choice, and/or move the `infodynamics.jar` file to a relevant location. Ensure that `infodynamics.jar` is on the Java classpath when your code attempts to access it (see e.g. SimpleJavaDemos).
+ # Unzip the distribution to a location of your choice, and/or move the `infodynamics.jar` file to a relevant location. Ensure that `infodynamics.jar` is on the Java classpath when your code attempts to access it (see e.g. SimpleJavaDemos);
  # To update to a new version, simply copy the new distribution over the top of the previous one.
 
 Otherwise, if you are running with the source code via an SVN checkout, see AntScripts regarding running `ant` to generate `infodynamics.jar`.
