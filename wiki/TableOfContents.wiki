@@ -29,6 +29,6 @@
   * [RoadMap Road map for new features]
   * [Extras Extra features]
  * For serious developers!
-  * [JUnitTestCases unit tests]
-  * [AntScripts ant scripts]
+  * [JUnitTestCases Unit tests]
+  * [AntScripts Ant scripts]
  * [PublicationsUsingThisToolkit Publications resulting]
