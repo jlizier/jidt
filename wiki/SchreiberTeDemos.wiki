@@ -14,7 +14,7 @@ Several additional analyses on the same data set are provided as well.
 
 It is written for MATLAB or Octave.
 
-This demonstration set is found at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave%2FSchreiberTransferEntropyExamples demos/octave/SchreiberTransferEntropyExamples/] in the svn or full distribution.
+This demonstration set is found at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave%2FSchreiberTransferEntropyExamples demos/octave/SchreiberTransferEntropyExamples/] in the svn or [Downloads full distribution].
 
 The examples included are:
  # [#1._Tent_Map Tent Map]
