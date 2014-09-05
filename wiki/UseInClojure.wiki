@@ -12,7 +12,7 @@ Here we give only a brief overview of calling Java code from [http://clojure.org
 No special installations are required to begin using Java objects in Clojure, these are supported natively as described [http://clojure.org/java_interop here].
 
 You can run your Java code in Clojure as follows:
- # Add the `[me.lizier/jidt "1.0.0"]` to the `:dependencies` vector of your `project.clj` file.
+ # Add the `[me.lizier/jidt "1.0.0"]` to the `:dependencies` vector of your `project.clj` file (this automatically references the JIDT har from the leiningen repository)
  # Import the classes you wish to use, e.g. `(import infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete)`.
  # Create an instance of the calculator you wish to use, e.g. `(def teCalc (TransferEntropyCalculatorDiscrete. 2 1))`
  # Call methods on the object, e.g. `(.addObservations teCalc sourceArray destArray)`.
