@@ -1,0 +1,52 @@
+#summary Examples of using the toolkit in clojure
+#labels examples,clojure,Phase-Deploy
+
+[Demos] > Clojure code examples
+
+= Clojure code examples =
+
+This page describes a basic set of demonstration scripts for using the toolkit in Clojure. The .clj files can be found at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Fclojure%2Fexamples demos/clojure/examples] in the svn or main distributions.
+
+Please see UseInClojure for instructions on how to begin using the Java toolkit from inside clojure. Most importantly, the [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Fclojure%2Fexamples%2Fproject.clj project.clj] file in this directory includes a reference to the JIDT jar file hosted at [https://clojars.org/me.lizier/jidt me.lizier/jidt] on the clojars.org repository:
+
+{{{
+(defproject me.lizier/jidt-clojure-samples "1.0-SNAPSHOT"
+  :description "Java Information Dynamics Toolkit (JIDT) clojure samples"
+  :url "https://code.google.com/p/information-dynamics-toolkit/"
+  :license
+    {
+      :name "GNU GPL v3"
+      :url "http://www.gnu.org/licenses/gpl.html"
+      :distribution :repo
+    }
+  :dependencies [[org.clojure/clojure "1.6.0"] [me.lizier/jidt "LATEST"] ])
+}}}
+
+This page contains the following code examples:
+  * [#Example_1_-_Transfer_entropy_on_binary_data Example 1 - Transfer entropy on binary data]
+
+= Example 1 - Transfer entropy on binary data =
+
+[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/example1TeBinaryData.m example1TeBinaryData.m] - Simple transfer entropy (TE) calculation on binary data using the discrete TE calculator:
+
+{{{
+; Import relevant classes:
+(import infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete)
+
+; Generate some random binary data.
+(def sourceArray (int-array (take 100 (repeatedly #(rand-int 2)))))
+(def destArray (int-array (cons 0 (butlast sourceArray)))) ; shifts sourceArray by 1
+(def sourceArray2 (int-array (take 100 (repeatedly #(rand-int 2)))))
+
+; Create a TE calculator and run it:
+(def teCalc (TransferEntropyCalculatorDiscrete. 2 1))
+(.initialise teCalc)
+(.addObservations teCalc sourceArray destArray)
+(println "For copied source, result should be close to 1 bit : "
+	(.computeAverageLocalOfObservations teCalc))
+
+(.initialise teCalc)
+(.addObservations teCalc sourceArray2 destArray)
+(println "For random source, result should be close to 0 bits : "
+	(.computeAverageLocalOfObservations teCalc))
+}}}
