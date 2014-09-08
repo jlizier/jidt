@@ -99,6 +99,10 @@
 		<delete dir="${reports.tests}"/>
 		<delete dir="${unittestsouttoplevel}"/>
 		<delete dir="${javadocsdir}"/>
+		<delete dir="demos/clojure/target"/>
+		<delete file="demos/clojure/pom.xml"/>
+		<delete file="demos/clojure/pom.xml.asc"/>
+		<delete file="demos/clojure/project.clj"/>
 		<delete file="${jarversiondistnamezip}"/>
 		<delete file="${distnamezip}"/>
 		<delete file="${jarplainname}"/>
@@ -142,6 +146,13 @@
 				<filter token="VERSION" value="${version}"/>
 			</filterset>
 		</copy>
+		<copy file="demos/clojure/deploy/project-template.clj" toFile="demos/clojure/deploy/project.clj" failonerror="false" overwrite="true">
+			<!-- The template file only exists in SVN - this won't crash ant 
+			     if users try to run it though because failonerror="false" -->
+			<filterset>
+				<filter token="VERSION" value="${version}"/>
+			</filterset>
+		</copy>
 	</target>
 
 	<!-- Developer build - builds everything and makes the jar only distribution file -->
@@ -166,7 +177,7 @@
 			<fileset file="InfoDynamicsToolkit.pdf"/>
 			<fileset file="${versionfile}"/>
 			<zipfileset dir="java" includes="**/*.java" prefix="java"/>
-			<zipfileset dir="demos" includes="**/*.*,**/*" prefix="demos"/>
+			<zipfileset dir="demos" includes="**/*.*,**/*" excludes="clojure/deploy" prefix="demos"/>
 			<zipfileset dir="javadocs" includes="**/*.*,**/*" prefix="javadocs"/>
 			<zipfileset dir="notices" includes="**/*.*,**/*" prefix="notices"/>
 		</zip>
