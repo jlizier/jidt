@@ -13,6 +13,7 @@
    * [OctaveMatlabExamples Matlab/Octave demos]
    * [PythonExamples Python demos]
    * [R_Examples R demos]
+   * [Clojure_Examples Clojure demos]
   * [CellularAutomataDemos Cellular Automata]
   * [SchreiberTeDemos Schreiber Transfer entropy demos]
   * [DetectingInteractionLags Detecting interaction lags]
@@ -23,6 +24,7 @@
    * [OctaveJavaArrayConversion Array conversion to/from Octave]
   * [UseInPython Python]
   * [UseInR R]
+  * [UseInClojure Clojure]
  * [FAQs]
  * Miscellaneous
   * [RelatedToolkits Related toolkits]
