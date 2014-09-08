@@ -3,7 +3,7 @@
 
 = Introduction =
 
-The Java code from this toolkit can easily be used in Clojure.
+The Java code from this toolkit can easily be used in Clojure -- the project jar has been deployed to maven as [https://clojars.org/me.lizier/jidt me.lizier/jidt] for automated inclusion in clojure projects (see further details below).
 
 Here we give only a brief overview of calling Java code from [http://clojure.org/ Clojure]; several longer examples of using the JIDT toolkit in Clojure can be viewed at [Clojure_Examples].
 
@@ -12,14 +12,14 @@ Here we give only a brief overview of calling Java code from [http://clojure.org
 No special installations are required to begin using Java objects in Clojure, these are supported natively as described [http://clojure.org/java_interop here].
 
 You can run your Java code in Clojure as follows:
- # Add the `[me.lizier/jidt "1.0.0"]` to the `:dependencies` vector of your `project.clj` file (this automatically references the JIDT har from the leiningen repository)
+ # Add the `[me.lizier/jidt "LATEST"]` for the latest version (or name a specific version) to the `:dependencies` vector of your `project.clj` file (this automatically references the JIDT jar from the leiningen repository and pulls it in)
  # Import the classes you wish to use, e.g. `(import infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete)`.
  # Create an instance of the calculator you wish to use, e.g. `(def teCalc (TransferEntropyCalculatorDiscrete. 2 1))`
  # Call methods on the object, e.g. `(.addObservations teCalc sourceArray destArray)`.
 
-*Array conversion* -- I need to look into this.
+*Array conversion* -- I need to look into this ...
 
 
 = Acknowledgements =
 
-A big thank you to Matthew Chadwick for showing me how to do this and getting things up and running on leiningen.
+A big thank you to Matthew Chadwick for showing me how to do this and getting things up and running with clojure and leiningen.
