@@ -17,8 +17,7 @@ You can run your Java code in Clojure as follows:
  # Create an instance of the calculator you wish to use, e.g. `(def teCalc (TransferEntropyCalculatorDiscrete. 2 1))`
  # Call methods on the object, e.g. `(.addObservations teCalc sourceArray destArray)`.
 
-*Array conversion* -- I need to look into this ...
-
+*Array conversion* -- is generally straightforward -- see some details at the [http://clojure.org/java_interop#Java%20Interop-Arrays Clojure-Java interoperability documentation], and the use of `int-array`, `into-array` and `map` in our [Clojure_Examples].
 
 = Acknowledgements =
 
