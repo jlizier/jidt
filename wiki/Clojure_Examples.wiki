@@ -22,9 +22,10 @@ Please see UseInClojure for instructions on how to begin using the Java toolkit 
   :dependencies [[org.clojure/clojure "1.6.0"] [me.lizier/jidt "LATEST"] ])
 }}}
 
-This page contains the following code examples. They can be run as `lein repl < example1TeBinaryData.clj` (Clojure uses will know how to properly take this code and start projects):
+This page contains the following code examples. They can be run as `lein repl < example1TeBinaryData.clj` (Yes, I know it's not great Clojure code, but all that's important is that shows you how to get started with JIDT in Clojure!):
   * [#Example_1_-_Transfer_entropy_on_binary_data Example 1 - Transfer entropy on binary data]
   * [#Example_2_-_Transfer_entropy_on_multidimensional_binary_data Example 2 - Transfer entropy on multidimensional binary data]
+  * [#Example_3_-_Transfer_entropy_on_continuous_data_using_kernel_est Example 3 - Transfer entropy on continuous data using kernel estimators]
 
 = Example 1 - Transfer entropy on binary data =
 
@@ -34,13 +35,16 @@ This page contains the following code examples. They can be run as `lein repl < 
 ; Import relevant classes:
 (import infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete)
 
-; Generate some random binary data.
-(def sourceArray (int-array (take 100 (repeatedly #(rand-int 2)))))
-(def destArray (int-array (cons 0 (butlast sourceArray)))) ; shifts sourceArray by 1
-(def sourceArray2 (int-array (take 100 (repeatedly #(rand-int 2)))))
+(let
+    ; Generate some random binary data.
+    [sourceArray (int-array (take 100 (repeatedly #(rand-int 2))))
+     destArray (int-array (cons 0 (butlast sourceArray))) ; shifts sourceArray by 1
+     sourceArray2 (int-array (take 100 (repeatedly #(rand-int 2))))
+     ; Create TE calculator
+     teCalc (TransferEntropyCalculatorDiscrete. 2 1)
+    ]
 
-; Create a TE calculator and run it:
-(def teCalc (TransferEntropyCalculatorDiscrete. 2 1))
+; Initialise the TE calculator and run it:
 (.initialise teCalc)
 (.addObservations teCalc sourceArray destArray)
 (println "For copied source, result should be close to 1 bit : "
@@ -50,6 +54,8 @@ This page contains the following code examples. They can be run as `lein repl < 
 (.addObservations teCalc sourceArray2 destArray)
 (println "For random source, result should be close to 0 bits : "
 	(.computeAverageLocalOfObservations teCalc))
+
+)
 }}}
 
 = Example 2 - Transfer entropy on multidimensional binary data =
@@ -62,18 +68,71 @@ This example shows how to handle multidimensional arrays from Clojure to Java.
 ; Import relevant classes:
 (import infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete)
 
-; Create many columns in a multidimensional array (2 rows by 100 columns),
-;  where the next time step (row 2) copies the value of the column on the left
-;  from the previous time step (row 1):
-(def row1 (int-array (take 100 (repeatedly #(rand-int 2)))))
-(def row2 (int-array (cons (aget row1 99) (butlast row1)))) ; shifts row1 by 1
-(def twoDTimeSeriesClojure (into-array (map int-array [row1 row2])))
+(let
+    ; Create many columns in a multidimensional array (2 rows by 100 columns),
+    ;  where the next time step (row 2) copies the value of the column on the left
+    ;  from the previous time step (row 1):
+    [row1 (int-array (take 100 (repeatedly #(rand-int 2))))
+     row2 (int-array (cons (aget row1 99) (butlast row1))) ; shifts row1 by 1
+     twoDTimeSeriesClojure (into-array (map int-array [row1 row2]))
+     ; Create TE calculator
+     teCalc (TransferEntropyCalculatorDiscrete. 2 1)
+    ]
 
-; Create a TE calculator and run it:
-(def teCalc (TransferEntropyCalculatorDiscrete. 2 1))
+
+; Initialise the TE calculator and run it:
 (.initialise teCalc)
 ; Add observations of transfer across one cell to the right per time step:
 (.addObservations teCalc twoDTimeSeriesClojure 1)
 (println "The result should be close to 1 bit here, since we are executing copy operations of what is effectively a random bit to each cell here:"
 	(.computeAverageLocalOfObservations teCalc))
+
+)
+}}}
+
+= Example 3 - Transfer entropy on continuous data using kernel estimators =
+
+[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/clojure/examples/example3TeContinuousDataKernel.clj example3TeContinuousDataKernel.clj] - Simple transfer entropy (TE) calculation on continuous-valued data using the (box) kernel-estimator TE calculator.
+
+{{{
+; Import relevant classes:
+(import infodynamics.measures.continuous.kernel.TransferEntropyCalculatorKernel)
+
+; Generate some random normalised data.
+(let 
+    [numObservations 1000
+     covariance 0.4
+     sourceArray (double-array (take numObservations (repeatedly #(rand))))
+     destArray (double-array 
+	(cons 0 
+	    (map + 
+		(map (partial * covariance) (butlast sourceArray)) 
+		(map (partial * (- covariance 1)) (double-array (take (- numObservations 1) (repeatedly #(rand))))) )))
+     sourceArray2 (double-array (take numObservations (repeatedly #(rand))))
+     teCalc (TransferEntropyCalculatorKernel. )
+    ]
+
+; Set up the calculator
+(.setProperty teCalc "NORMALISE" "true")
+(.initialise teCalc 1 0.5) ; Use history length 1 (Schreiber k=1), kernel width of 0.5 normalised units
+
+(.setObservations teCalc sourceArray destArray)
+; For copied source, should give something close to expected value for correlated Gaussians:
+(println "TE result " (.computeAverageLocalOfObservations teCalc)
+	" expected to be close to " (/ (Math/log (/ 1 (- 1 (* covariance covariance)))) (Math/log 2))
+	" for these correlated Gaussians but biased upward")
+
+(.initialise teCalc ) ; Initialise leaving the parameters the same
+(.setObservations teCalc sourceArray2 destArray)
+; For random source, it should give something close to 0 bits
+(println "TE result " (.computeAverageLocalOfObservations teCalc)
+	" expected to be close to 0 bits for these uncorrelated Gaussians but will be biased upward")
+
+; We can get insight into the bias by examining the null distribution:
+(def nullDist (.computeSignificance teCalc 100))
+(println "Null distribution for unrelated source and destination "
+	"(i.e. the bias) has mean " (.getMeanOfDistribution nullDist)
+	" and standard deviation " (.getStdOfDistribution nullDist))
+
+)
 }}}
