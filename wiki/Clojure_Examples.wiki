@@ -26,6 +26,8 @@ This page contains the following code examples. They can be run as `lein repl < 
   * [#Example_1_-_Transfer_entropy_on_binary_data Example 1 - Transfer entropy on binary data]
   * [#Example_2_-_Transfer_entropy_on_multidimensional_binary_data Example 2 - Transfer entropy on multidimensional binary data]
   * [#Example_3_-_Transfer_entropy_on_continuous_data_using_kernel_est Example 3 - Transfer entropy on continuous data using kernel estimators]
+  * [#Example_4_-_Transfer_entropy_on_continuous_data_using_Kraskov_es Example 4 - Transfer entropy on continuous data using Kraskov estimators]
+  * More to come ...
 
 = Example 1 - Transfer entropy on binary data =
 
@@ -97,18 +99,20 @@ This example shows how to handle multidimensional arrays from Clojure to Java.
 {{{
 ; Import relevant classes:
 (import infodynamics.measures.continuous.kernel.TransferEntropyCalculatorKernel)
+(import java.util.Random)
+(def rg (Random.))
 
-; Generate some random normalised data.
 (let 
     [numObservations 1000
      covariance 0.4
-     sourceArray (double-array (take numObservations (repeatedly #(rand))))
+     ; Generate some random normalised data.
+     sourceArray (double-array (take numObservations (repeatedly #(.nextGaussian rg))))
      destArray (double-array 
 	(cons 0 
 	    (map + 
 		(map (partial * covariance) (butlast sourceArray)) 
-		(map (partial * (- covariance 1)) (double-array (take (- numObservations 1) (repeatedly #(rand))))) )))
-     sourceArray2 (double-array (take numObservations (repeatedly #(rand))))
+		(map (partial * (- covariance 1)) (double-array (take (- numObservations 1) (repeatedly #(.nextGaussian rg))))) )))
+     sourceArray2 (double-array (take numObservations (repeatedly #(.nextGaussian rg))))
      teCalc (TransferEntropyCalculatorKernel. )
     ]
 
@@ -133,6 +137,62 @@ This example shows how to handle multidimensional arrays from Clojure to Java.
 (println "Null distribution for unrelated source and destination "
 	"(i.e. the bias) has mean " (.getMeanOfDistribution nullDist)
 	" and standard deviation " (.getStdOfDistribution nullDist))
+
+)
+}}}
+
+= Example 4 - Transfer entropy on continuous data using Kraskov estimators =
+
+[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/example4TeContinuousDataKraskov.m example4TeContinuousDataKraskov.m] - Simple transfer entropy (TE) calculation on continuous-valued data using the Kraskov-estimator TE calculator.
+
+{{{
+; Import relevant classes:
+(import infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov)
+(import java.util.Random)
+(def rg (Random.))
+
+(let 
+    [numObservations 1000
+     covariance 0.4
+     ; Generate some random normalised data.
+     sourceArray (double-array (take numObservations (repeatedly #(.nextGaussian rg))))
+     destArray (double-array 
+	(cons 0 
+	    (map + 
+		(map (partial * covariance) (butlast sourceArray)) 
+		(map (partial * (- covariance 1)) (double-array (take (- numObservations 1) (repeatedly #(.nextGaussian rg))))) )))
+     sourceArray2 (double-array (take numObservations (repeatedly #(.nextGaussian rg))))
+     teCalc (TransferEntropyCalculatorKraskov. )
+    ]
+
+; Set up the calculator
+(.setProperty teCalc "k" "4") ; Use Kraskov parameter K=4 for 4 nearest points
+(.initialise teCalc 1) ; Use history length 1 (Schreiber k=1)
+
+; Perform calculation with correlated source:
+(.setObservations teCalc sourceArray destArray)
+; Note that the calculation is a random variable (because the generated
+;  data is a set of random variables) - the result will be of the order
+;  of what we expect, but not exactly equal to it; in fact, there will
+;  be a large variance around it.
+(println "TE result " (.computeAverageLocalOfObservations teCalc)
+	" nats expected to be close to " (Math/log (/ 1 (- 1 (* covariance covariance))))
+	" nats for these correlated Gaussians")
+
+; Perform calculation with uncorrelated source:
+(.initialise teCalc ) ; Initialise leaving the parameters the same
+(.setObservations teCalc sourceArray2 destArray)
+; For random source, it should give something close to 0 bits
+(println "TE result " (.computeAverageLocalOfObservations teCalc)
+	" nats expected to be close to 0 nats for these uncorrelated Gaussians")
+
+; We can also compute the local TE values for the time-series samples here:
+;  (See more about utility of local TE in the CA demos)
+(def localTE (.computeLocalOfPreviousObservations teCalc))
+
+(println "Notice that the mean of locals, "
+	(/ (reduce + localTE) (- numObservations 1))
+	" nats, equals the previous result")
 
 )
 }}}
