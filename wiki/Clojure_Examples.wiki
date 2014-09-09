@@ -196,3 +196,7 @@ This example shows how to handle multidimensional arrays from Clojure to Java.
 
 )
 }}}
+
+= Acknowledgements =
+
+A big thank you to Matthew Chadwick for showing me how to do this and getting things up and running with clojure and leiningen.
