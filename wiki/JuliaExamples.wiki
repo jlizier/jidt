@@ -1,0 +1,53 @@
+#summary Examples of using the toolkit in Julia
+#labels julia,examples,Phase-Deploy
+
+[Demos] > Julia code examples
+
+= Julia code examples =
+
+This page describes a basic set of demonstration scripts for using the toolkit in Julia. The .jl files can be found at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Fjulia demos/julia] in the svn or main distributions.
+
+Please see UseInJulia for instructions on how to begin using JIDT from inside Julia, using the `JavaCall` package.
+
+This page contains the following code examples:
+  * [#Example_1_-_Transfer_entropy_on_binary_data Example 1 - Transfer entropy on binary data]
+
+Be aware that multidimensional arrays cannot yet be passed from Julia to Java via the `JavaCall` package; as such we have not implemented Example 2 nor Example 5 from the SimpleJavaDemos
+
+= Example 1 - Transfer entropy on binary data =
+
+[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/julia/example1TeBinaryData.jl example1TeBinaryData.jl] - Simple transfer entropy (TE) calculation on binary data using the discrete TE calculator:
+
+{{{
+# Import the JavaCall package:
+using JavaCall;
+
+# Change location of jar to match yours:
+jarLocation = "../../infodynamics.jar";
+# Start the JVM supplying classpath and heap size
+#  (increase memory here if you get crashes due to not enough space)
+JavaCall.init(["-Djava.class.path=$(jarLocation)", "-Xmx128M"]);
+
+# Generate some random binary data.
+sourceArray=rand(0:1, 100);
+destArray = [0; sourceArray[1:99]];
+sourceArray2=rand(0:1, 100);
+
+# Create a TE calculator and run it:
+teClass = @jimport infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete;
+teCalc=teClass((jint, jint), 2, 1);
+jcall(teCalc, "initialise", Void, ()); # This is how to indicate a void return type and arguments
+
+# We can pass simple arrays of ints directly in:
+jcall(teCalc, "addObservations", Void, (Array{jint,1}, Array{jint,1}),
+				     sourceArray, destArray);
+result = jcall(teCalc, "computeAverageLocalOfObservations", jdouble, ());
+@printf("For copied source, result should be close to 1 bit : %.4f\n", result);
+
+jcall(teCalc, "initialise", Void, ());
+jcall(teCalc, "addObservations", Void, (Array{jint,1}, Array{jint,1}),
+				     sourceArray2, destArray);
+result2 = jcall(teCalc, "computeAverageLocalOfObservations", jdouble, ());
+@printf("For random source, result should be close to 0 bits: %.4f\n", result2);
+
+}}}
