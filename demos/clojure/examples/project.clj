@@ -7,5 +7,6 @@
       :url "http://www.gnu.org/licenses/gpl.html"
       :distribution :repo
     }
-  :dependencies [[org.clojure/clojure "1.6.0"] [me.lizier/jidt "LATEST"] ])
+  :dependencies [[org.clojure/clojure "1.6.0"]
+  		 [me.lizier/jidt "LATEST"] ])
   
