@@ -3,7 +3,7 @@
 
 = Introduction =
 
-The Java code from this toolkit can easily be used in Clojure -- the project jar has been deployed to maven as [https://clojars.org/me.lizier/jidt me.lizier/jidt] for automated inclusion in clojure projects (see further details below).
+The Java code from this toolkit can easily be used in [http://clojure.org/ Clojure] -- the project jar has been deployed to maven as [https://clojars.org/me.lizier/jidt me.lizier/jidt] for automated inclusion in clojure projects (see further details below).
 
 Here we give only a brief overview of calling Java code from [http://clojure.org/ Clojure]; several longer examples of using the JIDT toolkit in Clojure can be viewed at [Clojure_Examples].
 
