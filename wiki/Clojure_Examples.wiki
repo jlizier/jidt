@@ -5,7 +5,7 @@
 
 = Clojure code examples =
 
-This page describes a basic set of demonstration scripts for using the toolkit in Clojure. The .clj files can be found at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Fclojure%2Fexamples demos/clojure/examples] in the svn or main distributions.
+This page describes a basic set of demonstration scripts for using the toolkit in Clojure. The .clj files (ready for use in Clojure REPL) can be found at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Fclojure%2Fexamples demos/clojure/examples] in the svn or main distributions.
 
 Please see UseInClojure for instructions on how to begin using the Java toolkit from inside clojure. Most importantly, the [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Fclojure%2Fexamples%2Fproject.clj project.clj] file in this directory includes a reference to the JIDT jar file hosted at [https://clojars.org/me.lizier/jidt me.lizier/jidt] on the clojars.org repository:
 
@@ -22,12 +22,13 @@ Please see UseInClojure for instructions on how to begin using the Java toolkit 
   :dependencies [[org.clojure/clojure "1.6.0"] [me.lizier/jidt "LATEST"] ])
 }}}
 
-This page contains the following code examples:
+This page contains the following code examples. They can be run as `lein repl < example1TeBinaryData.clj` (Clojure uses will know how to properly take this code and start projects):
   * [#Example_1_-_Transfer_entropy_on_binary_data Example 1 - Transfer entropy on binary data]
+  * [#Example_2_-_Transfer_entropy_on_multidimensional_binary_data Example 2 - Transfer entropy on multidimensional binary data]
 
 = Example 1 - Transfer entropy on binary data =
 
-[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/example1TeBinaryData.m example1TeBinaryData.m] - Simple transfer entropy (TE) calculation on binary data using the discrete TE calculator:
+[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/example1TeBinaryData.clj example1TeBinaryData.clj] - Simple transfer entropy (TE) calculation on binary data using the discrete TE calculator:
 
 {{{
 ; Import relevant classes:
@@ -48,5 +49,31 @@ This page contains the following code examples:
 (.initialise teCalc)
 (.addObservations teCalc sourceArray2 destArray)
 (println "For random source, result should be close to 0 bits : "
+	(.computeAverageLocalOfObservations teCalc))
+}}}
+
+= Example 2 - Transfer entropy on multidimensional binary data =
+
+[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/clojure/examples/example2TeMultidimBinaryData.clj example2TeMultidimBinaryData.clj] - Simple transfer entropy (TE) calculation on multidimensional binary data using the discrete TE calculator.
+
+This example shows how to handle multidimensional arrays from Clojure to Java.
+
+{{{
+; Import relevant classes:
+(import infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete)
+
+; Create many columns in a multidimensional array (2 rows by 100 columns),
+;  where the next time step (row 2) copies the value of the column on the left
+;  from the previous time step (row 1):
+(def row1 (int-array (take 100 (repeatedly #(rand-int 2)))))
+(def row2 (int-array (cons (aget row1 99) (butlast row1)))) ; shifts row1 by 1
+(def twoDTimeSeriesClojure (into-array (map int-array [row1 row2])))
+
+; Create a TE calculator and run it:
+(def teCalc (TransferEntropyCalculatorDiscrete. 2 1))
+(.initialise teCalc)
+; Add observations of transfer across one cell to the right per time step:
+(.addObservations teCalc twoDTimeSeriesClojure 1)
+(println "The result should be close to 1 bit here, since we are executing copy operations of what is effectively a random bit to each cell here:"
 	(.computeAverageLocalOfObservations teCalc))
 }}}
