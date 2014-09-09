@@ -16,31 +16,30 @@
 ;  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ;
 
-;; = Example 1 - Transfer entropy on binary data =
+; = Example 2 - Transfer entropy on multidimensional binary data =
 
-; Simple transfer entropy (TE) calculation on binary data using the discrete TE calculator:
+; Simple transfer entropy (TE) calculation on multidimensional binary data using the discrete TE calculator.
 
 ; Import relevant classes:
 (import infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete)
 
 (let
-    ; Generate some random binary data.
-    [sourceArray (int-array (take 100 (repeatedly #(rand-int 2))))
-     destArray (int-array (cons 0 (butlast sourceArray))) ; shifts sourceArray by 1
-     sourceArray2 (int-array (take 100 (repeatedly #(rand-int 2))))
+    ; Create many columns in a multidimensional array (2 rows by 100 columns),
+    ;  where the next time step (row 2) copies the value of the column on the left
+    ;  from the previous time step (row 1):
+    [row1 (int-array (take 100 (repeatedly #(rand-int 2))))
+     row2 (int-array (cons (aget row1 99) (butlast row1))) ; shifts row1 by 1
+     twoDTimeSeriesClojure (into-array (map int-array [row1 row2]))
      ; Create TE calculator
      teCalc (TransferEntropyCalculatorDiscrete. 2 1)
     ]
 
+
 ; Initialise the TE calculator and run it:
 (.initialise teCalc)
-(.addObservations teCalc sourceArray destArray)
-(println "For copied source, result should be close to 1 bit : "
-	(.computeAverageLocalOfObservations teCalc))
-
-(.initialise teCalc)
-(.addObservations teCalc sourceArray2 destArray)
-(println "For random source, result should be close to 0 bits : "
+; Add observations of transfer across one cell to the right per time step:
+(.addObservations teCalc twoDTimeSeriesClojure 1)
+(println "The result should be close to 1 bit here, since we are executing copy operations of what is effectively a random bit to each cell here:"
 	(.computeAverageLocalOfObservations teCalc))
 
 )
