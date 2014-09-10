@@ -11,8 +11,10 @@ Please see UseInJulia for instructions on how to begin using JIDT from inside Ju
 
 This page contains the following code examples:
   * [#Example_1_-_Transfer_entropy_on_binary_data Example 1 - Transfer entropy on binary data]
+  * [#Example_3_-_Transfer_entropy_on_continuous_data_using_kernel_est Example 3 - Transfer entropy on continuous data using kernel estimators]
+  * [#Example_4_-_Transfer_entropy_on_continuous_data_using_Kraskov_es Example 4 - Transfer entropy on continuous data using Kraskov estimators]
 
-Be aware that multidimensional arrays cannot yet be passed from Julia to Java via the `JavaCall` package; as such we have not implemented Example 2 nor Example 5 from the SimpleJavaDemos
+Be aware that multidimensional arrays cannot yet be passed from Julia to Java via the `JavaCall` package; as such we have not implemented Example 2 nor Example 5 from the SimpleJavaExamples.
 
 = Example 1 - Transfer entropy on binary data =
 
@@ -50,4 +52,101 @@ jcall(teCalc, "addObservations", Void, (Array{jint,1}, Array{jint,1}),
 result2 = jcall(teCalc, "computeAverageLocalOfObservations", jdouble, ());
 @printf("For random source, result should be close to 0 bits: %.4f\n", result2);
 
+}}}
+
+= Example 3 - Transfer entropy on continuous data using kernel estimators =
+
+[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/julia/example3TeContinuousDataKernel.jl example3TeContinuousDataKernel.jl] - Simple transfer entropy (TE) calculation on continuous-valued data using the (box) kernel-estimator TE calculator.
+
+{{{
+# Import the JavaCall package:
+using JavaCall;
+
+# Change location of jar to match yours:
+jarLocation = "../../infodynamics.jar";
+# Start the JVM supplying classpath and heap size
+#  (increase memory here if you get crashes due to not enough space)
+JavaCall.init(["-Djava.class.path=$(jarLocation)", "-Xmx128M"]);
+
+# Generate some random normalised data.
+numObservations = 1000;
+covariance=0.4;
+sourceArray=randn(numObservations);
+destArray = [0, covariance*sourceArray[1:numObservations-1] + (1-covariance)*randn(numObservations - 1)];
+sourceArray2=randn(numObservations); # Uncorrelated source
+# Create a TE calculator and run it:
+teClass = @jimport infodynamics.measures.continuous.kernel.TransferEntropyCalculatorKernel;
+teCalc=teClass(());
+jcall(teCalc, "setProperty", Void, (JString, JString), "NORMALISE", "true"); # Normalise the individual variables
+jcall(teCalc, "initialise", Void, (jint, jdouble), 1, 0.5); # Use history length 1 (Schreiber k=1), kernel width of 0.5 normalised units
+jcall(teCalc, "setObservations", Void, (Array{jdouble,1}, Array{jdouble,1}),
+				     sourceArray, destArray);
+# For copied source, should give something close to expected value for correlated Gaussians:
+result = jcall(teCalc, "computeAverageLocalOfObservations", jdouble, ());
+@printf("TE result %.4f bits; expected to be close to %.4f bits for these correlated Gaussians but biased upwards\n", result, log(1/(1-covariance^2))/log(2));
+
+jcall(teCalc, "initialise", Void, ()); # Initialise leaving the parameters the same
+jcall(teCalc, "setObservations", Void, (Array{jdouble,1}, Array{jdouble,1}),
+				     sourceArray2, destArray);
+# For random source, it should give something close to 0 bits
+result2 = jcall(teCalc, "computeAverageLocalOfObservations", jdouble, ());
+@printf("TE result %.4f bits; expected to be close to 0 bits for uncorrelated Gaussians but will be biased upwards\n", result2);
+
+# We can get insight into the bias by examining the null distribution:
+empiricalDistClass = @jimport infodynamics.utils.EmpiricalMeasurementDistribution;
+nullDist = jcall(teCalc, "computeSignificance", empiricalDistClass, (jint,), 100);
+@printf("Null distribution for unrelated source and destination (i.e. the bias) has mean %.4f and standard deviation %.4f\n",
+	jcall(nullDist, "getMeanOfDistribution", jdouble, ()),
+	jcall(nullDist, "getStdOfDistribution", jdouble, ()));
+}}}
+
+= Example 4 - Transfer entropy on continuous data using Kraskov estimators =
+
+[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/julia/example4TeContinuousDataKraskov.jl example4TeContinuousDataKraskov.jl] - Simple transfer entropy (TE) calculation on continuous-valued data using the Kraskov-estimator TE calculator.
+
+{{{
+# Import the JavaCall package:
+using JavaCall;
+
+# Change location of jar to match yours:
+jarLocation = "../../infodynamics.jar";
+# Start the JVM supplying classpath and heap size
+#  (increase memory here if you get crashes due to not enough space)
+JavaCall.init(["-Djava.class.path=$(jarLocation)", "-Xmx128M"]);
+
+# Generate some random normalised data.
+numObservations = 1000;
+covariance=0.4;
+sourceArray=randn(numObservations);
+destArray = [0, covariance*sourceArray[1:numObservations-1] + (1-covariance)*randn(numObservations - 1)];
+sourceArray2=randn(numObservations); # Uncorrelated source
+
+# Create a TE calculator and run it:
+teClass = @jimport infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov;
+teCalc=teClass(());
+jcall(teCalc, "setProperty", Void, (JString, JString), "k", "4"); # Use Kraskov parameter K=4 for 4 nearest points
+jcall(teCalc, "initialise", Void, (jint, ), 1); # Use history length 1 (Schreiber k=1)
+# Perform calculation with correlated source:
+jcall(teCalc, "setObservations", Void, (Array{jdouble,1}, Array{jdouble,1}),
+				     sourceArray, destArray);
+result = jcall(teCalc, "computeAverageLocalOfObservations", jdouble, ());
+# Note that the calculation is a random variable (because the generated
+#  data is a set of random variables) - the result will be of the order
+#  of what we expect, but not exactly equal to it; in fact, there will
+#  be a large variance around it.
+@printf("TE result %.4f nats; expected to be close to %.4f nats for these correlated Gaussians\n",
+    result, log(1/(1-covariance^2)));
+
+# Perform calculation with uncorrelated source:
+jcall(teCalc, "initialise", Void, ()); # Initialise leaving the parameters the same
+jcall(teCalc, "setObservations", Void, (Array{jdouble,1}, Array{jdouble,1}),
+				     sourceArray2, destArray);
+result2 = jcall(teCalc, "computeAverageLocalOfObservations", jdouble, ());
+@printf("TE result %.4f nats; expected to be close to 0 nats for these uncorrelated Gaussians\n", result2);
+
+# We can also compute the local TE values for the time-series samples here:
+#  (See more about utility of local TE in the CA demos)
+localTE = jcall(teCalc, "computeLocalOfPreviousObservations", Array{jdouble,1}, ());
+@printf("Notice that the mean of locals, %.4f nats, equals the previous result\n",
+	sum(localTE)/(numObservations-1));
 }}}
