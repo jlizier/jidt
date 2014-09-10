@@ -5,7 +5,7 @@
 
 = Clojure code examples =
 
-This page describes a basic set of demonstration scripts for using the toolkit in Clojure. The .clj files (ready for use in Clojure REPL) can be found at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Fclojure%2Fexamples demos/clojure/examples] in the svn or main distributions.
+This page describes a basic set of demonstration scripts for using the toolkit in Clojure. The .clj files (ready for use in Clojure REPL) can be found at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Fclojure%2Fexamples demos/clojure/examples] in the svn or main distributions (from the V1.1 release at a future point in time ...). 
 
 Please see UseInClojure for instructions on how to begin using the Java toolkit from inside clojure. Most importantly, the [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Fclojure%2Fexamples%2Fproject.clj project.clj] file in this directory includes a reference to the JIDT jar file hosted at [https://clojars.org/me.lizier/jidt me.lizier/jidt] on the clojars.org repository:
 
