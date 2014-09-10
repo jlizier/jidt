@@ -9,6 +9,7 @@ Several sets of demonstration code are distributed with the toolkit. Links to th
    * OctaveMatlabExamples -- `demos/octave` -- basic examples on using the Java toolkit from Octave or Matlab environments;
    * PythonExamples -- `demos/python` -- basic examples on using the Java toolkit from Python using the JPype interface;
    * [R_Examples] -- `demos/r` -- basic examples on using the Java toolkit from R using the rJava interface;
+   * [JuliaExamples] -- `demos/julia` -- basic examples on using the Java toolkit from Julia;
    * [Clojure_Examples] -- `demos/clojure/examples` -- basic examples on using the Java toolkit from Clojure;
   * SchreiberTeDemos -- `demos/octave/SchreiberTransferEntropyExamples` -- using the toolkit to reproduce the transfer entropy examples originally included in Schreiber's 2000 paper introducing transfer entropy;
   * CellularAutomataDemos -- `demos/octave/CellularAutomata` -- using the Java toolkit to plot local information dynamics profiles in cellular automata; the demo is run under Octave or Matlab;
