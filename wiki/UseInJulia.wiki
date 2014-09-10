@@ -1,4 +1,4 @@
-#summary How to use the toolkit in Clojure
+#summary How to use the toolkit in Julia
 #labels julia
 
 = Introduction =
@@ -18,5 +18,5 @@ You can then run your Java code in Julia as follows:
  # Create an instance of the calculator you wish to use, e.g. `teCalc = teClass((jint,jint,), 2, 1)`
  # Call methods on the object, passing in the return type of the method and a tuple of argument types and the arguments themselves, e.g. or `jcall(teCalc, "getPastCount", int,(int,))`, or `jcall(teCalc, "initialise", Void,())` for a void return type and no arguments. See how to specify array types below.
 
-*Array conversion* -- _single dimensional_ arrays can be passed directly back and forth. Take care to indicate their type correctly when passing into a Java method, e.g. `jcall(teCalc, "addObservations", Void, (Array{jint,1}, Array{jint,1}), sourceArray, destArray);`. _Multi-dimensional_ arrays however are not yet supported in JavaCall (see [http://aviks.github.io/JavaCall.jl/ here]). 
+*Array conversion* -- _single dimensional_ arrays can be passed directly back and forth. Take care to indicate their type correctly when passing into a Java method (see [http://aviks.github.io/JavaCall.jl/methods.html JavaCall docs]), e.g. `jcall(teCalc, "addObservations", Void, (Array{jint,1}, Array{jint,1}), sourceArray, destArray);`. _Multi-dimensional_ arrays however are not yet supported in `JavaCall` (see [http://aviks.github.io/JavaCall.jl/ here]). 
 We're looking into whether we can make a conversion script to do this manually ...
