@@ -5,7 +5,7 @@
 
 = Julia code examples =
 
-This page describes a basic set of demonstration scripts for using the toolkit in Julia. The .jl files can be found at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Fjulia demos/julia] in the svn or main distributions.
+This page describes a basic set of demonstration scripts for using the toolkit in Julia. The .jl files can be found at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Fjulia demos/julia] in the svn or main distributions (from the V1.1 release at a future point in time ...).
 
 Please see UseInJulia for instructions on how to begin using JIDT from inside Julia, using the `JavaCall` package.
 
