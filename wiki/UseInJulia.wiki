@@ -12,8 +12,8 @@ Here we give only a brief overview of calling Java code from [http://julialang.o
 First, you need to install the [http://aviks.github.io/JavaCall.jl/ JavaCall] package in Julia; this is done inside a Julia session by calling: `Pkg.add("JavaCall")`.
 
 You can then run your Java code in Julia as follows:
- # Include the JavaCall package with command: `using JavaCall;`
- # Initialise the JavaCall package and tell it where our `infodynamics.jar` file is, e.g.: `JavaCall.init(["-Xmx128M", "-Djava.class.path=$(jarLocation)"]);`
+ # Include the `JavaCall` package with command: `using JavaCall;`
+ # Initialise the `JavaCall` package and tell it where our `infodynamics.jar` file is, e.g.: `JavaCall.init(["-Xmx128M", "-Djava.class.path=$(jarLocation)"]);`
  # Import the classes you wish to use, e.g. `teClass = @jimport infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete;`.
  # Create an instance of the calculator you wish to use, e.g. `teCalc = teClass((jint,jint,), 2, 1)`
  # Call methods on the object, passing in the return type of the method and a tuple of argument types and the arguments themselves, e.g. or `jcall(teCalc, "getPastCount", int,(int,))`, or `jcall(teCalc, "initialise", Void,())` for a void return type and no arguments. See how to specify array types below.
