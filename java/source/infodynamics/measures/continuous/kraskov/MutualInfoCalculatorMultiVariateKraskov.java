@@ -156,11 +156,13 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	 * 		default is {@link EuclideanUtils#NORM_MAX_NORM}.
 	 *  <li>{@link #PROP_NORMALISE} -- whether to normalise the incoming individual
 	 *      variables to mean 0 and standard deviation 1 (true by default)</li>
-	 *  <li>{@link #PROP_ADD_NOISE} -- an amount of random noise to add to
-	 *       each variable, to avoid having neighbourhoods with artificially
-	 *       large counts. The amount is added in before any normalisation. 
-	 *       (Recommended by Kraskov. MILCA uses 1e-8; but adds in
-	 *       a random amount of noise in [0,noiseLevel) ). Default 0.</li>
+	 *  <li>{@link #PROP_ADD_NOISE} -- a standard deviation for an amount of
+	 *  	random Gaussian noise to add to
+	 *      each variable, to avoid having neighbourhoods with artificially
+	 *      large counts. The amount is added in after any normalisation,
+	 *      so can be considered as a number of standard deviations of the data.
+	 *      (Recommended by Kraskov. MILCA uses 1e-8; but adds in
+	 *      a random amount of noise in [0,noiseLevel) ). Default 0.</li>
 	 *  <li>any valid properties for {@link MutualInfoMultiVariateCommon#setProperty(String, String)}.</li>
 	 * </ul>
 	 * 
@@ -201,6 +203,14 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 		// Allow the parent to generate the data for us first
 		super.finaliseAddObservations();
 		
+		// Normalise the data if required
+		if (normalise) {
+			// We can overwrite these since they're already
+			//  a copy of the users' data.
+			MatrixUtils.normalise(sourceObservations);
+			MatrixUtils.normalise(destObservations);
+		}
+		
 		if (addNoise) {
 			Random random = new Random();
 			// Add Gaussian noise of std dev noiseLevel to the data
@@ -214,13 +224,6 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 							random.nextGaussian()*noiseLevel;
 				}
 			}
-		}
-		
-		// Then normalise the data if required
-		if (normalise) {
-			// Take a copy since we're going to normalise it
-			sourceObservations = MatrixUtils.normaliseIntoNewArray(sourceObservations);
-			destObservations = MatrixUtils.normaliseIntoNewArray(destObservations);
 		}
 	}
 
