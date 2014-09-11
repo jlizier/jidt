@@ -18,6 +18,8 @@
 
 package infodynamics.measures.continuous.kraskov;
 
+import java.util.Random;
+
 import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariate;
 import infodynamics.measures.continuous.ConditionalMutualInfoMultiVariateCommon;
 import infodynamics.utils.EuclideanUtils;
@@ -115,6 +117,20 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	 *  default is {@link EuclideanUtils#NORM_MAX_NORM}.
 	 */
 	public final static String PROP_NORM_TYPE = "NORM_TYPE";
+	/**
+	 * Property name for an amount of random Gaussian noise to be
+	 *  added to the data (default is 0).
+	 */
+	public static final String PROP_ADD_NOISE = "NOISE_LEVEL_TO_ADD";
+
+	/**
+	 * Whether to add an amount of random noise to the incoming data
+	 */
+	protected boolean addNoise = false;
+	/**
+	 * Amount of random Gaussian noise to add to the incoming data
+	 */
+	protected double noiseLevel = 0.0;
 
 	/**
 	 * Construct an instance of the KSG conditional MI calculator
@@ -147,6 +163,13 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	 * 		working out the norms between the points in each marginal space.
 	 * 		Options are defined by {@link EuclideanUtils#setNormToUse(String)} -
 	 * 		default is {@link EuclideanUtils#NORM_MAX_NORM}.
+	 *  <li>{@link #PROP_ADD_NOISE} -- a standard deviation for an amount of
+	 *  	random Gaussian noise to add to
+	 *      each variable, to avoid having neighbourhoods with artificially
+	 *      large counts. The amount is added in after any normalisation,
+	 *      so can be considered as a number of standard deviations of the data.
+	 *      (Recommended by Kraskov. MILCA uses 1e-8; but adds in
+	 *      a random amount of noise in [0,noiseLevel) ). Default 0.</li>
 	 *  <li>any valid properties for {@link ConditionalMutualInfoMultiVariateCommon#setProperty(String, String)},
 	 *     notably including {@link ConditionalMutualInfoMultiVariateCommon#PROP_NORMALISE}.</li>
 	 * </ul>
@@ -163,9 +186,40 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 			k = Integer.parseInt(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_NORM_TYPE)) {
 			normCalculator.setNormToUse(propertyValue);
+		} else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
+			addNoise = true;
+			noiseLevel = Double.parseDouble(propertyValue);
 		} else {
 			// Assume this is a property for the common parent class
 			super.setProperty(propertyName, propertyValue);
+		}
+	}
+
+	/* (non-Javadoc)
+	 * @see infodynamics.measures.continuous.ConditionalMutualInfoMultiVariateCommon#finaliseAddObservations()
+	 */
+	@Override
+	public void finaliseAddObservations() throws Exception {
+		// Allow the parent to generate the data for us first
+		super.finaliseAddObservations();
+		
+		if (addNoise) {
+			Random random = new Random();
+			// Add Gaussian noise of std dev noiseLevel to the data
+			for (int r = 0; r < var1Observations.length; r++) {
+				for (int c = 0; c < dimensionsVar1; c++) {
+					var1Observations[r][c] +=
+							random.nextGaussian()*noiseLevel;
+				}
+				for (int c = 0; c < dimensionsVar2; c++) {
+					var2Observations[r][c] +=
+							random.nextGaussian()*noiseLevel;
+				}
+				for (int c = 0; c < dimensionsCond; c++) {
+					condObservations[r][c] +=
+							random.nextGaussian()*noiseLevel;
+				}
+			}
 		}
 	}
 
