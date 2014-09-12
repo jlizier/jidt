@@ -24,6 +24,8 @@ import junit.framework.TestCase;
 
 public abstract class MutualInfoMultiVariateAbstractTester extends TestCase {
 
+	protected double lastResult = 0.0;
+	
 	/**
 	 * Confirm that the local values average correctly back to the average value
 	 * 
@@ -48,6 +50,7 @@ public abstract class MutualInfoMultiVariateAbstractTester extends TestCase {
 		
 		//teCalc.setDebug(true);
 		double mi = miCalc.computeAverageLocalOfObservations();
+		lastResult = mi;
 		//miCalc.setDebug(false);
 		double[] miLocal = miCalc.computeLocalOfPreviousObservations();
 		
@@ -88,12 +91,14 @@ public abstract class MutualInfoMultiVariateAbstractTester extends TestCase {
 		
 		// Now look at statistical significance tests
 		int[][] newOrderings = rg.generateDistinctRandomPerturbations(
-				timeSteps, 100);
+				timeSteps, 2);
 
 		miCalc.computeSignificance(newOrderings);
 		
 		// And compute the average value again to check that it's consistent:
 		for (int i = 0; i < 10; i++) {
+			double lastAverage = miCalc.getLastAverage();
+			assertEquals(mi, lastAverage);
 			double averageCheck1 = miCalc.computeAverageLocalOfObservations();
 			assertEquals(mi, averageCheck1);
 		}

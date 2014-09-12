@@ -24,6 +24,9 @@ import infodynamics.utils.MatrixUtils;
 public class MutualInfoMultiVariateTester
 	extends infodynamics.measures.continuous.MutualInfoMultiVariateAbstractTester {
 
+	protected String NUM_THREADS_TO_USE_DEFAULT = MutualInfoCalculatorMultiVariateKraskov.USE_ALL_THREADS;
+	protected String NUM_THREADS_TO_USE = NUM_THREADS_TO_USE_DEFAULT;
+	
 	/**
 	 * Utility function to create a calculator for the given algorithm number
 	 * 
@@ -47,7 +50,7 @@ public class MutualInfoMultiVariateTester
 	 *  neighbour searching.
 	 * 
 	 */
-	public void checkLocalsAverageCorrectly(int algNumber) throws Exception {
+	public void checkLocalsAverageCorrectly(int algNumber, String numThreads) throws Exception {
 		
 		MutualInfoCalculatorMultiVariateKraskov miCalc = getNewCalc(algNumber);
 		
@@ -56,12 +59,15 @@ public class MutualInfoMultiVariateTester
 		miCalc.setProperty(
 				MutualInfoCalculatorMultiVariateKraskov.PROP_K,
 				kraskov_K);
+		miCalc.setProperty(
+				MutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS,
+				numThreads);
 
 		super.testLocalsAverageCorrectly(miCalc, 2, 100);
 	}
 	public void testLocalsAverageCorrectly() throws Exception {
-		checkLocalsAverageCorrectly(1);
-		checkLocalsAverageCorrectly(2);
+		checkLocalsAverageCorrectly(1, NUM_THREADS_TO_USE);
+		checkLocalsAverageCorrectly(2, NUM_THREADS_TO_USE);
 	}
 	
 	/**
@@ -79,6 +85,9 @@ public class MutualInfoMultiVariateTester
 		miCalc.setProperty(
 				MutualInfoCalculatorMultiVariateKraskov.PROP_K,
 				kraskov_K);
+		miCalc.setProperty(
+				MutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS,
+				NUM_THREADS_TO_USE);
 
 		super.testComputeSignificanceDoesntAlterAverage(miCalc, 2, 100);
 	}
@@ -107,18 +116,23 @@ public class MutualInfoMultiVariateTester
 			miCalc.setProperty(
 					MutualInfoCalculatorMultiVariateKraskov.PROP_K,
 					Integer.toString(k));
+			miCalc.setProperty(
+					MutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS,
+					NUM_THREADS_TO_USE);
 			// No longer need to set this property as it's set by default:
 			//miCalc.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE,
 			//		EuclideanUtils.NORM_MAX_NORM_STRING);
 			miCalc.initialise(var1[0].length, var2[0].length);
 			miCalc.setObservations(var1, var2);
-			//miCalc.setDebug(true);
+			miCalc.setDebug(true);
 			double mi = miCalc.computeAverageLocalOfObservations();
-			//miCalc.setDebug(false);
+			miCalc.setDebug(false);
 			
 			System.out.printf("k=%d: Average MI %.8f (expected %.8f)\n",
 					k, mi, expectedResults[kIndex]);
-			assertEquals(expectedResults[kIndex], mi, 0.00000001);			
+			// Dropping required accuracy by one order of magnitude, due
+			//  to faster but slightly less accurate digamma estimator change
+			assertEquals(expectedResults[kIndex], mi, 0.0000001);			
 		}
 	}
 	
@@ -203,6 +217,45 @@ public class MutualInfoMultiVariateTester
 
 	/**
 	 * Test the computed multivariate MI against that calculated by Kraskov's own MILCA
+	 * tool on the same data, using various numbers of threads
+	 * 
+	 * To run Kraskov's tool (http://www.klab.caltech.edu/~kraskov/MILCA/) for this 
+	 * data, run:
+	 * ./MIxnyn <dataFile> 2 2 3000 <kNearestNeighbours> 0
+	 * 
+	 * @throws Exception if file not found 
+	 * 
+	 */
+	public void testMultivariateMIVariousNumThreads() throws Exception {
+		
+		// Test set 3a and 3b:
+		
+		// We'll just take the first two columns from this data set
+		ArrayFileReader afr = new ArrayFileReader("demos/data/4randomCols-1.txt");
+		double[][] data = afr.getDouble2DMatrix();
+		
+		// Use various Kraskov k nearest neighbours parameter
+		int[] kNNs = {3, 4};
+		// Expected values from Kraskov's MILCA toolkit:
+		double[] expectedFromMILCA_2 = {0.00186857,
+				-0.00377259};
+		
+		System.out.println("Kraskov comparison 3a - single threaded");
+		NUM_THREADS_TO_USE = "1";
+		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0, 1}),
+				MatrixUtils.selectColumns(data, new int[] {2, 3}),
+				kNNs, expectedFromMILCA_2);
+		System.out.println("Kraskov comparison 3b - dual threaded");
+		NUM_THREADS_TO_USE = "2";
+		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0, 1}),
+				MatrixUtils.selectColumns(data, new int[] {2, 3}),
+				kNNs, expectedFromMILCA_2);
+		NUM_THREADS_TO_USE = NUM_THREADS_TO_USE_DEFAULT;
+
+	}
+
+	/**
+	 * Test the computed multivariate MI against that calculated by Kraskov's own MILCA
 	 * tool on the same data.
 	 * 
 	 * To run Kraskov's tool (http://www.klab.caltech.edu/~kraskov/MILCA/) for this 
@@ -235,6 +288,8 @@ public class MutualInfoMultiVariateTester
 	/**
 	 * Test the computed multivariate MI against that calculated by Kraskov's own MILCA
 	 * tool on the same data.
+	 * This also tests for multithreading with residuals, assuming
+	 *  we're running on a 4 processor machine
 	 * 
 	 * To run Kraskov's tool (http://www.klab.caltech.edu/~kraskov/MILCA/) for this 
 	 * data, run:
