@@ -18,6 +18,7 @@
 
 package infodynamics.measures.continuous.kraskov;
 
+import java.util.Calendar;
 import java.util.Random;
 
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
@@ -120,9 +121,10 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	 */
 	protected double noiseLevel = 0.0;
 	/**
-	 * Number of parallel threads to use in the computation
+	 * Number of parallel threads to use in the computation;
+	 *  defaults to use all available.
 	 */
-	protected int numThreads = 1;
+	protected int numThreads = Runtime.getRuntime().availableProcessors();
 	/**
 	 * Private variable to record which algorithm this instance is implementing
 	 */
@@ -162,7 +164,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	 *  <li>{@link #PROP_NUM_THREADS} -- the integer number of parallel threads
 	 *  	to use in the computation. Can be passed as a string "USE_ALL"
 	 *      to use all available processors on the machine.
-	 *      Default is 1 for single-threaded.
+	 *      Default is "USE_ALL".
 	 *  <li>any valid properties for {@link MutualInfoMultiVariateCommon#setProperty(String, String)}.</li>
 	 * </ul>
 	 * 
@@ -240,8 +242,14 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	 */
 	public double computeAverageLocalOfObservations() throws Exception {
 		// Compute the MI
+		double startTime = Calendar.getInstance().getTimeInMillis();
 		lastAverage = computeFromObservations(false)[0];
 		miComputed = true;
+		if (debug) {
+			Calendar rightNow2 = Calendar.getInstance();
+			long endTime = rightNow2.getTimeInMillis();
+			System.out.println("Calculation time: " + ((endTime - startTime)/1000.0) + " sec" );
+		}
 		return lastAverage;
 	}
 

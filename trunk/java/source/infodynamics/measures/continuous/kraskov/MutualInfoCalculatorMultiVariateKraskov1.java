@@ -18,6 +18,8 @@
 
 package infodynamics.measures.continuous.kraskov;
 
+import java.util.Calendar;
+
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
@@ -63,6 +65,8 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 	protected double[] partialComputeFromObservations(
 			int startTimePoint, int numTimePoints, boolean returnLocals) throws Exception {
 		
+		double startTime = Calendar.getInstance().getTimeInMillis();
+
 		int N = sourceObservations.length; // number of observations
 		int cutoffForKthMinLinear = (int) (CUTOFF_MULTIPLIER * Math.log(N) / Math.log(2.0));
 		
@@ -125,6 +129,14 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 			if (returnLocals) {
 				localMi[t-startTimePoint] = digammaK - digammaNxPlusOne - digammaNyPlusOne + digammaN;
 			}
+		}
+		
+		if (debug) {
+			Calendar rightNow2 = Calendar.getInstance();
+			long endTime = rightNow2.getTimeInMillis();
+			System.out.println("Subset " + startTimePoint + ":" +
+					(startTimePoint + numTimePoints) + " Calculation time: " +
+					((endTime - startTime)/1000.0) + " sec" );
 		}
 		
 		// Select what to return:
