@@ -32,8 +32,8 @@ public class MathsUtils {
 	private static final double EULER_MASCHERONI_CONSTANT = 0.5772156;
 	
 	private static int highestDigammaArgCalced = 0;
-	private static final int NUM_STORED_DIGAMMAS = 10000;
-	private static double[] storedDigammas;
+	private static final int NUM_STORED_DIGAMMAS = 10000; // commons.math to handle beyond this
+	private static double[] storedDigammas = new double[0];
 	
 	/**
 	 * Returns the integer result of base^power
@@ -272,31 +272,42 @@ public class MathsUtils {
 		if (d < 1) {
 			return Double.NaN;
 		}
-		if (storedDigammas == null) {
-			// allocate space to store our results
-			storedDigammas = new double[NUM_STORED_DIGAMMAS];
-			storedDigammas[0] = Double.NaN;
-			storedDigammas[1] = -EULER_MASCHERONI_CONSTANT;
-			highestDigammaArgCalced = 1;
+		if (storedDigammas.length == 0) {
+			synchronized(storedDigammas) { // Ensure no race condition here
+				// We do two checks on whether the storage has been
+				//  created so that the first is very fast (without 
+				//  requiring synchronization), and the second
+				//  ensures no race condition.
+				if (storedDigammas.length == 0) {
+					// Using length == 0 as proxy to null, since 
+					//  we can't synchronize on a null object
+					
+					// allocate space to store our results
+					storedDigammas = new double[NUM_STORED_DIGAMMAS];
+					storedDigammas[0] = Double.NaN;
+					storedDigammas[1] = -EULER_MASCHERONI_CONSTANT;
+					highestDigammaArgCalced = 1;
+				}
+			}
 		}
 		if (d <= highestDigammaArgCalced) {
 			// We've already calculated this one
 			return storedDigammas[d];
 		}
-		// else need to calculate it
+		if (d >= NUM_STORED_DIGAMMAS) {
+			// Don't bother updating our storage,
+			//  directly use commons.math:
+			return Gamma.digamma(d);
+		}
+		// Else we'll calculate it and update the storage:
 		double result = storedDigammas[highestDigammaArgCalced];
 		for (int n = highestDigammaArgCalced + 1; n <= d; n++) {
 			result += 1.0 / (double) (n-1);
-			if (n < NUM_STORED_DIGAMMAS) {
-				storedDigammas[n] = result;
-			}
+			// n must be < NUM_STORED_DIGAMMAS by earlier if statement on d
+			storedDigammas[n] = result;
 		}
-		if (d < NUM_STORED_DIGAMMAS) {
-			highestDigammaArgCalced = d;
-		} else {
-			highestDigammaArgCalced = NUM_STORED_DIGAMMAS - 1;
-		}
-		return result;		
+		highestDigammaArgCalced = d;
+		return result;
 	}
 	
 	/**

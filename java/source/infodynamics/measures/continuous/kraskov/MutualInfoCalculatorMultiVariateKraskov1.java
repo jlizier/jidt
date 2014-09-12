@@ -43,6 +43,7 @@ import infodynamics.utils.MatrixUtils;
  * 
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
+ * @author Ipek Özdemir
  */
 public class MutualInfoCalculatorMultiVariateKraskov1
 	extends MutualInfoCalculatorMultiVariateKraskov {
@@ -53,188 +54,36 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 	 */
 	protected static final double CUTOFF_MULTIPLIER = 1.5;
 
-	@Override
-	public double computeAverageLocalOfObservations() throws Exception {
-		return computeAverageLocalOfObservations(null);
+	public MutualInfoCalculatorMultiVariateKraskov1() {
+		super();
+		isAlgorithm1 = true;
 	}
 
 	@Override
-	public double computeAverageLocalOfObservations(int[] reordering) throws Exception {
-		if (!tryKeepAllPairsNorms || (sourceObservations.length > MAX_DATA_SIZE_FOR_KEEP_ALL_PAIRS_NORM)) {
-			double[][] originalData2 = destObservations;
-			if (reordering != null) {
-				// Generate a new re-ordered data2
-				destObservations = MatrixUtils.extractSelectedTimePointsReusingArrays(originalData2, reordering);
-			}
-			// Compute the MI
-			double newMI = computeAverageLocalOfObservationsWhileComputingDistances();
-			// restore data2
-			destObservations = originalData2;
-			return newMI;
-		}
+	protected double[] partialComputeFromObservations(
+			int startTimePoint, int numTimePoints, boolean returnLocals) throws Exception {
 		
-		if (xNorms == null) {
-			computeNorms();
-		}
 		int N = sourceObservations.length; // number of observations
 		int cutoffForKthMinLinear = (int) (CUTOFF_MULTIPLIER * Math.log(N) / Math.log(2.0));
 		
-		// Count the average number of points within eps_x and eps_y
-		double averageDiGammas = 0;
-		double avNx = 0;
-		double avNy = 0;
-		
-		for (int t = 0; t < N; t++) {
-			// Compute eps for this time step:
-			//  using x and y norms to all neighbours
-			//  (note that norm of point t to itself will be set to infinity).
-			
-			int tForY = (reordering == null) ? t : reordering[t];
-
-			double[] jointNorm = new double[N];
-			for (int t2 = 0; t2 < N; t2++) {
-				int t2ForY = (reordering == null) ? t2 : reordering[t2];
-				jointNorm[t2] = Math.max(xNorms[t][t2], yNorms[tForY][t2ForY]);
-			}
-			// Then find the kth closest neighbour, using a heuristic to 
-			// select whether to keep the k mins only or to do a sort.
-			double epsilon = 0.0;
-			if (k <= cutoffForKthMinLinear) {
-				// just do a linear search for the minimum
-				epsilon = MatrixUtils.kthMin(jointNorm, k);
-			} else {
-				// Sort the array of joint norms first
-				java.util.Arrays.sort(jointNorm);
-				// And find the distance to it's kth closest neighbour
-				// (we subtract one since the array is indexed from zero)
-				epsilon = jointNorm[k-1];
-			}
-			
-			// Count the number of points whose x distance is less
-			//  than eps, and whose y distance is less than eps
-			int n_x = 0;
-			int n_y = 0;
-			for (int t2 = 0; t2 < N; t2++) {
-				if (xNorms[t][t2] < epsilon) {
-					n_x++;
-				}
-				int t2ForY = (reordering == null) ? t2 : reordering[t2];
-				if (yNorms[tForY][t2ForY] < epsilon) {
-					n_y++;
-				}
-			}
-			avNx += n_x;
-			avNy += n_y;
-			// And take the digamma before adding into the 
-			//  average:
-			averageDiGammas += MathsUtils.digamma(n_x+1) + MathsUtils.digamma(n_y+1);
+		double[] localMi = null;
+		if (returnLocals) {
+			localMi = new double[numTimePoints];
 		}
-		averageDiGammas /= (double) N;
-		if (debug) {
-			avNx /= (double)N;
-			avNy /= (double)N;
-			System.out.println(String.format("Average n_x=%.3f, Average n_y=%.3f", avNx, avNy));
-		}
-		
-		double average = MathsUtils.digamma(k) - averageDiGammas + MathsUtils.digamma(N);
-		miComputed = true;
-		if (reordering == null) {
-			lastAverage = average;
-		}
-		return average;
-	}
-	
-	/**
-	 * This method correctly computes the average MI, but recomputes the x and y 
-	 *  distances between all tuples in time.
-	 * Kept here for cases where we have too many observations
-	 *  to keep the norm between all pairs, and for testing purposes.
-	 * 
-	 * @see #computeAverageLocalOfObservations()
-	 * @return average MI value in nats not bits
-	 * @throws Exception
-	 */
-	public double computeAverageLocalOfObservationsWhileComputingDistances() throws Exception {
-		int N = sourceObservations.length; // number of observations
-		int cutoffForKthMinLinear = (int) (CUTOFF_MULTIPLIER * Math.log(N) / Math.log(2.0));
-		
-		// Count the average number of points within eps_x and eps_y
-		double averageDiGammas = 0;
-		double avNx = 0;
-		double avNy = 0;
-		
-		for (int t = 0; t < N; t++) {
-			// Compute eps for this time step:
-			//  First get x and y norms to all neighbours
-			//  (note that norm of point t to itself will be set to infinity).
-			double[][] xyNorms = normCalculator.computeNorms(sourceObservations, destObservations, t);
-			double[] jointNorm = new double[N];
-			for (int t2 = 0; t2 < N; t2++) {
-				jointNorm[t2] = Math.max(xyNorms[t2][0], xyNorms[t2][1]);
-			}
-			// Then find the kth closest neighbour, using a heuristic to 
-			// select whether to keep the k mins only or to do a sort.
-			double epsilon = 0.0;
-			if (k <= cutoffForKthMinLinear) {
-				// just do a linear search for the minimum
-				epsilon = MatrixUtils.kthMin(jointNorm, k);
-			} else {
-				// Sort the array of joint norms first
-				java.util.Arrays.sort(jointNorm);
-				// And find the distance to it's kth closest neighbour
-				// (we subtract one since the array is indexed from zero)
-				epsilon = jointNorm[k-1];
-			}
-			
-			// Count the number of points whose x distance is less
-			//  than eps, and whose y distance is less than eps
-			int n_x = 0;
-			int n_y = 0;
-			for (int t2 = 0; t2 < N; t2++) {
-				if (xyNorms[t2][0] < epsilon) {
-					n_x++;
-				}
-				if (xyNorms[t2][1] < epsilon) {
-					n_y++;
-				}
-			}
-			avNx += n_x;
-			avNy += n_y;
-			// And take the digamma before adding into the 
-			//  average:
-			averageDiGammas += MathsUtils.digamma(n_x+1) + MathsUtils.digamma(n_y+1);
-		}
-		averageDiGammas /= (double) N;
-		if (debug) {
-			avNx /= (double)N;
-			avNy /= (double)N;
-			System.out.println(String.format("Average n_x=%.3f, Average n_y=%.3f", avNx, avNy));
-		}
-		
-		lastAverage = MathsUtils.digamma(k) - averageDiGammas + MathsUtils.digamma(N);
-		miComputed = true;
-		return lastAverage;
-	}
-
-	@Override
-	public double[] computeLocalOfPreviousObservations() throws Exception {
-		int N = sourceObservations.length; // number of observations
-		int cutoffForKthMinLinear = (int) (CUTOFF_MULTIPLIER * Math.log(N) / Math.log(2.0));
-		double[] localMi = new double[N];
 		
 		// Constants:
 		double digammaK = MathsUtils.digamma(k);
 		double digammaN = MathsUtils.digamma(N);
 		
-		// Count the average number of points within eps_x and eps_y
-		double averageDiGammas = 0;
-		double avNx = 0;
-		double avNy = 0;
-		
-		for (int t = 0; t < N; t++) {
+		// Count the average number of points within eps_x and eps_y of each point
+		double sumDiGammas = 0;
+		double sumNx = 0;
+		double sumNy = 0;
+				
+		for (int t = startTimePoint; t < startTimePoint + numTimePoints; t++) {
 			// Compute eps for this time step:
 			//  First get x and y norms to all neighbours
-			//  (note that norm of point t to itself will be set to infinity.
+			//  (note that norm of point t to itself will be set to infinity).
 			double[][] xyNorms = normCalculator.computeNorms(sourceObservations, destObservations, t);
 			double[] jointNorm = new double[N];
 			for (int t2 = 0; t2 < N; t2++) {
@@ -249,7 +98,7 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 			} else {
 				// Sort the array of joint norms first
 				java.util.Arrays.sort(jointNorm);
-				// And find the distance to it's kth closest neighbour
+				// And find the distance to its kth closest neighbour
 				// (we subtract one since the array is indexed from zero)
 				epsilon = jointNorm[k-1];
 			}
@@ -266,29 +115,26 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 					n_y++;
 				}
 			}
-			// And take the digamma:
+			sumNx += n_x;
+			sumNy += n_y;
+			// And take the digammas:
 			double digammaNxPlusOne = MathsUtils.digamma(n_x+1);
 			double digammaNyPlusOne = MathsUtils.digamma(n_y+1);
-			
-			localMi[t] = digammaK - digammaNxPlusOne - digammaNyPlusOne + digammaN;
-			
-			avNx += n_x;
-			avNy += n_y;
-			// And keep track of the average
-			averageDiGammas += digammaNxPlusOne + digammaNyPlusOne;
-		}
-		averageDiGammas /= (double) N;
-		if (debug) {
-			avNx /= (double)N;
-			avNy /= (double)N;
-			System.out.println(String.format("Average n_x=%.3f, Average n_y=%.3f", avNx, avNy));
+			sumDiGammas += digammaNxPlusOne + digammaNyPlusOne;
+
+			if (returnLocals) {
+				localMi[t-startTimePoint] = digammaK - digammaNxPlusOne - digammaNyPlusOne + digammaN;
+			}
 		}
 		
-		lastAverage = digammaK - averageDiGammas + digammaN;
-		miComputed = true;
-		return localMi;
+		// Select what to return:
+		if (returnLocals) {
+			return localMi;
+		} else {
+			return new double[] {sumDiGammas, sumNx, sumNy};
+		}
 	}
-
+	
 	@Override
 	public String printConstants(int N) throws Exception {
 		String constants = String.format("digamma(k=%d)=%.3e + digamma(N=%d)=%.3e => %.3e",
