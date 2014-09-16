@@ -318,14 +318,14 @@ public interface ActiveInfoStorageCalculator {
 	 *  to create the surrogates to generate the distribution with. The first
 	 *  index is the permutation number (i.e. newOrderings.length is the number
 	 *  of surrogate samples we use to bootstrap to generate the distribution here.)
-	 *  Each array newOrderings[i] should be an array of length N (where
-	 *  would be the value returned by {@link #getNumObservations()}),
-	 *  containing a permutation of the values in 0..(N-1).
+	 *  Each array newOrderings[i] should be an array of length L being 
+	 *  the value returned by {@link #getNumObservations()},
+	 *  containing a permutation of the values in 0..(L-1).
 	 * @return the distribution of AIS scores under this null hypothesis.
 	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
 	 *    toolkit for studying the dynamics of complex systems', 2014."
 	 * @throws Exception where the length of each permutation in newOrderings
-	 *   is not equal to the number N samples that were previously supplied.
+	 *   is not equal to the number L observations that were previously supplied.
 	 */
 	public EmpiricalMeasurementDistribution computeSignificance(
 			int[][] newOrderings) throws Exception;

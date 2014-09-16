@@ -1714,9 +1714,9 @@ public class MatrixUtils {
 	 * @param tau embedding delay between each point in the original time series
 	 * 		selected into each embedding vector
 	 * @param startKthPoint last time point of the first embedding vector
-	 *   (i.e. use k-1 if you want to go from the start)
+	 *   (i.e. use (k-1)*tau if you want to go from the start)
 	 * @param numEmbeddingVectors the number of embedding vectors to return
-	 *   (i.e. use data.length-k+1 if you go from the start and want all
+	 *   (i.e. use data.length-(k-1)*tau if you go from the start and want all
 	 *   of them extracted)
 	 * @return  a 2D array of k-length embedding vectors.
 	 */
