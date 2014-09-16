@@ -100,6 +100,8 @@ public abstract class ConditionalMutualInfoMultiVariateAbstractTester
 		
 		// And compute the average value again to check that it's consistent:
 		for (int i = 0; i < 10; i++) {
+			double lastAverage = condMiCalc.getLastAverage();
+			assertEquals(condMi, lastAverage);
 			double averageCheck1 = condMiCalc.computeAverageLocalOfObservations();
 			assertEquals(condMi, averageCheck1);
 		}
@@ -109,6 +111,8 @@ public abstract class ConditionalMutualInfoMultiVariateAbstractTester
 		
 		// And compute the average value again to check that it's consistent:
 		for (int i = 0; i < 10; i++) {
+			double lastAverage = condMiCalc.getLastAverage();
+			assertEquals(condMi, lastAverage);
 			double averageCheck1 = condMiCalc.computeAverageLocalOfObservations();
 			assertEquals(condMi, averageCheck1);
 		}
