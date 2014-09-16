@@ -21,8 +21,10 @@ package infodynamics.measures.continuous.kraskov;
 import infodynamics.measures.continuous.MultiInfoCalculator;
 import infodynamics.utils.EuclideanUtils;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
+import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.RandomGenerator;
 
+import java.util.Random;
 import java.util.Vector;
 
 /**
@@ -125,8 +127,29 @@ public abstract class MultiInfoCalculatorKraskov implements
 	 * (default is true, Should only be set to false for testing)
 	 */
 	public final static String PROP_TRY_TO_KEEP_ALL_PAIRS_NORM = "TRY_KEEP_ALL_PAIRS_NORM";
-	
-	// TODO Add a NORMALISE property
+	/**
+	 * Property name for whether to normalise the incoming data to 
+	 * mean 0, standard deviation 1 (default true)
+	 */
+	public static final String PROP_NORMALISE = "NORMALISE";
+	/**
+	 * Property name for an amount of random Gaussian noise to be
+	 *  added to the data (default is 0).
+	 */
+	public static final String PROP_ADD_NOISE = "NOISE_LEVEL_TO_ADD";
+
+	/**
+	 * Whether to normalise the incoming data 
+	 */
+	protected boolean normalise = true;
+	/**
+	 * Whether to add an amount of random noise to the incoming data
+	 */
+	protected boolean addNoise = false;
+	/**
+	 * Amount of random Gaussian noise to add to the incoming data
+	 */
+	protected double noiseLevel = 0.0;
 	
 	/**
 	 * Construct an instance
@@ -159,6 +182,15 @@ public abstract class MultiInfoCalculatorKraskov implements
 	 * 		working out the norms between the points in each marginal space.
 	 * 		Options are defined by {@link EuclideanUtils#setNormToUse(String)} -
 	 * 		default is {@link EuclideanUtils#NORM_MAX_NORM}.
+	 *  <li>{@link #PROP_NORMALISE} -- whether to normalise the incoming individual
+	 *      variables to mean 0 and standard deviation 1 (true by default)</li>
+	 *  <li>{@link #PROP_ADD_NOISE} -- a standard deviation for an amount of
+	 *  	random Gaussian noise to add to
+	 *      each variable, to avoid having neighbourhoods with artificially
+	 *      large counts. The amount is added in after any normalisation,
+	 *      so can be considered as a number of standard deviations of the data.
+	 *      (Recommended by Kraskov. MILCA uses 1e-8; but adds in
+	 *      a random amount of noise in [0,noiseLevel) ). Default 0.</li>
 	 *  <li>{@link #PROP_TRY_TO_KEEP_ALL_PAIRS_NORM} -- whether to keep the norms
 	 * 		each time, making reordering very quick
 	 * 		(default is true, Should only be set to false for testing)</li>
@@ -176,6 +208,11 @@ public abstract class MultiInfoCalculatorKraskov implements
 			k = Integer.parseInt(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_NORM_TYPE)) {
 			normCalculator.setNormToUse(propertyValue);
+		} else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
+			normalise = Boolean.parseBoolean(propertyValue);
+		} else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
+			addNoise = true;
+			noiseLevel = Double.parseDouble(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_TRY_TO_KEEP_ALL_PAIRS_NORM)) {
 			tryKeepAllPairsNorms = Boolean.parseBoolean(propertyValue);
 		}
@@ -192,6 +229,20 @@ public abstract class MultiInfoCalculatorKraskov implements
 		}
 		data = observations;
 		N = data.length;
+		// Normalise the data if required
+		if (normalise) {
+			data = MatrixUtils.normaliseIntoNewArray(data);
+		}
+		
+		if (addNoise) {
+			Random random = new Random();
+			// Add Gaussian noise of std dev noiseLevel to the data
+			for (int r = 0; r < data.length; r++) {
+				for (int c = 0; c < V; c++) {
+					data[r][c] += random.nextGaussian()*noiseLevel;
+				}
+			}
+		}
 	}
 
 	/**
@@ -226,7 +277,22 @@ public abstract class MultiInfoCalculatorKraskov implements
 				data[t][v++] = observations2[t][i];
 			}
 		}
-		return;
+		// Normalise the data if required
+		if (normalise) {
+			// We can overwrite these since they're already
+			//  a copy of the users' data.
+			MatrixUtils.normalise(data);
+		}
+		
+		if (addNoise) {
+			Random random = new Random();
+			// Add Gaussian noise of std dev noiseLevel to the data
+			for (int r = 0; r < data.length; r++) {
+				for (int c = 0; c < V; c++) {
+					data[r][c] += random.nextGaussian()*noiseLevel;
+				}
+			}
+		}
 	}
 	
 	@Override
