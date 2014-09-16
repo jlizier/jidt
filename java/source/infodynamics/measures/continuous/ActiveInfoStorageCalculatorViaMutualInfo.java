@@ -146,18 +146,13 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	}
 
 	/**
-	 * Initialise the calculator for (re-)use, with some parameters
-	 * supplied here, and existing (or default) values of other parameters
-	 * to be used.
+	 * {@inheritDoc}
 	 * 
 	 * <p>All child classes <b>must</b> call this routine on this as the super class
 	 *  once they have finished executing their specialised code
 	 *  for their {@link #initialise()} implementations.
 	 * </p>
 	 * 
-	 * @param k embedding length of past history vector
-	 * @param tau embedding delay of past history vector
-	 * @throws Exception
 	 */
 	@Override
 	public void initialise(int k, int tau) throws Exception {
