@@ -88,6 +88,11 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 			// Compute eps for this time step:
 			//  First get x and y norms to all neighbours
 			//  (note that norm of point t to itself will be set to infinity).
+			
+			// TODO Consider reintroducing caching of the norms here; this helps when we're
+			//  computing stat significance for various re-orderings. May not be useful
+			//  when we've gone to fast nearest neighbour searching though.
+			
 			double[][] xyNorms = normCalculator.computeNorms(sourceObservations, destObservations, t);
 			double[] jointNorm = new double[N];
 			for (int t2 = 0; t2 < N; t2++) {
