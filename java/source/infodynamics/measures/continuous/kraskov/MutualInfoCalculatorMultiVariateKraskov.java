@@ -99,7 +99,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	public static final String PROP_ADD_NOISE = "NOISE_LEVEL_TO_ADD";
 	/**
 	 * Property name for the number of parallel threads to use in the
-	 *  computation
+	 *  computation (default is to use all available)
 	 */
 	public static final String PROP_NUM_THREADS = "NUM_THREADS";
 	/**
@@ -257,25 +257,18 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	 * {@inheritDoc} 
 	 * 
 	 * @return the MI under the new ordering, in nats (not bits!).
-	 *  Returns NaN if any of the determinants are zero
-	 *  (because this will make the denominator of the log 0).
 	 */
 	public double computeAverageLocalOfObservations(int[] reordering) throws Exception {
-		double[][] originalData2 = destObservations;
-		if (reordering != null) {
-			// Generate a new re-ordered data2
-			destObservations = MatrixUtils.extractSelectedTimePointsReusingArrays(originalData2, reordering);
+		if (reordering == null) {
+			return computeAverageLocalOfObservations();
 		}
+		double[][] originalData2 = destObservations;
+		// Generate a new re-ordered data2
+		destObservations = MatrixUtils.extractSelectedTimePointsReusingArrays(originalData2, reordering);
 		// Compute the MI
 		double newMI = computeFromObservations(false)[0];
 		// restore data2
 		destObservations = originalData2;
-		if (reordering == null) {
-			// Only keep this average value if it was for
-			//  the original data:
-			miComputed = true;
-			lastAverage = newMI;
-		}
 		return newMI;
 	}
 
@@ -348,14 +341,14 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 				returnValues = new double[N];
 			} else {
 				// We're computing average MI
-				returnValues = new double[3];
+				returnValues = new double[MiKraskovThreadRunner.RETURN_ARRAY_LENGTH];
 			}
 			
 			// Distribute the observations to the threads for the parallel processing
 			int lTimesteps = N / numThreads; // each thread gets the same amount of data
 			int res = N % numThreads; // the first thread gets the residual data
 			if (debug) {
-				System.out.printf("Computing Kraskov MI alg1 with %d threads (%d timesteps each, plus %d residual)\n",
+				System.out.printf("Computing Kraskov MI with %d threads (%d timesteps each, plus %d residual)\n",
 						numThreads, lTimesteps, res);
 			}
 			Thread[] tCalculators = new Thread[numThreads];
@@ -458,7 +451,8 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 		public static final int INDEX_SUM_DIGAMMAS = 0;
 		public static final int INDEX_SUM_NX = 1;
 		public static final int INDEX_SUM_NY = 2;
-		
+		public static final int RETURN_ARRAY_LENGTH = 3;
+
 		public MiKraskovThreadRunner(
 				MutualInfoCalculatorMultiVariateKraskov miCalc,
 				int myStartTimePoint, int numberOfTimePoints,

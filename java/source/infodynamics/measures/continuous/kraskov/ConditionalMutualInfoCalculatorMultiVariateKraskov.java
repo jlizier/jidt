@@ -18,11 +18,14 @@
 
 package infodynamics.measures.continuous.kraskov;
 
+import java.util.Calendar;
 import java.util.Random;
 
 import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariate;
 import infodynamics.measures.continuous.ConditionalMutualInfoMultiVariateCommon;
 import infodynamics.utils.EuclideanUtils;
+import infodynamics.utils.MathsUtils;
+import infodynamics.utils.MatrixUtils;
 
 /**
  * <p>Computes the differential conditional mutual information of two multivariate
@@ -68,6 +71,7 @@ import infodynamics.utils.EuclideanUtils;
  * 
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
+ * @author Ipek Özdemir
  */
 public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov 
 	extends ConditionalMutualInfoMultiVariateCommon
@@ -82,28 +86,6 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	 * Calculator for the norm between data points
 	 */
 	protected EuclideanUtils normCalculator;
-	/**
-	 * Cache for the norms between x (variable 1) points
-	 */
-	protected double[][] xNorms;
-	/**
-	 * Cache for the norms between y (variable 2) points
-	 */
-	protected double[][] yNorms;
-	/**
-	 * Cache for the norms between z (conditionals) points
-	 */
-	protected double[][] zNorms;
-	/**
-	 * Whether we cache the norms each time (making reordering very quick).
-	 *  (Should only be set to false for testing)
-	 */
-	public static boolean tryKeepAllPairsNorms = true;
-	/**
-	 * An upper limit on the number of samples for which
-	 * we will cache the norms between data points.
-	 */
-	public static int MAX_DATA_SIZE_FOR_KEEP_ALL_PAIRS_NORM = 2000;
 	
 	/**
 	 * Property name for the number of K nearest neighbours used in
@@ -122,6 +104,16 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	 *  added to the data (default is 0).
 	 */
 	public static final String PROP_ADD_NOISE = "NOISE_LEVEL_TO_ADD";
+	/**
+	 * Property name for the number of parallel threads to use in the
+	 *  computation (default is to use all available)
+	 */
+	public static final String PROP_NUM_THREADS = "NUM_THREADS";
+	/**
+	 * Valid property value for {@link #PROP_NUM_THREADS} to indicate
+	 *  that all available processors should be used. 
+	 */
+	public static final String USE_ALL_THREADS = "USE_ALL";
 
 	/**
 	 * Whether to add an amount of random noise to the incoming data
@@ -131,6 +123,15 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	 * Amount of random Gaussian noise to add to the incoming data
 	 */
 	protected double noiseLevel = 0.0;
+	/**
+	 * Number of parallel threads to use in the computation;
+	 *  defaults to use all available.
+	 */
+	protected int numThreads = Runtime.getRuntime().availableProcessors();
+	/**
+	 * Private variable to record which algorithm this instance is implementing
+	 */
+	protected boolean isAlgorithm1 = false;
 
 	/**
 	 * Construct an instance of the KSG conditional MI calculator
@@ -143,10 +144,6 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	@Override
 	public void initialise(int dimensions1, int dimensions2, int dimensionsCond) {
 		super.initialise(dimensions1, dimensions2, dimensionsCond);
-		
-		xNorms = null;
-		yNorms = null;
-		zNorms = null;
 	}
 
 	/**
@@ -170,6 +167,10 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	 *      so can be considered as a number of standard deviations of the data.
 	 *      (Recommended by Kraskov. MILCA uses 1e-8; but adds in
 	 *      a random amount of noise in [0,noiseLevel) ). Default 0.</li>
+	 *  <li>{@link #PROP_NUM_THREADS} -- the integer number of parallel threads
+	 *  	to use in the computation. Can be passed as a string "USE_ALL"
+	 *      to use all available processors on the machine.
+	 *      Default is "USE_ALL".
 	 *  <li>any valid properties for {@link ConditionalMutualInfoMultiVariateCommon#setProperty(String, String)},
 	 *     notably including {@link ConditionalMutualInfoMultiVariateCommon#PROP_NORMALISE}.</li>
 	 * </ul>
@@ -189,6 +190,12 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 		} else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
 			addNoise = true;
 			noiseLevel = Double.parseDouble(propertyValue);
+		} else if (propertyName.equalsIgnoreCase(PROP_NUM_THREADS)) {
+			if (propertyValue.equalsIgnoreCase(USE_ALL_THREADS)) {
+				numThreads = Runtime.getRuntime().availableProcessors();
+			} else { // otherwise the user has passed in an integer:
+				numThreads = Integer.parseInt(propertyValue);
+			}
 		} else {
 			// Assume this is a property for the common parent class
 			super.setProperty(propertyName, propertyValue);
@@ -224,30 +231,70 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	}
 
 	/**
-	 * Utility function to compute the norms between each pair of points in each marginal time series
-	 *
+	 * {@inheritDoc} 
+	 * 
+	 * @return the average conditional MI in nats (not bits!)
 	 */
-	protected void computeNorms() {
-		int N = var1Observations.length; // number of observations
-		
-		xNorms = new double[N][N];
-		yNorms = new double[N][N];
-		zNorms = new double[N][N];
-		for (int t = 0; t < N; t++) {
-			// Compute the norms from t to all other time points
-			double[][] xyzNormsForT = normCalculator.computeNorms(var1Observations,
-					var2Observations, condObservations, t);
-			for (int t2 = 0; t2 < N; t2++) {
-				xNorms[t][t2] = xyzNormsForT[t2][0];
-				yNorms[t][t2] = xyzNormsForT[t2][1];
-				zNorms[t][t2] = xyzNormsForT[t2][2];
-			}
+	@Override
+	public double computeAverageLocalOfObservations() throws Exception {
+		// Compute the conditional MI
+		double startTime = Calendar.getInstance().getTimeInMillis();
+		lastAverage = computeFromObservations(false)[0];
+		condMiComputed = true;
+		if (debug) {
+			Calendar rightNow2 = Calendar.getInstance();
+			long endTime = rightNow2.getTimeInMillis();
+			System.out.println("Calculation time: " + ((endTime - startTime)/1000.0) + " sec" );
 		}
+		return lastAverage;
 	}
-	
+
+	/**
+	 * {@inheritDoc} 
+	 * 
+	 * If {@code reordering} is null, it is assumed there is no reordering of
+	 *  the given variable.
+	 *  
+	 * @return the conditional MI under the new ordering, in nats (not bits!).
+	 */
+	@Override
+	public double computeAverageLocalOfObservations(int variableToReorder, 
+			int[] reordering) throws Exception {
+		
+		if (reordering == null) {
+			return computeAverageLocalOfObservations();
+		}
+		double[][] originalData;
+		if (variableToReorder == 1) {
+			originalData = var1Observations;
+			var1Observations = MatrixUtils.extractSelectedTimePointsReusingArrays(originalData, reordering);
+		} else {
+			originalData = var2Observations;
+			var2Observations = MatrixUtils.extractSelectedTimePointsReusingArrays(originalData, reordering);
+		}
+		// Compute the conditional MI
+		double newCondMI = computeFromObservations(false)[0];
+		// restore original data
+		if (variableToReorder == 1) {
+			var1Observations = originalData;
+		} else {
+			var2Observations = originalData;
+		}
+		return newCondMI;
+	}
+
+	@Override
+	public double[] computeLocalOfPreviousObservations() throws Exception {
+		double[] localValues = computeFromObservations(true);
+		lastAverage = MatrixUtils.mean(localValues);
+		condMiComputed = true;
+		return localValues;
+	}
+
 	/**
 	 * @returns the series of local conditional MI values in nats, not bits.
 	 */
+	@Override
 	public double[] computeLocalUsingPreviousObservations(double[][] states1,
 			double[][] states2, double[][] condStates) throws Exception {
 		// If implemented, will need to incorporate any normalisation here
@@ -256,6 +303,217 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 		throw new Exception("Local method not implemented yet");
 	}
 	
+	/**
+	 * This protected method handles the multiple threads which
+	 *  computes either the average or local conditional MI (over parts of the total
+	 *  observations), computing the x, y and z 
+	 *  distances between all tuples in time.
+	 * 
+	 * <p>The method returns:<ol>
+	 *  <li>for (returnLocals == false), an array of size 1,
+	 *      containing the average conditional MI </li>
+	 *  <li>for local conditional MIs (returnLocals == true), the array of local conditional MI values</li>
+	 *  </ol>
+	 * 
+	 * @param returnLocals whether to return an array or local values, or else
+	 *  sums of these values
+	 * @return either the average conditional MI, or array of local conditional MI value, in nats not bits
+	 * @throws Exception
+	 */
+	protected double[] computeFromObservations(boolean returnLocals) throws Exception {
+		int N = var1Observations.length; // number of observations
+		
+		double[] returnValues = null;
+		
+		if (numThreads == 1) {
+			// Single-threaded implementation:
+			returnValues = partialComputeFromObservations(0, N, returnLocals);
+			
+		} else {
+			// We're going multithreaded:
+			if (returnLocals) {
+				// We're computing local conditional MI
+				returnValues = new double[N];
+			} else {
+				// We're computing average conditional MI
+				returnValues = new double[CondMiKraskovThreadRunner.RETURN_ARRAY_LENGTH];
+			}
+			
+			// Distribute the observations to the threads for the parallel processing
+			int lTimesteps = N / numThreads; // each thread gets the same amount of data
+			int res = N % numThreads; // the first thread gets the residual data
+			if (debug) {
+				System.out.printf("Computing Kraskov conditional MI with %d threads (%d timesteps each, plus %d residual)\n",
+						numThreads, lTimesteps, res);
+			}
+			Thread[] tCalculators = new Thread[numThreads];
+			CondMiKraskovThreadRunner[] runners = new CondMiKraskovThreadRunner[numThreads];
+			for (int t = 0; t < numThreads; t++) {
+				int startTime = (t == 0) ? 0 : lTimesteps * t + res;
+				int numTimesteps = (t == 0) ? lTimesteps + res : lTimesteps;
+				if (debug) {
+					System.out.println(t + ".Thread: from " + startTime +
+							" to " + (startTime + numTimesteps)); // Trace Message
+				}
+				runners[t] = new CondMiKraskovThreadRunner(this, startTime, numTimesteps, returnLocals);
+				tCalculators[t] = new Thread(runners[t]);
+				tCalculators[t].start();
+			}
+			
+			// Here, we should wait for the termination of the all threads
+			//  and collect their results
+			for (int t = 0; t < numThreads; t++) {
+				if (tCalculators[t] != null) { // TODO Ipek: can you comment on why we're checking for null here?
+					tCalculators[t].join(); 
+				}
+				// Now we add in the data from this completed thread:
+				if (returnLocals) {
+					// We're computing local MI; copy these local values
+					//  into the full array of locals
+					System.arraycopy(runners[t].getReturnValues(), 0, 
+							returnValues, runners[t].myStartTimePoint, runners[t].numberOfTimePoints);
+				} else {
+					// We're computing the average MI, keep the running sums of digammas and counts
+					MatrixUtils.addInPlace(returnValues, runners[t].getReturnValues());
+				}
+			}
+		}
+		
+		// Finalise the results:
+		if (returnLocals) {
+			return returnValues;
+		} else {
+			// Average out the components for the final equation(s) and for debugging:
+			double averageDiGammas = returnValues[CondMiKraskovThreadRunner.INDEX_SUM_DIGAMMAS] / (double) N;
+			double avNxz = returnValues[CondMiKraskovThreadRunner.INDEX_SUM_NXZ] / (double) N;
+			double avNyz = returnValues[CondMiKraskovThreadRunner.INDEX_SUM_NYZ] / (double) N;
+			double avNz = returnValues[CondMiKraskovThreadRunner.INDEX_SUM_NZ] / (double) N;
+			if (debug) {
+				System.out.printf("<n_xz>=%.3f, <n_yz>=%.3f, <n_z>=%.3f\n",
+						avNxz, avNyz, avNz);
+			}
+			if (this.isAlgorithm1) {
+				// Algorithm 1:
+				if (debug) {
+					System.out.printf("Av = digamma(k)=%.3f + <digammas>=%.3f = %.3f \n",
+							MathsUtils.digamma(k), averageDiGammas, MathsUtils.digamma(k) + averageDiGammas);
+				}
+				return new double[] { MathsUtils.digamma(k) + averageDiGammas };
+			} else {
+				// Algorithm 2:
+				// We also retrieve the sums of inverses for debugging purposes:
+				double averageInverseCountInJointXZ =
+						returnValues[CondMiKraskovThreadRunner.INDEX_SUM_INV_NXZ] / (double) N;
+				double averageInverseCountInJointYZ =
+						returnValues[CondMiKraskovThreadRunner.INDEX_SUM_INV_NYZ] / (double) N;
+				double averageMeasure = MathsUtils.digamma(k) - (2.0 / (double)k) + averageDiGammas +
+						averageInverseCountInJointXZ + averageInverseCountInJointYZ;
+				if (debug) {
+					System.out.printf("Av = digamma(k)=%.3f + <digammas>=%.3f +<inverses>=%.3f - 2/k=%.3f  = %.3f" +
+							" (<1/n_yz>=%.3f, <1/n_xz>=%.3f)\n",
+							MathsUtils.digamma(k), averageDiGammas,
+							averageInverseCountInJointXZ + averageInverseCountInJointYZ,
+							(2.0 / (double)k), averageMeasure,
+							averageInverseCountInJointYZ, averageInverseCountInJointXZ);
+				}
+				return new double[] { averageMeasure };
+			}			
+		}
+	}
+	
+	/**
+	 * Protected method to be used internally for threaded implementations.
+	 * This method implements the guts of each Kraskov algorithm, computing the number of 
+	 *  nearest neighbours in each dimension for a sub-set of the data points.
+	 *  It is intended to be called by one thread to work on that specific
+	 *  sub-set of the data.
+	 * 
+	 * <p>The method returns:<ol>
+	 *  <li>for average conditional MIs (returnLocals == false), the relevant sums of digamma(n_{xz}), digamma(n_{yz})
+	 *     and digamma(n_z)
+	 *     for a partial set of the observations</li>
+	 *  <li>for local conditional MIs (returnLocals == true), the array of local conditional MI values</li>
+	 *  </ol>
+	 * 
+	 * @param startTimePoint start time for the partial set we examine
+	 * @param numTimePoints number of time points (including startTimePoint to examine)
+	 * @param returnLocals whether to return an array or local values, or else
+	 *  sums of these values
+	 * @return an array of the relevant sum of digamma(n_xz+1) and digamma(n_yz+1) and digamma(n_z), then
+	 *  sum of n_xz, n_yz, n_z and for algorithm 2 only, sum of 1/n_xz and 1/n_yz
+	 *  (these latter five are only for debugging purposes).
+	 * @throws Exception
+	 */
+	protected abstract double[] partialComputeFromObservations(
+			int startTimePoint, int numTimePoints, boolean returnLocals) throws Exception;
+
+	/**
+	 * Private class to handle multi-threading of the Kraskov algorithms.
+	 * Each instance calls partialComputeFromObservations()
+	 * to compute nearest neighbours for a part of the data.
+	 * 
+	 * 
+	 * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+	 * <a href="http://lizier.me/joseph/">www</a>)
+	 * @author Ipek Özdemir
+	 */
+	private class CondMiKraskovThreadRunner implements Runnable {
+		protected ConditionalMutualInfoCalculatorMultiVariateKraskov condMiCalc;
+		protected int myStartTimePoint;
+		protected int numberOfTimePoints;
+		protected boolean computeLocals;
+		
+		protected double[] returnValues = null;
+		protected Exception problem = null;
+		
+		public static final int INDEX_SUM_DIGAMMAS = 0;
+		public static final int INDEX_SUM_NXZ = 1;
+		public static final int INDEX_SUM_NYZ = 2;
+		public static final int INDEX_SUM_NZ = 3;
+		public static final int INDEX_SUM_INV_NXZ = 4; // Only used for algorithm 2
+		public static final int INDEX_SUM_INV_NYZ = 5; // Only used for algorithm 2
+		public static final int RETURN_ARRAY_LENGTH = 6;
+		
+		public CondMiKraskovThreadRunner(
+				ConditionalMutualInfoCalculatorMultiVariateKraskov condMiCalc,
+				int myStartTimePoint, int numberOfTimePoints,
+				boolean computeLocals) {
+			this.condMiCalc = condMiCalc;
+			this.myStartTimePoint = myStartTimePoint;
+			this.numberOfTimePoints = numberOfTimePoints;
+			this.computeLocals = computeLocals;
+		}
+		
+		/**
+		 * Return the values from this part of the data,
+		 *  or throw any exception that was encountered by the 
+		 *  thread.
+		 * 
+		 * @return an exception previously encountered by this thread.
+		 * @throws Exception
+		 */
+		public double[] getReturnValues() throws Exception {
+			if (problem != null) {
+				throw problem;
+			}
+			return returnValues;
+		}
+		
+		/**
+		 * Start the thread for the given parameters
+		 */
+		public void run() {
+			try {
+				returnValues = condMiCalc.partialComputeFromObservations(myStartTimePoint, numberOfTimePoints, computeLocals);
+			} catch (Exception e) {
+				// Store the exception for later retrieval
+				problem = e;
+				return;
+			}
+		}
+	}
+	// end class MiKraskovThreadRunner
+
 	public abstract String printConstants(int N) throws Exception;
 
 	// Note: no extra implementation of clone provided; we're simply
