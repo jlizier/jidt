@@ -24,6 +24,9 @@ import infodynamics.utils.MatrixUtils;
 public class ConditionalMutualInfoMultiVariateTester
 	extends infodynamics.measures.continuous.ConditionalMutualInfoMultiVariateAbstractTester {
 
+	protected String NUM_THREADS_TO_USE_DEFAULT = ConditionalMutualInfoCalculatorMultiVariateKraskov.USE_ALL_THREADS;
+	protected String NUM_THREADS_TO_USE = NUM_THREADS_TO_USE_DEFAULT;
+	
 	/**
 	 * Utility function to create a calculator for the given algorithm number
 	 * 
@@ -140,6 +143,9 @@ public class ConditionalMutualInfoMultiVariateTester
 			// No longer need to set this property as it's set by default:
 			//condMiCalc.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE,
 			//		EuclideanUtils.NORM_MAX_NORM_STRING);
+			condMiCalc.setProperty(
+					MutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS,
+					NUM_THREADS_TO_USE);
 			condMiCalc.initialise(var1[0].length * historyL,
 					var2[0].length, var2[0].length * historyK);
 			// Construct the joint vectors of the source states
@@ -338,7 +344,7 @@ public class ConditionalMutualInfoMultiVariateTester
 	}
 
 	/**
-	 * Test the computed multivariate TE as a conditional MI
+	 * Test the computed multivariate conditional MI
 	 * against that calculated by Wibral et al.'s TRENTOOL
 	 * on the same data.
 	 * 
@@ -356,7 +362,7 @@ public class ConditionalMutualInfoMultiVariateTester
 	 * @throws Exception if file not found 
 	 * 
 	 */
-	public void testMultivariateTEforCoupledDataFromFile() throws Exception {
+	public void testMultivariateCondMIforCoupledDataFromFile() throws Exception {
 		
 		// Test set 3:
 		
@@ -415,5 +421,84 @@ public class ConditionalMutualInfoMultiVariateTester
 				MatrixUtils.selectColumns(data, new int[] {2}),
 				1, 1,
 				kNNs, expectedFromTRENTOOL);		
+	}
+	
+	/**
+	 * Test the computed univariate TE as a conditional MI
+	 * using various numbers of threads.
+	 * 
+	 * Test the computed univariate TE as a conditional MI
+	 * against that calculated by Wibral et al.'s TRENTOOL
+	 * on the same data.
+	 * 
+	 * To run TRENTOOL (http://www.trentool.de/) for this 
+	 * data, run its TEvalues.m matlab script on the multivariate source
+	 * and dest data sets as:
+	 * TEvalues(source, dest, 1, 1, 1, kraskovK, 0)
+	 * with these values ensuring source-dest lag 1, history k=1,
+	 * embedding lag 1, no dynamic correlation exclusion 
+	 * 
+	 * @throws Exception if file not found 
+	 * 
+	 */
+	public void testUnivariateTEVariousNumberThreads() throws Exception {
+		
+		ArrayFileReader afr = new ArrayFileReader("demos/data/4randomCols-1.txt");
+		double[][] data = afr.getDouble2DMatrix();
+		
+		// Use various Kraskov k nearest neighbours parameter
+		int[] kNNs = {4};
+		// Expected values from TRENTOOL:
+		double[] expectedFromTRENTOOL = {-0.0096556};
+		
+		System.out.println("Kraskov Cond MI as TE - multivariate coupled data 1, k=2,l=2 (0->2)");
+		System.out.println(" with various numbers of threads:");
+		System.out.println(" -- 1 thread:");
+		NUM_THREADS_TO_USE = "1";
+		checkTEForGivenData(MatrixUtils.selectColumns(data, new int[] {0}),
+				MatrixUtils.selectColumns(data, new int[] {1}),
+				kNNs, expectedFromTRENTOOL);
+		System.out.println(" -- 2 threads:");
+		NUM_THREADS_TO_USE = "2";
+		checkTEForGivenData(MatrixUtils.selectColumns(data, new int[] {0}),
+				MatrixUtils.selectColumns(data, new int[] {1}),
+				kNNs, expectedFromTRENTOOL);
+		System.out.println(" -- 3 threads:");
+		NUM_THREADS_TO_USE = "3";
+		checkTEForGivenData(MatrixUtils.selectColumns(data, new int[] {0}),
+				MatrixUtils.selectColumns(data, new int[] {1}),
+				kNNs, expectedFromTRENTOOL);
+		System.out.println(" -- all threads:");
+		NUM_THREADS_TO_USE = ConditionalMutualInfoCalculatorMultiVariateKraskov.USE_ALL_THREADS;
+		checkTEForGivenData(MatrixUtils.selectColumns(data, new int[] {0}),
+				MatrixUtils.selectColumns(data, new int[] {1}),
+				kNNs, expectedFromTRENTOOL);
+		
+		// And finally test that multithreading is still ok if we have
+		//  an imbalanced number of data between each thread.
+		// Expected value is only generated from our own code; we're not so 
+		//  interested in checking for this precise value, as we are in
+		//  checking that the value is stable when we change the number of
+		//  threads and have an uneven amount of data in each thread.
+		double[] expectedValue = new double[] {0.026517704};
+		NUM_THREADS_TO_USE = "2";
+		checkTEForGivenData(
+				MatrixUtils.selectRows(
+						MatrixUtils.selectColumns(data, new int[] {0}),
+						0, 501),
+				MatrixUtils.selectRows(
+						MatrixUtils.selectColumns(data, new int[] {1}),
+						0, 501),
+				kNNs, expectedValue);
+		NUM_THREADS_TO_USE = "3";
+		checkTEForGivenData(
+				MatrixUtils.selectRows(
+						MatrixUtils.selectColumns(data, new int[] {0}),
+						0, 501),
+				MatrixUtils.selectRows(
+						MatrixUtils.selectColumns(data, new int[] {1}),
+						0, 501),
+				kNNs, expectedValue);
+		NUM_THREADS_TO_USE = NUM_THREADS_TO_USE_DEFAULT;
 	}
 }
