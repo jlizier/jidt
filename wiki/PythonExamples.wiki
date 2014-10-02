@@ -227,6 +227,8 @@ print('The result for random source is inflated towards 0.3 due to finite observ
 [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/java/infodynamics/demos/python/example6DynamicCallingMutualInfo.py example6DynamicCallingMutualInfo.py] - This example shows how to write Python code to take advantage of the common interfaces defined for various information-theoretic calculators.
 Here, we use the common form of the `infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate` interface (which is never named here) to write common code into which we can plug one of three concrete implementations (kernel estimator, Kraskov estimator or linear-Gaussian estimator) by dynamically supplying the class name of the concrete implementation.
 
+*Note* -- users of the v1.0 distribution will need to separately download the [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/java/infodynamics/demos/python/readFloatsFile.py readFloatsFile.py] module, which was accidentally not included in this release.
+
 {{{
 from jpype import *
 import random
