@@ -135,7 +135,7 @@ print("TE result %.4f bits; expected to be close to 0 bits for uncorrelated Gaus
 
 = Example 4 - Transfer entropy on continuous data using Kraskov estimators =
 
-[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/octave/example4TeContinuousDataKraskov.m example4TeContinuousDataKraskov.m] - Simple transfer entropy (TE) calculation on continuous-valued data using the Kraskov-estimator TE calculator.
+[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/python/example4TeContinuousDataKraskov.py example4TeContinuousDataKraskov.py] - Simple transfer entropy (TE) calculation on continuous-valued data using the Kraskov-estimator TE calculator.
 
 {{{
 from jpype import *
@@ -224,10 +224,10 @@ print('The result for random source is inflated towards 0.3 due to finite observ
 
 = Example 6 - Dynamic dispatch with Mutual info calculator =
 
-[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/java/infodynamics/demos/python/example6DynamicCallingMutualInfo.py example6DynamicCallingMutualInfo.py] - This example shows how to write Python code to take advantage of the common interfaces defined for various information-theoretic calculators.
+[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/python/example6DynamicCallingMutualInfo.py example6DynamicCallingMutualInfo.py] - This example shows how to write Python code to take advantage of the common interfaces defined for various information-theoretic calculators.
 Here, we use the common form of the `infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate` interface (which is never named here) to write common code into which we can plug one of three concrete implementations (kernel estimator, Kraskov estimator or linear-Gaussian estimator) by dynamically supplying the class name of the concrete implementation.
 
-*Note* -- users of the v1.0 distribution will need to separately download the [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/java/infodynamics/demos/python/readFloatsFile.py readFloatsFile.py] module, which was accidentally not included in this release.
+*Note* -- users of the v1.0 distribution will need to separately download the [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/python/readFloatsFile.py readFloatsFile.py] module, which was accidentally not included in this release.
 
 {{{
 from jpype import *
