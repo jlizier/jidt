@@ -17,11 +17,12 @@ The [http://dx.doi.org/10.1103/PhysRevE.69.066138 original publication] of the K
 
 This can be done for each KSG estimator in JIDT (for MI basec calculators from v1.0, for conditional MI based calculators from v1.1) as shown below for the transfer entropy estimator:
 {{{
+// The following is Java code; change it to your own language if required
 TransferEntropyCalculatorKraskov teCalc =
 		new TransferEntropyCalculatorKraskov();
 teCalc.setProperty("NORMALISE", "true"); // Normalise the individual variables (default)
 // Set up to add noise with standard deviation of 0.00000001 normalised units
-teCalc.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "0.00000001");
+teCalc.setProperty("NOISE_LEVEL_TO_ADD", "0.00000001");
 // Then use the calculator as normal ...
 }}}
 More details are shown in the [Documentation Javadocs] for the `setProperty(String, String)` method for each relevant calculator.
