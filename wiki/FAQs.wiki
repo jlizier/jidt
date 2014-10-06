@@ -21,7 +21,7 @@ TransferEntropyCalculatorKraskov teCalc =
 		new TransferEntropyCalculatorKraskov();
 teCalc.setProperty("NORMALISE", "true"); // Normalise the individual variables (default)
 // Set up to add noise with standard deviation of 0.00000001 normalised units
-teCalc.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, 0.00000001);
+teCalc.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "0.00000001");
 // Then use the calculator as normal ...
 }}}
 More details are shown in the [Documentation Javadocs] for the `setProperty(String, String)` method for each relevant calculator.
