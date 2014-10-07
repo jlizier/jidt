@@ -1,8 +1,21 @@
 #summary Frequently asked questions about the toolkit
 
 On this page, we list several frequently asked questions about the toolkit (these are mostly excerpts from emails):
+ * [#What_do_I_do_about_java.lang.OutOfMemoryError? What do I do about java.lang.OutOfMemoryError?]
  * [#How_fast_is_the_toolkit,_e.g._for_transfer_entropy_estimation? How fast is the toolkit, e.g. for transfer entropy estimation?]
  * [#Can_the_Kraskov-Stoegbauer-Grassberger_estimator_add_noise_to_the_data? Can the Kraskov-Stoegbauer-Grassberger estimator add noise to the data?]
+
+== What do I do about java.lang.OutOfMemoryError? ==
+
+Getting `java.lang.OutOfMemoryError` errors means that the heap space allocated to your JVM instance is not large enough for your program.
+
+If you are running Java directly, then you can increase the maximum heap space by adding an argument to the `java` command such as `-Xmx512M` to request 512 MB heap space, for example.
+
+When running Java from other environments, e.g. in an IDE, in Matlab, GNU Octave, Python etc, you will need to specify this parameter in a manner dependent on that environment:
+ * Matlab often gives this error because the heap space is usually set to a rather low value. Increasing the heap space allocated by Matlab to the JVM is described e.g. [http://www.mathworks.com.au/help/matlab/matlab_env/preferences.html#bsemees-1 here].
+ * For Python via JPype, you can specify this parameter when calling the `startJVM()` function; see comments in the PythonExamples.
+ * For Julia, you can specify this parameter when calling the `JavaCall.init()` method; see comments in the JuliaExamples.
+
 
 == How fast is the toolkit, e.g. for transfer entropy estimation? ==
 
