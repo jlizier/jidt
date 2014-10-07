@@ -5,7 +5,7 @@ On this page, we list several frequently asked questions about the toolkit (thes
  * [#How_fast_is_the_toolkit,_e.g._for_transfer_entropy_estimation? How fast is the toolkit, e.g. for transfer entropy estimation?]
  * [#Can_the_Kraskov-Stoegbauer-Grassberger_estimator_add_noise_to_the_data? Can the Kraskov-Stoegbauer-Grassberger estimator add noise to the data?]
 
-== What do I do about java.lang.OutOfMemoryError? ==
+== What do I do about `java.lang.OutOfMemoryError`? ==
 
 Getting `java.lang.OutOfMemoryError` errors means that the heap space allocated to your JVM instance is not large enough for your program.
 
