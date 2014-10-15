@@ -1,3 +1,21 @@
+/*
+ *  Java Information Dynamics Toolkit (JIDT)
+ *  Copyright (C) 2012, Joseph T. Lizier
+ *  
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *  
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *  
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package infodynamics.utils;
 
 import java.util.PriorityQueue;
@@ -50,6 +68,13 @@ public class KdTree {
 	 */
 	protected double[][][] dimensionToArray = null;
 	protected int[] dimensionToArrayIndex = null;
+	/**
+	 * Variable at index i in the full joint set 
+	 * corresponds to high level variable
+	 * dimensionToVariableNumber[i]; i.e. the
+	 * originalDataSets[dimensionToVariableNumber[i]] 2D array.
+	 */
+	protected int[] dimensionToVariableNumber = null;
 	protected int totalDimensions = 0;
 	
 	/**
@@ -120,12 +145,14 @@ public class KdTree {
 		//  are used for each dimension of the data
 		dimensionToArray = new double[totalDimensions][][];
 		dimensionToArrayIndex = new int[totalDimensions];
+		dimensionToVariableNumber = new int[totalDimensions];
 		int cumulativeDimension = 0;
 		int cumulativeDimsionsForPreviousArray = 0;
 		for (int i = 0; i < dimensions.length; i++) {
 			int dimensionsForThisVariable = dimensions[i];
 			for (int j = 0; j < dimensionsForThisVariable; j++) {
 				dimensionToArray[cumulativeDimension] = data[i];
+				dimensionToVariableNumber[cumulativeDimension] = i;
 				dimensionToArrayIndex[cumulativeDimension]
 						= cumulativeDimension - cumulativeDimsionsForPreviousArray;
 				cumulativeDimension++;
@@ -785,28 +812,26 @@ public class KdTree {
 			 ( allowEqualToR && (absDistOnThisDim == r)))) {
 			// Preliminary check says we need to compute the full distance
 			//  to use or at least to check if it should be counted.
-			double maxNorm = 0;
+			boolean withinBounds = true;
 			for (int v = 0; v < originalDataSets.length; v++) {
 				// For each of our separate (multivariate) variables,
 				//  compute the (specified) norm in that variable's space:
 				double distForVariableV;
 				// Distance calculation terminates early with Double.POSITIVE_INFINITY
-				//  if it is clearly larger than currentBest.distance:
+				//  if it is clearly larger than r:
 				distForVariableV = normCalculator.normWithAbort(
 						originalDataSets[v][sampleIndex],
 						originalDataSets[v][node.indexOfThisPoint],
 						r);
-				if (distForVariableV > maxNorm) {
-					maxNorm = distForVariableV;
-					if (Double.isInfinite(maxNorm)) {
-						// we've aborted the norm check early;
-						//  no point checking the other variables.
-						break;
-					}
+				if ((distForVariableV >= r) && 
+						!(allowEqualToR && (distForVariableV == r))) {
+					// We don't fit on this dimension, no point
+					//  checking the others:
+					withinBounds = false;
+					break;
 				}
 			}
-			if ((maxNorm <  r) ||
-				( allowEqualToR && (maxNorm == r))) {
+			if (withinBounds) {
 				// This node gets counted
 				count++;
 			}
@@ -849,6 +874,179 @@ public class KdTree {
 		return count;
 	}
 	
+	/**
+	 * Count the number of points within norms {r1,r2,etc} for each high-level
+	 *  variable, for a given
+	 *  sample index in the data set. The node itself is 
+	 *  excluded from the search.
+	 * Nearest neighbour function to compare to {r1,r2,etc}
+	 *  for each variable is the specified norm.
+	 * 
+	 * @param sampleIndex sample index in the data to find a nearest neighbour
+	 *  for
+	 * @param rs radii for each variable within which to count points
+	 * @param allowEqualToR if true, then count points at radii rs also,
+	 *   otherwise only those strictly within rs
+	 * @return the count of points within rs.
+	 */
+	public int countPointsWithinRs(int sampleIndex, double[] rs, boolean allowEqualToR) {
+		if (allowEqualToR) {
+			return countPointsWithinOrOnRs(sampleIndex, rs);
+		} else {
+			return countPointsStrictlyWithinRs(sampleIndex, rs);
+		}
+	}
+	
+	/**
+	 * Count the number of points strictly within norms {r1,r2,etc} for each high-level
+	 *  variable, for a given
+	 *  sample index in the data set. The node itself is 
+	 *  excluded from the search.
+	 * Nearest neighbour function to compare to {r1,r2,etc}
+	 *  for each variable is the specified norm.
+	 * 
+	 * @param sampleIndex sample index in the data to find a nearest neighbour
+	 *  for
+	 * @param rs radii for each variable within which to count points
+	 * @return the count of points within r.
+	 */
+	public int countPointsStrictlyWithinRs(int sampleIndex, double[] rs) {
+		if (rootNode == null) {
+			return 0;
+		}
+		return countPointsWithinRs(sampleIndex, rootNode, 0, rs, false);
+	}
+	
+	/**
+	 * Count the number of points within or at norms {r1,r2,etc} for each high-level
+	 *  variable, for a given
+	 *  sample index in the data set. The node itself is 
+	 *  excluded from the search.
+	 * Nearest neighbour function to compare to {r1,r2,etc}
+	 *  for each variable is the specified norm.
+	 * 
+	 * @param sampleIndex sample index in the data to find a nearest neighbour
+	 *  for
+	 * @param rs radii for each variable within which to count points
+	 * @return the count of points within or on r.
+	 */
+	public int countPointsWithinOrOnRs(int sampleIndex, double[] rs) {
+		if (rootNode == null) {
+			return 0;
+		}
+		return countPointsWithinRs(sampleIndex, rootNode, 0, rs, true);
+	}
+
+	/**
+	 * Count the number of points within norms {r1,r2,etc} for each high-level
+	 *  variable, for a given
+	 *  sample (sampleIndex),
+	 * in the tree rooted at node (which is at the specified level in the tree).
+	 * The node itself is excluded from the search.
+	 * Nearest neighbour function to compare to {r1,r2,etc}
+	 *  for each variable is the specified norm.
+	 * 
+	 * @param sampleIndex sample index in the data to find a nearest neighbour
+	 *  for
+	 * @param node node to start searching from in the kd-tree. Cannot be null
+	 * @param level which level we're currently at in the tree
+	 * @param rs radii for each variable within which to count points
+	 * @param allowEqualToR if true, then count points at radii rs also,
+	 *   otherwise only those strictly within r
+	 * @return count of points within r
+	 */
+	protected int countPointsWithinRs(int sampleIndex,
+			KdTreeNode node, int level, double[] rs, boolean allowEqualToR) {
+		
+		int count = 0;
+		
+		// Point to the correct array for the data at this level
+		int currentDim = level % totalDimensions;
+		double[][] data = dimensionToArray[currentDim];
+		int actualDim = dimensionToArrayIndex[currentDim];
+		int variableNumber = dimensionToVariableNumber[currentDim];
+		
+		// Check the distance on this particular dimension
+		double distOnThisDim = data[sampleIndex][actualDim] -
+								data[node.indexOfThisPoint][actualDim];
+		
+		double absDistOnThisDim;
+		if (normCalculator.getNormInUse() == EuclideanUtils.NORM_MAX_NORM) {
+			absDistOnThisDim = (distOnThisDim > 0) ? distOnThisDim : - distOnThisDim;
+		} else {
+			// norm type is EuclideanUtils#NORM_EUCLIDEAN_SQUARED
+			// Track the square distance
+			absDistOnThisDim = distOnThisDim * distOnThisDim;
+		}
+		
+		if ((node.indexOfThisPoint != sampleIndex) &&
+			((absDistOnThisDim <  rs[variableNumber]) ||
+			 ( allowEqualToR && (absDistOnThisDim == rs[variableNumber])))) {
+			// Preliminary check says we need to compute the full distances
+			//  to use or at least to check if it should be counted.
+			boolean withinBounds = true;
+			for (int v = 0; v < originalDataSets.length; v++) {
+				// For each of our separate (multivariate) variables,
+				//  compute the (specified) norm in that variable's space:
+				double distForVariableV;
+				// Distance calculation terminates early with Double.POSITIVE_INFINITY
+				//  if it is clearly larger than rs[v]:
+				distForVariableV = normCalculator.normWithAbort(
+						originalDataSets[v][sampleIndex],
+						originalDataSets[v][node.indexOfThisPoint],
+						rs[v]);
+				if ((distForVariableV >= rs[v]) && 
+					!(allowEqualToR && (distForVariableV == rs[v]))) {
+					// We don't fit on this dimension, no point
+					//  checking the others:
+					withinBounds = false;
+					break;
+				}
+			}
+			if (withinBounds) {
+				// This node gets counted
+				count++;
+			}
+		}
+		
+		KdTreeNode closestSubTree = null;
+		KdTreeNode furthestSubTree = null;
+		// And translate this to which subtree is closer
+		if (distOnThisDim < 0) {
+			// We need to search the left tree
+			closestSubTree = node.leftTree;
+			furthestSubTree = node.rightTree;
+		} else {
+			// We need to search the right tree
+			closestSubTree = node.rightTree;
+			furthestSubTree = node.leftTree;
+		}
+		// Update the search on that subtree
+		if (closestSubTree != null) {
+			count += countPointsWithinRs(sampleIndex, closestSubTree,
+					level + 1, rs, allowEqualToR);
+		}
+		if ((absDistOnThisDim <  rs[variableNumber]) ||
+			( allowEqualToR && (distOnThisDim < 0) &&
+			  (absDistOnThisDim == rs[variableNumber]))) {
+			// It's possible we could have a node within (or on) rs[variableNumber]
+			//  in the other branch as well, so search there too.
+			// (Note: we only check furthest subtree in the == case
+			//  when it's allowed
+			//  *if* it's the right subtree, as only the right sub-tree
+			//  can have node with distance in this coordinate *equal* to
+			//  that of the current node -- left subtree must be strictly
+			//  less than the coordinate of the current node, so
+			//  distance to any of those points could not be equal.)
+			if (furthestSubTree != null) {
+				count += countPointsWithinRs(sampleIndex, furthestSubTree,
+						level + 1, rs, allowEqualToR);
+			}
+		}
+		
+		return count;
+	}
+
 	/**
 	 * Internal utility function for debug printing of a tree
 	 * 

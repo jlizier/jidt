@@ -24,6 +24,7 @@ import java.util.Random;
 import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariate;
 import infodynamics.measures.continuous.ConditionalMutualInfoMultiVariateCommon;
 import infodynamics.utils.EuclideanUtils;
+import infodynamics.utils.KdTree;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 
@@ -32,6 +33,8 @@ import infodynamics.utils.MatrixUtils;
  *  <code>double[][]</code> sets of observations, conditioned on another
  *  (implementing {@link ConditionalMutualInfoCalculatorMultiVariate}),
  *  using Kraskov-Stoegbauer-Grassberger (KSG) estimation (see references below).
+ *  The implementation is made using fast-neighbour searches with an
+ *  underlying k-d tree algorithm.
  *  This is an abstract class, building on the common code base in
  *  {@link ConditionalMutualInfoMultiVariateCommon},
  *  to gather common functionality between the two
@@ -83,10 +86,10 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	protected int k = 4;
 		
 	/**
-	 * Calculator for the norm between data points
+	 * The norm type in use (see {@link #PROP_NORM_TYPE})
 	 */
-	protected EuclideanUtils normCalculator;
-	
+	protected int normType = EuclideanUtils.NORM_MAX_NORM;
+		
 	/**
 	 * Property name for the number of K nearest neighbours used in
 	 * the KSG algorithm in the full joint space (default 4).
@@ -95,7 +98,7 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	/**
 	 * Property name for what type of norm to use between data points
 	 *  for each marginal variable -- Options are defined by 
-	 *  {@link EuclideanUtils#setNormToUse(String)} and the
+	 *  {@link KdTree#setNormType(String)} and the
 	 *  default is {@link EuclideanUtils#NORM_MAX_NORM}.
 	 */
 	public final static String PROP_NORM_TYPE = "NORM_TYPE";
@@ -129,20 +132,50 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	 */
 	protected int numThreads = Runtime.getRuntime().availableProcessors();
 	/**
-	 * Private variable to record which algorithm this instance is implementing
+	 * Private variable to record which KSG algorithm number
+	 *  this instance is implementing
 	 */
 	protected boolean isAlgorithm1 = false;
 
+	/**
+	 * protected k-d tree data structure (for fast nearest neighbour searches)
+	 *  representing the joint source-dest space
+	 */
+	protected KdTree kdTreeJoint;
+	/**
+	 * protected k-d tree data structure (for fast nearest neighbour searches)
+	 *  representing the (var1,conditional) space
+	 */
+	protected KdTree kdTreeVar1Conditional;
+	/**
+	 * protected k-d tree data structure (for fast nearest neighbour searches)
+	 *  representing the (var2,conditional) space
+	 */
+	protected KdTree kdTreeVar2Conditional;
+	/**
+	 * protected k-d tree data structure (for fast nearest neighbour searches)
+	 *  representing the conditional space
+	 */
+	protected KdTree kdTreeConditional;
+	
+	/**
+	 * Constant for digamma(k), with k the number of nearest neighbours selected
+	 */
+	protected double digammaK;
+	
 	/**
 	 * Construct an instance of the KSG conditional MI calculator
 	 */
 	public ConditionalMutualInfoCalculatorMultiVariateKraskov() {
 		super();
-		normCalculator = new EuclideanUtils(EuclideanUtils.NORM_MAX_NORM);
 	}
 
 	@Override
 	public void initialise(int dimensions1, int dimensions2, int dimensionsCond) {
+		kdTreeJoint = null;
+		kdTreeVar1Conditional = null;
+		kdTreeVar2Conditional = null;
+		kdTreeConditional = null;
 		super.initialise(dimensions1, dimensions2, dimensionsCond);
 	}
 
@@ -158,7 +191,7 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	 *      in the KSG algorithm (default is 4).</li>
 	 * 	<li>{@link #PROP_NORM_TYPE}</li> -- normalization type to apply to 
 	 * 		working out the norms between the points in each marginal space.
-	 * 		Options are defined by {@link EuclideanUtils#setNormToUse(String)} -
+	 * 		Options are defined by {@link KdTree#setNormType(String)} -
 	 * 		default is {@link EuclideanUtils#NORM_MAX_NORM}.
 	 *  <li>{@link #PROP_ADD_NOISE} -- a standard deviation for an amount of
 	 *  	random Gaussian noise to add to
@@ -186,7 +219,7 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 		if (propertyName.equalsIgnoreCase(PROP_K)) {
 			k = Integer.parseInt(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_NORM_TYPE)) {
-			normCalculator.setNormToUse(propertyValue);
+			normType = KdTree.validateNormType(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
 			addNoise = true;
 			noiseLevel = Double.parseDouble(propertyValue);
@@ -210,6 +243,13 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 		// Allow the parent to generate the data for us first
 		super.finaliseAddObservations();
 		
+		if (totalObservations < k) {
+			throw new Exception("There are less observations provided (" +
+					totalObservations +
+					") than the number of nearest neighbours parameter (" +
+					k + ")");
+		}
+		
 		if (addNoise) {
 			Random random = new Random();
 			// Add Gaussian noise of std dev noiseLevel to the data
@@ -228,6 +268,9 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 				}
 			}
 		}
+
+		// Set the constants:
+		digammaK = MathsUtils.digamma(k);
 	}
 
 	/**
@@ -265,20 +308,29 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 			return computeAverageLocalOfObservations();
 		}
 		double[][] originalData;
+		KdTree originalKdTreeJoint = kdTreeJoint;
+		kdTreeJoint = null; // So that it is rebuilt for the new ordering
+		KdTree originalKdTreeVar1Conditional = kdTreeVar1Conditional;
+		KdTree originalKdTreeVar2Conditional = kdTreeVar2Conditional;
 		if (variableToReorder == 1) {
 			originalData = var1Observations;
+			kdTreeVar1Conditional = null; // So that it is rebuilt for the new ordering
 			var1Observations = MatrixUtils.extractSelectedTimePointsReusingArrays(originalData, reordering);
 		} else {
 			originalData = var2Observations;
+			kdTreeVar2Conditional = null; // So that it is rebuilt for the new ordering
 			var2Observations = MatrixUtils.extractSelectedTimePointsReusingArrays(originalData, reordering);
 		}
 		// Compute the conditional MI
 		double newCondMI = computeFromObservations(false)[0];
 		// restore original data
+		kdTreeJoint = originalKdTreeJoint;
 		if (variableToReorder == 1) {
 			var1Observations = originalData;
+			kdTreeVar1Conditional = originalKdTreeVar1Conditional;
 		} else {
 			var2Observations = originalData;
+			kdTreeVar2Conditional = originalKdTreeVar2Conditional;
 		}
 		return newCondMI;
 	}
@@ -325,6 +377,35 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 		
 		double[] returnValues = null;
 		
+		// We need to construct the k-d trees for use by the child
+		//  classes. We check each tree for existence separately
+		//  some can be used across original and surrogate data
+		// TODO can parallelise these -- best done within the kdTree --
+		//  though it's unclear if there's much point given that
+		//  the tree construction itself afterwards can't really be well parallelised.
+		if (kdTreeJoint == null) {
+			kdTreeJoint = new KdTree(
+					new int[] {dimensionsVar1, dimensionsVar2, dimensionsCond},
+					new double[][][] {var1Observations, var2Observations, condObservations});
+			kdTreeJoint.setNormType(normType);
+		}
+		if (kdTreeVar1Conditional == null) {
+			kdTreeVar1Conditional = new KdTree(
+					new int[] {dimensionsVar1, dimensionsCond},
+					new double[][][] {var1Observations, condObservations});
+			kdTreeVar1Conditional.setNormType(normType);
+		}
+		if (kdTreeVar2Conditional == null) {
+			kdTreeVar2Conditional = new KdTree(
+					new int[] {dimensionsVar2, dimensionsCond},
+					new double[][][] {var2Observations, condObservations});
+			kdTreeVar2Conditional.setNormType(normType);
+		}
+		if (kdTreeConditional == null) {
+			kdTreeConditional = new KdTree(condObservations);
+			kdTreeConditional.setNormType(normType);
+		}
+
 		if (numThreads == 1) {
 			// Single-threaded implementation:
 			returnValues = partialComputeFromObservations(0, N, returnLocals);
@@ -513,8 +594,6 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 		}
 	}
 	// end class MiKraskovThreadRunner
-
-	public abstract String printConstants(int N) throws Exception;
 
 	// Note: no extra implementation of clone provided; we're simply
 	//  allowing clone() to produce a shallow copy, which is fine
