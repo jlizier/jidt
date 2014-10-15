@@ -18,6 +18,7 @@
 
 package infodynamics.measures.continuous;
 
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.RandomGenerator;
 import junit.framework.TestCase;
@@ -93,7 +94,12 @@ public abstract class MutualInfoMultiVariateAbstractTester extends TestCase {
 		int[][] newOrderings = rg.generateDistinctRandomPerturbations(
 				timeSteps, 2);
 
-		miCalc.computeSignificance(newOrderings);
+		EmpiricalMeasurementDistribution measDist = 
+				miCalc.computeSignificance(newOrderings);
+		// Make sure that (the first) surrogate TE does not
+		//  match the actual TE (it could possibly match but with
+		//  an incredibly low probability)
+		assertFalse(mi == measDist.distribution[0]);
 		
 		// And compute the average value again to check that it's consistent:
 		for (int i = 0; i < 10; i++) {
