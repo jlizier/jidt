@@ -24,6 +24,7 @@ import java.util.Random;
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.measures.continuous.MutualInfoMultiVariateCommon;
 import infodynamics.utils.EuclideanUtils;
+import infodynamics.utils.KdTree;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 
@@ -31,6 +32,8 @@ import infodynamics.utils.MatrixUtils;
  * <p>Computes the differential mutual information of two given multivariate sets of
  *  observations (implementing {@link MutualInfoCalculatorMultiVariate}),
  *  using Kraskov-Stoegbauer-Grassberger (KSG) estimation (see Kraskov et al., below).
+ *  The implementation is made using fast-neighbour searches with an
+ *  underlying k-d tree algorithm.
  *  This is an abstract class to gather common functionality between the two
  *  algorithms defined by Kraskov et al.
  *  Two child classes {@link MutualInfoCalculatorMultiVariateKraskov1} and
@@ -46,10 +49,6 @@ import infodynamics.utils.MatrixUtils;
  *  </ul>
  * </p>
  *  
- * <p>
- * TODO Add fast nearest neighbour searches to the child classes
- * </p>
- * 
  * <p><b>References:</b><br/>
  * <ul>
  * 	<li>Kraskov, A., Stoegbauer, H., Grassberger, P., 
@@ -71,9 +70,9 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	protected int k = 4;
 	
 	/**
-	 * Calculator for the norm between data points
+	 * The norm type in use (see {@link #PROP_NORM_TYPE})
 	 */
-	protected EuclideanUtils normCalculator;
+	protected int normType = EuclideanUtils.NORM_MAX_NORM;
 	
 	/**
 	 * Property name for the number of K nearest neighbours used in
@@ -83,7 +82,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	/**
 	 * Property name for what type of norm to use between data points
 	 *  for each marginal variable -- Options are defined by 
-	 *  {@link EuclideanUtils#setNormToUse(String)} and the
+	 *  {@link KdTree#setNormType(String)} and the
 	 *  default is {@link EuclideanUtils#NORM_MAX_NORM}.
 	 */
 	public final static String PROP_NORM_TYPE = "NORM_TYPE";
@@ -126,16 +125,49 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	 */
 	protected int numThreads = Runtime.getRuntime().availableProcessors();
 	/**
-	 * Private variable to record which algorithm this instance is implementing
+	 * Private variable to record which KSG algorithm number
+	 *  this instance is implementing
 	 */
 	protected boolean isAlgorithm1 = false;
+	
+	/**
+	 * protected k-d tree data structure (for fast nearest neighbour searches)
+	 *  representing the joint source-dest space
+	 */
+	protected KdTree kdTreeJoint;
+	/**
+	 * protected k-d tree data structure (for fast nearest neighbour searches)
+	 *  representing the source space
+	 */
+	protected KdTree kdTreeSource;
+	/**
+	 * protected k-d tree data structure (for fast nearest neighbour searches)
+	 *  representing the dest space
+	 */
+	protected KdTree kdTreeDest;
+	
+	/**
+	 * Constant for digamma(k), with k the number of nearest neighbours selected
+	 */
+	protected double digammaK;
+	/**
+	 * Constant for digamma(N), with N the number of samples.
+	 */
+	protected double digammaN;
 	
 	/**
 	 * Construct an instance of the KSG MI calculator
 	 */
 	public MutualInfoCalculatorMultiVariateKraskov() {
 		super();
-		normCalculator = new EuclideanUtils(EuclideanUtils.NORM_MAX_NORM);
+	}
+
+	@Override
+	public void initialise(int sourceDimensions, int destDimensions) {
+		kdTreeJoint = null;
+		kdTreeSource = null;
+		kdTreeDest = null;
+		super.initialise(sourceDimensions, destDimensions);
 	}
 
 	/**
@@ -150,7 +182,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	 *      in the KSG algorithm (default is 4).</li>
 	 * 	<li>{@link #PROP_NORM_TYPE}</li> -- normalization type to apply to 
 	 * 		working out the norms between the points in each marginal space.
-	 * 		Options are defined by {@link EuclideanUtils#setNormToUse(String)} -
+	 * 		Options are defined by {@link KdTree#setNormType(String)} -
 	 * 		default is {@link EuclideanUtils#NORM_MAX_NORM}.
 	 *  <li>{@link #PROP_NORMALISE} -- whether to normalise the incoming individual
 	 *      variables to mean 0 and standard deviation 1 (true by default)</li>
@@ -179,7 +211,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 		if (propertyName.equalsIgnoreCase(PROP_K)) {
 			k = Integer.parseInt(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_NORM_TYPE)) {
-			normCalculator.setNormToUse(propertyValue);
+			normType = KdTree.validateNormType(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
 			normalise = Boolean.parseBoolean(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
@@ -211,6 +243,13 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 		// Allow the parent to generate the data for us first
 		super.finaliseAddObservations();
 		
+		if (totalObservations < k) {
+			throw new Exception("There are less observations provided (" +
+					totalObservations +
+					") than the number of nearest neighbours parameter (" +
+					k + ")");
+		}
+		
 		// Normalise the data if required
 		if (normalise) {
 			// We can overwrite these since they're already
@@ -233,6 +272,10 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 				}
 			}
 		}
+
+		// Set the constants:
+		digammaK = MathsUtils.digamma(k);
+		digammaN = MathsUtils.digamma(totalObservations);
 	}
 
 	/**
@@ -262,13 +305,25 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 		if (reordering == null) {
 			return computeAverageLocalOfObservations();
 		}
+		
+		// Save internal variables pertaining to the original order for
+		//  later reinstatement:
+		// (don't need to save and reinstate kdTreeSource, since we're not
+		//  altering the source data order).
+		KdTree originalKdTreeJoint = kdTreeJoint;
+		KdTree originalKdTreeDest = kdTreeDest;
 		double[][] originalData2 = destObservations;
+		
 		// Generate a new re-ordered data2
 		destObservations = MatrixUtils.extractSelectedTimePointsReusingArrays(originalData2, reordering);
 		// Compute the MI
 		double newMI = computeFromObservations(false)[0];
-		// restore data2
+		
+		// restore original variables:
 		destObservations = originalData2;
+		kdTreeJoint = originalKdTreeJoint;
+		kdTreeDest = originalKdTreeDest;
+		
 		return newMI;
 	}
 
@@ -329,6 +384,26 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 		int N = sourceObservations.length; // number of observations
 		
 		double[] returnValues = null;
+		
+		// We need to construct the k-d trees for use by the child
+		//  classes. We check each tree for existence separately
+		//  since source can be used across original and surrogate data
+		// TODO can parallelise these -- best done within the kdTree --
+		//  though it's unclear if there's much point given that
+		//  the tree construction itself afterwards can't really be well parallelised.
+		if (kdTreeJoint == null) {
+			kdTreeJoint = new KdTree(new int[] {dimensionsSource, dimensionsDest},
+						new double[][][] {sourceObservations, destObservations});
+			kdTreeJoint.setNormType(normType);
+		}
+		if (kdTreeSource == null) {
+			kdTreeSource = new KdTree(sourceObservations);
+			kdTreeSource.setNormType(normType);
+		}
+		if (kdTreeDest == null) {
+			kdTreeDest = new KdTree(destObservations);
+			kdTreeDest.setNormType(normType);
+		}
 		
 		if (numThreads == 1) {
 			// Single-threaded implementation:
@@ -483,7 +558,8 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 		 */
 		public void run() {
 			try {
-				returnValues = miCalc.partialComputeFromObservations(myStartTimePoint, numberOfTimePoints, computeLocals);
+				returnValues = miCalc.partialComputeFromObservations(
+						myStartTimePoint, numberOfTimePoints, computeLocals);
 			} catch (Exception e) {
 				// Store the exception for later retrieval
 				problem = e;
@@ -491,14 +567,5 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 			}
 		}
 	}
-	// end class MiKraskovThreadRunner
-	
-	/**
-	 * Utility function used for debugging, printing digamma constants
-	 * 
-	 * @param N
-	 * @return
-	 * @throws Exception
-	 */
-	public abstract String printConstants(int N) throws Exception ;	
+	// end class MiKraskovThreadRunner	
 }

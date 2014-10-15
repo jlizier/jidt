@@ -19,11 +19,11 @@
 package infodynamics.measures.continuous.kraskov;
 
 import java.util.Calendar;
+import java.util.PriorityQueue;
 
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
-import infodynamics.utils.FirstIndexComparatorDouble;
 import infodynamics.utils.MathsUtils;
-import infodynamics.utils.MatrixUtils;
+import infodynamics.utils.KdTree.NeighbourNodeData;
 
 /**
  * <p>Computes the differential mutual information of two given multivariate sets of
@@ -50,15 +50,6 @@ import infodynamics.utils.MatrixUtils;
  */
 public class MutualInfoCalculatorMultiVariateKraskov2
 	extends MutualInfoCalculatorMultiVariateKraskov {
-
-	protected static final int JOINT_NORM_VAL_COLUMN = 0;
-	protected static final int JOINT_NORM_TIMESTEP_COLUMN = 1;
-
-	/**
-	 * Multiplier used as hueristic for determining whether to use a linear search
-	 *  for kth nearest neighbour or a binary search.
-	 */
-	protected static final double CUTOFF_MULTIPLIER = 1.5;
 	
 	public MutualInfoCalculatorMultiVariateKraskov2() {
 		super();
@@ -70,18 +61,13 @@ public class MutualInfoCalculatorMultiVariateKraskov2
 		
 		double startTime = Calendar.getInstance().getTimeInMillis();
 
-		int N = sourceObservations.length; // number of observations
-		int cutoffForKthMinLinear = (int) (CUTOFF_MULTIPLIER * Math.log(N) / Math.log(2.0));
-		
 		double[] localMi = null;
 		if (returnLocals) {
 			localMi = new double[numTimePoints];
 		}
 		
 		// Constants:
-		double digammaK = MathsUtils.digamma(k);
 		double invK = 1.0 / (double)k;
-		double digammaN = MathsUtils.digamma(N);
 		
 		// Count the average number of points within eps_x and eps_y of each point
 		double sumDiGammas = 0;
@@ -89,59 +75,33 @@ public class MutualInfoCalculatorMultiVariateKraskov2
 		double sumNy = 0;
 				
 		for (int t = startTimePoint; t < startTimePoint + numTimePoints; t++) {
-			// Compute eps_x and eps_y for this time step:
-			//  First get x and y norms to all neighbours
-			//  (note that norm of point t to itself will be set to infinity).
-			double[][] xyNorms = normCalculator.computeNorms(sourceObservations, destObservations, t);
-			double[][] jointNorm = new double[N][2];
-			for (int t2 = 0; t2 < N; t2++) {
-				jointNorm[t2][JOINT_NORM_VAL_COLUMN] = Math.max(xyNorms[t2][0], xyNorms[t2][1]);
-				// And store the time step for back reference after the 
-				//  array is sorted.
-				jointNorm[t2][JOINT_NORM_TIMESTEP_COLUMN] = t2;
-			}
-			// Then find the k closest neighbours, using a heuristic to 
-			// select whether to keep the k mins only or to do a sort.
+			// Compute eps_x and eps_y for this time step by
+			//  finding the kth closest neighbours for point t:
+			PriorityQueue<NeighbourNodeData> nnPQ =
+					kdTreeJoint.findKNearestNeighbours(k, t);
+
+			// Find eps_{x,y} as the maximum x and y norms amongst this set:
 			double eps_x = 0.0;
 			double eps_y = 0.0;
-			int[] timeStepsOfKthMins = null;
-			if (k <= cutoffForKthMinLinear) {
-				// just do a linear search for the minimum epsilon value
-				timeStepsOfKthMins = MatrixUtils.kMinIndices(jointNorm, JOINT_NORM_VAL_COLUMN, k);
-			} else {
-				// Sort the array of joint norms
-				java.util.Arrays.sort(jointNorm, FirstIndexComparatorDouble.getInstance());
-				// and now we have the closest k points.
-				timeStepsOfKthMins = new int[k];
-				for (int j = 0; j < k; j++) {
-					timeStepsOfKthMins[j] = (int) jointNorm[j][JOINT_NORM_TIMESTEP_COLUMN];
-				}
-			}
-			// and now we have the closest k points.
-			// Find eps_{x,y} as the maximum x and y norms amongst this set:
 			for (int j = 0; j < k; j++) {
-				int timeStepOfJthPoint = timeStepsOfKthMins[j]; 
-				if (xyNorms[timeStepOfJthPoint][0] > eps_x) {
-					eps_x = xyNorms[timeStepOfJthPoint][0];
+				// Take the furthest remaining of the nearest neighbours from the PQ:
+				NeighbourNodeData nnData = nnPQ.poll();
+				if (nnData.norms[0] > eps_x) {
+					eps_x = nnData.norms[0];
 				}
-				if (xyNorms[timeStepOfJthPoint][1] > eps_y) {
-					eps_y = xyNorms[timeStepOfJthPoint][1];
+				if (nnData.norms[1] > eps_y) {
+					eps_y = nnData.norms[1];
 				}
 			}
-
+			
 			// Count the number of points whose x distance is less
 			//  than or equal to eps_x, and whose y distance is less
 			//  than or equal to eps_y
-			int n_x = 0;
-			int n_y = 0;
-			for (int t2 = 0; t2 < N; t2++) {
-				if (xyNorms[t2][0] <= eps_x) {
-					n_x++;
-				}
-				if (xyNorms[t2][1] <= eps_y) {
-					n_y++;
-				}
-			}
+			int n_x = kdTreeSource.countPointsWithinOrOnR(
+					t, eps_x);
+			int n_y = kdTreeDest.countPointsWithinOrOnR(
+					t, eps_y);
+
 			sumNx += n_x;
 			sumNy += n_y;
 			// And take the digammas:
@@ -168,12 +128,5 @@ public class MutualInfoCalculatorMultiVariateKraskov2
 		} else {
 			return new double[] {sumDiGammas, sumNx, sumNy};
 		}
-	}
-
-	public String printConstants(int N) throws Exception {
-		String constants = String.format("digamma(k=%d)=%.3e - 1/k=%.3e + digamma(N=%d)=%.3e => %.3e",
-				k, MathsUtils.digamma(k), 1.0/(double)k, N, MathsUtils.digamma(N),
-				(MathsUtils.digamma(k) - 1.0/(double)k + MathsUtils.digamma(N)));
-		return constants;
 	}
 }

@@ -19,10 +19,11 @@
 package infodynamics.measures.continuous.kraskov;
 
 import java.util.Calendar;
+import java.util.PriorityQueue;
 
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.utils.MathsUtils;
-import infodynamics.utils.MatrixUtils;
+import infodynamics.utils.KdTree.NeighbourNodeData;
 
 /**
  * <p>Computes the differential mutual information of two given multivariate sets of
@@ -50,12 +51,6 @@ import infodynamics.utils.MatrixUtils;
 public class MutualInfoCalculatorMultiVariateKraskov1
 	extends MutualInfoCalculatorMultiVariateKraskov {
 	
-	/**
-	 * Multiplier used as hueristic for determining whether to use a linear search
-	 *  for kth nearest neighbour or a binary search.
-	 */
-	protected static final double CUTOFF_MULTIPLIER = 1.5;
-
 	public MutualInfoCalculatorMultiVariateKraskov1() {
 		super();
 		isAlgorithm1 = true;
@@ -67,17 +62,10 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 		
 		double startTime = Calendar.getInstance().getTimeInMillis();
 
-		int N = sourceObservations.length; // number of observations
-		int cutoffForKthMinLinear = (int) (CUTOFF_MULTIPLIER * Math.log(N) / Math.log(2.0));
-		
 		double[] localMi = null;
 		if (returnLocals) {
 			localMi = new double[numTimePoints];
 		}
-		
-		// Constants:
-		double digammaK = MathsUtils.digamma(k);
-		double digammaN = MathsUtils.digamma(N);
 		
 		// Count the average number of points within eps_x and eps_y of each point
 		double sumDiGammas = 0;
@@ -85,45 +73,22 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 		double sumNy = 0;
 				
 		for (int t = startTimePoint; t < startTimePoint + numTimePoints; t++) {
-			// Compute eps for this time step:
-			//  First get x and y norms to all neighbours
-			//  (note that norm of point t to itself will be set to infinity).
-			
-			// TODO Consider reintroducing caching of the norms here; this helps when we're
-			//  computing stat significance for various re-orderings. May not be useful
-			//  when we've gone to fast nearest neighbour searching though.
-			
-			double[][] xyNorms = normCalculator.computeNorms(sourceObservations, destObservations, t);
-			double[] jointNorm = new double[N];
-			for (int t2 = 0; t2 < N; t2++) {
-				jointNorm[t2] = Math.max(xyNorms[t2][0], xyNorms[t2][1]);
-			}
-			// Then find the kth closest neighbour, using a heuristic to 
-			// select whether to keep the k mins only or to do a sort.
-			double epsilon = 0.0;
-			if (k <= cutoffForKthMinLinear) {
-				// just do a linear search for the minimum
-				epsilon = MatrixUtils.kthMin(jointNorm, k);
-			} else {
-				// Sort the array of joint norms first
-				java.util.Arrays.sort(jointNorm);
-				// And find the distance to its kth closest neighbour
-				// (we subtract one since the array is indexed from zero)
-				epsilon = jointNorm[k-1];
-			}
+			// Compute eps for this time step by
+			//  finding the kth closest neighbour for point t:
+			PriorityQueue<NeighbourNodeData> nnPQ =
+					kdTreeJoint.findKNearestNeighbours(k, t);
+			// First element in the PQ is the kth NN,
+			//  and epsilon = kthNnData.distance
+			NeighbourNodeData kthNnData = nnPQ.poll();
 			
 			// Count the number of points whose x distance is less
-			//  than eps, and whose y distance is less than eps
-			int n_x = 0;
-			int n_y = 0;
-			for (int t2 = 0; t2 < N; t2++) {
-				if (xyNorms[t2][0] < epsilon) {
-					n_x++;
-				}
-				if (xyNorms[t2][1] < epsilon) {
-					n_y++;
-				}
-			}
+			//  than eps, and whose y distance is less than
+			//  epsilon = kthNnData.distance
+			int n_x = kdTreeSource.countPointsStrictlyWithinR(
+							t, kthNnData.distance);
+			int n_y = kdTreeDest.countPointsStrictlyWithinR(
+							t, kthNnData.distance);
+			
 			sumNx += n_x;
 			sumNy += n_y;
 			// And take the digammas:
@@ -150,13 +115,5 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 		} else {
 			return new double[] {sumDiGammas, sumNx, sumNy};
 		}
-	}
-	
-	@Override
-	public String printConstants(int N) throws Exception {
-		String constants = String.format("digamma(k=%d)=%.3e + digamma(N=%d)=%.3e => %.3e",
-				k, MathsUtils.digamma(k), N, MathsUtils.digamma(N),
-				(MathsUtils.digamma(k) + MathsUtils.digamma(N)));
-		return constants;
-	}
+	}	
 }
