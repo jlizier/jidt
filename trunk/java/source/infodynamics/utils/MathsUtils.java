@@ -33,7 +33,7 @@ public class MathsUtils {
 	
 	private static int highestDigammaArgCalced = 0;
 	private static final int NUM_STORED_DIGAMMAS = 10000; // commons.math to handle beyond this
-	private static double[] storedDigammas = new double[0];
+	private static double[] storedDigammas = new double[NUM_STORED_DIGAMMAS];
 	
 	/**
 	 * Returns the integer result of base^power
@@ -272,23 +272,11 @@ public class MathsUtils {
 		if (d < 1) {
 			return Double.NaN;
 		}
-		if (storedDigammas.length == 0) {
-			synchronized(storedDigammas) { // Ensure no race condition here
-				// We do two checks on whether the storage has been
-				//  created so that the first is very fast (without 
-				//  requiring synchronization), and the second
-				//  ensures no race condition.
-				if (storedDigammas.length == 0) {
-					// Using length == 0 as proxy to null, since 
-					//  we can't synchronize on a null object
-					
-					// allocate space to store our results
-					storedDigammas = new double[NUM_STORED_DIGAMMAS];
-					storedDigammas[0] = Double.NaN;
-					storedDigammas[1] = -EULER_MASCHERONI_CONSTANT;
-					highestDigammaArgCalced = 1;
-				}
-			}
+		if (highestDigammaArgCalced == 0) {
+			// We're not initialised yet:
+			storedDigammas[0] = Double.NaN;
+			storedDigammas[1] = -EULER_MASCHERONI_CONSTANT;
+			highestDigammaArgCalced = 1;
 		}
 		if (d <= highestDigammaArgCalced) {
 			// We've already calculated this one

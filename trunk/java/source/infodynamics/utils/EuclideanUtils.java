@@ -35,6 +35,8 @@ public class EuclideanUtils {
 	public static final String NORM_EUCLIDEAN_NORMALISED_STRING = "EUCLIDEAN_NORMALISED";
 	public static final int NORM_MAX_NORM = 2;
 	public static final String NORM_MAX_NORM_STRING = "MAX_NORM";
+	public static final int NORM_EUCLIDEAN_SQUARED = 3;
+	public static final String NORM_EUCLIDEAN_SQUARED_STRING = "EUCLIDEAN_SQUARED";
 	// Track which norm we should use here
 	private int normToUse = 0;
 
@@ -42,12 +44,26 @@ public class EuclideanUtils {
 	 * Construct a EuclideanUtils object, to take norms of the given type
 	 * 
 	 * @param normToUse norm type, one of
-	 * {@link #NORM_EUCLIDEAN_STRING},
-	 * {@link #NORM_EUCLIDEAN_NORMALISED_STRING},
-	 *  or {@link #NORM_MAX_NORM_STRING}
+	 * {@link #NORM_EUCLIDEAN},
+	 * {@link #NORM_EUCLIDEAN_NORMALISED},
+	 * {@link #NORM_MAX_NORM}
+	 *  or {@link #NORM_MAX_NORM}
 	 */
 	public EuclideanUtils(int normToUse) {
-		this.normToUse = normToUse;
+		setNormToUse(normToUse);
+	}
+
+	/**
+	 * Construct a EuclideanUtils object, to take norms of the given type
+	 * 
+	 * @param normToUse norm type, one of
+	 * {@link #NORM_EUCLIDEAN_STRING},
+	 * {@link #NORM_EUCLIDEAN_NORMALISED_STRING},
+	 * {@link #NORM_MAX_NORM_STRING}
+	 *  or {@link #NORM_MAX_NORM_STRING}
+	 */
+	public EuclideanUtils(String normToUse) {
+		setNormToUse(normToUse);
 	}
 
 	public static double[] computeMinEuclideanDistances(double[][] observations) {
@@ -199,9 +215,35 @@ public class EuclideanUtils {
 			return euclideanNorm(x1, x2) / Math.sqrt(x1.length);
 		case NORM_MAX_NORM:
 			return maxNorm(x1, x2);
+		case NORM_EUCLIDEAN_SQUARED:
+			return euclideanNormSquared(x1, x2);
 		case NORM_EUCLIDEAN:
 		default:
 			return euclideanNorm(x1, x2);
+		}
+	}
+	
+	/**
+	 * Computing the configured norm between vectors x1 and x2; if 
+	 *  it becomes clear that norm will be larger than limit,
+	 *  then return Double.POSITIVE_INFINITY immediately.
+	 * 
+	 * @param x1
+	 * @param x2
+	 * @param limit
+	 * @return
+	 */
+	public double normWithAbort(double[] x1, double[] x2, double limit) {
+		switch (normToUse) {
+		case NORM_EUCLIDEAN_NORMALISED:
+			return euclideanNormWithAbort(x1, x2, limit) / Math.sqrt(x1.length);
+		case NORM_MAX_NORM:
+			return maxNormWithAbort(x1, x2, limit);
+		case NORM_EUCLIDEAN_SQUARED:
+			return euclideanNormSquaredWithAbort(x1, x2, limit);
+		case NORM_EUCLIDEAN:
+		default:
+			return euclideanNormWithAbort(x1, x2, limit);
 		}
 	}
 	
@@ -220,7 +262,70 @@ public class EuclideanUtils {
 		}
 		return Math.sqrt(distance);
 	}
+	
+	/**
+	 * Computing the norm as the Euclidean norm; if 
+	 *  it becomes clear that norm will be larger than limit,
+	 *  then return Double.POSITIVE_INFINITY immediately.
+	 * 
+	 * @param x1
+	 * @param x2
+	 * @param limit
+	 * @return
+	 */
+	public static double euclideanNormWithAbort(double[] x1, double[] x2, double limit) {
+		double distance = 0.0;
+		limit *= limit;
+		for (int d = 0; d < x1.length; d++) {
+			double difference = x1[d] - x2[d];
+			distance += difference * difference;
+			if (distance > limit) {
+				return Double.POSITIVE_INFINITY;
+			}
+		}
+		return Math.sqrt(distance);
+	}
 
+	/**
+	 * Computing the norm as the Euclidean norm squared
+	 *  (i.e. avoids taking the square root).
+	 * 
+	 * @param x1
+	 * @param x2
+	 * @return
+	 */
+	public static double euclideanNormSquared(double[] x1, double[] x2) {
+		double distance = 0.0;
+		for (int d = 0; d < x1.length; d++) {
+			double difference = x1[d] - x2[d];
+			distance += difference * difference;
+		}
+		return distance;
+	}
+	
+	/**
+	 * Computing the norm as the Euclidean norm squared
+	 *  (i.e. avoids taking the square root); if 
+	 *  it becomes clear that norm will be larger than limit,
+	 *  then return Double.POSITIVE_INFINITY immediately.
+	 * 
+	 * @param x1 vector 1
+	 * @param x2 vector 2
+	 * @return
+	 */
+	public static double euclideanNormSquaredWithAbort(
+			double[] x1, double[] x2, double limit) {
+		double distance = 0.0;
+		for (int d = 0; d < x1.length; d++) {
+			double difference = x1[d] - x2[d];
+			distance += difference * difference;
+			if (distance > limit) {
+					return Double.POSITIVE_INFINITY;
+			}
+		}
+		return distance;
+	}
+	
 	/**
 	 * Computing the norm as the Max norm.
 	 * 
@@ -243,6 +348,34 @@ public class EuclideanUtils {
 		return distance;
 	}
 
+	/**
+	 * Computing the norm as the Max norm; if 
+	 *  it becomes clear that norm will be larger than limit,
+	 *  then return Double.POSITIVE_INFINITY immediately.
+	 * 
+	 * @param x1 vector 1
+	 * @param x2 vector 2
+	 * @param limit
+	 * @return
+	 */
+	public static double maxNormWithAbort(double[] x1, double[] x2, double limit) {
+		double distance = 0.0;
+		for (int d = 0; d < x1.length; d++) {
+			double difference = x1[d] - x2[d];
+			// Take the abs
+			if (difference < 0) {
+				difference = -difference;
+			}
+			if (difference > distance) {
+				if (difference > limit) {
+					return Double.POSITIVE_INFINITY;
+				}
+				distance = difference;
+			}
+		}
+		return distance;
+	}
+	
 	/**
 	 * Compute the x and y configured norms of all other points from
 	 *  the data points at time step t.
@@ -353,17 +486,25 @@ public class EuclideanUtils {
 			normToUse = NORM_EUCLIDEAN_NORMALISED;
 		} else if (normType.equalsIgnoreCase(NORM_MAX_NORM_STRING)) {
 			normToUse = NORM_MAX_NORM;
+		} else if (normType.equalsIgnoreCase(NORM_EUCLIDEAN_SQUARED_STRING)) {
+			normToUse = NORM_EUCLIDEAN_SQUARED;
 		} else {
 			normToUse = NORM_EUCLIDEAN;
 		}
 	}
 	
-	public String getNormInUse() {
+	public int getNormInUse() {
+		return normToUse;
+	}
+
+	public String getNormInUseString() {
 		switch (normToUse) {
 		case NORM_EUCLIDEAN_NORMALISED:
 			return NORM_EUCLIDEAN_NORMALISED_STRING;
 		case NORM_MAX_NORM:
 			return NORM_MAX_NORM_STRING;
+		case NORM_EUCLIDEAN_SQUARED:
+			return NORM_EUCLIDEAN_SQUARED_STRING;
 		default:
 		case NORM_EUCLIDEAN:
 			return NORM_EUCLIDEAN_STRING;

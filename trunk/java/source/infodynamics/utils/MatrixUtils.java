@@ -2524,10 +2524,11 @@ public class MatrixUtils {
 	/**
 	 * Works out the index of the k minimum values in the matrix in a given column 
 	 * 
-	 * @param matrix
-	 * @param column
-	 * @param k
-	 * @return
+	 * @param matrix data
+	 * @param column which column of the data to find the min values from
+	 * @param k how many min values to return
+	 * @return an array of the (row) indices in the array with the k min values,
+	 *  with closest match first.
 	 * @throws Exception 
 	 */
 	public static int[] kMinIndices(double[][] matrix, int column, int k) throws Exception {
@@ -2568,7 +2569,7 @@ public class MatrixUtils {
 				}
 			}
 		}
-		// Return the index of the kth min
+		// Return the indices of the k mins
 		return minIndices;
 	}
 
