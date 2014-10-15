@@ -18,6 +18,7 @@
 
 package infodynamics.measures.continuous;
 
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.RandomGenerator;
 import junit.framework.TestCase;
@@ -96,7 +97,11 @@ public abstract class ConditionalMutualInfoMultiVariateAbstractTester
 				timeSteps, 100);
 		
 		// Compute significance for permuting first variable 
-		condMiCalc.computeSignificance(1, newOrderings);
+		EmpiricalMeasurementDistribution measDist =
+				condMiCalc.computeSignificance(1, newOrderings);
+		// The actual MI should be different to a surrogate (it's possible
+		//  but exceedingly unlikely that they would be equal).
+		assertFalse(condMi == measDist.distribution[0]);
 		
 		// And compute the average value again to check that it's consistent:
 		for (int i = 0; i < 10; i++) {
