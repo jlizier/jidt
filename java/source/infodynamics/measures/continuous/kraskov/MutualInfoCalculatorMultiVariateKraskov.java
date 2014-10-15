@@ -311,7 +311,9 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 		// (don't need to save and reinstate kdTreeSource, since we're not
 		//  altering the source data order).
 		KdTree originalKdTreeJoint = kdTreeJoint;
+		kdTreeJoint = null; // So that it is rebuilt for the new ordering
 		KdTree originalKdTreeDest = kdTreeDest;
+		kdTreeDest = null; // So that it is rebuilt for the new ordering
 		double[][] originalData2 = destObservations;
 		
 		// Generate a new re-ordered data2
