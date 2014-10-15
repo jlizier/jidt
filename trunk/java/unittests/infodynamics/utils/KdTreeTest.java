@@ -572,4 +572,90 @@ public class KdTreeTest extends TestCase {
 			}
 		}
 	}
+
+	public void testCountNeighboursWithinRsSeparateArrays() {
+		int variables = 3;
+		int dimensionsPerVariable = 3;
+		int samples = 1000;
+		double[][][] data = new double[variables][][];
+		for (int v = 0; v < variables; v++) {
+			data[v] = rg.generateNormalData(samples, dimensionsPerVariable, 0, 1);
+		}
+		
+		long startTime = Calendar.getInstance().getTimeInMillis();
+		int[] dimensions = new int[variables];
+		for (int v = 0; v < variables; v++) {
+			dimensions[v] = dimensionsPerVariable;
+		}
+		KdTree kdTree = new KdTree(dimensions, data);
+		long endTimeTree = Calendar.getInstance().getTimeInMillis();
+		System.out.printf("Tree of %d points constructed in: %.3f sec\n",
+				samples, ((double) (endTimeTree - startTime)/1000.0));
+		
+		double[] r1s = {0.2, 0.6, 0.8, 1.0};
+		double[] r2s = {0.25, 0.5, 0.6, 0.5};
+		double[] r3s = {0.5, 0.15, 0.2, 0.8};
+		for (int i = 0; i < r1s.length; i++) {
+			verifyCountNeighboursWithinRForSeparateArrays(EuclideanUtils.NORM_MAX_NORM,
+					data, samples, kdTree, new double[] {r1s[i], r2s[i], r3s[i]}, true);
+			verifyCountNeighboursWithinRForSeparateArrays(EuclideanUtils.NORM_MAX_NORM,
+					data, samples, kdTree, new double[] {r1s[i], r2s[i], r3s[i]}, false);
+			// Must test with EuclideanUtils.NORM_EUCLIDEAN_SQUARED instead
+			//  of EuclideanUtils.NORM_EUCLIDEAN if we want the min distances
+			//  to match when tested inside verifyNearestNeighbourForSeparateArrays()
+			verifyCountNeighboursWithinRForSeparateArrays(EuclideanUtils.NORM_EUCLIDEAN_SQUARED,
+					data, samples, kdTree, new double[] {r1s[i], r2s[i], r3s[i]}, true);
+			verifyCountNeighboursWithinRForSeparateArrays(EuclideanUtils.NORM_EUCLIDEAN_SQUARED,
+					data, samples, kdTree, new double[] {r1s[i], r2s[i], r3s[i]}, false);
+		}
+	}
+
+	private void verifyCountNeighboursWithinRForSeparateArrays(int normType,
+			double[][][] data, int samples, KdTree kdTree, double[] rs,
+			boolean allowEqualToR) {
+		
+		int variables = data.length;
+		
+		// Set up the given norm type:
+		EuclideanUtils normCalculator = new EuclideanUtils(normType);
+		kdTree.setNormType(normType);
+		
+		long startTime = Calendar.getInstance().getTimeInMillis();
+		int totalCount = 0;
+		for (int t = 0; t < samples; t++) {
+			int count = kdTree.countPointsWithinRs(t, rs, allowEqualToR);
+			assertTrue(count >= 0);
+			totalCount += count;
+			// Now find the neighbour count with a naive all-pairs comparison
+			int naiveCount = 0;
+			for (int t2 = 0; t2 < samples; t2++) {
+				if (t2 == t) {
+					continue;
+				}
+				boolean withinBounds = true;
+				for (int v = 0; v < variables; v++) {
+					double normForThisVariable = normCalculator.norm(
+							data[v][t], data[v][t2]);
+					if ((allowEqualToR && (normForThisVariable > rs[v])) ||
+						 (!allowEqualToR && (normForThisVariable >= rs[v]))) {
+						withinBounds = false;
+						break;
+					}
+				}
+				if (withinBounds) {
+					naiveCount++;
+				}
+			}
+			if (naiveCount != count) {
+				System.out.printf("All pairs    : count %d\n", naiveCount);
+				System.out.printf("kdTree search: count %d\n", count);
+			}
+			assertEquals(naiveCount, count);
+		}		
+		long endTimeValidate = Calendar.getInstance().getTimeInMillis();
+		System.out.printf("All neighbours within bounds (average of %.3f) found in: %.3f sec\n",
+				(double) totalCount / (double) samples,
+				((double) (endTimeValidate - startTime)/1000.0));
+	}
+
 }
