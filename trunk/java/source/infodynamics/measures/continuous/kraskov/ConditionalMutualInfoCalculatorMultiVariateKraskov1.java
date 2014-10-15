@@ -19,10 +19,11 @@
 package infodynamics.measures.continuous.kraskov;
 
 import java.util.Calendar;
+import java.util.PriorityQueue;
 
 import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariate;
+import infodynamics.utils.KdTree.NeighbourNodeData;
 import infodynamics.utils.MathsUtils;
-import infodynamics.utils.MatrixUtils;
 
 /**
  * <p>Computes the differential conditional mutual information of two multivariate
@@ -58,12 +59,6 @@ import infodynamics.utils.MatrixUtils;
 public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 	extends ConditionalMutualInfoCalculatorMultiVariateKraskov {
 	
-	/**
-	 * Multiplier used as hueristic for determining whether to use a linear search
-	 *  for kth nearest neighbour or a binary search.
-	 */
-	protected static final double CUTOFF_MULTIPLIER = 1.5;
-
 	public ConditionalMutualInfoCalculatorMultiVariateKraskov1() {
 		super();
 		isAlgorithm1 = true;
@@ -75,16 +70,10 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 		
 		double startTime = Calendar.getInstance().getTimeInMillis();
 
-		int N = var1Observations.length; // number of observations
-		int cutoffForKthMinLinear = (int) (CUTOFF_MULTIPLIER * Math.log(N) / Math.log(2.0));
-		
 		double[] localCondMi = null;
 		if (returnLocals) {
 			localCondMi = new double[numTimePoints];
 		}
-		
-		// Constants:
-		double digammaK = MathsUtils.digamma(k);
 		
 		// Count the average number of points within eps_xz and eps_yz and eps_z of each point
 		double sumDiGammas = 0;
@@ -93,46 +82,24 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 		double sumNz = 0;
 		
 		for (int t = startTimePoint; t < startTimePoint + numTimePoints; t++) {
-			// Compute eps for this time step:
-			//  First get x and y and z norms to all neighbours
-			//  (note that norm of point t to itself will be set to infinity.
-			double[][] xyzNorms = normCalculator.computeNorms(
-					var1Observations, var2Observations, condObservations, t);
-			double[] jointNorm = new double[N];
-			for (int t2 = 0; t2 < N; t2++) {
-				jointNorm[t2] = Math.max(xyzNorms[t2][0], Math.max(xyzNorms[t2][1], xyzNorms[t2][2]));
-			}
-			// Then find the kth closest neighbour, using a heuristic to 
-			// select whether to keep the k mins only or to do a sort.
-			double epsilon = 0.0;
-			if (k <= cutoffForKthMinLinear) {
-				// just do a linear search for the minimum
-				epsilon = MatrixUtils.kthMin(jointNorm, k);
-			} else {
-				// Sort the array of joint norms first
-				java.util.Arrays.sort(jointNorm);
-				// And find the distance to it's kth closest neighbour
-				// (we subtract one since the array is indexed from zero)
-				epsilon = jointNorm[k-1];
-			}
+			// Compute eps for this time step by
+			//  finding the kth closest neighbour for point t:
+			PriorityQueue<NeighbourNodeData> nnPQ =
+					kdTreeJoint.findKNearestNeighbours(k, t);
+			// First element in the PQ is the kth NN,
+			//  and epsilon = kthNnData.distance
+			NeighbourNodeData kthNnData = nnPQ.poll();
+						
+			// Count the number of points whose x distance is less
+			//  than eps, and whose y distance is less than
+			//  epsilon = kthNnData.distance
+			int n_xz = kdTreeVar1Conditional.countPointsStrictlyWithinR(
+							t, kthNnData.distance);
+			int n_yz = kdTreeVar2Conditional.countPointsStrictlyWithinR(
+							t, kthNnData.distance);
+			int n_z = kdTreeConditional.countPointsStrictlyWithinR(
+					t, kthNnData.distance);
 			
-			// Count the number of points whose z distance is less
-			//  than eps, x and z distance is less than eps, and
-			//  y and z distance is less than eps
-			int n_xz = 0;
-			int n_yz = 0;
-			int n_z = 0;
-			for (int t2 = 0; t2 < N; t2++) {
-				if (xyzNorms[t2][2] < epsilon) {
-					n_z++;
-					if (xyzNorms[t2][0] < epsilon) {
-						n_xz++;
-					}
-					if (xyzNorms[t2][1] < epsilon) {
-						n_yz++;
-					}
-				}
-			}
 			sumNxz += n_xz;
 			sumNyz += n_yz;
 			sumNz += n_z;
@@ -167,13 +134,5 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 			//  return length with algorithm 2
 			return new double[] {sumDiGammas, sumNxz, sumNyz, sumNz, 0, 0};
 		}		
-	}
-
-	
-	@Override
-	public String printConstants(int N) throws Exception {
-		String constants = String.format("digamma(k=%d)=%.3e",
-				k, MathsUtils.digamma(k));
-		return constants;
 	}
 }
