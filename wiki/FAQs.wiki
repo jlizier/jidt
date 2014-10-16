@@ -19,6 +19,8 @@ When running Java from other environments, e.g. in an IDE, in Matlab, GNU Octave
 
 == How can I build JIDT from the latest SVN sources? ==
 
+If you need one of the latest features that are only available via SVN (or you want to grab the source code and make some changes), you can grab the source and build `infodynamics.jar` as follows:
+
 1. Make an SVN checkout, e.g.:
 {{{
 svn checkout http://information-dynamics-toolkit.googlecode.com/svn/trunk/ information-dynamics-toolkit-read-only
