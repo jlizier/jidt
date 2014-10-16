@@ -2,6 +2,7 @@
 
 On this page, we list several frequently asked questions about the toolkit (these are mostly excerpts from emails):
  * [#What_do_I_do_about_java.lang.OutOfMemoryError? What do I do about java.lang.OutOfMemoryError?]
+ * [#How_can_I_build_JIDT_from_the_latest_SVN_sources? How can I build JIDT from the latest SVN sources?]
  * [#How_fast_is_the_toolkit,_e.g._for_transfer_entropy_estimation? How fast is the toolkit, e.g. for transfer entropy estimation?]
  * [#Can_the_Kraskov-Stoegbauer-Grassberger_estimator_add_noise_to_the_data? Can the Kraskov-Stoegbauer-Grassberger estimator add noise to the data?]
 
@@ -16,13 +17,27 @@ When running Java from other environments, e.g. in an IDE, in Matlab, GNU Octave
  * For Python via JPype, you can specify this parameter when calling the `startJVM()` function; see comments in the PythonExamples.
  * For Julia, you can specify this parameter when calling the `JavaCall.init()` method; see comments in the JuliaExamples.
 
+== How can I build JIDT from the latest SVN sources? ==
+
+1. Make an SVN checkout, e.g.:
+{{{
+svn checkout http://information-dynamics-toolkit.googlecode.com/svn/trunk/ information-dynamics-toolkit-read-only
+}}}
+or update an existing SVN checkout:
+{{{
+svn update
+}}}
+2. Compile the code and build your own `infodynamics.jar`:
+{{{
+ant jar
+}}}
 
 == How fast is the toolkit, e.g. for transfer entropy estimation? ==
 
 I've had some enquiries regarding how long the toolkit will take to compute transfer entropy on large data sets, say 100 000 samples.
 The answer depends mostly on the type of data that you are calculating transfer entropy on:
  # *Is it discrete or discretized data?* [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/java/source/infodynamics/measures/discrete/ApparentTransferEntropyCalculator.java infodynamics.discrete.ApparentTransferEntropyCalculator] is very fast, on the order of 1 sec or less for this sized data.
- # *Is it continuous data (that you would prefer not to discretize)?* This is slower, using techniques such as a Kraskov-Grassberger estimator (this is the best of breed for continuous valued data), i.e. [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/java/source/infodynamics/measures/continuous/kraskov/TransferEntropyCalculatorKraskov.java infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov]. At the moment, a 100 000 time step calculation will take almost an hour.  This will be sped up significantly in the future once I implement a fast-neighbour search algorithm. In the meantime, if you want the calculation to run faster than that, then you could discretize your data (at the expense of accuracy), or subsample (say into 10 data sets of 10 000 time steps, which will each take ~30 secs, and average over these. This will be a little less accurate, but I'm guessing there won't be much in it, and you will get a standard error measurement from this approach as well). You can test out how long the code takes to run e.g. with [SimpleJavaExamples#Example_4_-_Transfer_entropy_on_continuous_data_using_Kraskov_es example4] in the simple java demos (mirrored in the simple octave/matlab demos [OctaveMatlabExamples#Example_4_-_Transfer_entropy_on_continuous_data_using_Kraskov_es here] and the python demos [PythonExamples#Example_4_-_Transfer_entropy_on_continuous_data_using_Kraskov_es here]), by altering the length of the random data that is used.
+ # *Is it continuous data (that you would prefer not to discretize)?* This is generally slower, using techniques such as a Kraskov-Grassberger estimator (this is the best of breed for continuous valued data), i.e. [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/java/source/infodynamics/measures/continuous/kraskov/TransferEntropyCalculatorKraskov.java infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov], but not too far behind. At v1.0, a 100 000 time step calculation would take almost an hour with this estimator; however with the recent implementation of a fast-neighbour search algorithm (available in the SVN and from v1.1 onwards) this has dropped to (sub?) seconds. If you want the calculation to run faster than that, then you could discretize your data (at the expense of accuracy), or subsample (say into 10 data sets of 10 000 time steps, and average over these. This will be a little less accurate, but you will get a standard error measurement from this approach as well). You can test out how long the code takes to run e.g. with [SimpleJavaExamples#Example_4_-_Transfer_entropy_on_continuous_data_using_Kraskov_es example4] in the simple java demos (mirrored in the simple octave/matlab demos [OctaveMatlabExamples#Example_4_-_Transfer_entropy_on_continuous_data_using_Kraskov_es here] and the python demos [PythonExamples#Example_4_-_Transfer_entropy_on_continuous_data_using_Kraskov_es here]), by altering the length of the random data that is used.
 
 == Can the Kraskov-Stoegbauer-Grassberger estimator add noise to the data? ==
 
