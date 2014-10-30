@@ -39,7 +39,7 @@ import java.util.Vector;
  * 
   * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
-*/
+ */
 public abstract class MutualInfoMultiVariateCommon implements
 		MutualInfoCalculatorMultiVariate {
 
@@ -301,7 +301,7 @@ public abstract class MutualInfoMultiVariateCommon implements
 	}
 	
 	/**
-	 * Generate a bootstrapped distribution of what the MI would look like,
+	 * Generate a resampled distribution of what the MI would look like,
 	 * under a null hypothesis that the source values of our
 	 * samples had no relation to the destination value.
 	 * 
@@ -318,7 +318,7 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 * creates <i>random</i> shufflings of the next values for the surrogate MI
 	 * calculations.</p>
 	 * 
-	 * @param numPermutationsToCheck number of surrogate samples to bootstrap
+	 * @param numPermutationsToCheck number of surrogate samples for permutations
 	 *  to generate the distribution.
 	 * @return the distribution of channel measure scores under this null hypothesis.
 	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
@@ -335,7 +335,7 @@ public abstract class MutualInfoMultiVariateCommon implements
 	}
 
 	/**
-	 * Generate a bootstrapped distribution of what the MI would look like,
+	 * Generate a resampled distribution of what the MI would look like,
 	 * under a null hypothesis that the source values of our
 	 * samples had no relation to the destination value.
 	 * 

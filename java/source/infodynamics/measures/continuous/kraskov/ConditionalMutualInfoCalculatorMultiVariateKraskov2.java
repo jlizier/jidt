@@ -22,8 +22,8 @@ import java.util.Calendar;
 import java.util.PriorityQueue;
 
 import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariate;
-import infodynamics.utils.KdTree.NeighbourNodeData;
 import infodynamics.utils.MathsUtils;
+import infodynamics.utils.NeighbourNodeData;
 
 /**
  * <p>Computes the differential conditional mutual information of two multivariate
@@ -121,7 +121,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 					t, new double[] {eps_x, eps_z});
 			int n_yz = kdTreeVar2Conditional.countPointsWithinOrOnRs(
 					t, new double[] {eps_y, eps_z});
-			int n_z = kdTreeConditional.countPointsWithinOrOnR(
+			int n_z = nnSearcherConditional.countPointsWithinOrOnR(
 					t, eps_z);
 			
 			sumNxz += n_xz;

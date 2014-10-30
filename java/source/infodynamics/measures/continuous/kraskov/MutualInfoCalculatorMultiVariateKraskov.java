@@ -27,6 +27,7 @@ import infodynamics.utils.EuclideanUtils;
 import infodynamics.utils.KdTree;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
+import infodynamics.utils.NearestNeighbourSearcher;
 
 /**
  * <p>Computes the differential mutual information of two given multivariate sets of
@@ -136,15 +137,15 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	 */
 	protected KdTree kdTreeJoint;
 	/**
-	 * protected k-d tree data structure (for fast nearest neighbour searches)
+	 * protected data structure (for fast nearest neighbour searches)
 	 *  representing the source space
 	 */
-	protected KdTree kdTreeSource;
+	protected NearestNeighbourSearcher nnSearcherSource;
 	/**
-	 * protected k-d tree data structure (for fast nearest neighbour searches)
+	 * protected data structure (for fast nearest neighbour searches)
 	 *  representing the dest space
 	 */
-	protected KdTree kdTreeDest;
+	protected NearestNeighbourSearcher nnSearcherDest;
 	
 	/**
 	 * Constant for digamma(k), with k the number of nearest neighbours selected
@@ -165,8 +166,8 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	@Override
 	public void initialise(int sourceDimensions, int destDimensions) {
 		kdTreeJoint = null;
-		kdTreeSource = null;
-		kdTreeDest = null;
+		nnSearcherSource = null;
+		nnSearcherDest = null;
 		super.initialise(sourceDimensions, destDimensions);
 	}
 
@@ -312,8 +313,8 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 		//  altering the source data order).
 		KdTree originalKdTreeJoint = kdTreeJoint;
 		kdTreeJoint = null; // So that it is rebuilt for the new ordering
-		KdTree originalKdTreeDest = kdTreeDest;
-		kdTreeDest = null; // So that it is rebuilt for the new ordering
+		NearestNeighbourSearcher originalKdTreeDest = nnSearcherDest;
+		nnSearcherDest = null; // So that it is rebuilt for the new ordering
 		double[][] originalData2 = destObservations;
 		
 		// Generate a new re-ordered data2
@@ -324,7 +325,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 		// restore original variables:
 		destObservations = originalData2;
 		kdTreeJoint = originalKdTreeJoint;
-		kdTreeDest = originalKdTreeDest;
+		nnSearcherDest = originalKdTreeDest;
 		
 		return newMI;
 	}
@@ -344,7 +345,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	 *  then the local values for each disjoint observation set will be appended here
 	 *  to create a single "time-series" return array.</p>
 	 * 
-	 * @return the "time-series" of local MIs in bits
+	 * @return the "time-series" of local MIs in nats
 	 * @throws Exception
 	 */
 	public double[] computeLocalOfPreviousObservations() throws Exception {
@@ -398,13 +399,13 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 						new double[][][] {sourceObservations, destObservations});
 			kdTreeJoint.setNormType(normType);
 		}
-		if (kdTreeSource == null) {
-			kdTreeSource = new KdTree(sourceObservations);
-			kdTreeSource.setNormType(normType);
+		if (nnSearcherSource == null) {
+			nnSearcherSource = NearestNeighbourSearcher.create(sourceObservations);
+			nnSearcherSource.setNormType(normType);
 		}
-		if (kdTreeDest == null) {
-			kdTreeDest = new KdTree(destObservations);
-			kdTreeDest.setNormType(normType);
+		if (nnSearcherDest == null) {
+			nnSearcherDest = NearestNeighbourSearcher.create(destObservations);
+			nnSearcherDest.setNormType(normType);
 		}
 		
 		if (numThreads == 1) {
@@ -475,9 +476,9 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 			
 			// Finalise the average result, depending on which algorithm we are implementing:
 			if (isAlgorithm1) {
-				return new double[] { MathsUtils.digamma(k) - averageDiGammas + MathsUtils.digamma(N)};
+				return new double[] { digammaK - averageDiGammas + digammaN };
 			} else {
-				return new double[] { MathsUtils.digamma(k) - (1.0 / (double)k) - averageDiGammas + MathsUtils.digamma(N)};
+				return new double[] { digammaK - (1.0 / (double)k) - averageDiGammas + digammaN };
 			}
 		}
 	}
