@@ -19,13 +19,15 @@
 package infodynamics.measures.continuous.kraskov;
 
 import infodynamics.measures.continuous.MultiInfoCalculator;
+import infodynamics.measures.continuous.MultiInfoCalculatorCommon;
 import infodynamics.utils.EuclideanUtils;
-import infodynamics.utils.EmpiricalMeasurementDistribution;
+import infodynamics.utils.KdTree;
+import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
-import infodynamics.utils.RandomGenerator;
+import infodynamics.utils.UnivariateNearestNeighbourSearcher;
 
+import java.util.Calendar;
 import java.util.Random;
-import java.util.Vector;
 
 /**
  * <p>Computes the differential multi-information of a given multivariate set of
@@ -46,8 +48,11 @@ import java.util.Vector;
  *  </ul>
  * </p>
  * 
- * <p>
- * TODO Add fast nearest neighbour searches to the child classes
+ * <p>Finally, note that {@link Cloneable} is implemented allowing clone()
+ *  to produce only an automatic shallow copy, which is fine
+ *  for the statistical significance calculation it is intended for
+ *  (none of the array 
+ *  data will be changed there).
  * </p>
  * 
  * <p><b>References:</b><br/>
@@ -58,57 +63,22 @@ import java.util.Vector;
  * </ul>
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
+ * @author Ipek Özdemir
  */
-public abstract class MultiInfoCalculatorKraskov implements
-		MultiInfoCalculator {
+public abstract class MultiInfoCalculatorKraskov
+	extends MultiInfoCalculatorCommon
+	implements Cloneable { // See comments on clonability above
 
 	/**
 	 * we compute distances to the kth nearest neighbour
 	 */
 	protected int k = 4;
+		
 	/**
-	 * Cached observations
+	 * The norm type in use (see {@link #PROP_NORM_TYPE})
 	 */
-	protected double[][] data;
-	/**
-	 * Whether we are in debug mode
-	 */
-	protected boolean debug;
-	/**
-	 * Last average multi-info computed
-	 */
-	protected double mi;
-	protected boolean miComputed;
-	
-	/**
-	 * Set of individually supplied observations
-	 */
-	private Vector<double[]> individualObservations;
-
-	/**
-	 * number of observations supplied
-	 */
-	protected int N;
-	/**
-	 * number of joint variables
-	 */
-	protected int V; 
-	
-	/**
-	 * Calculator for the norm between data points
-	 */
-	protected EuclideanUtils normCalculator;
-	/**
-	 * Cached norms for each marginal variable from each observation to each other one
-	 */
-	protected double[][][] norms;
-	/**
-	 * Whether to keep the norms each time (making reordering very quick)
-	 * (Should only be set to false for testing)
-	 */
-	protected boolean tryKeepAllPairsNorms = true;
-	public static int MAX_DATA_SIZE_FOR_KEEP_ALL_PAIRS_NORM = 4000;
-	
+	protected int normType = EuclideanUtils.NORM_MAX_NORM;
+		
 	/**
 	 * Property name for the number of K nearest neighbours used in
 	 * the KSG algorithm (default 4).
@@ -117,31 +87,26 @@ public abstract class MultiInfoCalculatorKraskov implements
 	/**
 	 * Property name for what type of norm to use between data points
 	 *  for each marginal variable -- Options are defined by 
-	 *  {@link EuclideanUtils#setNormToUse(String)} and the
+	 *  {@link KdTree#setNormType(String)} and the
 	 *  default is {@link EuclideanUtils#NORM_MAX_NORM}.
 	 */
 	public final static String PROP_NORM_TYPE = "NORM_TYPE";
-	/**
-	 * Property name for whether to keep the norms
-	 * each time, making reordering very quick
-	 * (default is true, Should only be set to false for testing)
-	 */
-	public final static String PROP_TRY_TO_KEEP_ALL_PAIRS_NORM = "TRY_KEEP_ALL_PAIRS_NORM";
-	/**
-	 * Property name for whether to normalise the incoming data to 
-	 * mean 0, standard deviation 1 (default true)
-	 */
-	public static final String PROP_NORMALISE = "NORMALISE";
 	/**
 	 * Property name for an amount of random Gaussian noise to be
 	 *  added to the data (default is 0).
 	 */
 	public static final String PROP_ADD_NOISE = "NOISE_LEVEL_TO_ADD";
-
 	/**
-	 * Whether to normalise the incoming data 
+	 * Property name for the number of parallel threads to use in the
+	 *  computation (default is to use all available)
 	 */
-	protected boolean normalise = true;
+	public static final String PROP_NUM_THREADS = "NUM_THREADS";
+	/**
+	 * Valid property value for {@link #PROP_NUM_THREADS} to indicate
+	 *  that all available processors should be used. 
+	 */
+	public static final String USE_ALL_THREADS = "USE_ALL";
+
 	/**
 	 * Whether to add an amount of random noise to the incoming data
 	 */
@@ -150,22 +115,48 @@ public abstract class MultiInfoCalculatorKraskov implements
 	 * Amount of random Gaussian noise to add to the incoming data
 	 */
 	protected double noiseLevel = 0.0;
-	
+	/**
+	 * Number of parallel threads to use in the computation;
+	 *  defaults to use all available.
+	 */
+	protected int numThreads = Runtime.getRuntime().availableProcessors();
+	/**
+	 * Private variable to record which KSG algorithm number
+	 *  this instance is implementing
+	 */
+	protected boolean isAlgorithm1 = false;
+	/**
+	 * protected k-d tree data structure (for fast nearest neighbour searches)
+	 *  representing the joint space
+	 */
+	protected KdTree kdTreeJoint;
+	/**
+	 * protected data structures (for fast nearest neighbour searches)
+	 *  representing the marginal spaces
+	 */
+	protected UnivariateNearestNeighbourSearcher[] rangeSearchersInMarginals;
+	/**
+	 * Constant for digamma(k), with k the number of nearest neighbours selected
+	 */
+	protected double digammaK;
+	/**
+	 * Constant for digamma(N), with N the number of samples.
+	 */
+	protected double digammaN;
+
 	/**
 	 * Construct an instance
 	 */
 	public MultiInfoCalculatorKraskov() {
 		super();
-		normCalculator = new EuclideanUtils(EuclideanUtils.NORM_MAX_NORM);
 	}
 
 	@Override
 	public void initialise(int dimensions) {
-		V = dimensions;
-		mi = 0.0;
-		miComputed = false;
-		norms = null;
-		data = null;
+		// Now call the super class to handle the common variables:
+		super.initialise(dimensions);
+		kdTreeJoint = null;
+		rangeSearchersInMarginals = null;
 	}
 
 	/**
@@ -182,8 +173,6 @@ public abstract class MultiInfoCalculatorKraskov implements
 	 * 		working out the norms between the points in each marginal space.
 	 * 		Options are defined by {@link EuclideanUtils#setNormToUse(String)} -
 	 * 		default is {@link EuclideanUtils#NORM_MAX_NORM}.
-	 *  <li>{@link #PROP_NORMALISE} -- whether to normalise the incoming individual
-	 *      variables to mean 0 and standard deviation 1 (true by default)</li>
 	 *  <li>{@link #PROP_ADD_NOISE} -- a standard deviation for an amount of
 	 *  	random Gaussian noise to add to
 	 *      each variable, to avoid having neighbourhoods with artificially
@@ -203,45 +192,30 @@ public abstract class MultiInfoCalculatorKraskov implements
 	 * @throws Exception for invalid property values
 	 */
 	@Override
-	public void setProperty(String propertyName, String propertyValue) {
+	public void setProperty(String propertyName, String propertyValue) throws Exception {
+		boolean propertySet = true;
 		if (propertyName.equalsIgnoreCase(PROP_K)) {
 			k = Integer.parseInt(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_NORM_TYPE)) {
-			normCalculator.setNormToUse(propertyValue);
-		} else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
-			normalise = Boolean.parseBoolean(propertyValue);
+			normType = KdTree.validateNormType(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
 			addNoise = true;
 			noiseLevel = Double.parseDouble(propertyValue);
-		} else if (propertyName.equalsIgnoreCase(PROP_TRY_TO_KEEP_ALL_PAIRS_NORM)) {
-			tryKeepAllPairsNorms = Boolean.parseBoolean(propertyValue);
-		}
-	}
-
-	@Override
-	public void setObservations(double[][] observations) throws Exception {
-		if ((observations == null) || (observations[0].length == 0)) {
-			throw new Exception("Computing MI with a null set of data");
-		}
-		if (observations[0].length != V) {
-			throw new Exception("Incorrect number of dimensions " + observations[0].length +
-					" in supplied observations (expected " + V + ")");
-		}
-		data = observations;
-		N = data.length;
-		// Normalise the data if required
-		if (normalise) {
-			data = MatrixUtils.normaliseIntoNewArray(data);
-		}
-		
-		if (addNoise) {
-			Random random = new Random();
-			// Add Gaussian noise of std dev noiseLevel to the data
-			for (int r = 0; r < data.length; r++) {
-				for (int c = 0; c < V; c++) {
-					data[r][c] += random.nextGaussian()*noiseLevel;
-				}
+		} else if (propertyName.equalsIgnoreCase(PROP_NUM_THREADS)) {
+			if (propertyValue.equalsIgnoreCase(USE_ALL_THREADS)) {
+				numThreads = Runtime.getRuntime().availableProcessors();
+			} else { // otherwise the user has passed in an integer:
+				numThreads = Integer.parseInt(propertyValue);
 			}
+		} else {
+			// No property was set here
+			propertySet = false;
+			// try the superclass:
+			super.setProperty(propertyName, propertyValue);
+		}
+		if (debug && propertySet) {
+			System.out.println(this.getClass().getSimpleName() + ": Set property " + propertyName +
+					" to " + propertyValue);
 		}
 	}
 
@@ -261,222 +235,104 @@ public abstract class MultiInfoCalculatorKraskov implements
 		if (observations1.length != observations2.length) {
 			throw new Exception("Length of the time series to be joined to not match");
 		}
-		if (observations1[0].length + observations2[0].length != V) {
+		if (observations1[0].length + observations2[0].length != dimensions) {
 			throw new Exception("Incorrect number of dimensions " + 
 					(observations1[0].length + observations2[0].length) +
-					" in supplied observations (expected " + V + ")");
+					" in supplied observations (expected " + dimensions + ")");
 		}
-		N = observations1.length;
-		data = new double[N][V];
-		for (int t = 0; t < N; t++) {
+		totalObservations = observations1.length;
+		observations = new double[totalObservations][dimensions];
+		for (int t = 0; t < totalObservations; t++) {
 			int v = 0;
 			for (int i = 0; i < observations1[t].length; i++) {
-				data[t][v++] = observations1[t][i];
+				observations[t][v++] = observations1[t][i];
 			}
 			for (int i = 0; i < observations2[t].length; i++) {
-				data[t][v++] = observations2[t][i];
+				observations[t][v++] = observations2[t][i];
 			}
 		}
 		// Normalise the data if required
 		if (normalise) {
 			// We can overwrite these since they're already
 			//  a copy of the users' data.
-			MatrixUtils.normalise(data);
+			MatrixUtils.normalise(observations);
 		}
 		
 		if (addNoise) {
 			Random random = new Random();
 			// Add Gaussian noise of std dev noiseLevel to the data
-			for (int r = 0; r < data.length; r++) {
-				for (int c = 0; c < V; c++) {
-					data[r][c] += random.nextGaussian()*noiseLevel;
+			for (int r = 0; r < observations.length; r++) {
+				for (int c = 0; c < dimensions; c++) {
+					observations[r][c] += random.nextGaussian()*noiseLevel;
 				}
 			}
 		}
 	}
 	
-	@Override
-	public void startAddObservations() {
-		individualObservations = new Vector<double[]>();
-	}
-	
-	@Override
-	public void addObservation(double observation[]) {
-		individualObservations.add(observation);
-	}
-	
-	@Override
-	public void addObservations(double[][] observations) {
-		// This implementation is not particularly efficient,
-		//  however for the little use this calculator will 
-		//  attract, it will suffice.
-		for (int s = 0; s < observations.length; s++) {
-			addObservation(observations[s]);
-		}
-	}
-
 	@Override
 	public void finaliseAddObservations() throws Exception {
-		double[][] data = new double[individualObservations.size()][];
-		for (int t = 0; t < data.length; t++) {
-			data[t] = individualObservations.elementAt(t);
+		super.finaliseAddObservations();
+
+		// Normalise the data if required -- common class doesn't do this
+		//  since the Kernel estimator needs to do it internally
+		if (normalise) {
+			// normalise into new array so we don't overwrite
+			//  users' original data
+			observations = MatrixUtils.normaliseIntoNewArray(observations);
 		}
-		// Allow vector to be reclaimed
-		individualObservations = null;
-		setObservations(data);
-	}
-
-
-	/**
-	 * Compute the norms between each observation
-	 * for each marginal time series
-	 * and cache them
-	 *
-	 */
-	protected void computeNorms() {
 		
-		norms = new double[V][N][N];
-		for (int t = 0; t < N; t++) {
-			// Compute the norms from t to all other time points
-			double[][] normsForT = EuclideanUtils.computeNorms(data, t);
-			for (int t2 = 0; t2 < N; t2++) {
-				for (int v = 0; v < V; v++) {
-					norms[v][t][t2] = normsForT[t2][v];
+		if (addNoise) {
+			Random random = new Random();
+			// Add Gaussian noise of std dev noiseLevel to the data
+			for (int r = 0; r < observations.length; r++) {
+				for (int c = 0; c < dimensions; c++) {
+					observations[r][c] += random.nextGaussian()*noiseLevel;
 				}
 			}
 		}
+
+		// Set the constants:
+		digammaK = MathsUtils.digamma(k);
+		digammaN = MathsUtils.digamma(totalObservations);
+	}
+
+	/**
+	 * {@inheritDoc} 
+	 * 
+	 * @return the average multi-info in nats (not bits!)
+	 */
+	@Override
+	public double computeAverageLocalOfObservations() throws Exception {
+		// Compute the MI
+		double startTime = Calendar.getInstance().getTimeInMillis();
+		lastAverage = computeFromObservations(false)[0];
+		miComputed = true;
+		if (debug) {
+			Calendar rightNow2 = Calendar.getInstance();
+			long endTime = rightNow2.getTimeInMillis();
+			System.out.println("Calculation time: " + ((endTime - startTime)/1000.0) + " sec" );
+		}
+		return lastAverage;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * 
+	 * @return the "time-series" of local multi-info values in nats (not bits!)
+	 * @throws Exception
+	 */
+	@Override
+	public double[] computeLocalOfPreviousObservations() throws Exception {
+		double[] localValues = computeFromObservations(true);
+		lastAverage = MatrixUtils.mean(localValues);
+		miComputed = true;
+		return localValues;
 	}
 	
 	/**
-	 * Compute what the average multi-info would look like were all time series
-	 *  (bar the first) reordered
-	 *  as per the array of time indices in reordering.
-	 * The reordering array contains the reordering for each marginal variable (first index).
-	 * The user should ensure that all values 0..N-1 are represented exactly once in the
-	 *  array reordering and that no other values are included here.
-	 * 
-	 * @param reordering the specific new orderings to use. First index is the variable number
-	 *  (minus 1, since we don't reorder the first variable),
-	 *  second index is the time step, the value is the reordered time step to use
-	 *  for that variable at the given time step.
-	 *  If null, no reordering is performed.
-	 * @return what the average multi-info would look like under this reordering
-	 * @throws Exception
+	 * This method, specified in {@link MultiInfoCalculator}
+	 * is not implemented yet here.
 	 */
-	public abstract double computeAverageLocalOfObservations(int[][] reordering) throws Exception;
-
-	/**
-	 * Generate a bootstrapped distribution of what the multi-information would look like,
-	 * under a null hypothesis that the individual values of each
-	 * variable in the 
-	 * samples have no relation to eachother.
-	 * That is, we destroy the p(x,y,z,..) correlations, while
-	 * retaining the p(x), p(y),.. marginals, to check how
-	 *  significant this multi-information actually was.
-	 *  
-	 * <p>See Section II.E "Statistical significance testing" of 
-	 * the JIDT paper below for a description of how this is done for MI,
-	 * we are extending that here.
-	 * </p>
-	 * 
-	 * <p>Note that if several disjoint time-series have been added 
-	 * as observations using {@link #addObservations(double[])} etc.,
-	 * then these separate "trials" will be mixed up in the generation
-	 * of surrogates here.</p>
-	 * 
-	 * <p>This method (in contrast to {@link #computeSignificance(int[][][])})
-	 * creates <i>random</i> shufflings of the next values for the surrogate AIS
-	 * calculations.</p>
-	 * 
-	 * @param numPermutationsToCheck number of surrogate samples to bootstrap
-	 *  to generate the distribution.
-	 * @return the distribution of surrogate multi-info values under this null hypothesis.
-	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
-	 *    toolkit for studying the dynamics of complex systems', 2014."
-	 * @throws Exception
-	 */
-	public synchronized EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception {
-		// Generate the re-ordered indices:
-		RandomGenerator rg = new RandomGenerator();
-		int[][][] newOrderings = new int[numPermutationsToCheck][][];
-		// Generate numPermutationsToCheck * V permutations of 0 .. data.length-1
-		for (int n = 0; n < numPermutationsToCheck; n++) {
-			// (Not necessary to check for distinct random perturbations)
-			newOrderings[n] = rg.generateRandomPerturbations(data.length, V-1);
-		}
-		return computeSignificance(newOrderings);
-	}
-	
-	/**
-	 * Generate a bootstrapped distribution of what the multi-information would look like,
-	 * under a null hypothesis that the individual values of each
-	 * variable in the 
-	 * samples have no relation to eachother.
-	 * That is, we destroy the p(x,y,z,..) correlations, while
-	 * retaining the p(x), p(y),.. marginals, to check how
-	 *  significant this multi-information actually was.
-	 *  
-	 * <p>See Section II.E "Statistical significance testing" of 
-	 * the JIDT paper below for a description of how this is done for MI,
-	 * we are extending that here.
-	 * </p>
-	 * 
-	 * <p>Note that if several disjoint time-series have been added 
-	 * as observations using {@link #addObservations(double[])} etc.,
-	 * then these separate "trials" will be mixed up in the generation
-	 * of surrogates here.</p>
-	 * 
-	 * <p>This method (in contrast to {@link #computeSignificance(int)})
-	 * allows the user to specify how to construct the surrogates,
-	 * such that repeatable results may be obtained.</p>
-	 * 
-	 * @param newOrderings a specification of how to shuffle the values
-	 *  to create the surrogates to generate the distribution with. The first
-	 *  index is the permutation number (i.e. newOrderings.length is the number
-	 *  of surrogate samples we use to bootstrap to generate the distribution here.)
-	 *  The second index is the variable number (minus 1, since we don't reorder
-	 *  the first variable),
-	 *  Each array newOrderings[i][v] should be an array of length N (where
-	 *  would be the value returned by {@link #getNumObservations()}),
-	 *  containing a permutation of the values in 0..(N-1).
-	 * @return the distribution of surrogate multi-info values under this null hypothesis.
-	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
-	 *    toolkit for studying the dynamics of complex systems', 2014."
-	 * @throws Exception where the length of each permutation in newOrderings
-	 *   is not equal to the number N samples that were previously supplied.
-	 */
-	public EmpiricalMeasurementDistribution computeSignificance(int[][][] newOrderings) throws Exception {
-		int numPermutationsToCheck = newOrderings.length;
-		if (!miComputed) {
-			computeAverageLocalOfObservations();
-		}
-		// Store the real observations and their MI:
-		double actualMI = mi;
-		
-		EmpiricalMeasurementDistribution measDistribution = new EmpiricalMeasurementDistribution(numPermutationsToCheck);
-		
-		int countWhereMiIsMoreSignificantThanOriginal = 0;
-		for (int i = 0; i < numPermutationsToCheck; i++) {
-			// Compute the MI under this reordering
-			double newMI = computeAverageLocalOfObservations(newOrderings[i]);
-			measDistribution.distribution[i] = newMI;
-			if (debug){
-				System.out.println("New MI was " + newMI);
-			}
-			if (newMI >= actualMI) {
-				countWhereMiIsMoreSignificantThanOriginal++;
-			}
-		}
-		
-		// Restore the actual MI and the observations
-		mi = actualMI;
-
-		// And return the significance
-		measDistribution.pValue = (double) countWhereMiIsMoreSignificantThanOriginal / (double) numPermutationsToCheck;
-		measDistribution.actualValue = actualMI;
-		return measDistribution;
-	}
-
 	public double[] computeLocalUsingPreviousObservations(double[][] states) throws Exception {
 		// TODO If this is implemented, will need to normalise the incoming
 		//  observations the same way that previously supplied ones were
@@ -484,58 +340,225 @@ public abstract class MultiInfoCalculatorKraskov implements
 		throw new Exception("Local method not implemented yet");
 	}
 
-	public void setDebug(boolean debug) {
-		this.debug = debug;
-	}
-
-	public double getLastAverage() {
-		return mi;
+	/**
+	 * This protected method handles the multiple threads which
+	 *  computes either the average or local multi-info (over parts of the total
+	 *  observations), computing the
+	 *  distances between all tuples in time.
+	 * 
+	 * <p>The method returns:<ol>
+	 *  <li>for (returnLocals == false), an array of size 1,
+	 *      containing the average multi-info </li>
+	 *  <li>for local multi-infos (returnLocals == true), the array of local
+	 *      multi-info values</li>
+	 *  </ol>
+	 * 
+	 * @param returnLocals whether to return an array or local values, or else
+	 *  sums of these values
+	 * @return either the average multi-info, or array of local multi-info value,
+	 * 	in nats not bits
+	 * @throws Exception
+	 */
+	protected double[] computeFromObservations(boolean returnLocals) throws Exception {
+		
+		double[] returnValues = null;
+		
+		// We need to construct the k-d trees for use by the child
+		//  classes. We check each tree for existence separately
+		//  since source can be used across original and surrogate data
+		// TODO can parallelise these -- best done within the kdTree --
+		//  though it's unclear if there's much point given that
+		//  the tree construction itself afterwards can't really be well parallelised.
+		double[][][] separateMarginals = null;
+		int[] dimensionsArray = null;
+		if (kdTreeJoint == null) {
+			// We need to pull out 2D time series (of only one variable)
+			//  for each marginal variable here
+			separateMarginals = new double[dimensions][][];
+			dimensionsArray = new int[dimensions];
+			for (int d = 0; d < dimensions; d++) {
+				separateMarginals[d] =
+						MatrixUtils.selectColumns(observations, new int[] {d});
+				dimensionsArray[d] = 1;
+			}
+			kdTreeJoint = new KdTree(dimensionsArray, separateMarginals);
+			kdTreeJoint.setNormType(normType);
+		}
+		if (rangeSearchersInMarginals == null) {
+			rangeSearchersInMarginals = new UnivariateNearestNeighbourSearcher[dimensions];
+			for (int d = 0; d < dimensions; d++) {
+				rangeSearchersInMarginals[d] =
+						new UnivariateNearestNeighbourSearcher(
+								MatrixUtils.selectColumn(observations, d));
+				rangeSearchersInMarginals[d].setNormType(normType);
+			}
+		}
+		
+		if (numThreads == 1) {
+			// Single-threaded implementation:
+			returnValues = partialComputeFromObservations(0, totalObservations, returnLocals);
+			
+		} else {
+			// We're going multithreaded:
+			if (returnLocals) {
+				// We're computing local MI
+				returnValues = new double[totalObservations];
+			} else {
+				// We're computing average MI
+				returnValues = new double[1 + dimensions];
+			}
+			
+			// Distribute the observations to the threads for the parallel processing
+			int lTimesteps = totalObservations / numThreads; // each thread gets the same amount of data
+			int res = totalObservations % numThreads; // the first thread gets the residual data
+			if (debug) {
+				System.out.printf("Computing Kraskov Multi-Info with %d threads (%d timesteps each, plus %d residual)\n",
+						numThreads, lTimesteps, res);
+			}
+			Thread[] tCalculators = new Thread[numThreads];
+			MultiInfoKraskovThreadRunner[] runners = new MultiInfoKraskovThreadRunner[numThreads];
+			for (int t = 0; t < numThreads; t++) {
+				int startTime = (t == 0) ? 0 : lTimesteps * t + res;
+				int numTimesteps = (t == 0) ? lTimesteps + res : lTimesteps;
+				if (debug) {
+					System.out.println(t + ".Thread: from " + startTime +
+							" to " + (startTime + numTimesteps)); // Trace Message
+				}
+				runners[t] = new MultiInfoKraskovThreadRunner(this, startTime, numTimesteps, returnLocals);
+				tCalculators[t] = new Thread(runners[t]);
+				tCalculators[t].start();
+			}
+			
+			// Here, we should wait for the termination of the all threads
+			//  and collect their results
+			for (int t = 0; t < numThreads; t++) {
+				if (tCalculators[t] != null) { // TODO Ipek: can you comment on why we're checking for null here?
+					tCalculators[t].join(); 
+				}
+				// Now we add in the data from this completed thread:
+				if (returnLocals) {
+					// We're computing local multi-info; copy these local values
+					//  into the full array of locals
+					System.arraycopy(runners[t].getReturnValues(), 0, 
+							returnValues, runners[t].myStartTimePoint, runners[t].numberOfTimePoints);
+				} else {
+					// We're computing the average MI, keep the running sums of digammas and counts
+					MatrixUtils.addInPlace(returnValues, runners[t].getReturnValues());
+				}
+			}
+		}
+		
+		// Finalise the results:
+		if (returnLocals) {
+			return returnValues;
+		} else {
+			// Compute the average number of points within eps_x and eps_y
+			double averageDiGammas = returnValues[MultiInfoKraskovThreadRunner.INDEX_SUM_DIGAMMAS] / (double) totalObservations;
+			double[] avNMarginals = new double[dimensions];
+			for (int d = 0; d < dimensions; d++) {
+				avNMarginals[d] = returnValues[1 + d]  / (double) totalObservations;
+				if (debug) {
+					System.out.printf("Average n_%d=%.3f, ", d, avNMarginals[d]);
+				}
+			}
+			if (debug) {
+				System.out.println();
+			}
+			
+			// Finalise the average result, depending on which algorithm we are implementing:
+			if (isAlgorithm1) {
+				return new double[] { digammaK - averageDiGammas + (double) (dimensions - 1) * digammaN };
+			} else {
+				return new double[] { digammaK - ((double) (dimensions - 1)  / (double)k) - averageDiGammas +
+									(double) (dimensions - 1) * digammaN };
+			}
+		}
 	}
 	
 	/**
-	 * Utility function used for debugging, printing digamma constants
+	 * Protected method to be used internally for threaded implementations.
+	 * This method implements the guts of each Kraskov algorithm, computing the number of 
+	 *  nearest neighbours in each dimension for a sub-set of the data points.
+	 *  It is intended to be called by one thread to work on that specific
+	 *  sub-set of the data.
 	 * 
-	 * @param N
-	 * @return
+	 * <p>The method returns:<ol>
+	 *  <li>for average Multi-infos (returnLocals == false), the relevant sums of
+	 *  	digamma(n_x+1) in each marginal
+	 *     for a partial set of the observations</li>
+	 *  <li>for local MIs (returnLocals == true), the array of local MI values</li>
+	 *  </ol>
+	 * 
+	 * @param startTimePoint start time for the partial set we examine
+	 * @param numTimePoints number of time points (including startTimePoint to examine)
+	 * @param returnLocals whether to return an array or local values, or else
+	 *  sums of these values
+	 * @return an array of sum of digamma(n_x+1) for each marginal x, then
+	 *  sum of n_x for each marginal x (these latter ones are for debugging purposes).
 	 * @throws Exception
 	 */
-	public abstract String printConstants(int N) throws Exception;
+	protected abstract double[] partialComputeFromObservations(
+			int startTimePoint, int numTimePoints, boolean returnLocals) throws Exception;
 
 	/**
-	 * Utility to take a reordering matrix and return the array of reordered time indices from
-	 *  which to find the reordered data to be inserted at timeStep.
+	 * Private class to handle multi-threading of the Kraskov algorithms.
+	 * Each instance calls partialComputeFromObservations()
+	 * to compute nearest neighbours for a part of the data.
 	 * 
-	 * @param reordering the specific new orderings to use. First index is the variable number
-	 *  (can be for all variables, or one less than all if the first is not to be reordered),
-	 *  second index is the time step, the value is the reordered time step to use
-	 *  for that variable at the given time step.
-	 *  If null, no reordering is performed.
-	 * @param timeStep
-	 * @return array of reordered time indices from
-	 *  which to find the reordered data to be inserted at timeStep
+	 * 
+	 * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
+	 * <a href="http://lizier.me/joseph/">www</a>)
+	 * @author Ipek Özdemir
 	 */
-	protected int[] reorderedTimeStepsForEachMarginal(int[][] reordering, int timeStep) {
-		// Create storage for the reordered time steps for the variables
-		int[] tForEachMarginal = new int[V];
-		if (reordering == null) {
-			// We're not reordering
-			for (int v = 0; v < V; v++) {
-				tForEachMarginal[v] = timeStep;
+	private class MultiInfoKraskovThreadRunner implements Runnable {
+		protected MultiInfoCalculatorKraskov miCalc;
+		protected int myStartTimePoint;
+		protected int numberOfTimePoints;
+		protected boolean computeLocals;
+		
+		protected double[] returnValues = null;
+		protected Exception problem = null;
+		
+		public static final int INDEX_SUM_DIGAMMAS = 0;
+
+		public MultiInfoKraskovThreadRunner(
+				MultiInfoCalculatorKraskov miCalc,
+				int myStartTimePoint, int numberOfTimePoints,
+				boolean computeLocals) {
+			this.miCalc = miCalc;
+			this.myStartTimePoint = myStartTimePoint;
+			this.numberOfTimePoints = numberOfTimePoints;
+			this.computeLocals = computeLocals;
+		}
+		
+		/**
+		 * Return the values from this part of the data,
+		 *  or throw any exception that was encountered by the 
+		 *  thread.
+		 * 
+		 * @return an exception previously encountered by this thread.
+		 * @throws Exception
+		 */
+		public double[] getReturnValues() throws Exception {
+			if (problem != null) {
+				throw problem;
 			}
-		} else {
-			boolean reorderingFirstColumn = (reordering.length == V);
-			int reorderIndex = 0;
-			// Handle the first column
-			if (reorderingFirstColumn) {
-				tForEachMarginal[0] = reordering[reorderIndex++][timeStep];
-			} else {
-				tForEachMarginal[0] = timeStep;
-			}
-			// Handle subsequent columns
-			for (int v = 1; v < V; v++) {
-				tForEachMarginal[v] = reordering[reorderIndex++][timeStep];
+			return returnValues;
+		}
+		
+		/**
+		 * Start the thread for the given parameters
+		 */
+		public void run() {
+			try {
+				returnValues = miCalc.partialComputeFromObservations(
+						myStartTimePoint, numberOfTimePoints, computeLocals);
+			} catch (Exception e) {
+				// Store the exception for later retrieval
+				problem = e;
+				return;
 			}
 		}
-		return tForEachMarginal;
 	}
+	// end class MultiInfoKraskovThreadRunner
 }

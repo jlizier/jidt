@@ -18,11 +18,12 @@
 
 package infodynamics.measures.continuous.kraskov;
 
+import java.util.Calendar;
+import java.util.PriorityQueue;
+
 import infodynamics.measures.continuous.MultiInfoCalculator;
-import infodynamics.utils.EuclideanUtils;
-import infodynamics.utils.FirstIndexComparatorDouble;
 import infodynamics.utils.MathsUtils;
-import infodynamics.utils.MatrixUtils;
+import infodynamics.utils.NeighbourNodeData;
 
 /**
  * <p>Computes the differential multi-information of two given multivariate
@@ -53,315 +54,84 @@ import infodynamics.utils.MatrixUtils;
 public class MultiInfoCalculatorKraskov2
 	extends MultiInfoCalculatorKraskov {
 
-	protected static final int JOINT_NORM_VAL_COLUMN = 0;
-	protected static final int JOINT_NORM_TIMESTEP_COLUMN = 1;
-
-	@Override
-	public double computeAverageLocalOfObservations() throws Exception {
-		if (miComputed) {
-			return mi;
-		}
-		return computeAverageLocalOfObservations(null);
+	public MultiInfoCalculatorKraskov2() {
+		super();
+		isAlgorithm1 = false;
 	}
-
-	@Override
-	public double computeAverageLocalOfObservations(int[][] reordering) throws Exception {
-		if (V == 1) {
-			miComputed = true;
-			return 0.0;
-		}
-		if (!tryKeepAllPairsNorms || (data.length * V > MAX_DATA_SIZE_FOR_KEEP_ALL_PAIRS_NORM)) {
-			double[][] originalData = data;
-			// Generate a new re-ordered data
-			if (reordering != null) {
-				// Generate a new re-ordered data
-				data = MatrixUtils.reorderDataForVariables(originalData, reordering);
-			}
-			// Compute the MI
-			double newMI = computeAverageLocalOfObservationsWhileComputingDistances();
-			// restore data
-			data = originalData;
-			return newMI;
-		}
-		
-		// Otherwise we will use the norms we've already computed, and use a "virtual"
-		//  reordered data2.
-		
-		if (norms == null) {
-			computeNorms();
-		}
-		
-		// Count the average number of points within eps_x[v]
-		double averageDiGammas = 0;
-		double[] avNx = new double[V];
-		
-		for (int t = 0; t < N; t++) {
-			// Compute eps for each marginal for this time step:
-			//  First grab marginal norms to all neighbours
-			//  (note that norm of point t to itself will be set to infinity).
-
-			// Get the reordered time steps for the variables
-			int[] tForEachMarginal = reorderedTimeStepsForEachMarginal(reordering, t);
-
-			double[][] jointNorm = new double[N][2];
-			for (int t2 = 0; t2 < N; t2++) {
-				int[] t2ForEachMarginal = reorderedTimeStepsForEachMarginal(reordering, t2);
-				// Find the max marginal norm between the vector at t and the reordered vector
-				//  at t2:
-				jointNorm[t2][JOINT_NORM_VAL_COLUMN] = 0;
-				for (int v = 0; v < V; v++) {
-					double normForThisVar = norms[v][tForEachMarginal[v]][t2ForEachMarginal[v]];
-					if (normForThisVar > jointNorm[t2][JOINT_NORM_VAL_COLUMN]) {
-						jointNorm[t2][JOINT_NORM_VAL_COLUMN] = normForThisVar;
-					}
-				}
-				// And store the time step for back reference after the 
-				//  array is sorted.
-				jointNorm[t2][JOINT_NORM_TIMESTEP_COLUMN] = t2;
-			}
-			// Then find the k closest neighbours:
-			double[] eps_x = new double[V];
-			if (k == 1) {
-				// just do a linear search for the minimum epsilon value
-				int timeStepOfMin = MatrixUtils.minIndex(jointNorm, JOINT_NORM_VAL_COLUMN);
-				int[] timeStepOfMinForEachMarginal =
-					reorderedTimeStepsForEachMarginal(reordering, timeStepOfMin);
-				for (int v = 0; v < V; v++) {
-					eps_x[v] = norms[v][tForEachMarginal[v]][timeStepOfMinForEachMarginal[v]];
-				}
-			} else {
-				// Sort the array of joint norms
-				java.util.Arrays.sort(jointNorm, FirstIndexComparatorDouble.getInstance());
-				// and now we have the closest k points.
-				// Find eps_{x,y} as the maximum x and y norms amongst this set:
-				for (int j = 0; j < k; j++) {
-					int timeStepOfJthPoint = (int)jointNorm[j][JOINT_NORM_TIMESTEP_COLUMN];
-					int[] timeStepOfJthPointForEachMarginal =
-						reorderedTimeStepsForEachMarginal(reordering, timeStepOfJthPoint);
-					for (int v = 0; v < V; v++) {
-						if (norms[v][tForEachMarginal[v]][timeStepOfJthPointForEachMarginal[v]] > eps_x[v]) {
-							eps_x[v] = norms[v][tForEachMarginal[v]][timeStepOfJthPointForEachMarginal[v]];
-						}
-					}
-				}
-			}
-			
-			// Count the number of points (in each marginal variable) 
-			//  whose marginal distance is less than eps in that marginal dimension
-			int[] n_x = new int[V];
-			for (int t2 = 0; t2 < N; t2++) {
-				int[] t2ForEachMarginal = reorderedTimeStepsForEachMarginal(reordering, t2);
-				for (int v = 0; v < V; v++) {
-					if (norms[v][tForEachMarginal[v]][t2ForEachMarginal[v]] <= eps_x[v]) {
-						n_x[v]++;
-					}
-				}
-			}
-			// Track the averages, and take the digamma before adding into the 
-			//  average:
-			for (int v = 0; v < V; v++) {
-				avNx[v] += n_x[v];
-				averageDiGammas += MathsUtils.digamma(n_x[v]);
-			}
-		}
-		averageDiGammas /= (double) N;
-		if (debug) {
-			for (int v = 0; v < V; v++) {
-				avNx[v] /= (double)N;
-				System.out.print(String.format("Average n_x[%d]=%.3f, ", v, avNx[v]));
-			}
-			System.out.println();
-		}
-		
-		mi = MathsUtils.digamma(k) - (double) (V - 1) /(double)k - averageDiGammas +
-				(double) (V - 1) * MathsUtils.digamma(N);
-		miComputed = true;
-		return mi;
-	}
-
-	/**
-	 * This method correctly computes the average multi-info, but recomputes the
-	 *  marginal distances between all tuples in time.
-	 * Kept here for cases where we have too many observations
-	 *  to keep the norm between all pairs, and for testing purposes.
-	 * 
-	 * @see #computeAverageLocalOfObservations()
-	 * @return average multi-info
-	 * @throws Exception
-	 */
-	public double computeAverageLocalOfObservationsWhileComputingDistances() throws Exception {
-
-		if (V == 1) {
-			miComputed = true;
-			return 0.0;
-		}
-		// Count the average number of points within eps for each marginal variable
-		double averageDiGammas = 0;
-		double[] avNx = new double[V];
 	
-		for (int t = 0; t < N; t++) {
-			// Compute eps_x (for each marginal) for this time step:
-			//  First get the marginal norms to all neighbours
-			//  (note that norm of point t to itself will be set to infinity).
-			
-			double[][] normsForT = EuclideanUtils.computeNorms(data, t);
-			double[][] jointNorm = new double[N][2];
-			for (int t2 = 0; t2 < N; t2++) {
-				jointNorm[t2][JOINT_NORM_VAL_COLUMN] = MatrixUtils.max(normsForT[t2]);
-				// And store the time step for back reference after the 
-				//  array is sorted.
-				jointNorm[t2][JOINT_NORM_TIMESTEP_COLUMN] = t2;
-			}
-			
-			// Then find the k closest neighbours:
-			double[] eps_x = new double[V];
-			if (k == 1) {
-				// just do a linear search for the minimum epsilon value
-				int timeStepOfMin = MatrixUtils.minIndex(jointNorm, JOINT_NORM_VAL_COLUMN);
-				for (int v = 0; v < V; v++) {
-					eps_x[v] = normsForT[timeStepOfMin][v];
-				}
-			} else {
-				// Sort the array of joint norms
-				java.util.Arrays.sort(jointNorm, FirstIndexComparatorDouble.getInstance());
-				// and now we have the closest k points.
-				// Find eps_{x,y} as the maximum x and y norms amongst this set:
-				for (int j = 0; j < k; j++) {
-					int timeStepOfJthPoint = (int)jointNorm[j][JOINT_NORM_TIMESTEP_COLUMN];
-					for (int v = 0; v < V; v++) {
-						if (normsForT[timeStepOfJthPoint][v] > eps_x[v]) {
-							eps_x[v] = normsForT[timeStepOfJthPoint][v];
-						}
-					}
-				}
-			}
-			
-			// Count the number of points (in each marginal variable) 
-			//  whose marginal distance is less than eps in that marginal dimension
-			int[] n_x = new int[V];
-			for (int t2 = 0; t2 < N; t2++) {
-				for (int v = 0; v < V; v++) {
-					if (normsForT[t2][v] <= eps_x[v]) {
-						n_x[v]++;
-					}
-				}
-			}
-			// Track the averages, and take the digamma before adding into the 
-			//  average:
-			for (int v = 0; v < V; v++) {
-				avNx[v] += n_x[v];
-				averageDiGammas += MathsUtils.digamma(n_x[v]);
-			}
-		}
-		averageDiGammas /= (double) N;
-		if (debug) {
-			for (int v = 0; v < V; v++) {
-				avNx[v] /= (double)N;
-				System.out.print(String.format("Average n_x[%d]=%.3f, ", v, avNx[v]));
-			}
-			System.out.println();
+	protected double[] partialComputeFromObservations(
+			int startTimePoint, int numTimePoints, boolean returnLocals) throws Exception {
+		
+		double startTime = Calendar.getInstance().getTimeInMillis();
+
+		double[] localMi = null;
+		if (returnLocals) {
+			localMi = new double[numTimePoints];
 		}
 		
-		mi = MathsUtils.digamma(k) - (double) (V - 1) /(double)k - averageDiGammas +
-				(double) (V - 1) * MathsUtils.digamma(N);
-		miComputed = true;
-		return mi;
-	}
-
-	@Override
-	public double[] computeLocalOfPreviousObservations() throws Exception {
-		double[] localMi = new double[N];
-		if (V == 1) {
-			miComputed = true;
-			return localMi;
-		}
-
 		// Constants:
-		double digammaK = MathsUtils.digamma(k);
-		double Vminus1TimesDigammaN = (double) (V - 1) * MathsUtils.digamma(N);
-		double Vminus1TimesInvK = (double) (V - 1) / (double)k;
+		double dimensionsMinus1DivK = (double) (dimensions - 1) / (double)k;
+		double dimensionsMinus1TimesDiGammaN = (double) (dimensions - 1) * digammaN;
 		
-		// Count the average number of points within eps_x[v] for each marginal v
-		double averageDiGammas = 0;
-		double[] avNx = new double[V];
-		
-		for (int t = 0; t < N; t++) {
-			// Compute eps_x (for each marginal) for this time step:
-			//  First get the marginal norms to all neighbours
-			//  (note that norm of point t to itself will be set to infinity).
-			
-			double[][] normsForT = EuclideanUtils.computeNorms(data, t);
-			double[][] jointNorm = new double[N][2];
-			for (int t2 = 0; t2 < N; t2++) {
-				jointNorm[t2][JOINT_NORM_VAL_COLUMN] = MatrixUtils.max(normsForT[t2]);
-				// And store the time step for back reference after the 
-				//  array is sorted.
-				jointNorm[t2][JOINT_NORM_TIMESTEP_COLUMN] = t2;
-			}
+		// Count the average number of points within eps_x for each marginal x of each point
+		double sumDiGammas = 0;
+		double[] sumNMarginals = new double[dimensions];
+				
+		for (int t = startTimePoint; t < startTimePoint + numTimePoints; t++) {
+			// Compute eps_x for each marginal x for this time step by
+			//  finding the kth closest neighbours for point t:
+			PriorityQueue<NeighbourNodeData> nnPQ =
+					kdTreeJoint.findKNearestNeighbours(k, t);
 
-			// Then find the k closest neighbours:
-			double[] eps_x = new double[V];
-			if (k == 1) {
-				// just do a linear search for the minimum epsilon value
-				int timeStepOfMin = MatrixUtils.minIndex(jointNorm, JOINT_NORM_VAL_COLUMN);
-				for (int v = 0; v < V; v++) {
-					eps_x[v] = normsForT[timeStepOfMin][v];
-				}
-			} else {
-				// Sort the array of joint norms
-				java.util.Arrays.sort(jointNorm, FirstIndexComparatorDouble.getInstance());
-				// and now we have the closest k points.
-				// Find eps_{x,y} as the maximum x and y norms amongst this set:
-				for (int j = 0; j < k; j++) {
-					int timeStepOfJthPoint = (int)jointNorm[j][JOINT_NORM_TIMESTEP_COLUMN];
-					for (int v = 0; v < V; v++) {
-						if (normsForT[timeStepOfJthPoint][v] > eps_x[v]) {
-							eps_x[v] = normsForT[timeStepOfJthPoint][v];
-						}
+			// Find eps_x as the maximum x norm amongst this set
+			//  for each marginal x
+			double[] eps_marginals = new double[dimensions];
+			for (int j = 0; j < k; j++) {
+				// Take the furthest remaining of the nearest neighbours from the PQ:
+				NeighbourNodeData nnData = nnPQ.poll();
+				for (int d = 0; d < dimensions; d++) {
+					if (nnData.norms[d] > eps_marginals[d]) {
+						eps_marginals[d] = nnData.norms[d];
 					}
 				}
 			}
 			
-			// Count the number of points (in each marginal variable) 
-			//  whose marginal distance is less than eps in that marginal dimension
-			int[] n_x = new int[V];
-			for (int t2 = 0; t2 < N; t2++) {
-				for (int v = 0; v < V; v++) {
-					if (normsForT[t2][v] <= eps_x[v]) {
-						n_x[v]++;
-					}
-				}
+			// Count the number of points whose x distance is less
+			//  than or equal to eps_x, for each marginal x
+			int[] n_marginals = new int[dimensions];
+			double thisSumDiGammas = 0;
+			for (int d = 0; d < dimensions; d++) {
+				n_marginals[d] =
+						rangeSearchersInMarginals[d].countPointsWithinOrOnR(
+								t, eps_marginals[d]);
+				sumNMarginals[d] += n_marginals[d];
+				// And take the digammas:
+				thisSumDiGammas += MathsUtils.digamma(n_marginals[d]);
 			}
+			sumDiGammas += thisSumDiGammas;
 
-			// Track the averages, and take the digamma before adding into the 
-			//  local:
-			localMi[t] = digammaK - Vminus1TimesInvK + Vminus1TimesDigammaN;
-			for (int v = 0; v < V; v++) {
-				double digammaNx = MathsUtils.digamma(n_x[v]);
-				localMi[t] -= digammaNx;
-				// And keep track of the averages
-				avNx[v] += n_x[v];
-				averageDiGammas += digammaNx;
+			if (returnLocals) {
+				localMi[t-startTimePoint] = digammaK - dimensionsMinus1DivK - thisSumDiGammas + 
+						dimensionsMinus1TimesDiGammaN;
 			}
 		}
+
 		if (debug) {
-			for (int v = 0; v < V; v++) {
-				avNx[v] /= (double)N;
-				System.out.print(String.format("Average n_x[%d]=%.3f, ", v, avNx[v]));
-			}
-			System.out.println();
+			Calendar rightNow2 = Calendar.getInstance();
+			long endTime = rightNow2.getTimeInMillis();
+			System.out.println("Subset " + startTimePoint + ":" +
+					(startTimePoint + numTimePoints) + " Calculation time: " +
+					((endTime - startTime)/1000.0) + " sec" );
 		}
 		
-		mi = digammaK - Vminus1TimesInvK - averageDiGammas + Vminus1TimesDigammaN;
-		miComputed = true;
-		return localMi;
-	}
-
-	@Override
-	public String printConstants(int N) throws Exception {
-		String constants = String.format("digamma(k=%d)=%.3e - 1/k=%.3e + digamma(N=%d)=%.3e => %.3e",
-				k, MathsUtils.digamma(k), 1.0/(double)k, N, MathsUtils.digamma(N),
-				(MathsUtils.digamma(k) - 1.0/(double)k + MathsUtils.digamma(N)));
-		return constants;
+		// Select what to return:
+		if (returnLocals) {
+			return localMi;
+		} else {
+			double[] returnArray = new double[dimensions+1];
+			returnArray[0] = sumDiGammas;
+			System.arraycopy(sumNMarginals, 0, returnArray, 1, dimensions);
+			return returnArray;
+		}
 	}
 }
