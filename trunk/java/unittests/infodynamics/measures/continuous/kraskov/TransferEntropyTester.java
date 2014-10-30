@@ -110,13 +110,17 @@ public class TransferEntropyTester
 		teCalc.initialise(1);
 		teCalc.setObservations(col0, col1);
 		double result = teCalc.computeAverageLocalOfObservations();
+		System.out.printf("From 2coupledRandomCols 0->1 expecting %.6f, got %.6f\n",
+				expectedFromTRENTOOL0to1, result);
 		assertEquals(expectedFromTRENTOOL0to1, result, 0.000001);
 		
 		teCalc.initialise(1);
 		teCalc.setObservations(col1, col0);
 		result = teCalc.computeAverageLocalOfObservations();
 		assertEquals(expectedFromTRENTOOL1to0, result, 0.000001);
-		
+		System.out.printf("From 2coupledRandomCols 1->0 expecting %.6f, got %.6f\n",
+				expectedFromTRENTOOL1to0, result);
+
 		assertEquals(99, teCalc.getNumObservations());
 	}
 	
