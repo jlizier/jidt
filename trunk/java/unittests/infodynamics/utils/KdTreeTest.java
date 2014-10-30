@@ -1,3 +1,21 @@
+/*
+ *  Java Information Dynamics Toolkit (JIDT)
+ *  Copyright (C) 2012, Joseph T. Lizier
+ *  
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *  
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *  
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package infodynamics.utils;
 
 import java.util.Calendar;
@@ -5,7 +23,6 @@ import java.util.PriorityQueue;
 import java.util.Vector;
 
 import infodynamics.utils.KdTree.KdTreeNode;
-import infodynamics.utils.KdTree.NeighbourNodeData;
 import junit.framework.TestCase;
 
 public class KdTreeTest extends TestCase {
@@ -512,7 +529,7 @@ public class KdTreeTest extends TestCase {
 				((double) (endTimeValidate - startTime)/1000.0));
 	}
 
-	public void testCountNeighboursWithinRSeparateArraysWithDuplicates() {
+	public void testCountNeighboursWithinRSeparateArraysWithDuplicates() throws Exception {
 		int variables = 3;
 		int dimensionsPerVariable = 3;
 		int samples = 2000;

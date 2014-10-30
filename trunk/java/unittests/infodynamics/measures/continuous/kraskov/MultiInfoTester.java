@@ -18,13 +18,13 @@
 
 package infodynamics.measures.continuous.kraskov;
 
+import infodynamics.measures.continuous.MultiInfoAbstractTester;
 import infodynamics.utils.ArrayFileReader;
 import infodynamics.utils.MatrixUtils;
 
-public class MutualInfoMultiVariateTester
-	extends infodynamics.measures.continuous.MutualInfoMultiVariateAbstractTester {
+public class MultiInfoTester extends MultiInfoAbstractTester {
 
-	protected String NUM_THREADS_TO_USE_DEFAULT = MutualInfoCalculatorMultiVariateKraskov.USE_ALL_THREADS;
+	protected String NUM_THREADS_TO_USE_DEFAULT = MultiInfoCalculatorKraskov.USE_ALL_THREADS;
 	protected String NUM_THREADS_TO_USE = NUM_THREADS_TO_USE_DEFAULT;
 	
 	/**
@@ -33,12 +33,12 @@ public class MutualInfoMultiVariateTester
 	 * @param algNumber
 	 * @return
 	 */
-	public MutualInfoCalculatorMultiVariateKraskov getNewCalc(int algNumber) {
-		MutualInfoCalculatorMultiVariateKraskov miCalc = null;
+	public MultiInfoCalculatorKraskov getNewCalc(int algNumber) {
+		MultiInfoCalculatorKraskov miCalc = null;
 		if (algNumber == 1) {
-			miCalc = new MutualInfoCalculatorMultiVariateKraskov1();
+			miCalc = new MultiInfoCalculatorKraskov1();
 		} else if (algNumber == 2) {
-			miCalc = new MutualInfoCalculatorMultiVariateKraskov2();
+			miCalc = new MultiInfoCalculatorKraskov2();
 		}
 		return miCalc;
 	}
@@ -50,15 +50,15 @@ public class MutualInfoMultiVariateTester
 	 */
 	public void checkLocalsAverageCorrectly(int algNumber, String numThreads) throws Exception {
 		
-		MutualInfoCalculatorMultiVariateKraskov miCalc = getNewCalc(algNumber);
+		MultiInfoCalculatorKraskov miCalc = getNewCalc(algNumber);
 		
 		String kraskov_K = "4";
 		
 		miCalc.setProperty(
-				MutualInfoCalculatorMultiVariateKraskov.PROP_K,
+				MultiInfoCalculatorKraskov.PROP_K,
 				kraskov_K);
 		miCalc.setProperty(
-				MutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS,
+				MultiInfoCalculatorKraskov.PROP_NUM_THREADS,
 				numThreads);
 
 		super.testLocalsAverageCorrectly(miCalc, 2, 10000);
@@ -76,7 +76,7 @@ public class MutualInfoMultiVariateTester
 	 */
 	public void checkComputeSignificanceDoesntAlterAverage(int algNumber) throws Exception {
 		
-		MutualInfoCalculatorMultiVariateKraskov miCalc = getNewCalc(algNumber);
+		MultiInfoCalculatorKraskov miCalc = getNewCalc(algNumber);
 		
 		String kraskov_K = "4";
 		
@@ -98,16 +98,15 @@ public class MutualInfoMultiVariateTester
 	 * Utility function to run Kraskov MI for data with known results
 	 * 
 	 * @param var1
-	 * @param var2
 	 * @param kNNs array of Kraskov k nearest neighbours parameter to check
 	 * @param expectedResults array of expected results for each k
 	 */
-	protected void checkMIForGivenData(double[][] var1, double[][] var2,
+	protected void checkMIForGivenData(double[][] data, 
 			int[] kNNs, double[] expectedResults) throws Exception {
 				
 		// The Kraskov MILCA toolkit MIhigherdim executable 
 		//  uses algorithm 2 by default (this is what it means by rectangular):
-		MutualInfoCalculatorMultiVariateKraskov miCalc = getNewCalc(2);
+		MultiInfoCalculatorKraskov miCalc = getNewCalc(2);
 		
 		for (int kIndex = 0; kIndex < kNNs.length; kIndex++) {
 			int k = kNNs[kIndex];
@@ -120,22 +119,25 @@ public class MutualInfoMultiVariateTester
 			// No longer need to set this property as it's set by default:
 			//miCalc.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE,
 			//		EuclideanUtils.NORM_MAX_NORM_STRING);
-			miCalc.initialise(var1[0].length, var2[0].length);
-			miCalc.setObservations(var1, var2);
+			miCalc.initialise(data[0].length);
+			miCalc.setObservations(data);
 			miCalc.setDebug(true);
 			double mi = miCalc.computeAverageLocalOfObservations();
 			miCalc.setDebug(false);
 			
-			System.out.printf("k=%d: Average MI %.8f (expected %.8f)\n",
+			System.out.printf("k=%d: Average Multi-info %.8f (expected %.8f)\n",
 					k, mi, expectedResults[kIndex]);
 			// Dropping required accuracy by one order of magnitude, due
 			//  to faster but slightly less accurate digamma estimator change
-			assertEquals(expectedResults[kIndex], mi, 0.0000001);			
+			// 0.0000001 is fine for all but last test, so dropping again
+			//  to 0.000001
+			assertEquals(expectedResults[kIndex], mi, 0.000001);			
 		}
 	}
 	
 	/**
-	 * Test the computed univariate MI against that calculated by Kraskov's own MILCA
+	 * Test the computed Multi info for 2 variables (i.e. should be a regular MI!)
+	 *  against that calculated by Kraskov's own MILCA
 	 * tool on the same data.
 	 * 
 	 * To run Kraskov's tool (http://www.klab.caltech.edu/~kraskov/MILCA/) for this 
@@ -159,8 +161,7 @@ public class MutualInfoMultiVariateTester
 				0.00120807, -0.00924771, -0.00316402, -0.00778205, -0.00565778};
 		
 		System.out.println("Kraskov comparison 1 - univariate random data 1");
-		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0}),
-				MatrixUtils.selectColumns(data, new int[] {1}),
+		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0, 1}),
 				kNNs, expectedFromMILCA);
 		
 		//------------------
@@ -175,19 +176,18 @@ public class MutualInfoMultiVariateTester
 				-0.01130354, -0.01339670, -0.00964035, -0.00237072, -0.00096891};
 		
 		System.out.println("Kraskov comparison 2 - univariate random data 2");
-		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0}),
-				MatrixUtils.selectColumns(data, new int[] {1}),
+		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0, 1}),
 				kNNs, expectedFromMILCA_2);
 
 	}
 
 	/**
-	 * Test the computed multivariate MI against that calculated by Kraskov's own MILCA
+	 * Test the computed multivariate multi-info against that calculated by Kraskov's own MILCA
 	 * tool on the same data.
 	 * 
 	 * To run Kraskov's tool (http://www.klab.caltech.edu/~kraskov/MILCA/) for this 
 	 * data, run:
-	 * ./MIxnyn <dataFile> 2 2 3000 <kNearestNeighbours> 0
+	 * ./MIhigherdim <dataFile> 4 1 1 3000 <kNearestNeighbours> 0
 	 * 
 	 * @throws Exception if file not found 
 	 * 
@@ -203,30 +203,29 @@ public class MutualInfoMultiVariateTester
 		// Use various Kraskov k nearest neighbours parameter
 		int[] kNNs = {1, 2, 3, 4, 5, 6, 10, 15};
 		// Expected values from Kraskov's MILCA toolkit:
-		double[] expectedFromMILCA_2 = {0.02886644, 0.01071634, 0.00186857,
-				-0.00377259, -0.00634851, -0.00863725, -0.01058087, -0.01106348};
+		double[] expectedFromMILCA_2 = {0.03229833, -0.01146200, -0.00691358,
+				0.00002149, -0.01056322, -0.01482730, -0.01223885, -0.01461794};
 		
 		System.out.println("Kraskov comparison 3 - multivariate random data 1");
-		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0, 1}),
-				MatrixUtils.selectColumns(data, new int[] {2, 3}),
+		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0, 1, 2, 3}),
 				kNNs, expectedFromMILCA_2);
 
 	}
 
 	/**
-	 * Test the computed multivariate MI against that calculated by Kraskov's own MILCA
-	 * tool on the same data, using various numbers of threads
+	 * Test the computed multivariate multi-info against that calculated by Kraskov's own MILCA
+	 * tool on the same data.
 	 * 
 	 * To run Kraskov's tool (http://www.klab.caltech.edu/~kraskov/MILCA/) for this 
 	 * data, run:
-	 * ./MIxnyn <dataFile> 2 2 3000 <kNearestNeighbours> 0
+	 * ./MIhigherdim <dataFile> 4 1 1 3000 <kNearestNeighbours> 0
 	 * 
 	 * @throws Exception if file not found 
 	 * 
 	 */
 	public void testMultivariateMIVariousNumThreads() throws Exception {
 		
-		// Test set 3a and 3b:
+		// Test set 3:
 		
 		// We'll just take the first two columns from this data set
 		ArrayFileReader afr = new ArrayFileReader("demos/data/4randomCols-1.txt");
@@ -235,21 +234,18 @@ public class MutualInfoMultiVariateTester
 		// Use various Kraskov k nearest neighbours parameter
 		int[] kNNs = {3, 4};
 		// Expected values from Kraskov's MILCA toolkit:
-		double[] expectedFromMILCA_2 = {0.00186857,
-				-0.00377259};
+		double[] expectedFromMILCA_2 = {-0.00691358,
+				0.00002149};
 		
 		System.out.println("Kraskov comparison 3a - single threaded");
 		NUM_THREADS_TO_USE = "1";
-		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0, 1}),
-				MatrixUtils.selectColumns(data, new int[] {2, 3}),
+		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0, 1, 2, 3}),
 				kNNs, expectedFromMILCA_2);
 		System.out.println("Kraskov comparison 3b - dual threaded");
 		NUM_THREADS_TO_USE = "2";
-		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0, 1}),
-				MatrixUtils.selectColumns(data, new int[] {2, 3}),
+		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0, 1, 2, 3}),
 				kNNs, expectedFromMILCA_2);
 		NUM_THREADS_TO_USE = NUM_THREADS_TO_USE_DEFAULT;
-
 	}
 
 	/**
@@ -258,88 +254,7 @@ public class MutualInfoMultiVariateTester
 	 * 
 	 * To run Kraskov's tool (http://www.klab.caltech.edu/~kraskov/MILCA/) for this 
 	 * data, run:
-	 * ./MIxnyn <dataFile> 1 3 3000 <kNearestNeighbours> 0
-	 * 
-	 * @throws Exception if file not found 
-	 * 
-	 */
-	public void testImbalancedMultivariateMIforRandomVariablesFromFile() throws Exception {
-		
-		// Test set 4:
-		
-		// We'll take MI from first column to the next 3:
-		ArrayFileReader afr = new ArrayFileReader("demos/data/4randomCols-1.txt");
-		double[][] data = afr.getDouble2DMatrix();
-		
-		// Use various Kraskov k nearest neighbours parameter
-		int[] kNNs = {1, 2, 3, 4, 5, 6, 10, 15};
-		// Expected values from Kraskov's MILCA toolkit:
-		double[] expectedFromMILCA = {0.02473475, 0.00404451, -0.00454679,
-				-0.00737512, -0.00464896, -0.00610772, -0.00881741, -0.01306668};
-		
-		System.out.println("Kraskov comparison 4 - multivariate random data 2 (1 var to 3 vars)");
-		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0}),
-				MatrixUtils.selectColumns(data, new int[] {1, 2, 3}),
-				kNNs, expectedFromMILCA);
-	}
-
-	/**
-	 * Test the computed multivariate MI against that calculated by Kraskov's own MILCA
-	 * tool on the same data.
-	 * This also tests for multithreading with residuals, assuming
-	 *  we're running on a 4 processor machine
-	 * 
-	 * To run Kraskov's tool (http://www.klab.caltech.edu/~kraskov/MILCA/) for this 
-	 * data, run:
-	 * ./MIxnyn <dataFile> 2 2 3030 <kNearestNeighbours> 0
-	 * where the file has the first 30 rows repeated.
-	 * 
-	 * Kraskov et al recommend that a small amount of noise should be 
-	 * added to the data to avoid issues with repeated scores; this
-	 * can be done in our toolkit by setting the relevant property
-	 * 
-	 * @throws Exception if file not found 
-	 * 
-	 */
-	public void testMultivariateMIforRandomVariablesRepeatedDataFromFile() throws Exception {
-		
-		// Test set 5:
-		
-		// We'll just take the first two columns from this data set
-		ArrayFileReader afr = new ArrayFileReader("demos/data/4randomCols-1.txt");
-		double[][] data = afr.getDouble2DMatrix();
-		double[][] data2 = new double[data.length + 30][data[0].length];
-		for (int r = 0; r < data.length; r++) {
-			for (int c = 0; c < data[r].length; c++) {
-				data2[r][c] = data[r][c];
-			}
-		}
-		// Repeat the first 30 rows:
-		for (int r = 0; r < 30; r++) {
-			for (int c = 0; c < data[r].length; c++) {
-				data2[r+data.length][c] = data[r][c];
-			}			
-		}
-		
-		// Use various Kraskov k nearest neighbours parameter
-		int[] kNNs = {1, 2, 3, 4, 5, 6, 10, 15};
-		// Expected values from Kraskov's MILCA toolkit:
-		double[] expectedFromMILCA_2 = {0.16846374, 0.04091779, 0.02069109,
-				0.00700680, 0.00121768, -0.00134164, -0.00870685, -0.00966508};
-		
-		System.out.println("Kraskov comparison 5 - multivariate random data 1 with 30 repeated rows");
-		checkMIForGivenData(MatrixUtils.selectColumns(data2, new int[] {0, 1}),
-				MatrixUtils.selectColumns(data2, new int[] {2, 3}),
-				kNNs, expectedFromMILCA_2);
-	}
-
-	/**
-	 * Test the computed multivariate MI against that calculated by Kraskov's own MILCA
-	 * tool on the same data.
-	 * 
-	 * To run Kraskov's tool (http://www.klab.caltech.edu/~kraskov/MILCA/) for this 
-	 * data, run:
-	 * ./MIxnyn <dataFile> 2 2 3000 <kNearestNeighbours> 0
+	 * ./MIhigherdim <dataFile> 4 1 1 3000 <kNearestNeighbours> 0
 	 * 
 	 * @throws Exception if file not found 
 	 * 
@@ -355,12 +270,11 @@ public class MutualInfoMultiVariateTester
 		// Use various Kraskov k nearest neighbours parameter
 		int[] kNNs = {1, 2, 3, 4, 5, 6, 10, 15};
 		// Expected values from Kraskov's MILCA toolkit:
-		double[] expectedFromMILCA_2 = {5.00322122, 4.29011291, 3.91312749, 
-				3.69192886, 3.52807488, 3.39865354, 3.05327646, 2.79951639};
+		double[] expectedFromMILCA_2 = {8.44056282, 7.69813699, 7.26909347, 
+				6.97095249, 6.73728113, 6.53105867, 5.96391264, 5.51627278};
 		
 		System.out.println("Kraskov comparison 6 - multivariate dependent data 1");
-		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0, 1}),
-				MatrixUtils.selectColumns(data, new int[] {2, 3}),
+		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0, 1, 2, 3}),
 				kNNs, expectedFromMILCA_2);
 
 	}
@@ -371,7 +285,7 @@ public class MutualInfoMultiVariateTester
 	 * 
 	 * To run Kraskov's tool (http://www.klab.caltech.edu/~kraskov/MILCA/) for this 
 	 * data, run:
-	 * ./MIxnyn <dataFile> 2 2 3000 <kNearestNeighbours> 0
+	 * ./MIhigherdim <dataFile> 4 1 1 3000 <kNearestNeighbours> 0
 	 * 
 	 * @throws Exception if file not found 
 	 * 
@@ -387,12 +301,11 @@ public class MutualInfoMultiVariateTester
 		// Use various Kraskov k nearest neighbours parameter
 		int[] kNNs = {1, 2, 3, 4, 5, 6, 10, 15};
 		// Expected values from Kraskov's MILCA toolkit:
-		double[] expectedFromMILCA_2 = {0.33738970, 0.36251531, 0.34708687, 
-				0.36200563, 0.35766125, 0.35007623, 0.35023664, 0.33728287};
+		double[] expectedFromMILCA_2 = {0.31900665, 0.37304998, 0.37213228, 
+				0.37982388, 0.37304217, 0.36802502, 0.36353436, 0.35095074};
 		
 		System.out.println("Kraskov comparison 7 - multivariate dependent data 1");
-		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0, 1}),
-				MatrixUtils.selectColumns(data, new int[] {2, 3}),
+		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0, 1, 2, 3}),
 				kNNs, expectedFromMILCA_2);
 
 	}
@@ -403,7 +316,7 @@ public class MutualInfoMultiVariateTester
 	 * 
 	 * To run Kraskov's tool (http://www.klab.caltech.edu/~kraskov/MILCA/) for this 
 	 * data, run:
-	 * ./MIxnyn <dataFile> 5 5 10000 <kNearestNeighbours> 0
+	 * ./MIhigherdim <dataFile> 10 1 1 10000 <kNearestNeighbours> 0
 	 * 
 	 * @throws Exception if file not found 
 	 * 
@@ -419,44 +332,12 @@ public class MutualInfoMultiVariateTester
 		// Use various Kraskov k nearest neighbours parameter
 		int[] kNNs = {1, 2, 4, 10, 15};
 		// Expected values from Kraskov's MILCA toolkit:
-		double[] expectedFromMILCA_2 = {0.00815609, 0.00250864, 0.00035825,
-				0.00172174, 0.00033354};
+		double[] expectedFromMILCA_2 = {0.00932984, 0.00662195, 0.01697033,
+				0.00397984, 0.00212609};
 		
 		System.out.println("Kraskov comparison 8 - multivariate uncorrelated Gaussian data 1");
-		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0, 1, 2, 3, 4}),
-				MatrixUtils.selectColumns(data, new int[] {5, 6, 7, 8, 9}),
-				kNNs, expectedFromMILCA_2);
-
-	}
-
-	/**
-	 * Test the computed multivariate MI against that calculated by Kraskov's own MILCA
-	 * tool on the same data.
-	 * 
-	 * To run Kraskov's tool (http://www.klab.caltech.edu/~kraskov/MILCA/) for this 
-	 * data, run:
-	 * ./MIxnyn <dataFile> 1 1 10000 <kNearestNeighbours> 0
-	 * 
-	 * @throws Exception if file not found 
-	 * 
-	 */
-	public void testMIforRandomGaussianVariablesFromLargeFile() throws Exception {
-		
-		// Test set 9:
-		
-		// We'll take the columns from this data set
-		ArrayFileReader afr = new ArrayFileReader("demos/data/10ColsRandomGaussian-1.txt");
-		double[][] data = afr.getDouble2DMatrix();
-		
-		// Use various Kraskov k nearest neighbours parameter
-		int[] kNNs = {1, 2, 4, 10, 15};
-		// Expected values from Kraskov's MILCA toolkit:
-		double[] expectedFromMILCA_2 = {0.01542004, 0.01137151, 0.00210945,
-				0.00159921, 0.00031277};
-		
-		System.out.println("Kraskov comparison 9 - uncorrelated Gaussian data 1 - large file");
-		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0}),
-				MatrixUtils.selectColumns(data, new int[] {1}),
+		checkMIForGivenData(MatrixUtils.selectColumns(data,
+								new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}),
 				kNNs, expectedFromMILCA_2);
 
 	}
