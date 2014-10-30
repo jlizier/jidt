@@ -18,6 +18,8 @@
 
 package infodynamics.measures.continuous;
 
+import infodynamics.utils.EmpiricalMeasurementDistribution;
+
 /**
  * <p>Interface for implementations of the multi-information or integration,
  * which may be applied to either multivariate or merely univariate
@@ -77,6 +79,18 @@ package infodynamics.measures.continuous;
 public interface MultiInfoCalculator {
 
 	/**
+	 * Property name for whether to normalise incoming values to mean 0,
+	 * standard deviation 1 (default true)
+	 */
+	public static final String PROP_NORMALISE = "NORMALISE";
+	/**
+	 * Property name for whether to use less than 100% of the samples
+	 * in making the calculation; double value for this property in 0..1
+	 * gives the proportion of values to use (default is 1 meaning all).
+	 */
+	public static final String SAMPLING_FACTOR_PROP_NAME = "SAMPLING_FACTOR";
+
+	/**
 	 * Initialise the calculator for (re-)use, with the existing
 	 * (or default) values of parameters, with number of 
 	 * joint variables specified.
@@ -91,8 +105,16 @@ public interface MultiInfoCalculator {
 	 * New property values are not guaranteed to take effect until the next call
 	 *  to an initialise method. 
 	 * 
-	 * <p>No general properties are defined at the interface level here, i.e.
-	 * there are only properties defined by child interfaces and classes.</p>
+	 * <p>Valid property names, and what their
+	 * values should represent, include:</p>
+	 * <ul>
+	 * 		<li>{@link #PROP_NORMALISE} -- whether to normalise the incoming variables 
+	 * 			to mean 0, standard deviation 1, or not (default false).</li>
+	 * 		<li>{@link #SAMPLING_FACTOR_PROP_NAME} -- whether to use less than 100% of the samples
+	 * 			in making the calculation; double value for this property in 0..1
+	 * 			gives the proportion of values to use (default is 1 meaning all).</li>
+	 * 		<li>Any properties defined by the relevant child interfaces and classes.</li>
+	 * </ul>
 	 * 
 	 * @param propertyName name of the property
 	 * @param propertyValue value of the property
@@ -213,6 +235,109 @@ public interface MultiInfoCalculator {
 	public double[] computeLocalUsingPreviousObservations(double states[][])
 		throws Exception;
 
+	/**
+	 * Compute the multi information would look like were all time series
+	 *  (bar the first) reordered
+	 *  as per the array of time indices in newOrdering.
+	 * 
+	 * <p>The reordering array contains the reordering for each marginal variable (first index).
+	 * The user should ensure that all values 0..N-1 are represented exactly once in the
+	 *  array reordering and that no other values are included here.</p>
+	 *  
+	 * <p>Note that if several disjoint time-series have been added 
+	 * as observations using {@link #addObservations(double[])} etc.,
+	 * then these separate "trials" will be mixed up in the generation
+	 * of a shuffled source series here.</p>
+	 * 
+	 * <p>This method is primarily intended for use in {@link #computeSignificance(int[][])}
+	 * however has been made public in case users wish to access it.
+	 * </p>
+	 * 
+	 * @param newOrdering the specific permuted new orderings to use. First index is the variable number
+	 *  (minus 1, since we don't reorder the first variable),
+	 *  second index is the time step, the value is the reordered time step to use
+	 *  for that variable at the given time step.
+	 *  The values must be an array of length N (where
+	 *  would be the value returned by {@link #getNumObservations()}),
+	 *  containing a permutation of the values in 0..(N-1).
+	 *  If null, no reordering is performed.
+	 * @return what the average multi-info would look like under this reordering
+	 * @throws Exception
+	 */
+	public double computeAverageLocalOfObservations(int[][] newOrdering) throws Exception;
+
+	/**
+	 * Generate a resampled distribution of what the multi-information would look like,
+	 * under a null hypothesis that the individual values of each
+	 * variable in the 
+	 * samples have no relation to eachother.
+	 * That is, we destroy the p(x,y,z,..) correlations, while
+	 * retaining the p(x), p(y),.. marginals, to check how
+	 *  significant this multi-information actually was.
+	 *  
+	 * <p>See Section II.E "Statistical significance testing" of 
+	 * the JIDT paper below for a description of how this is done for MI,
+	 * we are extending that here.
+	 * </p>
+	 * 
+	 * <p>Note that if several disjoint time-series have been added 
+	 * as observations using {@link #addObservations(double[])} etc.,
+	 * then these separate "trials" will be mixed up in the generation
+	 * of surrogates here.</p>
+	 * 
+	 * <p>This method (in contrast to {@link #computeSignificance(int[][][])})
+	 * creates <i>random</i> shufflings of the next values for the surrogate MultiInfo
+	 * calculations.</p>
+	 * 
+	 * @param numPermutationsToCheck number of surrogate samples to permute
+	 *  to generate the distribution.
+	 * @return the distribution of surrogate multi-info values under this null hypothesis.
+	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
+	 *    toolkit for studying the dynamics of complex systems', 2014."
+	 * @throws Exception
+	 */
+	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception;
+	
+	/**
+	 * Generate a resampled distribution of what the multi-information would look like,
+	 * under a null hypothesis that the individual values of each
+	 * variable in the 
+	 * samples have no relation to eachother.
+	 * That is, we destroy the p(x,y,z,..) correlations, while
+	 * retaining the p(x), p(y),.. marginals, to check how
+	 *  significant this multi-information actually was.
+	 *  
+	 * <p>See Section II.E "Statistical significance testing" of 
+	 * the JIDT paper below for a description of how this is done for MI,
+	 * we are extending that here.
+	 * </p>
+	 * 
+	 * <p>Note that if several disjoint time-series have been added 
+	 * as observations using {@link #addObservations(double[])} etc.,
+	 * then these separate "trials" will be mixed up in the generation
+	 * of surrogates here.</p>
+	 * 
+	 * <p>This method (in contrast to {@link #computeSignificance(int)})
+	 * allows the user to specify how to construct the surrogates,
+	 * such that repeatable results may be obtained.</p>
+	 * 
+	 * @param newOrderings a specification of how to shuffle the values
+	 *  to create the surrogates to generate the distribution with. The first
+	 *  index is the permutation number (i.e. newOrderings.length is the number
+	 *  of surrogate samples we use to bootstrap to generate the distribution here.)
+	 *  The second index is the variable number (minus 1, since we don't reorder
+	 *  the first variable),
+	 *  Each array newOrderings[i][v] should be an array of length N (where
+	 *  would be the value returned by {@link #getNumObservations()}),
+	 *  containing a permutation of the values in 0..(N-1).
+	 * @return the distribution of surrogate multi-info values under this null hypothesis.
+	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
+	 *    toolkit for studying the dynamics of complex systems', 2014."
+	 * @throws Exception where the length of each permutation in newOrderings
+	 *   is not equal to the number N samples that were previously supplied.
+	 */
+	public EmpiricalMeasurementDistribution computeSignificance(int[][][] newOrderings) throws Exception;
+	
 	/**
 	 * Set or clear debug mode for extra debug printing to stdout
 	 * 

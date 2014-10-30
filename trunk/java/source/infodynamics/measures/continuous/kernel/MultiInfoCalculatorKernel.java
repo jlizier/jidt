@@ -19,10 +19,8 @@
 package infodynamics.measures.continuous.kernel;
 
 import infodynamics.measures.continuous.MultiInfoCalculator;
+import infodynamics.measures.continuous.MultiInfoCalculatorCommon;
 import infodynamics.utils.MatrixUtils;
-
-import java.util.Vector;
-import java.util.Random;
 
 /**
  * <p>Computes the differential multi-information of a given multivariate set of
@@ -52,8 +50,8 @@ import java.util.Random;
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public class MultiInfoCalculatorKernel implements
-	MultiInfoCalculator {
+public class MultiInfoCalculatorKernel 
+	extends MultiInfoCalculatorCommon {
 
 	/**
 	 * Marginal kernel density PDF estimators
@@ -64,40 +62,6 @@ public class MultiInfoCalculatorKernel implements
 	 */
 	protected KernelEstimatorMultiVariate mvkeJoint = null;
 
-	/**
-	 * Number of joint variables to consider
-	 */
-	private int dimensions = 0;
-	/**
-	 * Number of samples supplied
-	 */
-	private int totalObservations = 0;
-	/**
-	 * Whether we are in debug mode
-	 */
-	private boolean debug = false;
-	/**
-	 * Cached supplied observations
-	 */
-	private double[][] observations;
-	/**
-	 * Set of individually supplied observations
-	 */
-	private Vector<double[]> individualObservations;
-	/**
-	 * Cached last multi-info value calculated
-	 */
-	private double lastAverage;
-	
-	/**
-	 * Whether to normalise incoming values
-	 */
-	private boolean normalise = true;
-	/**
-	 * Property name for whether to normalise incoming values to mean 0,
-	 * standard deviation 1 (default true)
-	 */
-	public static final String NORMALISE_PROP_NAME = "NORMALISE";
 
 	private boolean dynCorrExcl = false;
 	private int dynCorrExclTime = 100;
@@ -106,16 +70,6 @@ public class MultiInfoCalculatorKernel implements
 	 * default is 0 which means no dynamic exclusion window.
 	 */
 	public static final String DYN_CORR_EXCL_TIME_NAME = "DYN_CORR_EXCL";
-
-	private boolean underSample = false;
-	private double samplingFactor = 0.1;
-	private Random rand;
-	/**
-	 * Property name for whether to use less than 100% of the samples
-	 * in making the calculation; double value for this property in 0..1
-	 * gives the proportion of values to use (default is 1 meaning all).
-	 */
-	public static final String SAMPLING_FACTOR_PROP_NAME = "SAMPLING_FACTOR";
 
 	/**
 	 * Property name for the kernel width
@@ -143,6 +97,8 @@ public class MultiInfoCalculatorKernel implements
 
 	@Override
 	public void initialise(int dimensions) {
+		// Super class' initialise() will be called
+		//  from the following:
 		initialise(dimensions, kernelWidth);
 	}
 
@@ -153,13 +109,12 @@ public class MultiInfoCalculatorKernel implements
 	 * Clears an PDFs of previously supplied observations.
 	 *
 	 * @param dimensions the number of joint variables
-	 * @param kernelWidth if {@link #NORMALISE_PROP_NAME} property has
+	 * @param kernelWidth if {@link #PROP_NORMALISE} property has
 	 *  been set, then this kernel width corresponds to the number of
 	 *  standard deviations from the mean (otherwise it is an absolute value)
 	 */
 	public void initialise(int dimensions, double epsilon) {
 		this.kernelWidth = epsilon;
-		observations = null;
 		if (this.dimensions != dimensions) {
 			// Need to create a new array of marginal kernel estimators 
 			this.dimensions = dimensions;
@@ -180,23 +135,80 @@ public class MultiInfoCalculatorKernel implements
 		}
 		// Initialise the joint kernel estimator
 		mvkeJoint.initialise(dimensions, epsilon);
-		lastAverage = 0.0;
+		// Now call the super class to handle the common variables:
+		super.initialise(dimensions);
 	}
 
+	/**
+	 * <p>Set properties for the kernel multi-information calculator.
+	 *  New property values are not guaranteed to take effect until the next call
+	 *  to an initialise method. 
+	 * 
+	 * <p>Valid property names, and what their
+	 * values should represent, include:</p>
+	 * <ul>
+	 * 		<li>{@link #KERNEL_WIDTH_PROP_NAME} (legacy value is {@link #EPSILON_PROP_NAME}) --
+	 * 			kernel width to be used in the calculation. If {@link #normalise} is set,
+	 * 		    then this is a number of standard deviations; otherwise it
+	 * 			is an absolute value. Default is {@link #DEFAULT_KERNEL_WIDTH}.</li>
+	 * 		<li>{@link #DYN_CORR_EXCL_TIME_NAME} -- a dynamics exclusion time window (see Kantz and Schreiber),
+	 * 			default is 0 which means no dynamic exclusion window.</li>
+	 *  	<li>any valid properties for {@link MultiInfoCalculatorCommon#setProperty(String, String)}.</li>
+	 * </ul>
+	 * </p>
+	 * 
+	 * <p>Note that dynamic correlation exclusion (set with {@link #DYN_CORR_EXCL_TIME_NAME})
+	 *  may have unexpected results if multiple
+	 *  observation sets have been added. This is because multiple observation sets
+	 *  are treated as though they are from a single time series, so observations from
+	 *  near the end of observation set i will be excluded from comparison to 
+	 *  observations near the beginning of observation set (i+1). 
+	 * 
+	 * <p>Unknown property values are ignored.</p>
+	 * 
+	 * @param propertyName name of the property
+	 * @param propertyValue value of the property
+	 * @throws Exception for invalid property values
+	 */
 	@Override
-	public void setObservations(double observations[][]) throws Exception {
-		if (observations[0].length != dimensions) {
-			throw new Exception("Incorrect number of dimensions " + observations[0].length +
-					" in supplied observations (expected " + dimensions + ")");
+	public void setProperty(String propertyName, String propertyValue) throws Exception {
+		boolean propertySet = true;
+		if (propertyName.equalsIgnoreCase(KERNEL_WIDTH_PROP_NAME) ||
+				propertyName.equalsIgnoreCase(EPSILON_PROP_NAME)) {
+			kernelWidth = Double.parseDouble(propertyValue);
+		} else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
+			super.setProperty(propertyName, propertyValue);
+			// More to do with this property locally:
+			for (int d = 0; d < dimensions; d++) {
+				svkeMarginals[d].setNormalise(normalise);
+			}
+			mvkeJoint.setNormalise(normalise);
+		} else if (propertyName.equalsIgnoreCase(DYN_CORR_EXCL_TIME_NAME)) {
+			dynCorrExclTime = Integer.parseInt(propertyValue);
+			dynCorrExcl = (dynCorrExclTime > 0);
+			if (dynCorrExcl) {
+				for (int d = 0; d < dimensions; d++) {
+					svkeMarginals[d].setDynamicCorrelationExclusion(dynCorrExclTime);
+				}
+				mvkeJoint.setDynamicCorrelationExclusion(dynCorrExclTime);
+			} else {
+				for (int d = 0; d < dimensions; d++) {
+					svkeMarginals[d].clearDynamicCorrelationExclusion();
+				}
+				mvkeJoint.clearDynamicCorrelationExclusion();
+			}
+		} else {
+			// No property was set here
+			propertySet = false;
+			// try the superclass:
+			super.setProperty(propertyName, propertyValue);
 		}
-		for (int d = 0; d < dimensions; d++) {
-			svkeMarginals[d].setObservations(MatrixUtils.selectColumn(observations, d));
+		if (debug && propertySet) {
+			System.out.println(this.getClass().getSimpleName() + ": Set property " + propertyName +
+					" to " + propertyValue);
 		}
-		mvkeJoint.setObservations(observations);
-		totalObservations = observations.length;
-		this.observations = observations;
 	}
-	
+
 	@Override
 	public void startAddObservations() {
 		if (dynCorrExcl) {
@@ -205,37 +217,17 @@ public class MultiInfoCalculatorKernel implements
 			throw new RuntimeException("Addition of multiple observation sets is not currently " +
 					"supported with property DYN_CORR_EXCL set");
 		}
-		individualObservations = new Vector<double[]>();
+		super.startAddObservations();
 	}
 	
-	@Override
-	public void addObservation(double observation[]) {
-		if (underSample && (rand.nextDouble() >= samplingFactor)) {
-			// Don't take this sample
-			return;
-		}
-		individualObservations.add(observation);
-	}
-	
-	@Override
-	public void addObservations(double[][] observations) {
-		// This implementation is not particularly efficient,
-		//  however for the little use this calculator will 
-		//  attract, it will suffice.
-		for (int s = 0; s < observations.length; s++) {
-			addObservation(observations[s]);
-		}
-	}
-
 	@Override
 	public void finaliseAddObservations() throws Exception {
-		double[][] data = new double[individualObservations.size()][];
-		for (int t = 0; t < data.length; t++) {
-			data[t] = individualObservations.elementAt(t);
+		super.finaliseAddObservations();
+
+		for (int d = 0; d < dimensions; d++) {
+			svkeMarginals[d].setObservations(MatrixUtils.selectColumn(observations, d));
 		}
-		// Allow vector to be reclaimed
-		individualObservations = null;
-		setObservations(data);
+		mvkeJoint.setObservations(observations);
 	}
 
 	@Override
@@ -622,90 +614,5 @@ public class MultiInfoCalculatorKernel implements
 			}
 		}
 		return localInfoDistance;
-	}
-
-	@Override
-	public void setDebug(boolean debug) {
-		this.debug = debug;
-	}
-
-	@Override
-	public double getLastAverage() {
-		return lastAverage;
-	}
-
-	/**
-	 * <p>Set properties for the kernel multi-information calculator.
-	 *  New property values are not guaranteed to take effect until the next call
-	 *  to an initialise method. 
-	 * 
-	 * <p>Valid property names, and what their
-	 * values should represent, include:</p>
-	 * <ul>
-	 * 		<li>{@link #KERNEL_WIDTH_PROP_NAME} (legacy value is {@link #EPSILON_PROP_NAME}) --
-	 * 			kernel width to be used in the calculation. If {@link #normalise} is set,
-	 * 		    then this is a number of standard deviations; otherwise it
-	 * 			is an absolute value. Default is {@link #DEFAULT_KERNEL_WIDTH}.</li>
-	 * 		<li>{@link #NORMALISE_PROP_NAME} -- whether to normalise the incoming variables 
-	 * 			to mean 0, standard deviation 1, or not (default false). Sets {@link #normalise}.</li>
-	 * 		<li>{@link #DYN_CORR_EXCL_TIME_NAME} -- a dynamics exclusion time window (see Kantz and Schreiber),
-	 * 			default is 0 which means no dynamic exclusion window.</li>
-	 * 		<li>{@link #SAMPLING_FACTOR_PROP_NAME} -- whether to use less than 100% of the samples
-	 * 			in making the calculation; double value for this property in 0..1
-	 * 			gives the proportion of values to use (default is 1 meaning all).</li>
-	 * </ul>
-	 * </p>
-	 * 
-	 * <p>Note that dynamic correlation exclusion (set with {@link #DYN_CORR_EXCL_TIME_NAME})
-	 *  may have unexpected results if multiple
-	 *  observation sets have been added. This is because multiple observation sets
-	 *  are treated as though they are from a single time series, so observations from
-	 *  near the end of observation set i will be excluded from comparison to 
-	 *  observations near the beginning of observation set (i+1). 
-	 * 
-	 * <p>Unknown property values are ignored.</p>
-	 * 
-	 * @param propertyName name of the property
-	 * @param propertyValue value of the property
-	 * @throws Exception for invalid property values
-	 */
-	@Override
-	public void setProperty(String propertyName, String propertyValue) {
-		if (propertyName.equalsIgnoreCase(KERNEL_WIDTH_PROP_NAME) ||
-				propertyName.equalsIgnoreCase(EPSILON_PROP_NAME)) {
-			kernelWidth = Double.parseDouble(propertyValue);
-		} else if (propertyName.equalsIgnoreCase(NORMALISE_PROP_NAME)) {
-			normalise = Boolean.parseBoolean(propertyValue);
-			for (int d = 0; d < dimensions; d++) {
-				svkeMarginals[d].setNormalise(normalise);
-			}
-			mvkeJoint.setNormalise(normalise);
-		} else if (propertyName.equalsIgnoreCase(DYN_CORR_EXCL_TIME_NAME)) {
-			dynCorrExclTime = Integer.parseInt(propertyValue);
-			dynCorrExcl = (dynCorrExclTime > 0);
-			if (dynCorrExcl) {
-				for (int d = 0; d < dimensions; d++) {
-					svkeMarginals[d].setDynamicCorrelationExclusion(dynCorrExclTime);
-				}
-				mvkeJoint.setDynamicCorrelationExclusion(dynCorrExclTime);
-			} else {
-				for (int d = 0; d < dimensions; d++) {
-					svkeMarginals[d].clearDynamicCorrelationExclusion();
-				}
-				mvkeJoint.clearDynamicCorrelationExclusion();
-			}
-		} else if (propertyName.equalsIgnoreCase(SAMPLING_FACTOR_PROP_NAME)) {
-			// Use less than 100 % of samples in the addObservation method
-			samplingFactor = Double.parseDouble(propertyValue);
-			underSample = (samplingFactor < 1.0);
-			rand = new Random();
-		} else {
-			// Property not recognised
-			return;
-		}
-		if (debug) {
-			System.out.println("Set property " + propertyName +
-					" to " + propertyValue);
-		}
 	}
 }
