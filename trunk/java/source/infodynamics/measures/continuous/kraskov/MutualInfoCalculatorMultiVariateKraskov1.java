@@ -23,7 +23,7 @@ import java.util.PriorityQueue;
 
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.utils.MathsUtils;
-import infodynamics.utils.KdTree.NeighbourNodeData;
+import infodynamics.utils.NeighbourNodeData;
 
 /**
  * <p>Computes the differential mutual information of two given multivariate sets of
@@ -84,9 +84,9 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 			// Count the number of points whose x distance is less
 			//  than eps, and whose y distance is less than
 			//  epsilon = kthNnData.distance
-			int n_x = kdTreeSource.countPointsStrictlyWithinR(
+			int n_x = nnSearcherSource.countPointsStrictlyWithinR(
 							t, kthNnData.distance);
-			int n_y = kdTreeDest.countPointsStrictlyWithinR(
+			int n_y = nnSearcherDest.countPointsStrictlyWithinR(
 							t, kthNnData.distance);
 			
 			sumNx += n_x;

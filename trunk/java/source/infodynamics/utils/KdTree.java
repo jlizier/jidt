@@ -32,7 +32,7 @@ import java.util.PriorityQueue;
  * 
  * @see <a href="http://en.wikipedia.org/wiki/K-d_tree">K-d tree page on wikipedia</a>
  */
-public class KdTree {
+public class KdTree extends NearestNeighbourSearcher {
 
 	/**
 	 * Cached reference to the data the tree is constructed from.
@@ -86,8 +86,8 @@ public class KdTree {
 	 * Calculator for computing the norms for each variable; defaults
 	 *  to a max norm. 
 	 */
-	protected EuclideanUtils normCalculator =
-			new EuclideanUtils(EuclideanUtils.NORM_MAX_NORM);
+	protected EuclideanUtils normCalculator;
+			
 
 	/**
 	 * Protected class to implement nodes of a k-d tree 
@@ -131,6 +131,8 @@ public class KdTree {
 	 *   within this data set)
 	 */
 	public KdTree(int[] dimensions, double[][][] data) {
+		
+		normCalculator = new EuclideanUtils(normTypeToUse);
 		
 		this.originalDataSets = data;
 		int numObservations = data[0].length;
@@ -299,102 +301,19 @@ public class KdTree {
 				constructKdTree(newDim, rightStart, rightNumPoints, newSortedArrayIndices));
 	}
 	
-	/**
-	 * Set the norm type to use in the nearest neighbour searches,
-	 * within each joint variable, to normType.
-	 * 
-	 * @param normType norm type to use; must be either
-	 *  {@link EuclideanUtils#NORM_EUCLIDEAN},
-	 *  {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} or
-	 *  {@link EuclideanUtils#NORM_MAX_NORM}, otherwise an
-	 *  UnsupportedOperationException is thrown.
-	 *  {@link EuclideanUtils#NORM_EUCLIDEAN} will be nominally supported
-	 *  but switched to
-	 *  {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally for speed.
-	 * @throws UnsupportedOperationException if the norm type is not
-	 *  one of the above supported options.
-	 */
+	@Override
 	public void setNormType(int normType) {
-		if ((normType != EuclideanUtils.NORM_EUCLIDEAN) &&
-			(normType != EuclideanUtils.NORM_EUCLIDEAN_SQUARED) &&
-			(normType != EuclideanUtils.NORM_MAX_NORM)) {
-			throw new UnsupportedOperationException("Norm type " + normType +
-					" is not supported in KdTree");
-		}
-		if (normType == EuclideanUtils.NORM_EUCLIDEAN) {
-			normType = EuclideanUtils.NORM_EUCLIDEAN_SQUARED;
-		}
-		normCalculator.setNormToUse(normType);
+		super.setNormType(normType);
+		normCalculator.setNormToUse(normTypeToUse);
 	}
 	
-	/**
-	 * Set the norm type to use within each joint variable to normType.
-	 * 
-	 * @param normType norm type to use; must be either
-	 *  {@link EuclideanUtils#NORM_EUCLIDEAN_STRING},
-	 *  {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED_STRING} or
-	 *  {@link EuclideanUtils#NORM_MAX_NORM_STRING}, otherwise an
-	 *  UnsupportedOperationException is thrown.
-	 *  {@link EuclideanUtils#NORM_EUCLIDEAN} will be nominally supported
-	 *  but switched to
-	 *  {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally for speed.
-	 * @throws UnsupportedOperationException if the norm type is not
-	 *  one of the above supported options.
-	 */
-	public void setNormType(String normType) {
-		if (!normType.equalsIgnoreCase(EuclideanUtils.NORM_EUCLIDEAN_STRING) &&
-				!normType.equalsIgnoreCase(EuclideanUtils.NORM_EUCLIDEAN_SQUARED_STRING) &&
-				!normType.equalsIgnoreCase(EuclideanUtils.NORM_MAX_NORM_STRING)) {
-				throw new UnsupportedOperationException("Norm type " + normType +
-						" is not supported in KdTree");
-		}
-		if (normType.equalsIgnoreCase(EuclideanUtils.NORM_EUCLIDEAN_STRING)) {
-			normType = EuclideanUtils.NORM_EUCLIDEAN_SQUARED_STRING;
-		}
-		normCalculator.setNormToUse(normType);
+	@Override
+	public void setNormType(String normTypeString) {
+		super.setNormType(normTypeString);
+		normCalculator.setNormToUse(normTypeToUse);
 	}
-	
-	/**
-	 * Validate whether a specified norm type is supported,
-	 *  and return the int corresponding to that type,
-	 *  otherwise through an exception.
-	 * 
-	 * @param normType norm type to use; must be either
-	 *  {@link EuclideanUtils#NORM_EUCLIDEAN_STRING},
-	 *  {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED_STRING} or
-	 *  {@link EuclideanUtils#NORM_MAX_NORM_STRING}, otherwise an
-	 *  UnsupportedOperationException is thrown.
-	 *  {@link EuclideanUtils#NORM_EUCLIDEAN} will be nominally supported
-	 *  but switched to
-	 *  {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally for speed.
-	 * @throws UnsupportedOperationException if the norm type is not
-	 *  one of the above supported options.
-	 */
-	public static int validateNormType(String normType) {
-		if (normType.equalsIgnoreCase(EuclideanUtils.NORM_EUCLIDEAN_STRING)) {
-			normType = EuclideanUtils.NORM_EUCLIDEAN_SQUARED_STRING;
-		}
-		if (normType.equalsIgnoreCase(EuclideanUtils.NORM_EUCLIDEAN_SQUARED_STRING)) {
-			return EuclideanUtils.NORM_EUCLIDEAN_SQUARED;
-		}
-		if (normType.equalsIgnoreCase(EuclideanUtils.NORM_MAX_NORM_STRING)) {
-			return EuclideanUtils.NORM_MAX_NORM;
-		}
-		throw new UnsupportedOperationException("Norm type " + normType +
-				" is not supported in KdTree");
-	}
-	
-	/**
-	 * Return the node which is the nearest neighbour for a given
-	 *  sample index in the data set. The node itself is 
-	 *  excluded from the search.
-	 * Nearest neighbour function to compare to r is a max norm between the
-	 * high-level variables, with norm for each variable being the specified norm.
-	 * 
-	 * @param sampleIndex sample index in the data to find a nearest neighbour
-	 *  for
-	 * @return the node for the nearest neighbour.
-	 */
+		
+	@Override
 	public NeighbourNodeData findNearestNeighbour(int sampleIndex) {
 		if (rootNode == null) {
 			return null;
@@ -509,22 +428,13 @@ public class KdTree {
 		return currentBest;
 	}
 
-	/**
-	 * Return the K nodes which are the K nearest neighbours for a given
-	 *  sample index in the data set. The node itself is 
-	 *  excluded from the search.
-	 * Nearest neighbour function to compare to r is a max norm between the
-	 * high-level variables, with norm for each variable being the specified norm.
-	 * 
-	 * @param K number of K nearest neighbours to return, sorted from
-	 *  furthest away first to nearest last.
-	 * @param sampleIndex sample index in the data to find the K nearest neighbours
-	 *  for
-	 * @return a PriorityQueue of nodes for the K nearest neighbours,
-	 *  sorted with furthest neighbour first in the PQ.
-	 */
+	@Override
 	public PriorityQueue<NeighbourNodeData>
-			findKNearestNeighbours(int K, int sampleIndex) {
+			findKNearestNeighbours(int K, int sampleIndex) throws Exception {
+		
+		if (originalDataSets[0].length <= K) {
+			throw new Exception("Not enough data points for a K nearest neighbours search");
+		}
 		
 		PriorityQueue<NeighbourNodeData> pq = new PriorityQueue<NeighbourNodeData>(K);
 		if (rootNode == null) {
@@ -649,80 +559,7 @@ public class KdTree {
 		}
 	}
 
-	/**
-	 * Protected class for caching nearest neighbour values during the search
-	 * 
-	 * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
-	 * <a href="http://lizier.me/joseph/">www</a>)
-	 */
-	public class NeighbourNodeData implements Comparable<NeighbourNodeData> {
-		public int sampleIndex;
-		public double[] norms; // norms in each high-level variable
-		public double distance; // Assertion: distance is the max of norms
-		
-		/**
-		 * Create an instance representing data about one given nearest neighbour
-		 *  to another data point.
-		 *  
-		 * 
-		 * @param sampleIndex index of the neighbour
-		 * @param norms norms between the neighbour and the other data point,
-		 *  for each high-level variable. 
-		 * @param distance the max of the norms (used for sorting 
-		 *  NeighbourNodeData objects in a PriorityQueue)
-		 */
-		public NeighbourNodeData(int sampleIndex, double[] norms, double distance) {
-			super();
-			this.norms = norms;
-			this.sampleIndex = sampleIndex;
-			this.distance = distance;
-		}
-
-		/**
-		 * Override's {@link Comparable#compareTo(Object)} to provide
-		 *  a natural comparison for the NeighbourNodeData class,
-		 *  based on the underlying distance member.
-		 *  
-		 * <p><b>IMPORTANT</b> -- we reverse the usual comparison return
-		 *  values, returning a positive number if other is greater,
-		 *  and a negative number if other is less. This is so that a 
-		 *  {@link java.util.PriorityQueue} of NeighbourNodeData objects
-		 *  will hold that with the largest distance as the head (whereas
-		 *  for standard return values from this method it would be
-		 *  the other way around).
-		 * 
-		 * @param other Other NeighbourNodeData to compare to 
-		 */
-		@Override
-		public int compareTo(NeighbourNodeData other) {
-			if (distance < other.distance) {
-				// Normally would return -1 here but we flip it -- see
-				//  header comments
-				return 1;
-			} else if (distance > other.distance) {
-				// Normally would return +1 here but we flip it -- see
-				//  header comments
-				return -1;
-			}
-			// distances are equal
-			return 0;
-		}
-	}
-	
-	/**
-	 * Count the number of points within norm r for a given
-	 *  sample index in the data set. The node itself is 
-	 *  excluded from the search.
-	 * Nearest neighbour function to compare to r is a max norm between the
-	 * high-level variables, with norm for each variable being the specified norm.
-	 * 
-	 * @param sampleIndex sample index in the data to find a nearest neighbour
-	 *  for
-	 * @param r radius within which to count points
-	 * @param allowEqualToR if true, then count points at radius r also,
-	 *   otherwise only those strictly within r
-	 * @return the count of points within r.
-	 */
+	@Override
 	public int countPointsWithinR(int sampleIndex, double r, boolean allowEqualToR) {
 		if (allowEqualToR) {
 			return countPointsWithinOrOnR(sampleIndex, r);
@@ -731,18 +568,7 @@ public class KdTree {
 		}
 	}
 	
-	/**
-	 * Count the number of points strictly within norm r for a given
-	 *  sample index in the data set. The node itself is 
-	 *  excluded from the search.
-	 * Nearest neighbour function to compare to r is a max norm between the
-	 * high-level variables, with norm for each variable being the specified norm.
-	 * 
-	 * @param sampleIndex sample index in the data to find a nearest neighbour
-	 *  for
-	 * @param r radius within which to count points
-	 * @return the count of points within r.
-	 */
+	@Override
 	public int countPointsStrictlyWithinR(int sampleIndex, double r) {
 		if (rootNode == null) {
 			return 0;
@@ -750,18 +576,7 @@ public class KdTree {
 		return countPointsWithinR(sampleIndex, rootNode, 0, r, false);
 	}
 	
-	/**
-	 * Count the number of points within or at norm r for a given
-	 *  sample index in the data set. The node itself is 
-	 *  excluded from the search.
-	 * Nearest neighbour function to compare to r is a max norm between the
-	 * high-level variables, with norm for each variable being the specified norm.
-	 * 
-	 * @param sampleIndex sample index in the data to find a nearest neighbour
-	 *  for
-	 * @param r radius within which to count points
-	 * @return the count of points within or on r.
-	 */
+	@Override
 	public int countPointsWithinOrOnR(int sampleIndex, double r) {
 		if (rootNode == null) {
 			return 0;

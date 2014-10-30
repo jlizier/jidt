@@ -27,6 +27,7 @@ import infodynamics.utils.EuclideanUtils;
 import infodynamics.utils.KdTree;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
+import infodynamics.utils.NearestNeighbourSearcher;
 
 /**
  * <p>Computes the differential conditional mutual information of two multivariate
@@ -56,11 +57,11 @@ import infodynamics.utils.MatrixUtils;
  *  </ul>
  * </p>
  * 
- * Finally, note that {@link Cloneable} is implemented allowing clone()
+ * <p>Finally, note that {@link Cloneable} is implemented allowing clone()
  *  to produce only an automatic shallow copy, which is fine
  *  for the statistical significance calculation it is intended for
  *  (none of the array 
- *  data will be changed there).
+ *  data will be changed there).</p>
  * 
  * <p><b>References:</b><br/>
  * <ul>
@@ -153,10 +154,12 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	 */
 	protected KdTree kdTreeVar2Conditional;
 	/**
-	 * protected k-d tree data structure (for fast nearest neighbour searches)
-	 *  representing the conditional space
+	 * protected data structure (for fast nearest neighbour searches)
+	 *  representing the conditional space.
+	 *  Could be implemented by either a k-d tree or sorted array, depending
+	 *  on whether the conditional is multi-variate or not.
 	 */
-	protected KdTree kdTreeConditional;
+	protected NearestNeighbourSearcher nnSearcherConditional;
 	
 	/**
 	 * Constant for digamma(k), with k the number of nearest neighbours selected
@@ -175,7 +178,7 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 		kdTreeJoint = null;
 		kdTreeVar1Conditional = null;
 		kdTreeVar2Conditional = null;
-		kdTreeConditional = null;
+		nnSearcherConditional = null;
 		super.initialise(dimensions1, dimensions2, dimensionsCond);
 	}
 
@@ -401,9 +404,9 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 					new double[][][] {var2Observations, condObservations});
 			kdTreeVar2Conditional.setNormType(normType);
 		}
-		if (kdTreeConditional == null) {
-			kdTreeConditional = new KdTree(condObservations);
-			kdTreeConditional.setNormType(normType);
+		if (nnSearcherConditional == null) {
+			nnSearcherConditional = NearestNeighbourSearcher.create(condObservations);
+			nnSearcherConditional.setNormType(normType);
 		}
 
 		if (numThreads == 1) {

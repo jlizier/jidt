@@ -1473,7 +1473,7 @@ public class MatrixUtils {
 	}
 
 	/**
-	 * Extraxts the boolean[] vectors at each of the selected time points.
+	 * Extracts the boolean[] vectors at each of the selected time points.
 	 * The return boolean[][] array is an array of points to the existing
 	 * boolean[] vectors.
 	 * 
@@ -1489,6 +1489,7 @@ public class MatrixUtils {
 		return extracted;
 	}
 
+	
 	public static double[][] extractSelectedTimePoints(double[][] data, int[][] timePoints,
 			int columnInTimePoints) {
 		int columns = data[0].length;
