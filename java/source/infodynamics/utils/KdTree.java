@@ -18,7 +18,9 @@
 
 package infodynamics.utils;
 
+import java.util.Collection;
 import java.util.PriorityQueue;
+import java.util.Vector;
 
 /**
  * K-d tree implementation to be used for fast neighbour searching
@@ -83,13 +85,6 @@ public class KdTree extends NearestNeighbourSearcher {
 	protected KdTreeNode rootNode = null;
 	
 	/**
-	 * Calculator for computing the norms for each variable; defaults
-	 *  to a max norm. 
-	 */
-	protected EuclideanUtils normCalculator;
-			
-
-	/**
 	 * Protected class to implement nodes of a k-d tree 
 	 * 
 	 * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
@@ -131,9 +126,7 @@ public class KdTree extends NearestNeighbourSearcher {
 	 *   within this data set)
 	 */
 	public KdTree(int[] dimensions, double[][][] data) {
-		
-		normCalculator = new EuclideanUtils(normTypeToUse);
-		
+				
 		this.originalDataSets = data;
 		int numObservations = data[0].length;
 				
@@ -304,15 +297,100 @@ public class KdTree extends NearestNeighbourSearcher {
 	@Override
 	public void setNormType(int normType) {
 		super.setNormType(normType);
-		normCalculator.setNormToUse(normTypeToUse);
 	}
 	
 	@Override
 	public void setNormType(String normTypeString) {
 		super.setNormType(normTypeString);
-		normCalculator.setNormToUse(normTypeToUse);
 	}
-		
+	
+	/**
+	 * Computing the configured norm between vectors x1 and x2.
+	 * Adding here instead of using {@link EuclideanUtils#norm(double[], double[])}
+	 * to attempt speed-up.
+	 * Also hoping this method is inlined by the JVM, but haven't checked this.
+	 * 
+	 * @param x1 vector of doubles
+	 * @param x2 vector of doubles
+	 * @return the selected norm
+	 */
+	public final static double norm(double[] x1, double[] x2, int normToUse) {
+		double distance = 0.0;
+		switch (normToUse) {
+		case EuclideanUtils.NORM_MAX_NORM:
+			// Inlined from {@link EuclideanUtils}:
+			for (int d = 0; d < x1.length; d++) {
+				double difference = x1[d] - x2[d];
+				// Take the abs
+				if (difference < 0) {
+					difference = -difference;
+				}
+				if (difference > distance) {
+					distance = difference;
+				}
+			}
+			return distance;
+		// case EuclideanUtils.NORM_EUCLIDEAN_SQUARED:
+		default:
+			// Inlined from {@link EuclideanUtils}:
+			for (int d = 0; d < x1.length; d++) {
+				double difference = x1[d] - x2[d];
+				distance += difference * difference;
+			}
+			return distance;
+		}
+	}
+
+	/**
+	 * Computing the configured norm between vectors x1 and x2; if 
+	 *  it becomes clear that norm will be larger than limit,
+	 *  then return Double.POSITIVE_INFINITY immediately.
+	 * 
+	 * <p>Adding here instead of using {@link EuclideanUtils#normWithAbort(double[], double[], double)}
+	 * to attempt speed-up.
+	 * Also hoping this method is inlined by the JVM, but haven't checked this.</p>
+	 * 
+	 * @param x1 vector 1 of doubles
+	 * @param x2 vector 2 of doubles
+	 * @param limit if it becomes clear that norm will be larger than limit,
+	 *  then return Double.POSITIVE_INFINITY immediately.
+	 * @param normToUse which norm to use, as defined by {@link #setNormType(int)}
+	 * @return the selected norm
+	 */
+	public final static double normWithAbort(double[] x1, double[] x2,
+			double limit, int normToUse) {
+		double distance = 0.0;
+		switch (normToUse) {
+		case EuclideanUtils.NORM_MAX_NORM:
+			// Inlined from {@link EuclideanUtils}:
+			for (int d = 0; d < x1.length; d++) {
+				double difference = x1[d] - x2[d];
+				// Take the abs
+				if (difference < 0) {
+					difference = -difference;
+				}
+				if (difference > distance) {
+					if (difference > limit) {
+						return Double.POSITIVE_INFINITY;
+					}
+					distance = difference;
+				}
+			}
+			return distance;
+		// case EuclideanUtils.NORM_EUCLIDEAN_SQUARED:
+		default:
+			// Inlined from {@link EuclideanUtils}:
+			for (int d = 0; d < x1.length; d++) {
+				double difference = x1[d] - x2[d];
+				distance += difference * difference;
+				if (distance > limit) {
+						return Double.POSITIVE_INFINITY;
+				}
+			}
+			return distance;
+		}
+	}
+
 	@Override
 	public NeighbourNodeData findNearestNeighbour(int sampleIndex) {
 		if (rootNode == null) {
@@ -350,7 +428,7 @@ public class KdTree extends NearestNeighbourSearcher {
 								data[node.indexOfThisPoint][actualDim];
 		
 		double absDistOnThisDim;
-		if (normCalculator.getNormInUse() == EuclideanUtils.NORM_MAX_NORM) {
+		if (normTypeToUse == EuclideanUtils.NORM_MAX_NORM) {
 			absDistOnThisDim = (distOnThisDim > 0) ? distOnThisDim : - distOnThisDim;
 		} else {
 			// norm type is EuclideanUtils#NORM_EUCLIDEAN_SQUARED
@@ -369,16 +447,16 @@ public class KdTree extends NearestNeighbourSearcher {
 				// For each of our separate (multivariate) variables,
 				//  compute the (specified) norm in that variable's space:
 				if (currentBest == null) {
-					norms[v] = normCalculator.norm(
+					norms[v] = norm(
 						originalDataSets[v][sampleIndex],
-						originalDataSets[v][node.indexOfThisPoint]);
+						originalDataSets[v][node.indexOfThisPoint], normTypeToUse);
 				} else {
 					// Distance calculation terminates early with Double.POSITIVE_INFINITY
 					//  if it is clearly larger than currentBest.distance:
-					norms[v] = normCalculator.normWithAbort(
+					norms[v] = normWithAbort(
 							originalDataSets[v][sampleIndex],
 							originalDataSets[v][node.indexOfThisPoint],
-							currentBest.distance);
+							currentBest.distance, normTypeToUse);
 				}
 				if (norms[v] > maxNorm) {
 					maxNorm = norms[v];
@@ -472,7 +550,7 @@ public class KdTree extends NearestNeighbourSearcher {
 		double distOnThisDim = data[sampleIndex][actualDim] -
 								data[node.indexOfThisPoint][actualDim];
 		double absDistOnThisDim;
-		if (normCalculator.getNormInUse() == EuclideanUtils.NORM_MAX_NORM) {
+		if (normTypeToUse == EuclideanUtils.NORM_MAX_NORM) {
 			absDistOnThisDim = (distOnThisDim > 0) ? distOnThisDim : - distOnThisDim;
 		} else {
 			// norm type is EuclideanUtils#NORM_EUCLIDEAN_SQUARED
@@ -495,16 +573,16 @@ public class KdTree extends NearestNeighbourSearcher {
 				// For each of our separate (multivariate) variables,
 				//  compute the (specified) norm in that variable's space:
 				if (currentKBest.size() < K) {
-					norms[v] = normCalculator.norm(
+					norms[v] = norm(
 						originalDataSets[v][sampleIndex],
-						originalDataSets[v][node.indexOfThisPoint]);
+						originalDataSets[v][node.indexOfThisPoint], normTypeToUse);
 				} else {
 					// Distance calculation terminates early with Double.POSITIVE_INFINITY
 					//  if it is clearly larger than currentBest.distance:
-					norms[v] = normCalculator.normWithAbort(
+					norms[v] = normWithAbort(
 							originalDataSets[v][sampleIndex],
 							originalDataSets[v][node.indexOfThisPoint],
-							furthestCached.distance);
+							furthestCached.distance, normTypeToUse);
 				}
 				if (norms[v] > maxNorm) {
 					maxNorm = norms[v];
@@ -583,12 +661,15 @@ public class KdTree extends NearestNeighbourSearcher {
 		}
 		return countPointsWithinR(sampleIndex, rootNode, 0, r, true);
 	}
-
+	
 	/**
 	 * Count the number of points within radius r of a given sample (sampleIndex),
 	 * in the tree rooted at node (which is at the specified level in the tree).
 	 * Nearest neighbour function to compare to r is a max norm between the
 	 * high-level variables, with norm for each variable being the specified norm.
+	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
+	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
+	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
 	 * 
 	 * @param sampleIndex sample index in the data to find a nearest neighbour
 	 *  for
@@ -614,7 +695,7 @@ public class KdTree extends NearestNeighbourSearcher {
 								data[node.indexOfThisPoint][actualDim];
 		
 		double absDistOnThisDim;
-		if (normCalculator.getNormInUse() == EuclideanUtils.NORM_MAX_NORM) {
+		if (normTypeToUse == EuclideanUtils.NORM_MAX_NORM) {
 			absDistOnThisDim = (distOnThisDim > 0) ? distOnThisDim : - distOnThisDim;
 		} else {
 			// norm type is EuclideanUtils#NORM_EUCLIDEAN_SQUARED
@@ -634,10 +715,10 @@ public class KdTree extends NearestNeighbourSearcher {
 				double distForVariableV;
 				// Distance calculation terminates early with Double.POSITIVE_INFINITY
 				//  if it is clearly larger than r:
-				distForVariableV = normCalculator.normWithAbort(
+				distForVariableV = normWithAbort(
 						originalDataSets[v][sampleIndex],
 						originalDataSets[v][node.indexOfThisPoint],
-						r);
+						r, normTypeToUse);
 				if ((distForVariableV >= r) && 
 						!(allowEqualToR && (distForVariableV == r))) {
 					// We don't fit on this dimension, no point
@@ -689,6 +770,145 @@ public class KdTree extends NearestNeighbourSearcher {
 		return count;
 	}
 	
+	@Override
+	public Collection<NeighbourNodeData> findPointsWithinR(int sampleIndex,
+			double r, boolean allowEqualToR) {
+		Vector<NeighbourNodeData> pointsWithinR = new Vector<NeighbourNodeData>();
+		
+		if (rootNode == null) {
+			return pointsWithinR;
+		}
+		findPointsWithinR(sampleIndex,
+				rootNode, 0, r, allowEqualToR, pointsWithinR);
+		
+		return pointsWithinR;
+	}
+
+	@Override
+	public Collection<NeighbourNodeData> findPointsStrictlyWithinR(
+			int sampleIndex, double r) {
+		return findPointsWithinR(sampleIndex, r, false);
+	}
+
+	@Override
+	public Collection<NeighbourNodeData> findPointsWithinOrOnR(int sampleIndex,
+			double r) {
+		return findPointsWithinR(sampleIndex, r, true);
+	}
+
+	/**
+	 * Add to the collection of points within radius r of a given sample (sampleIndex),
+	 * in the tree rooted at node (which is at the specified level in the tree).
+	 * Nearest neighbour function to compare to r is a max norm between the
+	 * high-level variables, with norm for each variable being the specified norm.
+	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
+	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
+	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
+	 * 
+	 * @param sampleIndex sample index in the data to find a nearest neighbour
+	 *  for
+	 * @param node node to start searching from in the kd-tree. Cannot be null
+	 * @param level which level we're currently at in the tree
+	 * @param r radius within which to count points
+	 * @param allowEqualToR if true, then count points at radius r also,
+	 *   otherwise only those strictly within r
+	 * @param pointsWithinR the collection of points to add to
+	 */
+	protected void findPointsWithinR(int sampleIndex,
+			KdTreeNode node, int level, double r, boolean allowEqualToR,
+			Collection<NeighbourNodeData> pointsWithinR) {
+		
+		// Point to the correct array for the data at this level
+		int currentDim = level % totalDimensions;
+		double[][] data = dimensionToArray[currentDim];
+		int actualDim = dimensionToArrayIndex[currentDim];
+		
+		// Check the distance on this particular dimension
+		double distOnThisDim = data[sampleIndex][actualDim] -
+								data[node.indexOfThisPoint][actualDim];
+		
+		double absDistOnThisDim;
+		if (normTypeToUse == EuclideanUtils.NORM_MAX_NORM) {
+			absDistOnThisDim = (distOnThisDim > 0) ? distOnThisDim : - distOnThisDim;
+		} else {
+			// norm type is EuclideanUtils#NORM_EUCLIDEAN_SQUARED
+			// Track the square distance
+			absDistOnThisDim = distOnThisDim * distOnThisDim;
+		}
+		
+		if ((node.indexOfThisPoint != sampleIndex) &&
+			((absDistOnThisDim <  r) ||
+			 ( allowEqualToR && (absDistOnThisDim == r)))) {
+			// Preliminary check says we need to compute the full distance
+			//  to use or at least to check if it should be counted.
+			boolean withinBounds = true;
+			double[] norms = new double[originalDataSets.length];
+			double maxNorm = 0;
+			for (int v = 0; v < originalDataSets.length; v++) {
+				// For each of our separate (multivariate) variables,
+				//  compute the (specified) norm in that variable's space:
+				double distForVariableV;
+				// Distance calculation terminates early with Double.POSITIVE_INFINITY
+				//  if it is clearly larger than r:
+				distForVariableV = normWithAbort(
+						originalDataSets[v][sampleIndex],
+						originalDataSets[v][node.indexOfThisPoint],
+						r, normTypeToUse);
+				if ((distForVariableV >= r) && 
+						!(allowEqualToR && (distForVariableV == r))) {
+					// We don't fit on this variable, no point
+					//  checking the others:
+					withinBounds = false;
+					break;
+				}
+				norms[v] = distForVariableV;
+				if (distForVariableV > maxNorm) {
+					maxNorm = distForVariableV;
+				}
+			}
+			if (withinBounds) {
+				// This node gets counted
+				pointsWithinR.add(
+						new NeighbourNodeData(node.indexOfThisPoint,
+								norms, maxNorm));
+			}
+		}
+		
+		KdTreeNode closestSubTree = null;
+		KdTreeNode furthestSubTree = null;
+		// And translate this to which subtree is closer
+		if (distOnThisDim < 0) {
+			// We need to search the left tree
+			closestSubTree = node.leftTree;
+			furthestSubTree = node.rightTree;
+		} else {
+			// We need to search the right tree
+			closestSubTree = node.rightTree;
+			furthestSubTree = node.leftTree;
+		}
+		// Update the search on that subtree
+		if (closestSubTree != null) {
+			findPointsWithinR(sampleIndex, closestSubTree,
+					level + 1, r, allowEqualToR, pointsWithinR);
+		}
+		if ((absDistOnThisDim <  r) ||
+			( allowEqualToR && (distOnThisDim < 0) && (absDistOnThisDim == r))) {
+			// It's possible we could have a node within (or on) r
+			//  in the other branch as well, so search there too.
+			// (Note: we only check furthest subtree in the == case
+			//  when it's allowed
+			//  *if* it's the right subtree, as only the right sub-tree
+			//  can have node with distance in this coordinate *equal* to
+			//  that of the current node -- left subtree must be strictly
+			//  less than the coordinate of the current node, so
+			//  distance to any of those points could not be equal.)
+			if (furthestSubTree != null) {
+				findPointsWithinR(sampleIndex, furthestSubTree,
+						level + 1, r, allowEqualToR, pointsWithinR);
+			}
+		}
+	}
+	
 	/**
 	 * Count the number of points within norms {r1,r2,etc} for each high-level
 	 *  variable, for a given
@@ -696,6 +916,9 @@ public class KdTree extends NearestNeighbourSearcher {
 	 *  excluded from the search.
 	 * Nearest neighbour function to compare to {r1,r2,etc}
 	 *  for each variable is the specified norm.
+	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
+	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
+	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
 	 * 
 	 * @param sampleIndex sample index in the data to find a nearest neighbour
 	 *  for
@@ -719,6 +942,9 @@ public class KdTree extends NearestNeighbourSearcher {
 	 *  excluded from the search.
 	 * Nearest neighbour function to compare to {r1,r2,etc}
 	 *  for each variable is the specified norm.
+	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
+	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
+	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
 	 * 
 	 * @param sampleIndex sample index in the data to find a nearest neighbour
 	 *  for
@@ -739,6 +965,9 @@ public class KdTree extends NearestNeighbourSearcher {
 	 *  excluded from the search.
 	 * Nearest neighbour function to compare to {r1,r2,etc}
 	 *  for each variable is the specified norm.
+	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
+	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
+	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
 	 * 
 	 * @param sampleIndex sample index in the data to find a nearest neighbour
 	 *  for
@@ -760,6 +989,9 @@ public class KdTree extends NearestNeighbourSearcher {
 	 * The node itself is excluded from the search.
 	 * Nearest neighbour function to compare to {r1,r2,etc}
 	 *  for each variable is the specified norm.
+	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
+	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
+	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
 	 * 
 	 * @param sampleIndex sample index in the data to find a nearest neighbour
 	 *  for
@@ -786,7 +1018,7 @@ public class KdTree extends NearestNeighbourSearcher {
 								data[node.indexOfThisPoint][actualDim];
 		
 		double absDistOnThisDim;
-		if (normCalculator.getNormInUse() == EuclideanUtils.NORM_MAX_NORM) {
+		if (normTypeToUse == EuclideanUtils.NORM_MAX_NORM) {
 			absDistOnThisDim = (distOnThisDim > 0) ? distOnThisDim : - distOnThisDim;
 		} else {
 			// norm type is EuclideanUtils#NORM_EUCLIDEAN_SQUARED
@@ -806,10 +1038,10 @@ public class KdTree extends NearestNeighbourSearcher {
 				double distForVariableV;
 				// Distance calculation terminates early with Double.POSITIVE_INFINITY
 				//  if it is clearly larger than rs[v]:
-				distForVariableV = normCalculator.normWithAbort(
+				distForVariableV = normWithAbort(
 						originalDataSets[v][sampleIndex],
 						originalDataSets[v][node.indexOfThisPoint],
-						rs[v]);
+						rs[v], normTypeToUse);
 				if ((distForVariableV >= rs[v]) && 
 					!(allowEqualToR && (distForVariableV == rs[v]))) {
 					// We don't fit on this dimension, no point
