@@ -169,15 +169,28 @@ public class UnivariateNearestNeighbourTest extends TestCase {
 					data.length, K, ((double) (endTimeTree - startTime)/1000.0));
 			
 			startTime = Calendar.getInstance().getTimeInMillis();
+			@SuppressWarnings("unchecked")
+			PriorityQueue<NeighbourNodeData>[] pqs =
+					(PriorityQueue<NeighbourNodeData>[]) new PriorityQueue[data.length];
+			
 			for (int t = 0; t < data.length; t++) {
 				PriorityQueue<NeighbourNodeData> nnPQ =
 						searcher.findKNearestNeighbours(K, t);
 				assertTrue(nnPQ.size() == K);
-				// Now find the K nearest neighbours with a naive all-pairs comparison
+				pqs[t] = nnPQ;
+			}
+			long nnEndTime = Calendar.getInstance().getTimeInMillis();
+			System.out.printf("All %d nearest neighbours found in: %.3f sec\n",
+					K, ((double) (nnEndTime - startTime)/1000.0));
+
+			// Now find the K nearest neighbours with a naive all-pairs comparison
+			for (int t = 0; t < data.length; t++) {
 				double[][] distancesAndIndices = new double[data.length][2];
 				for (int t2 = 0; t2 < data.length; t2++) {
 					if (t2 != t) {
-						distancesAndIndices[t2][0] = searcher.norm(data[t], data[t2]);
+						distancesAndIndices[t2][0] =
+								UnivariateNearestNeighbourSearcher.norm(data[t], data[t2],
+										searcher.normTypeToUse);
 					} else {
 						distancesAndIndices[t2][0] = Double.POSITIVE_INFINITY;
 					}
@@ -185,6 +198,8 @@ public class UnivariateNearestNeighbourTest extends TestCase {
 				}
 				int[] timeStepsOfKthMins =
 						MatrixUtils.kMinIndices(distancesAndIndices, 0, K);
+				// Compare to what our NN technique picked out:
+				PriorityQueue<NeighbourNodeData> nnPQ = pqs[t];
 				for (int i = 0; i < K; i++) {
 					// Check that the ith nearest neighbour matches for each method.
 					// Note that these two method provide a different sorting order
@@ -196,10 +211,10 @@ public class UnivariateNearestNeighbourTest extends TestCase {
 					}
 					assertEquals(timeStepsOfKthMins[K - 1 - i], nnData.sampleIndex);
 				}
-			}		
+			}
 			long endTimeValidate = Calendar.getInstance().getTimeInMillis();
-			System.out.printf("All %d nearest neighbours found in: %.3f sec\n",
-					K, ((double) (endTimeValidate - startTime)/1000.0));
+			System.out.printf("All %d nearest neighbours validated in: %.3f sec\n",
+					K, ((double) (endTimeValidate - nnEndTime)/1000.0));
 		}
 	}
 
