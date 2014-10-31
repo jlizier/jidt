@@ -19,6 +19,7 @@
 package infodynamics.utils;
 
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.PriorityQueue;
 import java.util.Vector;
 
@@ -493,11 +494,22 @@ public class KdTreeTest extends TestCase {
 		
 		long startTime = Calendar.getInstance().getTimeInMillis();
 		int totalCount = 0;
+		int[] counts = new int[samples];
 		for (int t = 0; t < samples; t++) {
-			int count = kdTree.countPointsWithinR(t, r, allowEqualToR);
+			// int count = kdTree.countPointsWithinR(t, r, allowEqualToR);
+			Collection<NeighbourNodeData> pointsWithinR =
+					kdTree.findPointsWithinR(t, r, allowEqualToR);
+			int count = pointsWithinR.size();
 			assertTrue(count >= 0);
+			counts[t] = count;
 			totalCount += count;
-			// Now find the neighbour count with a naive all-pairs comparison
+		}
+		long endTimeCount = Calendar.getInstance().getTimeInMillis();
+		System.out.printf("All neighbours within %.3f (average of %.3f) found in: %.3f sec\n",
+				r, (double) totalCount / (double) samples,
+				((double) (endTimeCount - startTime)/1000.0));
+		// Now find the neighbour count with a naive all-pairs comparison
+		for (int t = 0; t < samples; t++) {
 			int naiveCount = 0;
 			for (int t2 = 0; t2 < samples; t2++) {
 				double norm = Double.POSITIVE_INFINITY;
@@ -517,16 +529,16 @@ public class KdTreeTest extends TestCase {
 					naiveCount++;
 				}
 			}
-			if (naiveCount != count) {
+			if (naiveCount != counts[t]) {
 				System.out.printf("All pairs    : count %d\n", naiveCount);
-				System.out.printf("kdTree search: count %d\n", count);
+				System.out.printf("kdTree search: count %d\n", counts[t]);
 			}
-			assertEquals(naiveCount, count);
-		}		
+			assertEquals(naiveCount, counts[t]);
+		}
 		long endTimeValidate = Calendar.getInstance().getTimeInMillis();
-		System.out.printf("All neighbours within %.3f (average of %.3f) found in: %.3f sec\n",
+		System.out.printf("All neighbours within %.3f (average of %.3f) validated in: %.3f sec\n",
 				r, (double) totalCount / (double) samples,
-				((double) (endTimeValidate - startTime)/1000.0));
+				((double) (endTimeValidate - endTimeCount)/1000.0));
 	}
 
 	public void testCountNeighboursWithinRSeparateArraysWithDuplicates() throws Exception {
