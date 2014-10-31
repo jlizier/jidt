@@ -18,7 +18,9 @@
 
 package infodynamics.utils;
 
+import java.util.Collection;
 import java.util.PriorityQueue;
+import java.util.Vector;
 
 
 /**
@@ -80,17 +82,18 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 	}
 
 	/**
-	 * Computed the configured norm between the unidimensional variables
+	 * Computed the configured norm between the unidimensional variables.
+	 * Hoping this method is inlined by the JVM, but haven't checked this.
 	 * 
 	 * @param x1 data point 1
 	 * @param x2 data point 2
 	 * @return the norm
 	 */
-	protected double norm(double x1, double x2) {
+	protected static double norm(double x1, double x2, int normTypeToUse) {
 		switch (normTypeToUse) {
 		case EuclideanUtils.NORM_MAX_NORM:
 			return Math.abs(x1-x2);
-		case EuclideanUtils.NORM_EUCLIDEAN_SQUARED:
+		// case EuclideanUtils.NORM_EUCLIDEAN_SQUARED:
 		default:
 			double difference = x1 - x2;
 			return difference * difference;
@@ -111,7 +114,7 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 			// Assumes we have more than 1 data point -- this is
 			//  checked in the constructor for us.
 			double theNorm = norm(originalDataSet[sampleIndex],
-						originalDataSet[sortedArrayIndices[1]]);
+						originalDataSet[sortedArrayIndices[1]], normTypeToUse);
 			return new NeighbourNodeData(sortedArrayIndices[1],
 					new double[] {theNorm}, theNorm);
 		} else if (indexInSortedArray == numObservations - 1) {
@@ -119,15 +122,18 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 			// Assumes we have more than 1 data point -- this is
 			//  checked in the constructor for us.
 			double theNorm = norm(originalDataSet[sampleIndex],
-						originalDataSet[sortedArrayIndices[numObservations - 2]]);
+						originalDataSet[sortedArrayIndices[numObservations - 2]],
+						normTypeToUse);
 			return new NeighbourNodeData(sortedArrayIndices[numObservations - 2],
 					new double[] {theNorm}, theNorm);
 		} else {
 			// We need to check candidates on both sides of the data point:
 			double normAbove = norm(originalDataSet[sampleIndex],
-					originalDataSet[sortedArrayIndices[indexInSortedArray+1]]);
+					originalDataSet[sortedArrayIndices[indexInSortedArray+1]],
+					normTypeToUse);
 			double normBelow = norm(originalDataSet[sampleIndex],
-					originalDataSet[sortedArrayIndices[indexInSortedArray-1]]);
+					originalDataSet[sortedArrayIndices[indexInSortedArray-1]],
+					normTypeToUse);
 			if (normAbove < normBelow) {
 				return new NeighbourNodeData(sortedArrayIndices[indexInSortedArray+1],
 						new double[] {normAbove}, normAbove);
@@ -168,11 +174,13 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 			double normAbove =  (upperCandidate == -1) ?
 					Double.POSITIVE_INFINITY :
 						norm(originalDataSet[sampleIndex],
-							originalDataSet[sortedArrayIndices[upperCandidate]]);
+							originalDataSet[sortedArrayIndices[upperCandidate]],
+							normTypeToUse);
 			double normBelow = (lowerCandidate == -1) ?
 					Double.POSITIVE_INFINITY :
 						norm(originalDataSet[sampleIndex],
-							originalDataSet[sortedArrayIndices[lowerCandidate]]);
+							originalDataSet[sortedArrayIndices[lowerCandidate]],
+							normTypeToUse);
 			NeighbourNodeData nextNearest;
 			if (normAbove < normBelow) {
 				nextNearest = new NeighbourNodeData(sortedArrayIndices[upperCandidate],
@@ -199,6 +207,9 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 	 *  sample index in the data set. The node itself is 
 	 *  excluded from the search.
 	 * Nearest neighbour function to compare to r is the specified norm.
+	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
+	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
+	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
 	 */
 	public int countPointsWithinR(int sampleIndex, double r, boolean allowEqualToR) {
 		int count = 0;
@@ -207,7 +218,7 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 		// Check the points with smaller data values first:
 		for (int i = indexInSortedArray - 1; i >= 0; i--) {
 			double theNorm = norm(originalDataSet[sampleIndex],
-					originalDataSet[sortedArrayIndices[i]]);
+					originalDataSet[sortedArrayIndices[i]], normTypeToUse);
 			if ((allowEqualToR  && (theNorm <= r)) ||
 				(!allowEqualToR && (theNorm < r))) {
 				count++;
@@ -219,7 +230,7 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 		// Next check the points with larger data values:
 		for (int i = indexInSortedArray + 1; i < numObservations; i++) {
 			double theNorm = norm(originalDataSet[sampleIndex],
-					originalDataSet[sortedArrayIndices[i]]);
+					originalDataSet[sortedArrayIndices[i]], normTypeToUse);
 			if ((allowEqualToR  && (theNorm <= r)) ||
 				(!allowEqualToR && (theNorm < r))) {
 				count++;
@@ -232,10 +243,57 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 	}
 	
 	/**
+	 * Count the number of points within norm r for a given
+	 *  sample index in the data set. The node itself is 
+	 *  excluded from the search.
+	 * Nearest neighbour function to compare to r is the specified norm.
+	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
+	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
+	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
+	 */
+	public Collection<NeighbourNodeData> findPointsWithinR(int sampleIndex, double r, boolean allowEqualToR) {
+		Vector<NeighbourNodeData> pointsWithinR = new Vector<NeighbourNodeData>();
+		// Find where this node sits in the sorted array:
+		int indexInSortedArray = indicesInSortedArray[sampleIndex];
+		// Check the points with smaller data values first:
+		for (int i = indexInSortedArray - 1; i >= 0; i--) {
+			double theNorm = norm(originalDataSet[sampleIndex],
+					originalDataSet[sortedArrayIndices[i]], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r)) ||
+				(!allowEqualToR && (theNorm < r))) {
+				pointsWithinR.add(
+					new NeighbourNodeData(sortedArrayIndices[i],
+							new double[] {theNorm}, theNorm));
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		// Next check the points with larger data values:
+		for (int i = indexInSortedArray + 1; i < numObservations; i++) {
+			double theNorm = norm(originalDataSet[sampleIndex],
+					originalDataSet[sortedArrayIndices[i]], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r)) ||
+				(!allowEqualToR && (theNorm < r))) {
+				pointsWithinR.add(
+						new NeighbourNodeData(sortedArrayIndices[i],
+								new double[] {theNorm}, theNorm));
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		return pointsWithinR;
+	}
+	
+	/**
 	 * Count the number of points strictly within norm r for a given
 	 *  sample index in the data set. The node itself is 
 	 *  excluded from the search.
 	 * Nearest neighbour function to compare to r is the specified norm.
+	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
+	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
+	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
 	 * 
 	 */
 	public int countPointsStrictlyWithinR(int sampleIndex, double r) {
@@ -243,12 +301,42 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 	}
 	
 	/**
+	 * Return a collection of points strictly within norm r for a given
+	 *  sample index in the data set. The node itself is 
+	 *  excluded from the search.
+	 * Nearest neighbour function to compare to r is the specified norm.
+	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
+	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
+	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
+	 * 
+	 */
+	public Collection<NeighbourNodeData> findPointsStrictlyWithinR(int sampleIndex, double r) {
+		return findPointsWithinR(sampleIndex, r, false);
+	}
+
+	/**
 	 * Count the number of points within or at norm r for a given
 	 *  sample index in the data set. The node itself is 
 	 *  excluded from the search.
 	 * Nearest neighbour function to compare to r is the specified norm.
+	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
+	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
+	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
 	 */
 	public int countPointsWithinOrOnR(int sampleIndex, double r) {
 		return countPointsWithinR(sampleIndex, r, true);
+	}
+
+	/**
+	 * Return a collection of points within or at norm r for a given
+	 *  sample index in the data set. The node itself is 
+	 *  excluded from the search.
+	 * Nearest neighbour function to compare to r is the specified norm.
+	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
+	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
+	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
+	 */
+	public Collection<NeighbourNodeData> findPointsWithinOrOnR(int sampleIndex, double r) {
+		return findPointsWithinR(sampleIndex, r, true);
 	}
 }

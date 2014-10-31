@@ -18,6 +18,7 @@
 
 package infodynamics.utils;
 
+import java.util.Collection;
 import java.util.PriorityQueue;
 
 /**
@@ -186,6 +187,9 @@ public abstract class NearestNeighbourSearcher {
 	 *  excluded from the search.
 	 * Nearest neighbour function to compare to r is a max norm between the
 	 * high-level variables, with norm for each variable being the specified norm.
+	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
+	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
+	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
 	 * 
 	 * @param sampleIndex sample index in the data to find a nearest neighbour
 	 *  for
@@ -198,11 +202,35 @@ public abstract class NearestNeighbourSearcher {
 			boolean allowEqualToR);
 
 	/**
+	 * Return the collection of points within norm r for a given
+	 *  sample index in the data set. The node itself is 
+	 *  excluded from the search.
+	 * Nearest neighbour function to compare to r is a max norm between the
+	 * high-level variables, with norm for each variable being the specified norm.
+	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
+	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
+	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
+	 * 
+	 * @param sampleIndex sample index in the data to find a nearest neighbour
+	 *  for
+	 * @param r radius within which to count points
+	 * @param allowEqualToR if true, then count points at radius r also,
+	 *   otherwise only those strictly within r
+	 * @return the collection of points within r.
+	 */
+	public abstract Collection<NeighbourNodeData> findPointsWithinR(
+			int sampleIndex, double r,
+			boolean allowEqualToR);
+
+	/**
 	 * Count the number of points strictly within norm r for a given
 	 *  sample index in the data set. The node itself is 
 	 *  excluded from the search.
 	 * Nearest neighbour function to compare to r is a max norm between the
 	 * high-level variables, with norm for each variable being the specified norm.
+	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
+	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
+	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
 	 * 
 	 * @param sampleIndex sample index in the data to find a nearest neighbour
 	 *  for
@@ -212,11 +240,31 @@ public abstract class NearestNeighbourSearcher {
 	public abstract int countPointsStrictlyWithinR(int sampleIndex, double r);
 	
 	/**
+	 * Return the collection of points strictly within norm r for a given
+	 *  sample index in the data set. The node itself is 
+	 *  excluded from the search.
+	 * Nearest neighbour function to compare to r is a max norm between the
+	 * high-level variables, with norm for each variable being the specified norm.
+	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
+	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
+	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
+	 * 
+	 * @param sampleIndex sample index in the data to find a nearest neighbour
+	 *  for
+	 * @param r radius within which to count points
+	 * @return the collection of points within r.
+	 */
+	public abstract Collection<NeighbourNodeData> findPointsStrictlyWithinR(int sampleIndex, double r);
+
+	/**
 	 * Count the number of points within or at norm r for a given
 	 *  sample index in the data set. The node itself is 
 	 *  excluded from the search.
 	 * Nearest neighbour function to compare to r is a max norm between the
 	 * high-level variables, with norm for each variable being the specified norm.
+	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
+	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
+	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
 	 * 
 	 * @param sampleIndex sample index in the data to find a nearest neighbour
 	 *  for
@@ -224,4 +272,21 @@ public abstract class NearestNeighbourSearcher {
 	 * @return the count of points within or on r.
 	 */
 	public abstract int countPointsWithinOrOnR(int sampleIndex, double r);
+
+	/**
+	 * Return the collection of points within or at norm r for a given
+	 *  sample index in the data set. The node itself is 
+	 *  excluded from the search.
+	 * Nearest neighbour function to compare to r is a max norm between the
+	 * high-level variables, with norm for each variable being the specified norm.
+	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
+	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
+	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
+	 * 
+	 * @param sampleIndex sample index in the data to find a nearest neighbour
+	 *  for
+	 * @param r radius within which to count points
+	 * @return the collection of points within or on r.
+	 */
+	public abstract Collection<NeighbourNodeData> findPointsWithinOrOnR(int sampleIndex, double r);
 }
