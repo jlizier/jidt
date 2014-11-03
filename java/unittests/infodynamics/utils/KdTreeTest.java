@@ -472,12 +472,21 @@ public class KdTreeTest extends TestCase {
 					data, samples, kdTree, rs[i], true);
 			verifyCountNeighboursWithinRForSeparateArrays(EuclideanUtils.NORM_MAX_NORM,
 					data, samples, kdTree, rs[i], false);
+			// And test the array return variant also:
+			verifyCountNeighboursWithinRForSeparateArraysArrayArgs(EuclideanUtils.NORM_MAX_NORM,
+					data, samples, kdTree, rs[i], true);
+			verifyCountNeighboursWithinRForSeparateArraysArrayArgs(EuclideanUtils.NORM_MAX_NORM,
+					data, samples, kdTree, rs[i], false);
 			// Must test with EuclideanUtils.NORM_EUCLIDEAN_SQUARED instead
 			//  of EuclideanUtils.NORM_EUCLIDEAN if we want the min distances
 			//  to match when tested inside verifyNearestNeighbourForSeparateArrays()
 			verifyCountNeighboursWithinRForSeparateArrays(EuclideanUtils.NORM_EUCLIDEAN_SQUARED,
 					data, samples, kdTree, rs[i], true);
 			verifyCountNeighboursWithinRForSeparateArrays(EuclideanUtils.NORM_EUCLIDEAN_SQUARED,
+					data, samples, kdTree, rs[i], false);
+			verifyCountNeighboursWithinRForSeparateArraysArrayArgs(EuclideanUtils.NORM_EUCLIDEAN_SQUARED,
+					data, samples, kdTree, rs[i], true);
+			verifyCountNeighboursWithinRForSeparateArraysArrayArgs(EuclideanUtils.NORM_EUCLIDEAN_SQUARED,
 					data, samples, kdTree, rs[i], false);
 		}
 	}
@@ -501,6 +510,93 @@ public class KdTreeTest extends TestCase {
 					kdTree.findPointsWithinR(t, r, allowEqualToR);
 			int count = pointsWithinR.size();
 			assertTrue(count >= 0);
+			counts[t] = count;
+			totalCount += count;
+		}
+		long endTimeCount = Calendar.getInstance().getTimeInMillis();
+		System.out.printf("All neighbours within %.3f (average of %.3f) found in: %.3f sec\n",
+				r, (double) totalCount / (double) samples,
+				((double) (endTimeCount - startTime)/1000.0));
+		// Now find the neighbour count with a naive all-pairs comparison
+		for (int t = 0; t < samples; t++) {
+			int naiveCount = 0;
+			for (int t2 = 0; t2 < samples; t2++) {
+				double norm = Double.POSITIVE_INFINITY;
+				if (t2 != t) {
+					double maxNorm = 0;
+					for (int v = 0; v < variables; v++) {
+						double normForThisVariable = normCalculator.norm(
+								data[v][t], data[v][t2]);
+						if (maxNorm < normForThisVariable) {
+							maxNorm = normForThisVariable;
+						}
+					}
+					norm = maxNorm;
+				}
+				if ((!allowEqualToR && (norm < r)) ||
+					( allowEqualToR && (norm <= r))) {
+					naiveCount++;
+				}
+			}
+			if (naiveCount != counts[t]) {
+				System.out.printf("All pairs    : count %d\n", naiveCount);
+				System.out.printf("kdTree search: count %d\n", counts[t]);
+			}
+			assertEquals(naiveCount, counts[t]);
+		}
+		long endTimeValidate = Calendar.getInstance().getTimeInMillis();
+		System.out.printf("All neighbours within %.3f (average of %.3f) validated in: %.3f sec\n",
+				r, (double) totalCount / (double) samples,
+				((double) (endTimeValidate - endTimeCount)/1000.0));
+	}
+
+	private void verifyCountNeighboursWithinRForSeparateArraysArrayArgs(int normType,
+			double[][][] data, int samples, KdTree kdTree, double r,
+			boolean allowEqualToR) {
+		
+		int variables = data.length;
+		
+		// Set up the given norm type:
+		EuclideanUtils normCalculator = new EuclideanUtils(normType);
+		kdTree.setNormType(normType);
+		
+		long startTime = Calendar.getInstance().getTimeInMillis();
+		int totalCount = 0;
+		int[] counts = new int[samples];
+		boolean[] withinR = new boolean[samples];
+		int[] indicesWithinR = new int[samples];
+		for (int t = 0; t < samples; t++) {
+			// int count = kdTree.countPointsWithinR(t, r, allowEqualToR);
+			kdTree.findPointsWithinR(t, r, allowEqualToR, withinR, indicesWithinR);
+			int count = 0;
+			// Run through the list of points returned as within r and check them
+			for (int t2 = 0; indicesWithinR[t2] != -1; t2++) {
+				count++;
+				assertTrue(withinR[indicesWithinR[t2]]);
+				// Reset this marker
+				withinR[indicesWithinR[t2]] = false;
+				// Check that it's really within r
+				double maxNorm = 0;
+				for (int v = 0; v < variables; v++) {
+					double normForThisVariable = normCalculator.norm(
+							data[v][t], data[v][indicesWithinR[t2]]);
+					if (maxNorm < normForThisVariable) {
+						maxNorm = normForThisVariable;
+					}
+				}
+				
+				assertTrue((!allowEqualToR && (maxNorm < r)) ||
+						( allowEqualToR && (maxNorm <= r)));
+			}
+			// Check that there were no other points marked as within r:
+			int count2 = 0;
+			for (int t2 = 0; t2 < samples; t2++) {
+				if (withinR[t2]) {
+					count2++;
+				}
+			}
+			assertEquals(0, count2); // We set all the ones that should have been true to false already
+			// Now reset the boolean array
 			counts[t] = count;
 			totalCount += count;
 		}
@@ -687,4 +783,78 @@ public class KdTreeTest extends TestCase {
 				((double) (endTimeValidate - startTime)/1000.0));
 	}
 
+	public void testAdditionalCriteria() throws Exception {
+		validateAdditionalCriteria(3, 3, true);
+		validateAdditionalCriteria(3, 3, false);
+		// The following will include a little unit testing
+		//  of UnivariateNearestNeighbourSearcher
+		//  for the data0 in both cases, and the remaining data in 
+		//  the last:
+		validateAdditionalCriteria(3, 1, false);
+		validateAdditionalCriteria(2, 1, false);
+	}
+	
+	public void validateAdditionalCriteria(int variables,
+			int dimensionsPerVariable, boolean allowEqualsR) throws Exception {
+		int samples = 1000;
+		double[][][] data = new double[variables][][];
+		double[][][] dataAfter1 = new double[variables-1][][];
+		for (int v = 0; v < variables; v++) {
+			data[v] = rg.generateNormalData(samples, dimensionsPerVariable, 0, 1);
+			if (v > 0) {
+				dataAfter1[v-1] = data[v];
+			}
+		}
+		double[][] data1 = data[0];
+
+		long startTime = Calendar.getInstance().getTimeInMillis();
+		int[] dimensions = new int[variables];
+		for (int v = 0; v < variables; v++) {
+			dimensions[v] = dimensionsPerVariable;
+		}
+		int[] dimensionsAfter1 = new int[variables-1];
+		for (int v = 1; v < variables; v++) {
+			dimensionsAfter1[v-1] = dimensionsPerVariable;
+		}
+		KdTree kdTree = new KdTree(dimensions, data);
+		NearestNeighbourSearcher nnSearcherExceptVar1 =
+				NearestNeighbourSearcher.create(dimensionsAfter1, dataAfter1);
+		NearestNeighbourSearcher nnSearcherVar1 =
+				NearestNeighbourSearcher.create(data1);
+		long endTimeTree = Calendar.getInstance().getTimeInMillis();
+		System.out.printf("Additional criteria test: Tree of %d points constructed in: %.3f sec\n",
+				samples, ((double) (endTimeTree - startTime)/1000.0));
+
+		double[] r1 = {1.0};
+		boolean[] isWithinR = new boolean[samples];
+		int[] indicesWithinR = new int[samples+1];
+		for (int i = 0; i < r1.length; i++) {
+			for (int t = 0; t < samples; t++) {
+				// Establish our ground truth:
+				int count = kdTree.countPointsWithinR(t, r1[i], allowEqualsR);
+				// Alternative if we need to debug:
+				// Collection<NeighbourNodeData> coll = kdTree.findPointsWithinR(t, r1[i], allowEqualsR);
+				// int count = coll.size();
+				
+				// Now search in variable 1 first, then use that 
+				//  to help the others:
+				nnSearcherVar1.findPointsWithinR(t, r1[i], allowEqualsR,
+						isWithinR, indicesWithinR);
+				int countUsingVar1 = kdTree.countPointsWithinR(t, r1[i],
+						allowEqualsR, 0, isWithinR);
+				assertEquals(count, countUsingVar1);
+				
+				// And then search the kdTree which does not have variable 1:
+				int countAdditionalCriteria =
+						nnSearcherExceptVar1.countPointsWithinR(t, r1[i],
+								allowEqualsR, isWithinR);
+				assertEquals(count, countAdditionalCriteria);
+				
+				// Finally, reset our boolean array:
+				for (int t2 = 0; indicesWithinR[t2] != -1; t2++) {
+					isWithinR[indicesWithinR[t2]] = false;
+				}
+			}
+		}
+	}
 }
