@@ -81,6 +81,10 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 		double sumNyz = 0;
 		double sumNz = 0;
 		
+		// Arrays used for fast searching on conditionals with a marginal:
+		boolean[] isWithinRForConditionals = new boolean[totalObservations];
+		int[] indicesWithinRForConditionals = new int[totalObservations+1];
+
 		for (int t = startTimePoint; t < startTimePoint + numTimePoints; t++) {
 			// Compute eps for this time step by
 			//  finding the kth closest neighbour for point t:
@@ -89,17 +93,68 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 			// First element in the PQ is the kth NN,
 			//  and epsilon = kthNnData.distance
 			NeighbourNodeData kthNnData = nnPQ.poll();
-						
-			// Count the number of points whose x distance is less
-			//  than eps, and whose y distance is less than
-			//  epsilon = kthNnData.distance
-			int n_xz = kdTreeVar1Conditional.countPointsStrictlyWithinR(
-							t, kthNnData.distance);
-			int n_yz = kdTreeVar2Conditional.countPointsStrictlyWithinR(
-							t, kthNnData.distance);
-			int n_z = nnSearcherConditional.countPointsStrictlyWithinR(
-					t, kthNnData.distance);
 			
+			// Now count the points in the conditional space, and 
+			//  the var1-conditional and var2-conditional spaces.
+			// We have 3 coded options for how to do this:
+			
+			/* Option A -- straightforward way using each k-d tree separately:
+			int n_xz = kdTreeVar1Conditional.countPointsStrictlyWithinR(
+					t, kthNnData.distance);
+			int n_yz = kdTreeVar2Conditional.countPointsStrictlyWithinR(
+					t, kthNnData.distance);
+			int n_z = nnSearcherConditional.countPointsStrictlyWithinR(
+			t, kthNnData.distance);
+			*/ // end option A
+			
+			/* Option B -- 
+			 * Select all points within conditional z, then check x and y norms for
+			 *  these points only. Works better than A if few points qualify for the conditionals
+			 *  (e.g. large multivariate conditional) but not so well for 
+			 *  many qualifying points (e.g. low dimensional conditional).
+			 *   
+			Collection<NeighbourNodeData> z_pointsWithinR = 
+					nnSearcherConditional.findPointsStrictlyWithinR(
+							t, kthNnData.distance);
+			int n_z = z_pointsWithinR.size();
+			
+			int n_xz = 0, n_yz = 0;
+			for(NeighbourNodeData zNeighbour :  z_pointsWithinR) {
+				if (KdTree.normWithAbort(
+						var1Observations[t],
+						var1Observations[zNeighbour.sampleIndex],
+						kthNnData.distance, normType) < kthNnData.distance) {
+					n_xz++;
+				}
+				if (KdTree.normWithAbort(
+						var2Observations[t],
+						var2Observations[zNeighbour.sampleIndex],
+						kthNnData.distance, normType) < kthNnData.distance) {
+					n_yz++;
+				}
+			}
+			 */ // end option B
+			
+			// Option C --
+			// Identify the points satisfying the conditional criteria, then use
+			//  the knowledge of which points made this cut to speed up the searching
+			//  in the conditional-marginal spaces:
+			// 1. Identify the n_z points within the conditional boundaries:
+			nnSearcherConditional.findPointsWithinR(t, kthNnData.distance,
+					false, isWithinRForConditionals, indicesWithinRForConditionals);
+			// 2. Then compute n_xz and n_yz harnessing our knowledge of
+			//  which points qualified for the conditional already:
+			int n_xz = kdTreeVar1Conditional.countPointsWithinR(t, kthNnData.distance,
+					false, 1, isWithinRForConditionals);
+			int n_yz = kdTreeVar2Conditional.countPointsWithinR(t, kthNnData.distance,
+					false, 1, isWithinRForConditionals);
+			// 3. Finally, reset our boolean array for its next use while we count n_z:
+			int n_z;
+			for (n_z = 0; indicesWithinRForConditionals[n_z] != -1; n_z++) {
+				isWithinRForConditionals[indicesWithinRForConditionals[n_z]] = false;
+			}
+			// end option C
+
 			sumNxz += n_xz;
 			sumNyz += n_yz;
 			sumNz += n_z;

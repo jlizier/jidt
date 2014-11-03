@@ -243,7 +243,7 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 	}
 	
 	/**
-	 * Count the number of points within norm r for a given
+	 * Find the collection of points within norm r for a given
 	 *  sample index in the data set. The node itself is 
 	 *  excluded from the search.
 	 * Nearest neighbour function to compare to r is the specified norm.
@@ -287,7 +287,7 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 	}
 	
 	/**
-	 * Count the number of points strictly within norm r for a given
+	 * Record the collection of points within norm r for a given
 	 *  sample index in the data set. The node itself is 
 	 *  excluded from the search.
 	 * Nearest neighbour function to compare to r is the specified norm.
@@ -295,48 +295,100 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
 	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
 	 * 
-	 */
-	public int countPointsStrictlyWithinR(int sampleIndex, double r) {
-		return countPointsWithinR(sampleIndex, r, false);
-	}
-	
-	/**
-	 * Return a collection of points strictly within norm r for a given
-	 *  sample index in the data set. The node itself is 
-	 *  excluded from the search.
-	 * Nearest neighbour function to compare to r is the specified norm.
-	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
-	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
-	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
+	 * <p>The recording of nearest neighbours is made within the isWithinR
+	 *  and indicesWithinR arrays, which must be constructed before
+	 *  calling this method, with length at or exceeding the total
+	 *  number of data points. indicesWithinR is 
+	 * </p> 
 	 * 
 	 */
-	public Collection<NeighbourNodeData> findPointsStrictlyWithinR(int sampleIndex, double r) {
-		return findPointsWithinR(sampleIndex, r, false);
+	public void findPointsWithinR(
+			int sampleIndex, double r, boolean allowEqualToR,
+			boolean[] isWithinR, int[] indicesWithinR) {
+		int indexInIndicesWithinR = 0;
+		// Find where this node sits in the sorted array:
+		int indexInSortedArray = indicesInSortedArray[sampleIndex];
+		// Check the points with smaller data values first:
+		for (int i = indexInSortedArray - 1; i >= 0; i--) {
+			double theNorm = norm(originalDataSet[sampleIndex],
+					originalDataSet[sortedArrayIndices[i]], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r)) ||
+				(!allowEqualToR && (theNorm < r))) {
+				isWithinR[sortedArrayIndices[i]] = true;
+				indicesWithinR[indexInIndicesWithinR++] = sortedArrayIndices[i];
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		// Next check the points with larger data values:
+		for (int i = indexInSortedArray + 1; i < numObservations; i++) {
+			double theNorm = norm(originalDataSet[sampleIndex],
+					originalDataSet[sortedArrayIndices[i]], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r)) ||
+				(!allowEqualToR && (theNorm < r))) {
+				isWithinR[sortedArrayIndices[i]] = true;
+				indicesWithinR[indexInIndicesWithinR++] = sortedArrayIndices[i];
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		// Write the terminating integer into the indicesWithinR array:
+		indicesWithinR[indexInIndicesWithinR++] = -1;
 	}
 
-	/**
-	 * Count the number of points within or at norm r for a given
-	 *  sample index in the data set. The node itself is 
-	 *  excluded from the search.
-	 * Nearest neighbour function to compare to r is the specified norm.
-	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
-	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
-	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
-	 */
-	public int countPointsWithinOrOnR(int sampleIndex, double r) {
-		return countPointsWithinR(sampleIndex, r, true);
-	}
-
-	/**
-	 * Return a collection of points within or at norm r for a given
-	 *  sample index in the data set. The node itself is 
-	 *  excluded from the search.
-	 * Nearest neighbour function to compare to r is the specified norm.
-	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
-	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
-	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
-	 */
-	public Collection<NeighbourNodeData> findPointsWithinOrOnR(int sampleIndex, double r) {
-		return findPointsWithinR(sampleIndex, r, true);
+	@Override
+	public int countPointsWithinR(int sampleIndex, double r, boolean allowEqualToR,
+			boolean[] additionalCriteria) {
+		
+		int count = 0;
+		// Find where this node sits in the sorted array:
+		int indexInSortedArray = indicesInSortedArray[sampleIndex];
+		// Check the points with smaller data values first:
+		for (int i = indexInSortedArray - 1; i >= 0; i--) {
+			if (!additionalCriteria[sortedArrayIndices[i]]) {
+				// This point failed the additional criteria,
+				//  so skip checking it.
+				// We check this first, even though it's the norm 
+				//  that really determines whether we need to continue
+				//  checking or not. In some circumstances this may be
+				//  slower, but for our main application - KSG conditional MI -
+				//  this should be faster.
+				continue;
+			}
+			double theNorm = norm(originalDataSet[sampleIndex],
+					originalDataSet[sortedArrayIndices[i]], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r)) ||
+				(!allowEqualToR && (theNorm < r))) {
+				count++;
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		// Next check the points with larger data values:
+		for (int i = indexInSortedArray + 1; i < numObservations; i++) {
+			if (!additionalCriteria[sortedArrayIndices[i]]) {
+				// This point failed the additional criteria,
+				//  so skip checking it.
+				// We check this first, even though it's the norm 
+				//  that really determines whether we need to continue
+				//  checking or not. In some circumstances this may be
+				//  slower, but for our main application - KSG conditional MI -
+				//  this should be faster.
+				continue;
+			}
+			double theNorm = norm(originalDataSet[sampleIndex],
+					originalDataSet[sortedArrayIndices[i]], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r)) ||
+				(!allowEqualToR && (theNorm < r))) {
+				count++;
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		return count;
 	}
 }
