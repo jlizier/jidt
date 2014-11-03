@@ -202,14 +202,8 @@ public abstract class NearestNeighbourSearcher {
 			boolean allowEqualToR);
 
 	/**
-	 * Return the collection of points within norm r for a given
-	 *  sample index in the data set. The node itself is 
-	 *  excluded from the search.
-	 * Nearest neighbour function to compare to r is a max norm between the
-	 * high-level variables, with norm for each variable being the specified norm.
-	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
-	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
-	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
+	 * As per {@link #countPointsWithinR(int, double, boolean)}
+	 * however returns a collection rather than a count.
 	 * 
 	 * @param sampleIndex sample index in the data to find a nearest neighbour
 	 *  for
@@ -223,70 +217,136 @@ public abstract class NearestNeighbourSearcher {
 			boolean allowEqualToR);
 
 	/**
-	 * Count the number of points strictly within norm r for a given
-	 *  sample index in the data set. The node itself is 
-	 *  excluded from the search.
-	 * Nearest neighbour function to compare to r is a max norm between the
-	 * high-level variables, with norm for each variable being the specified norm.
-	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
-	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
-	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
+	 * As per {@link #countPointsWithinR(int, double, boolean)}
+	 * however records the nearest neighbours made within the isWithinR
+	 *  and indicesWithinR arrays, which must be constructed before
+	 *  calling this method, with length at or exceeding the total
+	 *  number of data points. indicesWithinR is 
+	 * </p> 
+	 * 
+	 * @param sampleIndex sample index in the data to find a nearest neighbour
+	 *  for
+	 * @param r radius within which to count points
+	 * @param allowEqualToR if true, then count points at radius r also,
+	 *   otherwise only those strictly within r
+	 * @param isWithinR the array MUST be passed in with all points set to
+	 *  false initially, and is returned indicating whether each sample was
+	 *  found to be within r of that at sampleIndex.
+	 * @param indicesWithinR a list of array indices
+	 *  for points marked as true in isWithinR, terminated with a -1 value.
+	 */
+	public abstract void findPointsWithinR(
+			int sampleIndex, double r,
+			boolean allowEqualToR, boolean[] isWithinR, int[] indicesWithinR);
+
+	/**
+	 * As per {@link #countPointsWithinR(int, double, boolean)}
+	 * with allowEqualToR == false
 	 * 
 	 * @param sampleIndex sample index in the data to find a nearest neighbour
 	 *  for
 	 * @param r radius within which to count points
 	 * @return the count of points within r.
 	 */
-	public abstract int countPointsStrictlyWithinR(int sampleIndex, double r);
+	public int countPointsStrictlyWithinR(int sampleIndex, double r) {
+		return countPointsWithinR(sampleIndex, r, false);
+	}
 	
 	/**
-	 * Return the collection of points strictly within norm r for a given
-	 *  sample index in the data set. The node itself is 
-	 *  excluded from the search.
-	 * Nearest neighbour function to compare to r is a max norm between the
-	 * high-level variables, with norm for each variable being the specified norm.
-	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
-	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
-	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
+	 * As per {@link #findPointsStrictlyWithinR(int, double) }
+	 * with allowEqualToR == false
 	 * 
 	 * @param sampleIndex sample index in the data to find a nearest neighbour
 	 *  for
 	 * @param r radius within which to count points
 	 * @return the collection of points within r.
 	 */
-	public abstract Collection<NeighbourNodeData> findPointsStrictlyWithinR(int sampleIndex, double r);
+	public Collection<NeighbourNodeData> findPointsStrictlyWithinR(
+			int sampleIndex, double r) {
+		return findPointsWithinR(sampleIndex, r, false);
+	}
 
 	/**
-	 * Count the number of points within or at norm r for a given
-	 *  sample index in the data set. The node itself is 
-	 *  excluded from the search.
-	 * Nearest neighbour function to compare to r is a max norm between the
-	 * high-level variables, with norm for each variable being the specified norm.
-	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
-	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
-	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
+	 * As per {@link #findPointsWithinR(int, double, boolean, boolean[], int[]) }
+	 * with allowEqualToR == false
+	 * 
+	 * @param sampleIndex sample index in the data to find a nearest neighbour
+	 *  for
+	 * @param r radius within which to count points
+	 * @param isWithinR the array should be passed in with all points set to
+	 *  false initially, and is return indicating whether each sample was
+	 *  found to be within r of that at sampleIndex.
+	 * @param indicesWithinR a list of array indices
+	 *  for points marked as true in isWithinR, terminated with a -1 value.
+	 */
+	public void findPointsStrictlyWithinR(
+			int sampleIndex, double r, boolean[] isWithinR, int[] indicesWithinR) {
+		findPointsWithinR(sampleIndex, r, false, isWithinR,
+				indicesWithinR);
+	}
+
+	/**
+	 * As per {@link #countPointsWithinR(int, double, boolean)}
+	 * with allowEqualToR == true
 	 * 
 	 * @param sampleIndex sample index in the data to find a nearest neighbour
 	 *  for
 	 * @param r radius within which to count points
 	 * @return the count of points within or on r.
 	 */
-	public abstract int countPointsWithinOrOnR(int sampleIndex, double r);
+	public int countPointsWithinOrOnR(int sampleIndex, double r) {
+		return countPointsWithinR(sampleIndex, r, true);
+	}
 
 	/**
-	 * Return the collection of points within or at norm r for a given
-	 *  sample index in the data set. The node itself is 
-	 *  excluded from the search.
-	 * Nearest neighbour function to compare to r is a max norm between the
-	 * high-level variables, with norm for each variable being the specified norm.
-	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
-	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
-	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
+	 * As per {@link #findPointsStrictlyWithinR(int, double) }
+	 * with allowEqualToR == true
 	 * 
 	 * @param sampleIndex sample index in the data to find a nearest neighbour
 	 *  for
 	 * @param r radius within which to count points
 	 * @return the collection of points within or on r.
 	 */
-	public abstract Collection<NeighbourNodeData> findPointsWithinOrOnR(int sampleIndex, double r);
+	public Collection<NeighbourNodeData> findPointsWithinOrOnR(
+			int sampleIndex, double r) {
+		return findPointsWithinR(sampleIndex, r, true);
+	}
+
+	/**
+	 * As per {@link #findPointsWithinR(int, double, boolean, boolean[], int[]) }
+	 * with allowEqualToR == true
+	 * 
+	 * @param sampleIndex sample index in the data to find a nearest neighbour
+	 *  for
+	 * @param r radius within which to count points
+	 * @param isWithinR the array should be passed in with all points set to
+	 *  false initially, and is return indicating whether each sample was
+	 *  found to be within r of that at sampleIndex.
+	 * @param indicesWithinR a list of array indices
+	 *  for points marked as true in isWithinR, terminated with a -1 value.
+	 */
+	public void findPointsWithinOrOnR(int sampleIndex, double r,
+			boolean[] isWithinR, int[] indicesWithinR) {
+		findPointsWithinR(sampleIndex, r, true, isWithinR,
+				indicesWithinR);
+	}
+	
+	/**
+	 * As per {@link #countPointsWithinR(int, double, boolean)}
+	 * however each point is subject to also meeting the additional
+	 * criteria of being true in additionalCriteria.
+	 * 
+	 * @param sampleIndex sample index in the data to find a nearest neighbour
+	 *  for
+	 * @param r radius within which to count points
+	 * @param allowEqualToR if true, then count points at radius r also,
+	 *   otherwise only those strictly within r
+	 * @param additionalCriteria array of booleans. Only count a point if it
+	 *  is within r and is true in additionalCrtieria.
+	 * @return the count of points within r.
+	 */
+	public abstract int countPointsWithinR(int sampleIndex, double r,
+			boolean allowEqualToR, boolean[] additionalCriteria);
+
+
 }
