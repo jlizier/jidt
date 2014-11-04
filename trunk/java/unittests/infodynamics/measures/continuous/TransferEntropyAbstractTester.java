@@ -35,6 +35,8 @@ public abstract class TransferEntropyAbstractTester extends TestCase {
 			int timeSteps, int k)
 			throws Exception {
 		
+		System.out.printf("Testing locals average correctly");
+		
 		teCalc.initialise(k);
 		
 		// generate some random data
@@ -67,6 +69,8 @@ public abstract class TransferEntropyAbstractTester extends TestCase {
 	 */
 	public void testComputeSignificanceDoesntAlterAverage(TransferEntropyCalculator teCalc,
 			int timeSteps, int k) throws Exception {
+		
+		System.out.printf("Testing significance doesn't alter average");
 		
 		teCalc.initialise(k);
 		
