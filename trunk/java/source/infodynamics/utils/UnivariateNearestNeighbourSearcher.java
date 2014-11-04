@@ -55,6 +55,15 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 	 */
 	protected int[] indicesInSortedArray = null;
 	
+	public UnivariateNearestNeighbourSearcher(double[][] data) throws Exception {
+		// Ideally we would not call the constructor until after the following check,
+		//  but the constructor must come first in Java.
+		this(MatrixUtils.selectColumn(data, 0));
+		if (data[0].length != 1) {
+			throw new Exception("Cannot define UnivariateNearestNeighbourSearcher for multivariate data");
+		}
+	}
+	
 	public UnivariateNearestNeighbourSearcher(double[] data) throws Exception {
 		this.originalDataSet = data;
 		numObservations = data.length;

@@ -28,6 +28,7 @@ import infodynamics.utils.KdTree;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.NearestNeighbourSearcher;
+import infodynamics.utils.UnivariateNearestNeighbourSearcher;
 
 /**
  * <p>Computes the differential conditional mutual information of two multivariate
@@ -149,10 +150,20 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	 */
 	protected KdTree kdTreeVar1Conditional;
 	/**
+	 * protected univariate neighbour searcher data structure (for fast nearest neighbour searches)
+	 *  representing the (var1) space; used only if var1 is univariate
+	 */
+	protected UnivariateNearestNeighbourSearcher uniNNSearcherVar1;
+	/**
 	 * protected k-d tree data structure (for fast nearest neighbour searches)
 	 *  representing the (var2,conditional) space
 	 */
 	protected KdTree kdTreeVar2Conditional;
+	/**
+	 * protected univariate neighbour searcher data structure (for fast nearest neighbour searches)
+	 *  representing the (var2) space; used only if var2 is univariate
+	 */
+	protected UnivariateNearestNeighbourSearcher uniNNSearcherVar2;
 	/**
 	 * protected data structure (for fast nearest neighbour searches)
 	 *  representing the conditional space.
@@ -179,6 +190,8 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 		kdTreeVar1Conditional = null;
 		kdTreeVar2Conditional = null;
 		nnSearcherConditional = null;
+		uniNNSearcherVar1 = null;
+		uniNNSearcherVar2 = null;
 		super.initialise(dimensions1, dimensions2, dimensionsCond);
 	}
 
@@ -314,14 +327,18 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 		KdTree originalKdTreeJoint = kdTreeJoint;
 		kdTreeJoint = null; // So that it is rebuilt for the new ordering
 		KdTree originalKdTreeVar1Conditional = kdTreeVar1Conditional;
+		UnivariateNearestNeighbourSearcher originalUniNNSearcherVar1 = uniNNSearcherVar1;
 		KdTree originalKdTreeVar2Conditional = kdTreeVar2Conditional;
+		UnivariateNearestNeighbourSearcher originalUniNNSearcherVar2 = uniNNSearcherVar2;
 		if (variableToReorder == 1) {
 			originalData = var1Observations;
-			kdTreeVar1Conditional = null; // So that it is rebuilt for the new ordering
+			kdTreeVar1Conditional = null; // So that it is rebuilt for the new ordering if required
+			uniNNSearcherVar1 = null; // So that it is rebuilt for the new ordering if required
 			var1Observations = MatrixUtils.extractSelectedTimePointsReusingArrays(originalData, reordering);
 		} else {
 			originalData = var2Observations;
 			kdTreeVar2Conditional = null; // So that it is rebuilt for the new ordering
+			uniNNSearcherVar2 = null; // So that it is rebuilt for the new ordering if required
 			var2Observations = MatrixUtils.extractSelectedTimePointsReusingArrays(originalData, reordering);
 		}
 		// Compute the conditional MI
@@ -331,9 +348,11 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 		if (variableToReorder == 1) {
 			var1Observations = originalData;
 			kdTreeVar1Conditional = originalKdTreeVar1Conditional;
+			uniNNSearcherVar1 = originalUniNNSearcherVar1;
 		} else {
 			var2Observations = originalData;
 			kdTreeVar2Conditional = originalKdTreeVar2Conditional;
+			uniNNSearcherVar2 = originalUniNNSearcherVar2;
 		}
 		return newCondMI;
 	}
@@ -392,17 +411,29 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 					new double[][][] {var1Observations, var2Observations, condObservations});
 			kdTreeJoint.setNormType(normType);
 		}
-		if (kdTreeVar1Conditional == null) {
-			kdTreeVar1Conditional = new KdTree(
-					new int[] {dimensionsVar1, dimensionsCond},
-					new double[][][] {var1Observations, condObservations});
-			kdTreeVar1Conditional.setNormType(normType);
+		if (dimensionsVar1 > 1) {
+			if (kdTreeVar1Conditional == null) {
+				kdTreeVar1Conditional = new KdTree(
+						new int[] {dimensionsVar1, dimensionsCond},
+						new double[][][] {var1Observations, condObservations});
+				kdTreeVar1Conditional.setNormType(normType);
+			} 
+		} else { // Univariate variable 1, so we'll search its space alone as this is faster
+			if (uniNNSearcherVar1 == null) {
+				uniNNSearcherVar1 = new UnivariateNearestNeighbourSearcher(var1Observations);
+			}
 		}
-		if (kdTreeVar2Conditional == null) {
-			kdTreeVar2Conditional = new KdTree(
-					new int[] {dimensionsVar2, dimensionsCond},
-					new double[][][] {var2Observations, condObservations});
-			kdTreeVar2Conditional.setNormType(normType);
+		if (dimensionsVar2 > 1) {
+			if (kdTreeVar2Conditional == null) {
+				kdTreeVar2Conditional = new KdTree(
+						new int[] {dimensionsVar2, dimensionsCond},
+						new double[][][] {var2Observations, condObservations});
+				kdTreeVar2Conditional.setNormType(normType);
+			}
+		} else { // Univariate variable 2, so we'll search its space alone as this is faster
+			if (uniNNSearcherVar2 == null) {
+				uniNNSearcherVar2 = new UnivariateNearestNeighbourSearcher(var2Observations);
+			}
 		}
 		if (nnSearcherConditional == null) {
 			nnSearcherConditional = NearestNeighbourSearcher.create(condObservations);
