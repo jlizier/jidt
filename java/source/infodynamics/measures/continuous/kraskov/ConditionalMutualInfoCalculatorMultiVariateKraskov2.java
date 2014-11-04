@@ -89,6 +89,10 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 		double sumInverseCountInJointYZ = 0;
 		double sumInverseCountInJointXZ = 0;
 
+		// Arrays used for fast searching on conditionals with a marginal:
+		boolean[] isWithinRForConditionals = new boolean[totalObservations];
+		int[] indicesWithinRForConditionals = new int[totalObservations+1];
+		
 		for (int t = startTimePoint; t < startTimePoint + numTimePoints; t++) {
 			// Compute eps_x and eps_y and eps_z for this time step by
 			//  finding the kth closest neighbours for point t:
@@ -117,12 +121,50 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 			//  than or equal to eps_z, and whose x and z distances are less
 			//  than or equal to eps_z and eps_x, and whose y and z distance are less
 			//  than or equal to eps_z and eps_y:
-			int n_xz = kdTreeVar1Conditional.countPointsWithinOrOnRs(
+
+			/* Option A -- straightforward way using each k-d tree separately:
+			int n_xz = nnSearcherVar1.countPointsWithinOrOnRs(
 					t, new double[] {eps_x, eps_z});
-			int n_yz = kdTreeVar2Conditional.countPointsWithinOrOnRs(
+			int n_yz = nnSearcherVar2.countPointsWithinOrOnRs(
 					t, new double[] {eps_y, eps_z});
 			int n_z = nnSearcherConditional.countPointsWithinOrOnR(
 					t, eps_z);
+			*/
+			
+			// Option C --
+			// Identify the points satisfying the conditional criteria, then use
+			//  the knowledge of which points made this cut to speed up the searching
+			//  in the conditional-marginal spaces:
+			// 1. Identify the n_z points within the conditional boundaries:
+			nnSearcherConditional.findPointsWithinR(t, eps_z,
+					true, isWithinRForConditionals, indicesWithinRForConditionals);
+			// 2. Then compute n_xz and n_yz harnessing our knowledge of
+			//  which points qualified for the conditional already:
+			int n_xz;
+			if (dimensionsVar1 > 1) {
+				// Check only the x variable against eps_x, use existing results for z
+				n_xz = kdTreeVar1Conditional.countPointsWithinR(t, eps_x,
+						true, 1, isWithinRForConditionals);
+			} else { // Generally faster to search only the marginal space if it is univariate 
+				n_xz = uniNNSearcherVar1.countPointsWithinR(t, eps_x,
+						true, isWithinRForConditionals);
+			}
+			int n_yz;
+			if (dimensionsVar2 > 1) {
+				// Check only the y variable against eps_y, use existing results for z
+				n_yz = kdTreeVar2Conditional.countPointsWithinR(t, eps_y,
+						true, 1, isWithinRForConditionals);
+			} else { // Generally faster to search only the marginal space if it is univariate
+				n_yz = uniNNSearcherVar2.countPointsWithinR(t, eps_y,
+						true, isWithinRForConditionals);
+			}
+			// 3. Finally, reset our boolean array for its next use while we count n_z:
+			int n_z;
+			for (n_z = 0; indicesWithinRForConditionals[n_z] != -1; n_z++) {
+				isWithinRForConditionals[indicesWithinRForConditionals[n_z]] = false;
+			}
+			// end option C
+
 			
 			sumNxz += n_xz;
 			sumNyz += n_yz;

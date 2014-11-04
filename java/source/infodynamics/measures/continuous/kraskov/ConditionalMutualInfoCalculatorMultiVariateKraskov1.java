@@ -81,6 +81,9 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 		double sumNyz = 0;
 		double sumNz = 0;
 		
+		long knnTime = 0, conditionalTime = 0,
+				conditionalXTime = 0, conditionalYTime = 0;
+		
 		// Arrays used for fast searching on conditionals with a marginal:
 		boolean[] isWithinRForConditionals = new boolean[totalObservations];
 		int[] indicesWithinRForConditionals = new int[totalObservations+1];
@@ -88,8 +91,11 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 		for (int t = startTimePoint; t < startTimePoint + numTimePoints; t++) {
 			// Compute eps for this time step by
 			//  finding the kth closest neighbour for point t:
+			long methodStartTime = Calendar.getInstance().getTimeInMillis();
 			PriorityQueue<NeighbourNodeData> nnPQ =
 					kdTreeJoint.findKNearestNeighbours(k, t);
+			knnTime += Calendar.getInstance().getTimeInMillis() -
+					methodStartTime;
 			// First element in the PQ is the kth NN,
 			//  and epsilon = kthNnData.distance
 			NeighbourNodeData kthNnData = nnPQ.poll();
@@ -99,6 +105,8 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 			// We have 3 coded options for how to do this:
 			
 			/* Option A -- straightforward way using each k-d tree separately:
+			 * To use this, need to construct kdTreeVar1Conditional and
+			 *  kdTreeVar2Conditional regardless of dimensionsVar1 and 2.
 			int n_xz = kdTreeVar1Conditional.countPointsStrictlyWithinR(
 					t, kthNnData.distance);
 			int n_yz = kdTreeVar2Conditional.countPointsStrictlyWithinR(
@@ -140,14 +148,43 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 			//  the knowledge of which points made this cut to speed up the searching
 			//  in the conditional-marginal spaces:
 			// 1. Identify the n_z points within the conditional boundaries:
+			if (debug) {
+				methodStartTime = Calendar.getInstance().getTimeInMillis();
+			}
 			nnSearcherConditional.findPointsWithinR(t, kthNnData.distance,
 					false, isWithinRForConditionals, indicesWithinRForConditionals);
+			if (debug) {
+				conditionalTime += Calendar.getInstance().getTimeInMillis() -
+						methodStartTime;
+				methodStartTime = Calendar.getInstance().getTimeInMillis();
+			}
 			// 2. Then compute n_xz and n_yz harnessing our knowledge of
 			//  which points qualified for the conditional already:
-			int n_xz = kdTreeVar1Conditional.countPointsWithinR(t, kthNnData.distance,
-					false, 1, isWithinRForConditionals);
-			int n_yz = kdTreeVar2Conditional.countPointsWithinR(t, kthNnData.distance,
-					false, 1, isWithinRForConditionals);
+			int n_xz;
+			if (dimensionsVar1 > 1) {
+				n_xz = kdTreeVar1Conditional.countPointsWithinR(t, kthNnData.distance,
+						false, 1, isWithinRForConditionals);
+			} else { // Generally faster to search only the marginal space if it is univariate 
+				n_xz = uniNNSearcherVar1.countPointsWithinR(t, kthNnData.distance,
+						false, isWithinRForConditionals);
+			}
+			if (debug) {
+				conditionalXTime += Calendar.getInstance().getTimeInMillis() -
+						methodStartTime;
+				methodStartTime = Calendar.getInstance().getTimeInMillis();
+			}
+			int n_yz;
+			if (dimensionsVar2 > 1) {
+				n_yz = kdTreeVar2Conditional.countPointsWithinR(t, kthNnData.distance,
+						false, 1, isWithinRForConditionals);
+			} else { // Generally faster to search only the marginal space if it is univariate
+				n_yz = uniNNSearcherVar2.countPointsWithinR(t, kthNnData.distance,
+						false, isWithinRForConditionals);
+			}
+			if (debug) {
+				conditionalYTime += Calendar.getInstance().getTimeInMillis() -
+					methodStartTime;
+			}
 			// 3. Finally, reset our boolean array for its next use while we count n_z:
 			int n_z;
 			for (n_z = 0; indicesWithinRForConditionals[n_z] != -1; n_z++) {
@@ -179,6 +216,11 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 			System.out.println("Subset " + startTimePoint + ":" +
 					(startTimePoint + numTimePoints) + " Calculation time: " +
 					((endTime - startTime)/1000.0) + " sec" );
+			System.out.println("Total exec times for: ");
+			System.out.println("\tknn search: " + (knnTime/1000.0));
+			System.out.println("\tz   search: " + (conditionalTime/1000.0));
+			System.out.println("\tzx  search: " + (conditionalXTime/1000.0));
+			System.out.println("\tzy  search: " + (conditionalYTime/1000.0));
 		}
 
 		// Select what to return:
