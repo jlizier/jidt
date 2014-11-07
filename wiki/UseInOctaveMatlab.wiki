@@ -24,6 +24,8 @@ For _static_ methods, note that you can simply call it on the class itself, or o
 
 If you get any `java.lang.OutOfMemoryError` errors, then you need to increase the heap space allocated by Matlab (it is usually set to a rather low value) -- doing this is described e.g. [http://www.mathworks.com.au/help/matlab/matlab_env/preferences.html#bsemees-1 here].
 
+Finally, sometimes Matlab can give warnings such as `Warning: Objects of infodynamics/measures/continuous/kraskovTransferEntropyCalculatorMultiVariateKraskov class exist - not clearing java`. To get rid of these errors, then you can clear the relevant Java variables in Matlab, e.g. `clear teCalc`, or clear all Java variables: `clear java`.
+
 See longer code examples at OctaveMatlabExamples.
 
 = Use in Octave =
