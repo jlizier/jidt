@@ -17,6 +17,9 @@ This page contains the following code examples:
   * [#Example_4_-_Transfer_entropy_on_continuous_data_using_Kraskov_es Example 4 - Transfer entropy on continuous data using Kraskov estimators]
   * [#Example_5_-_Multivariate_transfer_entropy_on_binary_data Example 5 - Multivariate transfer entropy on binary data]
   * [#Example_6_-_Dynamic_dispatch_with_Mutual_info_calculator Example 6 - Dynamic dispatch with Mutual info calculator]
+  * Example 7 - coming soon
+  * Example 8 - coming soon
+  * [#Example_9_-_Transfer_entropy_on_multivariate_continuous_data_using_Kraskov Example 9 - Transfer entropy on multivariate continuous data using Kraskov estimators]
 
 ==Be aware==
 
@@ -251,4 +254,50 @@ miValue = miCalc.computeAverageLocalOfObservations();
 
 fprintf('MI calculator %s\ncomputed the joint MI as %.5f\n', ...
 		implementingClass, miValue);
+}}}
+
+= Example 9 - Transfer entropy on multivariate continuous data using Kraskov estimators =
+
+[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/java/infodynamics/demos/octave/example9TeContinuousMultivariateDataKraskov.m example9TeContinuousMultivariateDataKraskov.m] - Transfer entropy (TE) calculation on *multivariate* continuous-valued data using the Kraskov-estimator TE calculator (i.e. computing transfer from a multivariate source to a multivariate destination). The original code for this example was contributed by [http://www.nld.ds.mpg.de/people/priesemann Viola Priesemann].
+
+{{{
+% Change location of jar to match yours:
+javaaddpath('../../infodynamics.jar')
+
+% Generate some random normalised data.
+numObservations = 10000;
+covariance=0.4; 
+
+% Define the dimension of the states of the RVs
+sourceDim = 2;  
+destDim = 3;
+
+sourceMVArray = randn(numObservations, sourceDim);
+% Set first two columns of dest to copy source values
+destMVArray  = [zeros(1,sourceDim); covariance*(sourceMVArray(1:numObservations-1,:)) + (1-covariance)*randn(numObservations-1, sourceDim)];
+% Set a third colum to be randomised
+destMVArray(:,3) = randn(numObservations, 1);
+sourceMVArray2= randn(numObservations, sourceDim); % Uncorrelated source
+
+% Create a TE calculator and run it:
+teCalc=javaObject('infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorMultiVariateKraskov');
+teCalc.initialise(1,sourceDim,destDim); % Use history length 1 (Schreiber k=1)
+teCalc.setProperty('k', '4'); % Use Kraskov parameter K=4 for 4 nearest points
+teCalc.setObservations(octaveToJavaDoubleMatrix(sourceMVArray), octaveToJavaDoubleMatrix(destMVArray));
+% Perform calculation with correlated source:
+result = teCalc.computeAverageLocalOfObservations();
+% Note that the calculation is a random variable (because the generated
+%  data is a set of random variables) - the result will be of the order
+%  of what we expect, but not exactly equal to it; in fact, there will
+%  be some variance around it. It will probably be biased down here
+%  due to small correlations between the supposedly uncorrelated variables.
+fprintf('TE result %.4f nats; expected to be close to %.4f nats for the two correlated Gaussians\n', ...
+result, 2*log(1/(1-covariance^2)));
+
+% Perform calculation with uncorrelated source:
+teCalc.initialise(1,sourceDim,destDim); % Initialise leaving the parameters the same
+teCalc.setObservations(octaveToJavaDoubleMatrix(sourceMVArray2), octaveToJavaDoubleMatrix(destMVArray));
+result2 = teCalc.computeAverageLocalOfObservations();
+fprintf('TE result %.4f nats; expected to be close to 0 nats for these uncorrelated Gaussians\n', result2);
+clear teCalc
 }}}
