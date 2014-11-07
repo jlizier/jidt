@@ -19,7 +19,7 @@ This page contains the following code examples:
   * [#Example_6_-_Dynamic_dispatch_with_Mutual_info_calculator Example 6 - Dynamic dispatch with Mutual info calculator]
   * Example 7 - coming soon
   * Example 8 - coming soon
-  * [#Example_9_-_Transfer_entropy_on_multivariate_continuous_data_using_Kraskov Example 9 - Transfer entropy on multivariate continuous data using Kraskov estimators]
+  * [#Example_9_-_Transfer_entropy_on_multivariate_continuous_data_usi Example 9 - Transfer entropy on multivariate continuous data using Kraskov estimators]
 
 ==Be aware==
 
