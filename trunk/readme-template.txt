@@ -1,5 +1,6 @@
 Java Information Dynamics Toolkit (JIDT)
-Copyright (C) 2012 Joseph T. Lizier
+Copyright (C) 2012-2014 Joseph T. Lizier
+Copyright (C) 2014 Joseph T. Lizier and Ipek Özdemir
 
 Version @VERSION@ (see release notes below)
 
@@ -83,6 +84,10 @@ Several sets of demonstration code are distributed with the toolkit:
 
    iii. demos/r -- basic examples on easily using the Java toolkit from R -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/R_Examples
 
+   iv. demos/julia -- basic examples on easily using the Java toolkit from Julia -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/JuliaExamples
+
+   v. demos/clojure -- basic examples on easily using the Java toolkit from Clojure -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/Clojure_Examples
+
  c. demos/octave/CellularAutomata -- using the Java toolkit to plot local information dynamics profiles in cellular automata; the toolkit is run under Octave or Matlab -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/CellularAutomataDemos
  
  d. demos/octave/SchreiberTransferEntropyExamples -- recreates the transfer entropy examples in Schreiber's original paper presenting this measure; shows the correct parameter settings to reproduce these results  -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/SchreiberTeDemos
@@ -101,7 +106,9 @@ Several sets of demonstration code are distributed with the toolkit:
 
 Please cite your use of this toolkit as:
 
-Joseph T. Lizier, "JIDT: An information-theoretic toolkit for studying the dynamics of complex systems", 2014, arXiv:1408.3270
+Joseph T. Lizier, "JIDT: An information-theoretic toolkit for studying the dynamics of complex systems", Frontiers in Robotics and AI 1:11, 2014; doi:10.3389/frobt.2014.00011
+
+A pre-print of this paper is distributed with this toolkit (InfoDynamicsToolkit.pdf) and is available at arXiv:1408.3270
 
 =============
    Notices
@@ -120,6 +127,16 @@ Notices for this software are found in the notices/JAMA directory.
 ===============
  Release notes
 ===============
+
+v1.1 14/11/2014 at r566
+-----------------------
+Implemented Fast Nearest Neighbour Search for Kraskov-Stögbauer-Grassberger (KSG) estimators for MI, conditional MI, TE, conditional TE, AIS, Predictive info, and multi-information. This includes a general (multivariate) k-d tree implementation;
+Added multi-threading (using all available processors by default) for the KSG estimators -- code contributed by Ipek Özdemir;
+Added Predictive information / Excess entropy implementations for KSG, kernel and Gaussian estimators;
+Added R, Julia, and Clojure demos;
+Added Windows batch files for the Simple Java Demos;
+Added property for adding a small amount of noise to data in all KSG estimators;
+
 
 v1.0 14/8/2014 at r434
 ----------------------
