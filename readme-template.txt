@@ -128,7 +128,7 @@ Notices for this software are found in the notices/JAMA directory.
  Release notes
 ===============
 
-v1.1 14/11/2014 at r570
+v1.1 14/11/2014 at r571
 -----------------------
 Implemented Fast Nearest Neighbour Search for Kraskov-Stögbauer-Grassberger (KSG) estimators for MI, conditional MI, TE, conditional TE, AIS, Predictive info, and multi-information. This includes a general (multivariate) k-d tree implementation;
 Added multi-threading (using all available processors by default) for the KSG estimators -- code contributed by Ipek Özdemir;

@@ -177,7 +177,7 @@
 			<fileset file="InfoDynamicsToolkit.pdf"/>
 			<fileset file="${versionfile}"/>
 			<zipfileset dir="java" includes="**/*.java" prefix="java"/>
-			<zipfileset dir="demos" includes="**/*.*,**/*" excludes="clojure/deploy" prefix="demos"/>
+			<zipfileset dir="demos" includes="**/*.*,**/*" excludes="clojure/deploy,clojure/deploy/*.*,python/*.pyc" prefix="demos"/>
 			<zipfileset dir="javadocs" includes="**/*.*,**/*" prefix="javadocs"/>
 			<zipfileset dir="notices" includes="**/*.*,**/*" prefix="notices"/>
 		</zip>
