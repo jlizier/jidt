@@ -204,8 +204,10 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 			if (returnLocals) {
 				localCondMi[t-startTimePoint] = digammaK - digammaNxzPlusOne - digammaNyzPlusOne + digammaNzPlusOne;
 				if (debug) {
-					System.out.printf("t=%d, n_xz=%d, n_yz=%d, n_z=%d, local=%.4f\n",
-							t, n_xz, n_yz, n_z, localCondMi[t-startTimePoint]);
+					System.out.printf("t=%d, n_xz=%d, n_yz=%d, n_z=%d, local=%.4f," +
+							" digamma(n_xz+1)=%.5f, digamma(n_yz+1)=%.5f, digamma(n_z+1)=%.5f, \n",
+							t, n_xz, n_yz, n_z, localCondMi[t-startTimePoint],
+							digammaNxzPlusOne, digammaNyzPlusOne, digammaNzPlusOne);
 				}
 			}
 		}
@@ -221,6 +223,9 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 			System.out.println("\tz   search: " + (conditionalTime/1000.0));
 			System.out.println("\tzx  search: " + (conditionalXTime/1000.0));
 			System.out.println("\tzy  search: " + (conditionalYTime/1000.0));
+			System.out.printf("%d:%d -- Returning: %.4f, %.4f, %.4f, %.4f\n",
+					startTimePoint, (startTimePoint + numTimePoints),
+					sumDiGammas, sumNxz, sumNyz, sumNz);
 		}
 
 		// Select what to return:
@@ -229,7 +234,12 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 		} else {
 			// Pad return array with two values, to allow compatibility in 
 			//  return length with algorithm 2
-			return new double[] {sumDiGammas, sumNxz, sumNyz, sumNz, 0, 0};
+			double[] results = new double[6];
+			results[0] = sumDiGammas;
+			results[1] = sumNxz;
+			results[2] = sumNyz;
+			results[3] = sumNz;
+			return results;
 		}		
 	}
 }
