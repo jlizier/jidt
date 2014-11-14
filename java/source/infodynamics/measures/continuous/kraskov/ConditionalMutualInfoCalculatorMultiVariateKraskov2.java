@@ -202,8 +202,14 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 		if (returnLocals) {
 			return localCondMi;
 		} else {
-			return new double[] {sumDiGammas, sumNxz, sumNyz, sumNz,
-					sumInverseCountInJointXZ, sumInverseCountInJointYZ};
+			double[] returnValues = new double[6];
+			returnValues[0] = sumDiGammas;
+			returnValues[1] = sumNxz;
+			returnValues[2] = sumNyz;
+			returnValues[3] = sumNz;
+			returnValues[4] = sumInverseCountInJointXZ;
+			returnValues[5] = sumInverseCountInJointYZ;
+			return returnValues;
 		}		
 	}
 }
