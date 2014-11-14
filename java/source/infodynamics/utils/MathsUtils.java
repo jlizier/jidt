@@ -259,10 +259,10 @@ public class MathsUtils {
 	}
 
 	/**
-	 * Compute digamma(d).
+	 * <p>Compute digamma(d).</p>
 	 * 
-	 * Stores previous calculations to speed up computation here, though some precision may
-	 *  be lost because we're adding in larger numbers first.
+	 * <p>Stores previous calculations to speed up computation here, though some precision may
+	 *  be lost because we're adding in larger numbers first.</p>
 	 * 
 	 * @param d
 	 * @return
@@ -272,13 +272,15 @@ public class MathsUtils {
 		if (d < 1) {
 			return Double.NaN;
 		}
-		if (highestDigammaArgCalced == 0) {
-			// We're not initialised yet:
-			storedDigammas[0] = Double.NaN;
-			storedDigammas[1] = -EULER_MASCHERONI_CONSTANT;
-			highestDigammaArgCalced = 1;
-		}
-		if (d <= highestDigammaArgCalced) {
+		// Need to take care with multi-threaded applications
+		//  here -- another thread could be attempting to update
+		//  highestDigammaArgCalced at the same time.
+		// Sample the value of highestDigammaArgCalced and
+		//  run with it through the rest of the method, to avoid
+		//  any race conditions if it is concurrently updated:
+		int highestDigammaArgCalcedAtStartForThisThread =
+				highestDigammaArgCalced;
+		if (d <= highestDigammaArgCalcedAtStartForThisThread) {
 			// We've already calculated this one
 			return storedDigammas[d];
 		}
@@ -287,14 +289,29 @@ public class MathsUtils {
 			//  directly use commons.math:
 			return Gamma.digamma(d);
 		}
+		if (highestDigammaArgCalcedAtStartForThisThread == 0) {
+			// We're not initialised yet:
+			storedDigammas[0] = Double.NaN;
+			storedDigammas[1] = -EULER_MASCHERONI_CONSTANT;
+			highestDigammaArgCalcedAtStartForThisThread = 1;
+		}
 		// Else we'll calculate it and update the storage:
-		double result = storedDigammas[highestDigammaArgCalced];
-		for (int n = highestDigammaArgCalced + 1; n <= d; n++) {
+		double result = storedDigammas[highestDigammaArgCalcedAtStartForThisThread];
+		for (int n = highestDigammaArgCalcedAtStartForThisThread + 1; n <= d; n++) {
 			result += 1.0 / (double) (n-1);
 			// n must be < NUM_STORED_DIGAMMAS by earlier if statement on d
 			storedDigammas[n] = result;
 		}
-		highestDigammaArgCalced = d;
+		// Finally, update highestDigammaArgCalced:
+		// We could synchronize on highestDigammaArgCalced, however
+		//  this is costly; the following check may be compromised under
+		//  a race condition, but the worst outcome is that we have to 
+		//  recalculate a few values -- this is probably faster than
+		//  enforcing synchronisation
+		if (d > highestDigammaArgCalced) {
+			// We make the check in case another thread has already set this higher
+			highestDigammaArgCalced = d;
+		}
 		return result;
 	}
 	

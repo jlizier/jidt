@@ -513,7 +513,9 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 					System.out.printf("Av = digamma(k)=%.3f + <digammas>=%.3f = %.3f \n",
 							MathsUtils.digamma(k), averageDiGammas, MathsUtils.digamma(k) + averageDiGammas);
 				}
-				return new double[] { MathsUtils.digamma(k) + averageDiGammas };
+				double[] result = new double[1];
+				result[0] = MathsUtils.digamma(k) + averageDiGammas;
+				return result;
 			} else {
 				// Algorithm 2:
 				// We also retrieve the sums of inverses for debugging purposes:
@@ -531,7 +533,9 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 							(2.0 / (double)k), averageMeasure,
 							averageInverseCountInJointYZ, averageInverseCountInJointXZ);
 				}
-				return new double[] { averageMeasure };
+				double[] result = new double[1];
+				result[0] = averageMeasure;
+				return result;
 			}			
 		}
 	}
