@@ -35,7 +35,7 @@ public abstract class TransferEntropyAbstractTester extends TestCase {
 			int timeSteps, int k)
 			throws Exception {
 		
-		System.out.printf("Testing locals average correctly");
+		System.out.println("Testing locals average correctly");
 		
 		teCalc.initialise(k);
 		
