@@ -9,6 +9,7 @@ This page, intended for developers, outlines the process we follow in making a n
  # Update build.xml for the new version number
  # Update readme.txt with release notes etc
  # Build the releases in a clean svn download
+ # Check sha1 of the new release: `sha1sum infodynamics-dist-1.0.zip`
  # Post the code to lizier.me, make new counter files, ready and chmod them via ssh access.
  # Post the Javadocs to lizier.me and link from our [Documentation] page
  # Link to the new code on the [Downloads] page, [Installation] page and the front page of the google code site
