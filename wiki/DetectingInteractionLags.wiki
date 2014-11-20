@@ -76,7 +76,7 @@ To investigate this example, run:
 {{{
 coupledLogisticMap()
 }}}
-For the full 1000 repeats, the calculation takes 2-5 minutes.
+For the full 1000 repeats, the calculation takes ~30 seconds.
 (Notice in the code, that for the continuous TE calculator here, one can simply call a more complete `initialise()` method to supply the source-destination lag to investigate, e.g. `teCalc.initialise(k,1,1,1,3);` for lag 3.)
 
 Sample results are as follows:
