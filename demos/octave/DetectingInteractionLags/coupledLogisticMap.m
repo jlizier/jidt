@@ -69,7 +69,7 @@ function coupledLogisticMap()
 	cYToX = 0.2;
 	cXToY = 0.5;
 	T = 512;
-	fprintf('For 1000 repeats, expect the calculations to take ~5 minutes ...\n');
+	fprintf('For 1000 repeats, expect the calculations to take ~30 seconds ...\n');
 	repeats = 1000; % General results visible for 100 repeats if you want to see them faster (~20 sec)
 	k = 1; % history length
 	
@@ -136,20 +136,20 @@ function coupledLogisticMap()
 		% Perform calculation for X -> Y (lag 1)
 		teCalc.initialise(k,1,1,1,1); % Use history length k (Schreiber k)
 		teCalc.setProperty('k', KraskovK);
-		teCalc.setObservations(octaveToJavaDoubleMatrix(X(seedSteps:size(X,1),r)), ...
-					octaveToJavaDoubleMatrix(Y(seedSteps:size(Y,1),r)));
+		teCalc.setObservations(octaveToJavaDoubleArray(X(seedSteps:size(X,1),r)), ...
+					octaveToJavaDoubleArray(Y(seedSteps:size(Y,1),r)));
 		resultsLag1(r) = teCalc.computeAverageLocalOfObservations();
 		% Perform calculation for X -> Y (lag 2)
 		teCalc.initialise(k,1,1,1,2); % Use history length k (Schreiber k)
 		teCalc.setProperty('k', KraskovK);
-		teCalc.setObservations(octaveToJavaDoubleMatrix(X(seedSteps:size(X,1),r)), ...
-					octaveToJavaDoubleMatrix(Y(seedSteps:size(Y,1),r)));
+		teCalc.setObservations(octaveToJavaDoubleArray(X(seedSteps:size(X,1),r)), ...
+					octaveToJavaDoubleArray(Y(seedSteps:size(Y,1),r)));
 		resultsLag2(r) = teCalc.computeAverageLocalOfObservations();
 		% Perform calculation for X -> Y (lag 3)
 		teCalc.initialise(k,1,1,1,3); % Use history length k (Schreiber k)
 		teCalc.setProperty('k', KraskovK);
-		teCalc.setObservations(octaveToJavaDoubleMatrix(X(seedSteps:size(X,1),r)), ...
-					octaveToJavaDoubleMatrix(Y(seedSteps:size(Y,1),r)));
+		teCalc.setObservations(octaveToJavaDoubleArray(X(seedSteps:size(X,1),r)), ...
+					octaveToJavaDoubleArray(Y(seedSteps:size(Y,1),r)));
 		resultsLag3(r) = teCalc.computeAverageLocalOfObservations();
 		
 		% Kernel estimator returns the correct ordering of lag 1 and 2 for 
