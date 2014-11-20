@@ -8,8 +8,8 @@ Here we describe how to install and start using the toolkit (it's pretty simple!
 = Download =
 
 Download the latest distribution; either (note: these distributions are suitable for all platforms):
- # [http://lizier.me/joseph/software/jidt/download.php?file=infodynamics-dist-1.0.zip v1.0 full distribution] -- this is *recommended* for most users (includes jar file, javadocs, demonstrations, unit tests and build scripts); or
- # [http://lizier.me/joseph/software/jidt/download.php?file=infodynamics-jar-1.0.zip v1.0 jar] only (use only if you don't need much guidance on how to use the toolkit);
+ # [http://lizier.me/joseph/software/jidt/download.php?file=infodynamics-dist-1.1.zip v1.1 full distribution] -- this is *recommended* for most users (includes jar file, javadocs, demonstrations, unit tests and build scripts); or
+ # [http://lizier.me/joseph/software/jidt/download.php?file=infodynamics-jar-1.1.zip v1.1 jar] only (use only if you don't need much guidance on how to use the toolkit);
  # SVN checkout -- the bleeding edge, use only to stay right up to date, but be aware that compilation could break at any time -- see [http://code.google.com/p/information-dynamics-toolkit/source/checkout]. See AntScripts for build instructions.
 
 See all distributions and brief descriptions at [Downloads].
@@ -27,7 +27,7 @@ There are only dependencies if:
 = Install =
 
 If you have one of the distributions:
- # Unzip the distribution to a location of your choice, and/or move the `infodynamics.jar` file to a relevant location. Ensure that `infodynamics.jar` is on the Java classpath when your code attempts to access it (see e.g. SimpleJavaDemos);
+ # Unzip the distribution to a location of your choice, and/or move the `infodynamics.jar` file to a relevant location. Ensure that `infodynamics.jar` is on the Java classpath when your code attempts to access it (see e.g. SimpleJavaExamples);
  # To update to a new version, simply copy the new distribution over the top of the previous one.
 
 Otherwise, if you are running with the source code via an SVN checkout, see AntScripts regarding running `ant` to generate `infodynamics.jar`.
