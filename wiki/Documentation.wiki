@@ -9,6 +9,7 @@ The documentation available for the project is as follows:
  * The *[Demos]* distributed with the toolkit give examples on how to use the various classes, including how to use it in [OctaveMatlabExamples Matlab and GNU Octave], [PythonExamples Python] and [R_Examples R].
  * The [JUnitTestCases unit tests] distributed with the toolkit provide additional examples on how to run the code.
  * *Javadocs* fully describing the Java class hierarchy and API for each class are distributed in the `javadocs` folder of the distribution, and hosted online as follows:
+  * [http://lizier.me/joseph/software/jidt/javadocs/v1.1/ v1.1 Javadocs]
   * [http://lizier.me/joseph/software/jidt/javadocs/v1.0/ v1.0 Javadocs]
 
 You can also join our [http://groups.google.com/d/forum/jidt-discuss jidt-discuss] mailing list for announcements, help and discussion.
