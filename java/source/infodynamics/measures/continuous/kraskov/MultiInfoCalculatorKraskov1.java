@@ -79,7 +79,7 @@ public class MultiInfoCalculatorKraskov1
 			// Compute eps for this time step by
 			//  finding the kth closest neighbour for point t:
 			PriorityQueue<NeighbourNodeData> nnPQ =
-					kdTreeJoint.findKNearestNeighbours(k, t);
+					kdTreeJoint.findKNearestNeighbours(k, t, dynCorrExclTime);
 			// First element in the PQ is the kth NN,
 			//  and epsilon = kthNnData.distance
 			NeighbourNodeData kthNnData = nnPQ.poll();
@@ -91,7 +91,7 @@ public class MultiInfoCalculatorKraskov1
 			for (int d = 0; d < dimensions; d++) {
 				n_marginals[d] =
 						rangeSearchersInMarginals[d].countPointsStrictlyWithinR(
-								t, kthNnData.distance);
+								t, kthNnData.distance, dynCorrExclTime);
 				sumNMarginals[d] += n_marginals[d];
 				// And take the digammas:
 				thisSumDiGammas += MathsUtils.digamma(n_marginals[d]+1);

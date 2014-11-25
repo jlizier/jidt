@@ -97,7 +97,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 			// Compute eps_x and eps_y and eps_z for this time step by
 			//  finding the kth closest neighbours for point t:
 			PriorityQueue<NeighbourNodeData> nnPQ =
-					kdTreeJoint.findKNearestNeighbours(k, t);
+					kdTreeJoint.findKNearestNeighbours(k, t, dynCorrExclTime);
 			
 			// Find eps_{x,y,z} as the maximum x, y and z norms amongst this set:
 			double eps_x = 0.0;
@@ -124,11 +124,11 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 
 			/* Option A -- straightforward way using each k-d tree separately:
 			int n_xz = nnSearcherVar1.countPointsWithinOrOnRs(
-					t, new double[] {eps_x, eps_z});
+					t, new double[] {eps_x, eps_z}, dynCorrExclTime);
 			int n_yz = nnSearcherVar2.countPointsWithinOrOnRs(
-					t, new double[] {eps_y, eps_z});
+					t, new double[] {eps_y, eps_z}, dynCorrExclTime);
 			int n_z = nnSearcherConditional.countPointsWithinOrOnR(
-					t, eps_z);
+					t, eps_z, dynCorrExclTime);
 			*/
 			
 			// Option C --
@@ -136,10 +136,12 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 			//  the knowledge of which points made this cut to speed up the searching
 			//  in the conditional-marginal spaces:
 			// 1. Identify the n_z points within the conditional boundaries:
-			nnSearcherConditional.findPointsWithinR(t, eps_z,
+			nnSearcherConditional.findPointsWithinR(t, eps_z, dynCorrExclTime,
 					true, isWithinRForConditionals, indicesWithinRForConditionals);
 			// 2. Then compute n_xz and n_yz harnessing our knowledge of
 			//  which points qualified for the conditional already:
+			// Don't need to supply dynCorrExclTime in the following, because only 
+			//  points outside of it have been included in isWithinRForConditionals
 			int n_xz;
 			if (dimensionsVar1 > 1) {
 				// Check only the x variable against eps_x, use existing results for z

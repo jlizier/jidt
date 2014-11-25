@@ -76,7 +76,7 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 			// Compute eps for this time step by
 			//  finding the kth closest neighbour for point t:
 			PriorityQueue<NeighbourNodeData> nnPQ =
-					kdTreeJoint.findKNearestNeighbours(k, t);
+					kdTreeJoint.findKNearestNeighbours(k, t, dynCorrExclTime);
 			// First element in the PQ is the kth NN,
 			//  and epsilon = kthNnData.distance
 			NeighbourNodeData kthNnData = nnPQ.poll();
@@ -85,9 +85,9 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 			//  than eps, and whose y distance is less than
 			//  epsilon = kthNnData.distance
 			int n_x = nnSearcherSource.countPointsStrictlyWithinR(
-							t, kthNnData.distance);
+							t, kthNnData.distance, dynCorrExclTime);
 			int n_y = nnSearcherDest.countPointsStrictlyWithinR(
-							t, kthNnData.distance);
+							t, kthNnData.distance, dynCorrExclTime);
 			
 			sumNx += n_x;
 			sumNy += n_y;

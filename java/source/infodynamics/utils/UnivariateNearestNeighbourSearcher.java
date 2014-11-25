@@ -201,8 +201,116 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 				nextNearest = new NeighbourNodeData(sortedArrayIndices[lowerCandidate],
 								new double[] {normBelow}, normBelow);
 				// Advance the lower candidate
-				lowerCandidate = (lowerCandidate == 0) ?
-									-1 : lowerCandidate - 1;
+				//lowerCandidate = (lowerCandidate == 0) ?
+				//					-1 : lowerCandidate - 1;
+				// Faster:
+				lowerCandidate--;
+			}
+			// And add this next nearest neighbour to the PQ:
+			pq.add(nextNearest);
+		}
+		
+		return pq;
+	}
+
+	/**
+	 * Return the K nodes which are the K nearest neighbours for a given
+	 *  sample index in the data set. Nodes within dynCorrExclTime time
+	 *  points are excluded from the search.
+	 * Nearest neighbour function to compare to r is the specified norm.
+	 */
+	public PriorityQueue<NeighbourNodeData>
+			findKNearestNeighbours(int K, int sampleIndex,
+					int dynCorrExclTime) throws Exception {
+		
+		if (numObservations <= K + 2*dynCorrExclTime) {
+			throw new Exception("Not enough data points for a K nearest neighbours search" +
+					" with dynamic exclusion window of " + dynCorrExclTime + " points either side");
+		}
+		
+		// Find where this node sits in the sorted array:
+		int indexInSortedArray = indicesInSortedArray[sampleIndex];
+		// Initialise the nearest neighbours above and below this data point,
+		//  storing an extreme value for the indices where there are none left on this side:
+		int lowerCandidate;
+		int indexOfLowerCandidate = -1;
+		for (lowerCandidate = indexInSortedArray - 1;
+				lowerCandidate >= 0;
+				lowerCandidate--) {
+			indexOfLowerCandidate = sortedArrayIndices[lowerCandidate];
+			if (Math.abs(sampleIndex - indexOfLowerCandidate) > dynCorrExclTime) {
+				// This sample is outside the dynamic correlation exclusion window
+				break;
+			}
+		}
+		// Postcondition: lowerCandidate points to the nearest neighbour
+		//  below this point, which is outside of the dynamic correlation exclusion
+		//  window; otherwise lowerCandidate == -1.
+		int upperCandidate;
+		int indexOfUpperCandidate = -1;
+		for (upperCandidate = indexInSortedArray + 1;
+				upperCandidate <= numObservations - 1;
+				upperCandidate++) {
+			indexOfUpperCandidate = sortedArrayIndices[upperCandidate];
+			if (Math.abs(sampleIndex - indexOfUpperCandidate) > dynCorrExclTime) {
+				// This sample is outside the dynamic correlation exclusion window
+				break;
+			}
+		}
+		// Postcondition: upperCandidate points to the nearest neighbour
+		//  above this point, which is outside of the dynamic correlation exclusion
+		//  window; otherwise upperCandidate == numObservations.
+		
+		PriorityQueue<NeighbourNodeData> pq = new PriorityQueue<NeighbourNodeData>(K);
+		for (int k = 0; k < K; k++) {
+			// Select the (k+1)th nearest neighbour
+			// Check norms for candidates on both sides of the data point.
+			//  (Their must be at least one valid candidate
+			//   since we have previously checked there were at least K+1 data points
+			//   plus the dynamic exclusion window size)
+			double normAbove =  (upperCandidate == numObservations) ?
+					Double.POSITIVE_INFINITY :
+						norm(originalDataSet[sampleIndex],
+							originalDataSet[indexOfUpperCandidate],
+							normTypeToUse);
+			double normBelow = (lowerCandidate == -1) ?
+					Double.POSITIVE_INFINITY :
+						norm(originalDataSet[sampleIndex],
+							originalDataSet[indexOfLowerCandidate],
+							normTypeToUse);
+			NeighbourNodeData nextNearest;
+			if (normAbove < normBelow) {
+				nextNearest = new NeighbourNodeData(indexOfUpperCandidate,
+								new double[] {normAbove}, normAbove);
+				// Advance the upper candidate
+				for (upperCandidate++;
+						upperCandidate <= numObservations - 1;
+						upperCandidate++) {
+					indexOfUpperCandidate = sortedArrayIndices[upperCandidate];
+					if (Math.abs(sampleIndex - indexOfUpperCandidate) > dynCorrExclTime) {
+						// This sample is outside the dynamic correlation exclusion window
+						break;
+					}
+				}
+				// Postcondition: upperCandidate points to the nearest neighbour
+				//  above this point, which is outside of the dynamic correlation exclusion
+				//  window; otherwise upperCandidate == numObservations.
+			} else {
+				nextNearest = new NeighbourNodeData(indexOfLowerCandidate,
+								new double[] {normBelow}, normBelow);
+				// Advance the lower candidate
+				for (lowerCandidate--;
+						lowerCandidate >= 0;
+						lowerCandidate--) {
+					indexOfLowerCandidate = sortedArrayIndices[lowerCandidate];
+					if (Math.abs(sampleIndex - indexOfLowerCandidate) > dynCorrExclTime) {
+						// This sample is outside the dynamic correlation exclusion window
+						break;
+					}
+				}
+				// Postcondition: lowerCandidate points to the nearest neighbour
+				//  below this point, which is outside of the dynamic correlation exclusion
+				//  window; otherwise lowerCandidate == -1.
 			}
 			// And add this next nearest neighbour to the PQ:
 			pq.add(nextNearest);
@@ -238,6 +346,55 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 		}
 		// Next check the points with larger data values:
 		for (int i = indexInSortedArray + 1; i < numObservations; i++) {
+			double theNorm = norm(originalDataSet[sampleIndex],
+					originalDataSet[sortedArrayIndices[i]], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r)) ||
+				(!allowEqualToR && (theNorm < r))) {
+				count++;
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		return count;
+	}
+	
+	/**
+	 * Count the number of points within norm r for a given
+	 *  sample index in the data set. Nodes within dynCorrExclTime
+	 *  of sampleIndex are excluded from the search.
+	 * Nearest neighbour function to compare to r is the specified norm.
+	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
+	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
+	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
+	 */
+	public int countPointsWithinR(int sampleIndex, double r,
+			int dynCorrExclTime, boolean allowEqualToR) {
+		int count = 0;
+		// Find where this node sits in the sorted array:
+		int indexInSortedArray = indicesInSortedArray[sampleIndex];
+		// Check the points with smaller data values first:
+		for (int i = indexInSortedArray - 1; i >= 0; i--) {
+			if (Math.abs(sampleIndex - sortedArrayIndices[i]) <= dynCorrExclTime) {
+				// Can't count this point, but keep checking:
+				continue;
+			}
+			double theNorm = norm(originalDataSet[sampleIndex],
+					originalDataSet[sortedArrayIndices[i]], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r)) ||
+				(!allowEqualToR && (theNorm < r))) {
+				count++;
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		// Next check the points with larger data values:
+		for (int i = indexInSortedArray + 1; i < numObservations; i++) {
+			if (Math.abs(sampleIndex - sortedArrayIndices[i]) <= dynCorrExclTime) {
+				// Can't count this point, but keep checking:
+				continue;
+			}
 			double theNorm = norm(originalDataSet[sampleIndex],
 					originalDataSet[sortedArrayIndices[i]], normTypeToUse);
 			if ((allowEqualToR  && (theNorm <= r)) ||
@@ -347,6 +504,67 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 		indicesWithinR[indexInIndicesWithinR++] = -1;
 	}
 
+	/**
+	 * Record the collection of points within norm r for a given
+	 *  sample index in the data set. The node itself is 
+	 *  excluded from the search.
+	 * Nearest neighbour function to compare to r is the specified norm.
+	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
+	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
+	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
+	 * 
+	 * <p>The recording of nearest neighbours is made within the isWithinR
+	 *  and indicesWithinR arrays, which must be constructed before
+	 *  calling this method, with length at or exceeding the total
+	 *  number of data points. indicesWithinR is 
+	 * </p> 
+	 * 
+	 */
+	public void findPointsWithinR(
+			int sampleIndex, double r, int dynCorrExclTime,
+			boolean allowEqualToR,
+			boolean[] isWithinR, int[] indicesWithinR) {
+		int indexInIndicesWithinR = 0;
+		// Find where this node sits in the sorted array:
+		int indexInSortedArray = indicesInSortedArray[sampleIndex];
+		// Check the points with smaller data values first:
+		for (int i = indexInSortedArray - 1; i >= 0; i--) {
+			if (Math.abs(sampleIndex - sortedArrayIndices[i]) <= dynCorrExclTime) {
+				// Can't count this point, but keep checking:
+				continue;
+			}
+			double theNorm = norm(originalDataSet[sampleIndex],
+					originalDataSet[sortedArrayIndices[i]], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r)) ||
+				(!allowEqualToR && (theNorm < r))) {
+				isWithinR[sortedArrayIndices[i]] = true;
+				indicesWithinR[indexInIndicesWithinR++] = sortedArrayIndices[i];
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		// Next check the points with larger data values:
+		for (int i = indexInSortedArray + 1; i < numObservations; i++) {
+			if (Math.abs(sampleIndex - sortedArrayIndices[i]) <= dynCorrExclTime) {
+				// Can't count this point, but keep checking:
+				continue;
+			}
+			double theNorm = norm(originalDataSet[sampleIndex],
+					originalDataSet[sortedArrayIndices[i]], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r)) ||
+				(!allowEqualToR && (theNorm < r))) {
+				isWithinR[sortedArrayIndices[i]] = true;
+				indicesWithinR[indexInIndicesWithinR++] = sortedArrayIndices[i];
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		// Write the terminating integer into the indicesWithinR array:
+		indicesWithinR[indexInIndicesWithinR++] = -1;
+	}
+	
 	@Override
 	public int countPointsWithinR(int sampleIndex, double r, boolean allowEqualToR,
 			boolean[] additionalCriteria) {

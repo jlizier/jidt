@@ -78,7 +78,7 @@ public class MutualInfoCalculatorMultiVariateKraskov2
 			// Compute eps_x and eps_y for this time step by
 			//  finding the kth closest neighbours for point t:
 			PriorityQueue<NeighbourNodeData> nnPQ =
-					kdTreeJoint.findKNearestNeighbours(k, t);
+					kdTreeJoint.findKNearestNeighbours(k, t, dynCorrExclTime);
 
 			// Find eps_{x,y} as the maximum x and y norms amongst this set:
 			double eps_x = 0.0;
@@ -98,9 +98,9 @@ public class MutualInfoCalculatorMultiVariateKraskov2
 			//  than or equal to eps_x, and whose y distance is less
 			//  than or equal to eps_y
 			int n_x = nnSearcherSource.countPointsWithinOrOnR(
-					t, eps_x);
+					t, eps_x, dynCorrExclTime);
 			int n_y = nnSearcherDest.countPointsWithinOrOnR(
-					t, eps_y);
+					t, eps_y, dynCorrExclTime);
 
 			sumNx += n_x;
 			sumNy += n_y;
