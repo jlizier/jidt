@@ -127,6 +127,92 @@ public class TransferEntropyTester
 	/**
 	 * Test the computed univariate TE
 	 * against that calculated by Wibral et al.'s TRENTOOL
+	 * on the same data, adding dynamic correlation exclusion
+	 * 
+	 * To run TRENTOOL (http://www.trentool.de/) for this 
+	 * data, run its TEvalues.m matlab script on the multivariate source
+	 * and dest data sets as:
+	 * TEvalues(source, dest, 1, 1, 1, kraskovK, dynCorrExcl)
+	 * with these values ensuring source-dest lag 1, history k=1,
+	 * embedding lag 1, and dynamic correlation exclusion window dynCorrExcl
+	 * 
+	 * @throws Exception if file not found 
+	 * 
+	 */
+	public void testUnivariateTEforCoupledVariablesFromFileDynCorrExcl() throws Exception {
+		// Test set 1:
+		
+		ArrayFileReader afr = new ArrayFileReader("demos/data/2coupledRandomCols-1.txt");
+		double[][] data = afr.getDouble2DMatrix();
+		double[] col0 = MatrixUtils.selectColumn(data, 0);
+		double[] col1 = MatrixUtils.selectColumn(data, 1);
+		// Need to normalise these ourselves rather than letting the calculator do it -
+		//  this ensures the extra values in the time series (e.g. last value in source)
+		//  are taken into account, in line with TRENTOOL
+		col0 = MatrixUtils.normaliseIntoNewArray(col0);
+		col1 = MatrixUtils.normaliseIntoNewArray(col1);
+		
+		// Use various Kraskov k nearest neighbours parameter
+		int kNNs = 4;
+		// Expected values from TRENTOOL for correlation exclusion window 10:
+		int exclWindow = 10;
+		double expectedFromTRENTOOL0to1 = 0.2930714;
+		double expectedFromTRENTOOL1to0 = -0.0387031;
+		
+		System.out.println("Kraskov TE comparison 1b to TRENTOOL - univariate coupled data with dynamic correlation exclusion");
+		TransferEntropyCalculatorKraskov teCalc =
+				new TransferEntropyCalculatorKraskov();
+		teCalc.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_K, Integer.toString(kNNs));
+		// We already normalised above, and this will do a different
+		//  normalisation without taking the extra values in to account if we did it
+		teCalc.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NORMALISE, "false");
+		// Set dynamic correlation exclusion window:
+		teCalc.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_DYN_CORR_EXCL_TIME,
+				Integer.toString(exclWindow));
+		
+		teCalc.initialise(1);
+		teCalc.setObservations(col0, col1);
+		double result = teCalc.computeAverageLocalOfObservations();
+		System.out.printf("From 2coupledRandomCols 0->1, Theiler window 10, expecting %.6f, got %.6f\n",
+				expectedFromTRENTOOL0to1, result);
+		assertEquals(expectedFromTRENTOOL0to1, result, 0.000001);
+		
+		teCalc.initialise(1);
+		teCalc.setObservations(col1, col0);
+		result = teCalc.computeAverageLocalOfObservations();
+		assertEquals(expectedFromTRENTOOL1to0, result, 0.000001);
+		System.out.printf("From 2coupledRandomCols 1->0, Theiler window 10, expecting %.6f, got %.6f\n",
+				expectedFromTRENTOOL1to0, result);
+
+		assertEquals(99, teCalc.getNumObservations());
+		
+		// Change dynamic correlation exclusion window:
+		exclWindow = 20;
+		expectedFromTRENTOOL0to1 = 0.2995997;
+		expectedFromTRENTOOL1to0 = -0.0381608;
+		teCalc.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_DYN_CORR_EXCL_TIME,
+				Integer.toString(exclWindow));
+		
+		teCalc.initialise(1);
+		teCalc.setObservations(col0, col1);
+		result = teCalc.computeAverageLocalOfObservations();
+		System.out.printf("From 2coupledRandomCols 0->1, Theiler window 20, expecting %.6f, got %.6f\n",
+				expectedFromTRENTOOL0to1, result);
+		assertEquals(expectedFromTRENTOOL0to1, result, 0.000001);
+		
+		teCalc.initialise(1);
+		teCalc.setObservations(col1, col0);
+		result = teCalc.computeAverageLocalOfObservations();
+		assertEquals(expectedFromTRENTOOL1to0, result, 0.000001);
+		System.out.printf("From 2coupledRandomCols 1->0, Theiler window 20, expecting %.6f, got %.6f\n",
+				expectedFromTRENTOOL1to0, result);
+
+		assertEquals(99, teCalc.getNumObservations());
+	}
+	
+	/**
+	 * Test the computed univariate TE
+	 * against that calculated by Wibral et al.'s TRENTOOL
 	 * on the same data.
 	 * 
 	 * To run TRENTOOL (http://www.trentool.de/) for this 
