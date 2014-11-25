@@ -335,10 +335,67 @@ public class KdTreeTest extends TestCase {
 				PriorityQueue<NeighbourNodeData> nnPQ =
 						kdTree.findKNearestNeighbours(K, t);
 				assertTrue(nnPQ.size() == K);
+				// Also check the result is still correct if we search with
+				//  zero size exclusion window:
+				PriorityQueue<NeighbourNodeData> nnPQ_zeroExclWindow =
+						kdTree.findKNearestNeighbours(K, t, 0);
+				assertTrue(nnPQ_zeroExclWindow.size() == K);
 				// Now find the K nearest neighbours with a naive all-pairs comparison
 				double[][] distancesAndIndices = new double[data.length][2];
 				for (int t2 = 0; t2 < data.length; t2++) {
 					if (t2 != t) {
+						distancesAndIndices[t2][0] = normCalculator.norm(data[t], data[t2]);
+					} else {
+						distancesAndIndices[t2][0] = Double.POSITIVE_INFINITY;
+					}
+					distancesAndIndices[t2][1] = t2;
+				}
+				int[] timeStepsOfKthMins =
+						MatrixUtils.kMinIndices(distancesAndIndices, 0, K);
+				for (int i = 0; i < K; i++) {
+					// Check that the ith nearest neighbour matches for each method.
+					// Note that these two method provide a different sorting order
+					NeighbourNodeData nnData = nnPQ.poll();
+					NeighbourNodeData nnData_zeroWindow = nnPQ_zeroExclWindow.poll();
+					if (timeStepsOfKthMins[K - 1 - i] != nnData.sampleIndex) {
+						// We have an error:
+						System.out.printf("Erroneous match between indices %d (expected) " +
+						 " and %d\n", timeStepsOfKthMins[K - 1 - i], nnData.sampleIndex);
+					}
+					assertEquals(timeStepsOfKthMins[K - 1 - i], nnData.sampleIndex);
+					assertEquals(timeStepsOfKthMins[K - 1 - i], nnData_zeroWindow.sampleIndex);
+				}
+			}		
+			long endTimeValidate = Calendar.getInstance().getTimeInMillis();
+			System.out.printf("All %d nearest neighbours found in: %.3f sec\n",
+					K, ((double) (endTimeValidate - startTime)/1000.0));
+		}
+	}
+
+	public void testFindKNearestNeighboursWithExclusionWindow() throws Exception {
+		int dimension = 4;
+		int numSamples = 1000;
+		int exclusionWindow = 100;
+		
+		for (int K = 1; K < 5; K++) {
+			double[][] data = rg.generateNormalData(numSamples, dimension, 0, 1);
+			
+			long startTime = Calendar.getInstance().getTimeInMillis();
+			KdTree kdTree = new KdTree(data);
+			long endTimeTree = Calendar.getInstance().getTimeInMillis();
+			System.out.printf("Tree of %d points for %d NNs constructed in: %.3f sec\n",
+					data.length, K, ((double) (endTimeTree - startTime)/1000.0));
+			
+			EuclideanUtils normCalculator = new EuclideanUtils(EuclideanUtils.NORM_MAX_NORM);
+			startTime = Calendar.getInstance().getTimeInMillis();
+			for (int t = 0; t < data.length; t++) {
+				PriorityQueue<NeighbourNodeData> nnPQ =
+						kdTree.findKNearestNeighbours(K, t, exclusionWindow);
+				assertTrue(nnPQ.size() == K);
+				// Now find the K nearest neighbours with a naive all-pairs comparison
+				double[][] distancesAndIndices = new double[data.length][2];
+				for (int t2 = 0; t2 < data.length; t2++) {
+					if (Math.abs(t2 - t) > exclusionWindow) {
 						distancesAndIndices[t2][0] = normCalculator.norm(data[t], data[t2]);
 					} else {
 						distancesAndIndices[t2][0] = Double.POSITIVE_INFINITY;
@@ -628,6 +685,199 @@ public class KdTreeTest extends TestCase {
 			if (naiveCount != counts[t]) {
 				System.out.printf("All pairs    : count %d\n", naiveCount);
 				System.out.printf("kdTree search: count %d\n", counts[t]);
+			}
+			assertEquals(naiveCount, counts[t]);
+		}
+		long endTimeValidate = Calendar.getInstance().getTimeInMillis();
+		System.out.printf("All neighbours within %.3f (average of %.3f) validated in: %.3f sec\n",
+				r, (double) totalCount / (double) samples,
+				((double) (endTimeValidate - endTimeCount)/1000.0));
+	}
+
+	public void testCountNeighboursWithinRExclusionWindow() {
+		int dimensionsPerVariable = 3;
+		int samples = 1000;
+		double[][] data = rg.generateNormalData(samples, dimensionsPerVariable, 0, 1);
+		
+		long startTime = Calendar.getInstance().getTimeInMillis();
+		KdTree kdTree = new KdTree(data);
+		long endTimeTree = Calendar.getInstance().getTimeInMillis();
+		System.out.printf("Tree of %d points constructed in: %.3f sec\n",
+				samples, ((double) (endTimeTree - startTime)/1000.0));
+		
+		double[] rs = {0.2, 0.6, 0.8, 1.0};
+		for (int i = 0; i < rs.length; i++) {
+			verifyCountNeighboursWithinRExclusionWindow(EuclideanUtils.NORM_MAX_NORM,
+					data, samples, kdTree, rs[i], true);
+			verifyCountNeighboursWithinRExclusionWindow(EuclideanUtils.NORM_MAX_NORM,
+					data, samples, kdTree, rs[i], false);
+			// and check using the array methods as well
+			verifyCountNeighboursWithinRExclusionWindowArrayArgs(EuclideanUtils.NORM_MAX_NORM,
+					data, samples, kdTree, rs[i], true);
+			verifyCountNeighboursWithinRExclusionWindowArrayArgs(EuclideanUtils.NORM_MAX_NORM,
+					data, samples, kdTree, rs[i], false);
+		}
+	}
+
+	private void verifyCountNeighboursWithinRExclusionWindow(int normType,
+			double[][] data, int samples, KdTree kdTree, double r,
+			boolean allowEqualToR) {
+		
+		int exclWindow = 100;
+		
+		// Set up the given norm type:
+		EuclideanUtils normCalculator = new EuclideanUtils(normType);
+		kdTree.setNormType(normType);
+		
+		long startTime = Calendar.getInstance().getTimeInMillis();
+		int totalCount = 0;
+		int[] counts = new int[samples];
+		for (int t = 0; t < samples; t++) {
+			int count =
+					kdTree.countPointsWithinR(t, r, exclWindow, allowEqualToR);
+			assertTrue(count >= 0);
+			counts[t] = count;
+			totalCount += count;
+		}
+		long endTimeCount = Calendar.getInstance().getTimeInMillis();
+		System.out.printf("All neighbours within %.3f (average of %.3f) found in: %.3f sec\n",
+				r, (double) totalCount / (double) samples,
+				((double) (endTimeCount - startTime)/1000.0));
+		// Now find the neighbour count with a naive all-pairs comparison
+		for (int t = 0; t < samples; t++) {
+			int naiveCount = 0;
+			for (int t2 = 0; t2 < samples; t2++) {
+				double norm = Double.POSITIVE_INFINITY;
+				if (Math.abs(t2 - t) > exclWindow) {
+					norm = normCalculator.norm(
+							data[t], data[t2]);
+				}
+				if ((!allowEqualToR && (norm < r)) ||
+					( allowEqualToR && (norm <= r))) {
+					naiveCount++;
+				}
+			}
+			if (naiveCount != counts[t]) {
+				// Add some debug prints:
+				System.out.printf("All pairs    : count %d\n", naiveCount);
+				System.out.printf("kdTree search: count %d\n", counts[t]);
+				Collection<NeighbourNodeData> pointsWithinR =
+						kdTree.findPointsWithinR(t, r, allowEqualToR);
+				for (NeighbourNodeData nnData : pointsWithinR) {
+					System.out.printf("kd: t=%d: time diff %d, norm %.3f\n",
+							t, Math.abs(nnData.sampleIndex - t),
+							normCalculator.norm(
+									data[t], data[nnData.sampleIndex]));
+				}
+				// and compare to all pairs:
+				for (int t2 = 0; t2 < samples; t2++) {
+					double norm = Double.POSITIVE_INFINITY;
+					if (Math.abs(t2 - t) > exclWindow) {
+						norm = normCalculator.norm(
+								data[t], data[t2]);
+					}
+					if ((!allowEqualToR && (norm < r)) ||
+						( allowEqualToR && (norm <= r))) {
+						System.out.printf("naive: t=%d: time diff %d, norm %.3f\n",
+								t, Math.abs(t2 - t), norm);
+					}
+				}
+			}
+			assertEquals(naiveCount, counts[t]);
+		}
+		long endTimeValidate = Calendar.getInstance().getTimeInMillis();
+		System.out.printf("All neighbours within %.3f (average of %.3f) validated in: %.3f sec\n",
+				r, (double) totalCount / (double) samples,
+				((double) (endTimeValidate - endTimeCount)/1000.0));
+	}
+
+	private void verifyCountNeighboursWithinRExclusionWindowArrayArgs(int normType,
+			double[][] data, int samples, KdTree kdTree, double r,
+			boolean allowEqualToR) {
+		
+		int exclWindow = 100;
+		
+		// Set up the given norm type:
+		EuclideanUtils normCalculator = new EuclideanUtils(normType);
+		kdTree.setNormType(normType);
+		
+		long startTime = Calendar.getInstance().getTimeInMillis();
+		int totalCount = 0;
+		int[] counts = new int[samples];
+		boolean[] withinR = new boolean[samples];
+		int[] indicesWithinR = new int[samples];
+		for (int t = 0; t < samples; t++) {
+			// int count = kdTree.countPointsWithinR(t, r, allowEqualToR);
+			kdTree.findPointsWithinR(t, r, exclWindow, allowEqualToR,
+					withinR, indicesWithinR);
+			int count = 0;
+			// Run through the list of points returned as within r and check them
+			for (int t2 = 0; indicesWithinR[t2] != -1; t2++) {
+				count++;
+				assertTrue(withinR[indicesWithinR[t2]]);
+				// Reset this marker
+				withinR[indicesWithinR[t2]] = false;
+				// Check that it's really within r
+				double maxNorm = normCalculator.norm(
+							data[t], data[indicesWithinR[t2]]);
+				assertTrue((!allowEqualToR && (maxNorm < r)) ||
+						( allowEqualToR && (maxNorm <= r)));
+			}
+			// Check that there were no other points marked as within r:
+			int count2 = 0;
+			for (int t2 = 0; t2 < samples; t2++) {
+				if (withinR[t2]) {
+					count2++;
+				}
+			}
+			assertEquals(0, count2); // We set all the ones that should have been true to false already
+			// Now reset the boolean array
+			counts[t] = count;
+			totalCount += count;
+		}
+		long endTimeCount = Calendar.getInstance().getTimeInMillis();
+		System.out.printf("All neighbours within %.3f (average of %.3f) found in: %.3f sec\n",
+				r, (double) totalCount / (double) samples,
+				((double) (endTimeCount - startTime)/1000.0));
+		// Now find the neighbour count with a naive all-pairs comparison
+		for (int t = 0; t < samples; t++) {
+			int naiveCount = 0;
+			for (int t2 = 0; t2 < samples; t2++) {
+				double norm = Double.POSITIVE_INFINITY;
+				if (Math.abs(t2 - t) > exclWindow) {
+					norm = normCalculator.norm(
+							data[t], data[t2]);
+				}
+				if ((!allowEqualToR && (norm < r)) ||
+					( allowEqualToR && (norm <= r))) {
+					naiveCount++;
+				}
+			}
+			if (naiveCount != counts[t]) {
+				// Add some debug prints:
+				System.out.printf("All pairs    : count %d\n", naiveCount);
+				System.out.printf("kdTree search: count %d\n", counts[t]);
+				Collection<NeighbourNodeData> pointsWithinR =
+						kdTree.findPointsWithinR(t, r, allowEqualToR);
+				for (NeighbourNodeData nnData : pointsWithinR) {
+					System.out.printf("kd: t=%d: time diff %d, norm %.3f\n",
+							t, Math.abs(nnData.sampleIndex - t),
+							normCalculator.norm(
+									data[t], data[nnData.sampleIndex]));
+				}
+				// and compare to all pairs:
+				for (int t2 = 0; t2 < samples; t2++) {
+					double norm = Double.POSITIVE_INFINITY;
+					if (Math.abs(t2 - t) > exclWindow) {
+						norm = normCalculator.norm(
+								data[t], data[t2]);
+					}
+					if ((!allowEqualToR && (norm < r)) ||
+						( allowEqualToR && (norm <= r))) {
+						System.out.printf("naive: t=%d: time diff %d, norm %.3f\n",
+								t, Math.abs(t2 - t), norm);
+					}
+				}
 			}
 			assertEquals(naiveCount, counts[t]);
 		}
