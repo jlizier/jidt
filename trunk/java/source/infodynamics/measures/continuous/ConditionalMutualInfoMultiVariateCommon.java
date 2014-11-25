@@ -145,6 +145,7 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		var1Observations = null;
 		var2Observations = null;
 		condObservations = null;
+		addedMoreThanOneObservationSet = false;
 	}
 
 	/**

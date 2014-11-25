@@ -98,6 +98,12 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	 */
 	public static final String PROP_ADD_NOISE = "NOISE_LEVEL_TO_ADD";
 	/**
+	 * Property name for a dynamics exclusion time window 
+	 * otherwise known as Theiler window (see Kantz and Schreiber).
+	 * Default is 0 which means no dynamic exclusion window.
+	 */
+	public static final String PROP_DYN_CORR_EXCL_TIME = "DYN_CORR_EXCL";	
+	/**
 	 * Property name for the number of parallel threads to use in the
 	 *  computation (default is to use all available)
 	 */
@@ -120,6 +126,14 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	 * Amount of random Gaussian noise to add to the incoming data
 	 */
 	protected double noiseLevel = 0.0;
+	/**
+	 * Whether we use dynamic correlation exclusion
+	 */
+	protected boolean dynCorrExcl = false;
+	/**
+	 * Size of dynamic correlation exclusion window.
+	 */
+	protected int dynCorrExclTime = 0;
 	/**
 	 * Number of parallel threads to use in the computation;
 	 *  defaults to use all available.
@@ -187,6 +201,9 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	 * 		default is {@link EuclideanUtils#NORM_MAX_NORM}.
 	 *  <li>{@link #PROP_NORMALISE} -- whether to normalise the incoming individual
 	 *      variables to mean 0 and standard deviation 1 (true by default)</li>
+	 *  <li>{@link #DYN_CORR_EXCL_TIME_NAME} -- a dynamics exclusion time window,
+	 *      also known as Theiler window (see Kantz and Schreiber);
+	 *      default is 0 which means no dynamic exclusion window.</li>
 	 *  <li>{@link #PROP_ADD_NOISE} -- a standard deviation for an amount of
 	 *  	random Gaussian noise to add to
 	 *      each variable, to avoid having neighbourhoods with artificially
@@ -215,6 +232,9 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 			normType = KdTree.validateNormType(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
 			normalise = Boolean.parseBoolean(propertyValue);
+		} else if (propertyName.equalsIgnoreCase(PROP_DYN_CORR_EXCL_TIME)) {
+			dynCorrExclTime = Integer.parseInt(propertyValue);
+			dynCorrExcl = (dynCorrExclTime > 0);
 		} else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
 			addNoise = true;
 			noiseLevel = Double.parseDouble(propertyValue);
@@ -244,11 +264,18 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 		// Allow the parent to generate the data for us first
 		super.finaliseAddObservations();
 		
-		if (totalObservations < k) {
+		if (dynCorrExcl && addedMoreThanOneObservationSet) {
+			// We have not properly implemented dynamic correlation exclusion for
+			//  multiple observation sets, so throw an error
+			throw new RuntimeException("Addition of multiple observation sets is not currently " +
+					"supported with property " + PROP_DYN_CORR_EXCL_TIME + " set");
+		}
+		
+		if (totalObservations <= k + 2*dynCorrExclTime) {
 			throw new Exception("There are less observations provided (" +
 					totalObservations +
-					") than the number of nearest neighbours parameter (" +
-					k + ")");
+					") than required for the number of nearest neighbours parameter (" +
+					k + ") and any dynamic correlation exclusion (" + dynCorrExclTime + ")");
 		}
 		
 		// Normalise the data if required

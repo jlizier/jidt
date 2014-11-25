@@ -179,7 +179,8 @@ public class TransferEntropyCalculatorKernel
 	 * 			is an absolute value. Default is {@link #DEFAULT_KERNEL_WIDTH}.</li>
 	 * 		<li>{@link #NORMALISE_PROP_NAME} -- whether to normalise the incoming variables 
 	 * 			to mean 0, standard deviation 1, or not (default false). Sets {@link #normalise}.</li>
-	 * 		<li>{@link #DYN_CORR_EXCL_TIME_NAME} -- a dynamics exclusion time window (see Kantz and Schreiber),
+	 * 		<li>{@link #DYN_CORR_EXCL_TIME_NAME} -- a dynamics exclusion time window,
+	 * 			also known as Theiler window (see Kantz and Schreiber);
 	 * 			default is 0 which means no dynamic exclusion window.</li>
 	 * 		<li>{@link #FORCE_KERNEL_COMPARE_TO_ALL} -- whether to force the underlying kernel estimators to compare
 	 *  		each data point to each other (or else allow it to use optimisations).</li>

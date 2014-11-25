@@ -129,6 +129,7 @@ public abstract class MutualInfoMultiVariateCommon implements
 		miComputed = false;
 		sourceObservations = null;
 		destObservations = null;
+		addedMoreThanOneObservationSet = false;
 	}
 
 	/**
@@ -178,7 +179,6 @@ public abstract class MutualInfoMultiVariateCommon implements
 		startAddObservations();
 		addObservations(source, destination);
 		finaliseAddObservations();
-		addedMoreThanOneObservationSet = false;
 	}
 
 	public void startAddObservations() {
@@ -209,9 +209,6 @@ public abstract class MutualInfoMultiVariateCommon implements
 		}
 		vectorOfSourceObservations.add(source);
 		vectorOfDestinationObservations.add(destination);
-		if (vectorOfSourceObservations.size() > 1) {
-			addedMoreThanOneObservationSet = true;
-		}
 	}
 
 	public void addObservations(double[][] source, double[][] destination,
@@ -230,9 +227,6 @@ public abstract class MutualInfoMultiVariateCommon implements
 		double[][] destToAdd = new double[numTimeSteps][];
 		System.arraycopy(destination, startTime, destToAdd, 0, numTimeSteps);
 		vectorOfDestinationObservations.add(destToAdd);
-		if (vectorOfSourceObservations.size() > 1) {
-			addedMoreThanOneObservationSet = true;
-		}
 	}
 
 	public void setObservations(double[][] source, double[][] destination,
@@ -294,6 +288,9 @@ public abstract class MutualInfoMultiVariateCommon implements
 					destObservations, startObservation, 0,
 					destination.length - timeDiff, dimensionsDest);
 			startObservation += destination.length - timeDiff;
+		}
+		if (vectorOfSourceObservations.size() > 1) {
+			addedMoreThanOneObservationSet = true;
 		}
 		// We don't need to keep the vectors of observation sets anymore:
 		vectorOfSourceObservations = null;

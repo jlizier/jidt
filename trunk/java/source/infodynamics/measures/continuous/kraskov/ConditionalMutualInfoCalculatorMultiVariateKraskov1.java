@@ -93,7 +93,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 			//  finding the kth closest neighbour for point t:
 			long methodStartTime = Calendar.getInstance().getTimeInMillis();
 			PriorityQueue<NeighbourNodeData> nnPQ =
-					kdTreeJoint.findKNearestNeighbours(k, t);
+					kdTreeJoint.findKNearestNeighbours(k, t, dynCorrExclTime);
 			knnTime += Calendar.getInstance().getTimeInMillis() -
 					methodStartTime;
 			// First element in the PQ is the kth NN,
@@ -108,11 +108,11 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 			 * To use this, need to construct kdTreeVar1Conditional and
 			 *  kdTreeVar2Conditional regardless of dimensionsVar1 and 2.
 			int n_xz = kdTreeVar1Conditional.countPointsStrictlyWithinR(
-					t, kthNnData.distance);
+					t, kthNnData.distance, dynCorrExclTime);
 			int n_yz = kdTreeVar2Conditional.countPointsStrictlyWithinR(
-					t, kthNnData.distance);
+					t, kthNnData.distance, dynCorrExclTime);
 			int n_z = nnSearcherConditional.countPointsStrictlyWithinR(
-			t, kthNnData.distance);
+			t, kthNnData.distance, dynCorrExclTime);
 			*/ // end option A
 			
 			/* Option B -- 
@@ -123,7 +123,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 			 *   
 			Collection<NeighbourNodeData> z_pointsWithinR = 
 					nnSearcherConditional.findPointsStrictlyWithinR(
-							t, kthNnData.distance);
+							t, kthNnData.distance, dynCorrExclTime);
 			int n_z = z_pointsWithinR.size();
 			
 			int n_xz = 0, n_yz = 0;
@@ -151,7 +151,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 			if (debug) {
 				methodStartTime = Calendar.getInstance().getTimeInMillis();
 			}
-			nnSearcherConditional.findPointsWithinR(t, kthNnData.distance,
+			nnSearcherConditional.findPointsWithinR(t, kthNnData.distance, dynCorrExclTime,
 					false, isWithinRForConditionals, indicesWithinRForConditionals);
 			if (debug) {
 				conditionalTime += Calendar.getInstance().getTimeInMillis() -
@@ -160,6 +160,8 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 			}
 			// 2. Then compute n_xz and n_yz harnessing our knowledge of
 			//  which points qualified for the conditional already:
+			// Don't need to supply dynCorrExclTime in the following, because only 
+			//  points outside of it have been included in isWithinRForConditionals
 			int n_xz;
 			if (dimensionsVar1 > 1) {
 				n_xz = kdTreeVar1Conditional.countPointsWithinR(t, kthNnData.distance,

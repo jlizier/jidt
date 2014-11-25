@@ -182,6 +182,25 @@ public abstract class NearestNeighbourSearcher {
 		findKNearestNeighbours(int K, int sampleIndex) throws Exception;
 
 	/**
+	 * Return the K nodes which are the K nearest neighbours for a given
+	 *  sample index in the data set. Nodes within dynCorrExclTime time points
+	 *  are excluded from the search.
+	 * Nearest neighbour function to compare to r is a max norm between the
+	 * high-level variables, with norm for each variable being the specified norm.
+	 * 
+	 * @param K number of K nearest neighbours to return, sorted from
+	 *  furthest away first to nearest last.
+	 * @param sampleIndex sample index in the data to find the K nearest neighbours
+	 *  for
+	 * @param dynCorrExclTime Range around sampleIndex to exclude points from the count. Is >= 0. 
+	 * @return a PriorityQueue of nodes for the K nearest neighbours,
+	 *  sorted with furthest neighbour first in the PQ.
+	 * @throws Exception 
+	 */
+	public abstract PriorityQueue<NeighbourNodeData>
+		findKNearestNeighbours(int K, int sampleIndex, int dynCorrExclTime) throws Exception;
+
+	/**
 	 * Count the number of points within norm r for a given
 	 *  sample index in the data set. The node itself is 
 	 *  excluded from the search.
@@ -200,6 +219,23 @@ public abstract class NearestNeighbourSearcher {
 	 */
 	public abstract int countPointsWithinR(int sampleIndex, double r,
 			boolean allowEqualToR);
+
+	/**
+	 * As per {@link #countPointsWithinR(int, double, boolean)}
+	 * however any nodes within dynCorrExclTime are excluded from
+	 * the search.
+	 * 
+	 * @param sampleIndex sample index in the data to find a nearest neighbour
+	 *  for
+	 * @param r radius within which to count points
+	 * @param dynCorrExclTime time window within which to exclude
+	 *  points to be counted. Is >= 0. 0 means only exclude sampleIndex.
+	 * @param allowEqualToR if true, then count points at radius r also,
+	 *   otherwise only those strictly within r
+	 * @return the count of points within r.
+	 */
+	public abstract int countPointsWithinR(int sampleIndex, double r,
+			int dynCorrExclTime, boolean allowEqualToR);
 
 	/**
 	 * As per {@link #countPointsWithinR(int, double, boolean)}
@@ -239,6 +275,44 @@ public abstract class NearestNeighbourSearcher {
 			int sampleIndex, double r,
 			boolean allowEqualToR, boolean[] isWithinR, int[] indicesWithinR);
 
+	/**
+	 * As per {@link #findPointsWithinR(int, double, boolean, boolean[], int[])}
+	 * however incorporates dynamic correlation exclusion.
+	 * </p> 
+	 * 
+	 * @param sampleIndex sample index in the data to find a nearest neighbour
+	 *  for
+	 * @param r radius within which to count points
+	 * @param dynCorrExclTime time window within which to exclude
+	 *  points to be counted. Is >= 0. 0 means only exclude sampleIndex.
+	 * @param allowEqualToR if true, then count points at radius r also,
+	 *   otherwise only those strictly within r
+	 * @param isWithinR the array MUST be passed in with all points set to
+	 *  false initially, and is returned indicating whether each sample was
+	 *  found to be within r of that at sampleIndex.
+	 * @param indicesWithinR a list of array indices
+	 *  for points marked as true in isWithinR, terminated with a -1 value.
+	 */
+	public abstract void findPointsWithinR(
+			int sampleIndex, double r, int dynCorrExclTime,
+			boolean allowEqualToR, boolean[] isWithinR, int[] indicesWithinR);
+	
+	/**
+	 * As per {@link #countPointsWithinR(int, double, int, boolean)}
+	 * with allowEqualToR == false
+	 * 
+	 * @param sampleIndex sample index in the data to find a nearest neighbour
+	 *  for
+	 * @param r radius within which to count points
+	 * @param dynCorrExclTime time window within which to exclude
+	 *  points to be counted. Is >= 0. 0 means only exclude sampleIndex.
+	 * @return the count of points within r.
+	 */
+	public int countPointsStrictlyWithinR(int sampleIndex, double r,
+						int dynCorrExclTime) {
+		return countPointsWithinR(sampleIndex, r, dynCorrExclTime, false);
+	}
+	
 	/**
 	 * As per {@link #countPointsWithinR(int, double, boolean)}
 	 * with allowEqualToR == false
@@ -296,6 +370,22 @@ public abstract class NearestNeighbourSearcher {
 	 */
 	public int countPointsWithinOrOnR(int sampleIndex, double r) {
 		return countPointsWithinR(sampleIndex, r, true);
+	}
+
+	/**
+	 * As per {@link #countPointsWithinR(int, double, int, boolean)}
+	 * with allowEqualToR == true
+	 * 
+	 * @param sampleIndex sample index in the data to find a nearest neighbour
+	 *  for
+	 * @param r radius within which to count points
+	 * @param dynCorrExclTime time window within which to exclude
+	 *  points to be counted. Is >= 0. 0 means only exclude sampleIndex.
+	 * @return the count of points within or on r.
+	 */
+	public int countPointsWithinOrOnR(int sampleIndex, double r,
+			int dynCorrExclTime) {
+		return countPointsWithinR(sampleIndex, r, dynCorrExclTime, true);
 	}
 
 	/**

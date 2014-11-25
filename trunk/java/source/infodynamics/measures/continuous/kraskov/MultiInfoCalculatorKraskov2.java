@@ -81,7 +81,7 @@ public class MultiInfoCalculatorKraskov2
 			// Compute eps_x for each marginal x for this time step by
 			//  finding the kth closest neighbours for point t:
 			PriorityQueue<NeighbourNodeData> nnPQ =
-					kdTreeJoint.findKNearestNeighbours(k, t);
+					kdTreeJoint.findKNearestNeighbours(k, t, dynCorrExclTime);
 
 			// Find eps_x as the maximum x norm amongst this set
 			//  for each marginal x
@@ -103,7 +103,7 @@ public class MultiInfoCalculatorKraskov2
 			for (int d = 0; d < dimensions; d++) {
 				n_marginals[d] =
 						rangeSearchersInMarginals[d].countPointsWithinOrOnR(
-								t, eps_marginals[d]);
+								t, eps_marginals[d], dynCorrExclTime);
 				sumNMarginals[d] += n_marginals[d];
 				// And take the digammas:
 				thisSumDiGammas += MathsUtils.digamma(n_marginals[d]);
