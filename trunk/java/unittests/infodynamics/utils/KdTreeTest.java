@@ -1107,4 +1107,69 @@ public class KdTreeTest extends TestCase {
 			}
 		}
 	}
+	
+	public void testPreviouslyTestedVariableMethodMultipleRs() throws Exception {
+		
+		for (int vars = 2; vars <= 3; vars++) {
+			for (int dimsPerVar = 1; dimsPerVar <= 3; dimsPerVar++) {
+				for (int varToPretest = 0; varToPretest < vars; varToPretest++) {
+					validatePreviouslyTestedVariableMethodMultipleRs(
+							vars, dimsPerVar, varToPretest, true);
+					validatePreviouslyTestedVariableMethodMultipleRs(
+							vars, dimsPerVar, varToPretest, false);
+				}
+			}
+		}
+	}
+	
+	public void validatePreviouslyTestedVariableMethodMultipleRs(int variables,
+			int dimensionsPerVariable, int variableToPretest, boolean allowEqualsR) throws Exception {
+		int samples = 1000;
+		double[][][] data = new double[variables][][];
+		for (int v = 0; v < variables; v++) {
+			data[v] = rg.generateNormalData(samples, dimensionsPerVariable, 0, 1);
+		}
+
+		long startTime = Calendar.getInstance().getTimeInMillis();
+		int[] dimensions = new int[variables];
+		for (int v = 0; v < variables; v++) {
+			dimensions[v] = dimensionsPerVariable;
+		}
+		KdTree kdTree = new KdTree(dimensions, data);
+		NearestNeighbourSearcher nnSearcherVarToPretest =
+				NearestNeighbourSearcher.create(data[variableToPretest]);
+		long endTimeTree = Calendar.getInstance().getTimeInMillis();
+		System.out.printf("Previously Tested Variable Method Multiple Rs test: Tree of %d points constructed in: %.3f sec\n",
+				samples, ((double) (endTimeTree - startTime)/1000.0));
+
+		double[] mainRadii = {1.0};
+		boolean[] isWithinR = new boolean[samples];
+		int[] indicesWithinR = new int[samples+1];
+		for (int i = 0; i < mainRadii.length; i++) {
+			// Construct a set of radii here:
+			double[] r = new double[variables];
+			for (int v = 0; v < variables; v++) {
+				r[v] = mainRadii[i] * Math.pow(0.7, v);
+			}
+			// Now test each sample point:
+			for (int t = 0; t < samples; t++) {
+				// Establish our ground truth:
+				int count = kdTree.countPointsWithinRs(t, r, allowEqualsR);
+				
+				// Now search in the pretest first, then use that 
+				//  to help the others:
+				nnSearcherVarToPretest.findPointsWithinR(t, r[variableToPretest], 0,
+						allowEqualsR, isWithinR, indicesWithinR);
+				int countUsingPretestVar = kdTree.countPointsWithinRs(t, r,
+						allowEqualsR, variableToPretest, isWithinR);
+				assertEquals(count, countUsingPretestVar);
+				
+				// Finally, reset our boolean array:
+				for (int t2 = 0; indicesWithinR[t2] != -1; t2++) {
+					isWithinR[indicesWithinR[t2]] = false;
+				}
+			}
+		}
+	}
+
 }
