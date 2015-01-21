@@ -145,7 +145,8 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 			int n_xz;
 			if (dimensionsVar1 > 1) {
 				// Check only the x variable against eps_x, use existing results for z
-				n_xz = kdTreeVar1Conditional.countPointsWithinR(t, eps_x,
+				n_xz = kdTreeVar1Conditional.countPointsWithinRs(t, 
+						new double[] {eps_x, eps_z},
 						true, 1, isWithinRForConditionals);
 			} else { // Generally faster to search only the marginal space if it is univariate 
 				n_xz = uniNNSearcherVar1.countPointsWithinR(t, eps_x,
@@ -154,7 +155,8 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 			int n_yz;
 			if (dimensionsVar2 > 1) {
 				// Check only the y variable against eps_y, use existing results for z
-				n_yz = kdTreeVar2Conditional.countPointsWithinR(t, eps_y,
+				n_yz = kdTreeVar2Conditional.countPointsWithinRs(t,
+						new double[] {eps_y, eps_z},
 						true, 1, isWithinRForConditionals);
 			} else { // Generally faster to search only the marginal space if it is univariate
 				n_yz = uniNNSearcherVar2.countPointsWithinR(t, eps_y,

@@ -97,6 +97,9 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 			sumDiGammas += digammaNxPlusOne + digammaNyPlusOne;
 
 			if (returnLocals) {
+				// TODO should digammaN be adjusted if we are using 
+				//  dynamic correlation exclusion, since we're not sampling from
+				//  N after all? Think about this for all Kraskov estimators.
 				localMi[t-startTimePoint] = digammaK - digammaNxPlusOne - digammaNyPlusOne + digammaN;
 			}
 		}
