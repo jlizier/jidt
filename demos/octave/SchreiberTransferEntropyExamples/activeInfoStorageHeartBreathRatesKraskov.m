@@ -74,9 +74,9 @@ function [aisHeart, aisBreath] = activeInfoStorageHeartBreathRatesKraskov(kHisto
 		% Compute an AIS value for this embedding length for each variable:
 				
 		% Perform calculation for heart
-		aisCalc.initialise(kHistory); % Use history length kHistory (Schreiber k)
 		aisCalc.setProperty('k', sprintf('%d',knn));
 		aisCalc.setProperty('NORMALISE', 'true');
+		aisCalc.initialise(kHistory); % Use history length kHistory (Schreiber k)
 		aisCalc.setObservations(octaveToJavaDoubleArray(heart(1:timeSteps)));
 		aisHeart(kIndex) = aisCalc.computeAverageLocalOfObservations();
 		if (numSurrogates > 0)
@@ -86,9 +86,9 @@ function [aisHeart, aisBreath] = activeInfoStorageHeartBreathRatesKraskov(kHisto
 		end
 		
 		% Perform calculation for breath
-		aisCalc.initialise(kHistory); % Use history length kHistory (Schreiber k)
 		aisCalc.setProperty('k', sprintf('%d',knn));
 		aisCalc.setProperty('NORMALISE', 'true');
+		aisCalc.initialise(kHistory); % Use history length kHistory (Schreiber k)
 		aisCalc.setObservations(octaveToJavaDoubleArray(chestVol(1:timeSteps)));
 		aisBreath(kIndex) = aisCalc.computeAverageLocalOfObservations();
 		if (numSurrogates > 0)
