@@ -41,15 +41,19 @@ startJVM(getDefaultJVMPath(), "-ea", "-Djava.class.path=" + jarLocation)
 # 1. Properties for the calculation (these are dynamically changeable):
 # The name of the data file (relative to this directory)
 datafile = '../data/4ColsPairedNoisyDependence-1.txt'
-# List of column numbers for variables 1 and 2:
+# List of column numbers for univariate time seres 1 and 2:
 #  (you can select any columns you wish to be contained in each variable)
-variable1Columns = [0,1] # array indices start from 0 in python
-variable2Columns = [2,3]
+univariateSeries1Column = 0; # array indices start from 0 in python
+univariateSeries2Column = 2;
+# List of column numbers for joint variables 1 and 2:
+#  (you can select any columns you wish to be contained in each variable)
+jointVariable1Columns = [0,1] # array indices start from 0 in python
+jointVariable2Columns = [2,3]
 # The name of the concrete implementation of the interface 
 #  infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate
 #  which we wish to use for the calculation.
 # Note that one could use any of the following calculators (try them all!):
-#  implementingClass = "infodynamics.measures.continuous.kraskov.MutualInfoCalculatorMultiVariateKraskov1" # MI([0,1], [2,3]) = 0.35507
+#  implementingClass = "infodynamics.measures.continuous.kraskov.MutualInfoCalculatorMultiVariateKraskov1" # MI(1;3) as 0.10044, MI([1,2], [3,4]) = 0.36353 (NATS not bits)
 #  implementingClass = "infodynamics.measures.continuous.kernel.MutualInfoCalculatorMultiVariateKernel"
 #  implementingClass = "infodynamics.measures.continuous.gaussian.MutualInfoCalculatorMultiVariateGaussian"
 implementingClass = "infodynamics.measures.continuous.kraskov.MutualInfoCalculatorMultiVariateKraskov1"
@@ -59,15 +63,18 @@ implementingClass = "infodynamics.measures.continuous.kraskov.MutualInfoCalculat
 data = readFloatsFile.readFloatsFile(datafile)
 # As numpy array:
 A = numpy.array(data)
-# Pull out the columns from the data set which correspond to each of variable 1 and 2:
-variable1 = A[:,variable1Columns]
-variable2 = A[:,variable2Columns]
+# Pull out the columns from the data set for a univariate MI calculation:
+univariateSeries1 = A[:,univariateSeries1Column];
+univariateSeries2 = A[:,univariateSeries2Column];
+# Pull out the columns from the data set for a multivariate MI calculation:
+jointVariable1 = A[:,jointVariable1Columns]
+jointVariable2 = A[:,jointVariable2Columns]
 
 #--------------------
 # 3. Dynamically instantiate an object of the given class:
 # (in fact, all java object creation in python is dynamic - it has to be,
 #  since the languages are interpreted. This makes our life slightly easier at this
-#  point than it is in demos/java/lateBindingDemo where we have to handle this manually)
+#  point than it is in demos/java/example6 where we have to handle this manually)
 indexOfLastDot = string.rfind(implementingClass, ".")
 implementingPackage = implementingClass[:indexOfLastDot]
 implementingBaseName = implementingClass[indexOfLastDot+1:]
@@ -79,13 +86,25 @@ miCalc = miCalcClass()
 #  call common methods defined in the interface type
 #  infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate
 #  not methods only defined in a given implementation class.
-# a. Initialise the calculator to use the required number of
-#   dimensions for each variable:
-miCalc.initialise(len(variable1Columns), len(variable2Columns))
+# a. Initialise the calculator for a univariate calculation:
+miCalc.initialise(1, 1)
 # b. Supply the observations to compute the PDFs from:
-miCalc.setObservations(variable1, variable2)
+miCalc.setObservations(univariateSeries1, univariateSeries2)
 # c. Make the MI calculation:
-miValue = miCalc.computeAverageLocalOfObservations()
+miUnivariateValue = miCalc.computeAverageLocalOfObservations()
 
-print("MI calculator %s computed the joint MI as %.5f\n" % (implementingClass, miValue))
+#---------------------
+# 5. Continue onto a multivariate calculation, still
+#    only calling common methods defined in the interface type.
+# a. Initialise the calculator for a multivariate calculation
+#   to use the required number of dimensions for each variable:
+miCalc.initialise(len(jointVariable1Columns), len(jointVariable2Columns))
+# b. Supply the observations to compute the PDFs from:
+miCalc.setObservations(jointVariable1, jointVariable2)
+# c. Make the MI calculation:
+miJointValue = miCalc.computeAverageLocalOfObservations()
+
+print("MI calculator %s computed the univariate MI(%d;%d) as %.5f and joint MI([%s];[%s]) as %.5f\n" %
+	(implementingClass, univariateSeries1Column, univariateSeries2Column, miUnivariateValue,
+	str(jointVariable1Columns).strip('[]'), str(jointVariable2Columns).strip('[]'), miJointValue))
 
