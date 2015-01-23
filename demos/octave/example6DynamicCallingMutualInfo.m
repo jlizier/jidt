@@ -65,7 +65,7 @@ jointVariable2 = data(:, jointVariable2Columns);
 % 3. Dynamically instantiate an object of the given class:
 % (in fact, all java object creation in octave/matlab is dynamic - it has to be,
 %  since the languages are interpreted. This makes our life slightly easier at this
-%  point than it is in demos/java/lateBindingDemo where we have to handle this manually)
+%  point than it is in demos/java/example6 where we have to handle this manually)
 miCalc = javaObject(implementingClass);
 
 %---------------------
