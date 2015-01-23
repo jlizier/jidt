@@ -44,9 +44,6 @@ package infodynamics.measures.continuous;
  */
 public interface ChannelCalculatorMultiVariate extends ChannelCalculatorCommon {
 
-	// TODO We should define methods for adding univariate series
-	//  if our multivariates only have a single dimension.
-	
 	/**
 	 * Initialise the calculator for (re-)use, with the existing
 	 * (or default) values of parameters, with number of source
@@ -77,6 +74,33 @@ public interface ChannelCalculatorMultiVariate extends ChannelCalculatorCommon {
 	public void setObservations(double[][] source, double[][] destination) throws Exception;
 
 	/**
+	 * Sets a single pair of univariate series from which to compute the PDF for the channel measure --
+	 * available ONLY if both sourceDimensions and destDimensions were initialised
+	 * to 1.
+	 * Cannot be called in conjunction with other methods for setting/adding
+	 * observations.
+	 * 
+	 * <p>The supplied series are certainly time-series for time-series measures
+	 * such as transfer entropy, however may be simply a set of separate observations
+	 * for the mutual information without a time interpretation.
+	 * 
+	 * <p>Design note: this method is defined here in addition to in
+	 * {@link ChannelCalculator} rather than only in {@link ChannelCalculatorCommon}
+	 * since {@link ConditionalTransferEntropyCalculator} etc inherit
+	 * directly from {@link ChannelCalculatorCommon} but this method would not
+	 * be relevant for them.
+	 * </p>
+	 * 
+	 * @param source series of observations for the source variable. 
+	 * @param destination series of observations for the destination
+	 *  variable. Length must match <code>source</code>, and their indices
+	 *  must correspond.
+	 * @throws Exception if sourceDimensions and destDimensions were not both initialised
+	 *  to 1 in {@link #initialise(int, int)}
+	 */
+	public void setObservations(double source[], double destination[]) throws Exception;
+	
+	/**
 	 * <p>Adds a new set of observations to update the PDFs with - is
 	 * intended to be called multiple times.
 	 * Must be called after {@link #startAddObservations()}; call
@@ -102,6 +126,41 @@ public interface ChannelCalculatorMultiVariate extends ChannelCalculatorCommon {
 	 */
 	public void addObservations(double[][] source, double[][] destination) throws Exception;
 	
+	/**
+	 * <p>Adds a new set of univariate observations to update the PDFs with.
+	 * available ONLY if both sourceDimensions and destDimensions were initialised
+	 * to 1.
+	 * It is intended to be called multiple times, and must
+	 * be called after {@link #startAddObservations()}. Call
+	 * {@link #finaliseAddObservations()} once all observations have
+	 * been supplied.</p>
+	 * 
+	 * <p><b>Important:</b> this does not append these observations to the previously
+	 *  supplied observations, but treats them independently - i.e. measurements
+	 *  such as the transfer entropy will not join them up to examine k
+	 *  consecutive values in time.</p>
+	 *  
+	 * <p>Note that the arrays source and destination must not be over-written by the user
+	 *  until after {@link #finaliseAddObservations()} has been called
+	 *  (they are not copied by this method necessarily, but the method
+	 *  may simply hold a pointer to them).</p>
+	 * 
+	 * <p>Design note: this method is defined here in addition to in
+	 * {@link ChannelCalculator} rather than only in {@link ChannelCalculatorCommon}
+	 * since {@link ConditionalTransferEntropyCalculator} etc inherit
+	 * directly from {@link ChannelCalculatorCommon} but this method would not
+	 * be relevant for them.
+	 * </p>
+	 * 
+	 * @param source series of observations for the source variable. 
+	 * @param destination series of observations for the destination
+	 *  variable. Length must match <code>source</code>, and their indices
+	 *  must correspond.
+	 * @throws Exception if sourceDimensions and destDimensions were not both initialised
+	 *  to 1 in {@link #initialise(int, int)}
+	 */
+	public void addObservations(double[] source, double[] destination) throws Exception;
+
 	/**
 	 * <p>Adds a new sub-series of observations to update the PDFs with - is
 	 * intended to be called multiple times.

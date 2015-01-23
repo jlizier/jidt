@@ -181,6 +181,12 @@ public abstract class MutualInfoMultiVariateCommon implements
 		finaliseAddObservations();
 	}
 
+	public void setObservations(double[] source, double[] destination) throws Exception {
+		startAddObservations();
+		addObservations(source, destination);
+		finaliseAddObservations();
+	}
+
 	public void startAddObservations() {
 		vectorOfSourceObservations = new Vector<double[][]>();
 		vectorOfDestinationObservations = new Vector<double[][]>();
@@ -209,6 +215,18 @@ public abstract class MutualInfoMultiVariateCommon implements
 		}
 		vectorOfSourceObservations.add(source);
 		vectorOfDestinationObservations.add(destination);
+	}
+
+	public void addObservations(double[] source, double[] destination) throws Exception {
+		
+		if ((dimensionsDest != 1) || (dimensionsSource != 1)) {
+			throw new Exception("The number of source and dest dimensions (having been initialised to " +
+					dimensionsSource + " and " + dimensionsDest + ") can only be 1 when " +
+					"the univariate addObservations(double[],double[]) and " + 
+					"setObservations(double[],double[]) methods are called");
+		}
+		addObservations(MatrixUtils.reshape(source, source.length, 1),
+						MatrixUtils.reshape(destination, destination.length, 1));
 	}
 
 	public void addObservations(double[][] source, double[][] destination,
