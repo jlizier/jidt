@@ -128,6 +128,13 @@ Notices for this software are found in the notices/JAMA directory.
  Release notes
 ===============
 
+v1.2 28/1/2015 at r601
+-----------------------
+Dynamic correlation exclusion, or Theiler window, added to all Kraskov estimators;
+Added univariate MI calculation to simple demo 6;
+Added Java code for Schreiber TE heart-breath rate with KSG estimator, ready for use as a template in Tutorial;
+Patch for crashes in KSG conditional MI algorithm 2;
+
 v1.1 14/11/2014 at r576
 -----------------------
 Implemented Fast Nearest Neighbour Search for Kraskov-Stögbauer-Grassberger (KSG) estimators for MI, conditional MI, TE, conditional TE, AIS, Predictive info, and multi-information. This includes a general (multivariate) k-d tree implementation;
