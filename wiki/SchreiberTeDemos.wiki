@@ -119,6 +119,7 @@ There are a number of important items to observe here:
  # The results are above the noise floor for approximately `K>=3` for breath->heart and approximately `K>=8` for heart->breath. That is, below this scale any apparent TE is a statistical fluctuation simply due to undersampling. One can explore this by using the fourth parameter `numSurrogates` to this script (use 100 to quickly get an estimate of the variance of the noise floor, though for formal results one should use at least 1000).
  # With an appropriate setting for the number of nearest neighbours `K` to set the scale avoiding undersampling, we see that the measure is very robust to this parameter.
  # Indeed, the results suggest that breath->heart is the dominant direction for information transfer, though there is of course a complex two-way interaction here.
+ # Dynamic correlation exclusion (Theiler window) does make a difference here, but not to the overall conclusions (Exercise: check this by settings the property `DYN_CORR_EXCL` for the calculator).
 
 == References ==
 
