@@ -20,6 +20,7 @@
   * [DetectingInteractionLags Detecting interaction lags]
   * [NullDistributions Null distributions]
   * [InterregionalTransfer Interregional transfer]
+ * [Tutorial]
  * Non-Java environments
   * [UseInOctaveMatlab Matlab/Octave]
    * [OctaveJavaArrayConversion Array conversion to/from Octave]
