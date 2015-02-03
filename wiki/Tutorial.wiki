@@ -34,8 +34,8 @@ You can either:
 *HINT* -- If you're getting stuck, start with one of our sample TE scripts as above, and try to read through and understand how it is working first.
 Next, remember that in using any of the calculators, you should follow the following steps:
  # Construct the calculator -- which class should you be using to achieve this calculation? (Remember we want MI, by KSG estimator, algorithm 2)
- # Initialise the calculator -- what parameters should be supplied here? (Check the [Documentation Javadocs] for this class)
  # Set relevant properties for the calculator -- what properties are available? (Check the [Documentation Javadocs] for this class)
+ # Initialise the calculator -- what parameters should be supplied here? (Check the [Documentation Javadocs] for this class)
  # Supply the data to the calculator using a `set/addObservations()` method
  # Calculate the average MI.
 
