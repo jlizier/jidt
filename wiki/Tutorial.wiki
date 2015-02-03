@@ -57,4 +57,9 @@ This challenge task is best achieved in Matlab/Octave, since it involves plottin
 
 Return to computing transfer entropy for heart to breath rate (using a KSG estimator, k=4 nearest neighbours) -- you can either write this from scratch or return to the demo code available as indicated above.
  # Compute the time-series of *local* TE here (*HINT*: see [SimpleJavaExamples#Example_4_-_Transfer_entropy_on_continuous_data_using_Kraskov_es Simple demo 4] if you're not sure how to do that)
- # Plot these local TE values as a function of the previous breath rate. Investigate both k and l=1 and k and l=2 for history embedding lengths here. This is inspired by Figure 4 in [http://arxiv.org/abs/1102.1507 arXiv:1102.1507]; the result will not be identical, since we are using a different estimator and our fully localised values will give a resulting scatter plots (rather than the somewhat smoothed results there due to partially local values). Further we use potentially different embedding lengths.
+ # Plot these local TE values as a function of the previous breath rate. Investigate both k and l=1 and k and l=2 for history embedding lengths here.
+
+This is inspired by Figure 4 in [http://arxiv.org/abs/1102.1507 arXiv:1102.1507]; the result will not be identical, since:
+ * we are using a different estimator;
+ * we use potentially different embedding lengths; and
+ * our fully localised values will give a resulting _scatter_ plot (rather than the somewhat smoothed results there due to partially local values). To get something more comparable, try smoothing over a window of consecutive previous breath rate values (will require sorting the results first ...)
