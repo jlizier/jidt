@@ -17,3 +17,5 @@ javac -classpath "../../infodynamics.jar" "infodynamics/demos/schreiberTransferE
 # Run the example:
 java -classpath ".:../../infodynamics.jar" infodynamics.demos.schreiberTransferEntropyExamples.HeartBreathRateKraskovRunner $1 $2 $3 $4
 
+cd SchreiberTransferEntropyExamples
+
