@@ -26,7 +26,10 @@ You can either:
  # write code for this from scratch in your preferred environment (the data set is at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Fdata%2FSFI-heartRate_breathVol_bloodOx.txt demos/data/SFI-heartRate_breathVol_bloodOx.txt]), or
  # you can start by using one of our sample scripts which calculate Transfer Entropy on this data set as a template. These samples include code to read in the data and parse the arguments. There are samples available for Transfer Entropy here in either:
   # Java ([http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Fjava%2Finfodynamics%2Fdemos%2FschreiberTransferEntropyExamples/HeartBreathRateKraskovRunner.java demos/java/infodynamics/demos/schreiberTransferEntropyExamples/HeartBreathRateKraskovRunner.java]) or
-  # Octave ([http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave%2FSchreiberTransferEntropyExamples/runHeartBreathRateKraskov.m demos/octave/SchreiberTransferEntropyExamples/runHeartBreathRateKraskov.m]).
+  # Octave ([http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave%2FSchreiberTransferEntropyExamples/runHeartBreathRateKraskov.m demos/octave/SchreiberTransferEntropyExamples/runHeartBreathRateKraskov.m]) or
+  # Python ([http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Fpython%2FSchreiberTransferEntropyExamples/runHeartBreathRateKraskov.py demos/python/SchreiberTransferEntropyExamples/runHeartBreathRateKraskov.py]).
+
+*Answer: 0.123 nats.*
 
 *HINT* -- If you're getting stuck, start with one of our sample TE scripts as above, and try to read through and understand how it is working first.
 Next, remember that in using any of the calculators, you should follow the following steps:
@@ -38,9 +41,15 @@ Next, remember that in using any of the calculators, you should follow the follo
 
 == 2. Challenge 1. Compute MI over various lags ==
 
-Extend your code from the above task to compute the Mutual Information between heart rate and breath rate, for a variety of lags between the two time-series. For instance, investigate lags of (-15, -14, ..., -1, 0, 1, ..., 14, 15).
+Extend your code from the above task to compute the Mutual Information between heart rate and breath rate, for a variety of lags between the two time-series. For instance, investigate lags of (0, 1, ..., 14, 15).
 
-*HINT*: You could either shift the time-series with respect to eachother to affect the lag, or a cleaner method can be achieved if you investigate the available properties for this MI calculator in the [Documentation Javadocs] ...
+*HINT*: You could either shift the time-series with respect to eachother to affect the lag, or a cleaner method can be achieved if you investigate the available properties for this MI calculator in the [Documentation Javadocs] (_Challenge_: what to do if you want to use negative lags, i.e. a positive lag from breath to heart, with this property?)
+
+Sample results:
+
+[http://information-dynamics-toolkit.googlecode.com/svn/trunk/demos/octave/SchreiberTransferEntropyExamples/sampleResults/heartBreathResults-kraskovMI.png] 
+
+What would you interpret from the results? Can you think of some logical further investigations here?
 
 == 3. Challenge 2. Compute Local TE as a function of past breath rate ==
 
