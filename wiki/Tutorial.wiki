@@ -51,15 +51,17 @@ Sample results:
 
 What would you interpret from the results? Can you think of some logical further investigations here?
 
-== 3. Challenge 2. Compute Local TE as a function of past breath rate ==
+== 3. Challenge 2. Compute Local TE as a function of target's past ==
 
 This challenge task is best achieved in Matlab/Octave, since it involves plotting the results.
 
-Return to computing transfer entropy for heart to breath rate (using a KSG estimator, k=4 nearest neighbours) -- you can either write this from scratch or return to the demo code available as indicated above.
+Return to computing transfer entropy for heart to breath rate and vice-versa (using a KSG estimator, k=4 nearest neighbours) -- you can either write this from scratch or return to the demo code available as indicated above.
  # Compute the time-series of *local* TE here (*HINT*: see [SimpleJavaExamples#Example_4_-_Transfer_entropy_on_continuous_data_using_Kraskov_es Simple demo 4] if you're not sure how to do that)
- # Plot these local TE values as a function of the previous breath rate. Investigate both k and l=1 and k and l=2 for history embedding lengths here.
+ # Plot these local TE values as a function of the previous value of the target (heart or breath rate). Investigate both k and l=1 and k and l=2 for history embedding lengths here.
 
 This is inspired by Figure 4 in [http://arxiv.org/abs/1102.1507 arXiv:1102.1507]; the result will not be identical, since:
  * we are using a different estimator;
  * we use potentially different embedding lengths; and
- * our fully localised values will give a resulting _scatter_ plot (rather than the somewhat smoothed results there due to partially local values). To get something more comparable, try smoothing over a window of consecutive previous breath rate values (will require sorting the results first ...)
+ * our fully localised values will give a resulting _scatter_ plot (rather than the somewhat smoothed results there due to partially local values). To get something more comparable, try smoothing over a window of consecutive previous target values (will require sorting the results first ...)
+
+What can you conclude from your results? Are they similar to [http://arxiv.org/abs/1102.1507 arXiv:1102.1507] despite the different estimator? Do we get any new insights for breath -> heart transfer?
