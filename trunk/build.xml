@@ -5,7 +5,7 @@
 	</description>
 	
 	<!-- set global properties for this build -->
-	<property name="version" value="1.2"/>
+	<property name="version" value="1.2.1"/>
 	<property name="mainfilename" value="infodynamics"/>
 	<property name="jarplainname" value="${mainfilename}.jar" />
 	<property name="jarversiondistnamezip" value="${mainfilename}-jar-${version}.zip" />
@@ -33,7 +33,17 @@
 	
 	<!-- Compile the java toolkit -->
 	<target name="compile" depends="init" description="compile the source and unittests">
-		<javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false"/>
+		<!-- Compile to Java 6 to provide compatibility for users with older JREs.
+		     Caveat: The flags here only check the language compatibility, but
+		     may still use newer libraries which may cause issues for users with JDK 6.
+		     Indeed, one gets the warning: "bootstrap class path not set in conjunction with -source 1.6"
+		     To fix this, one would use the bootstrap classpath to point our JDK to an rt.jar
+		     for Java 6. 
+		     At this stage, I'm sure I'm not using new library calls from Java 7, so we can
+		     ignore the warning, and I don't want to bother installing Java 6 just to compile
+		     like this. I'll endeavour not to use JDK 7 libraries so as not to cause
+		     any issues here ... -->
+		<javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false" target="1.6" source="1.6"/>
 	</target>
 
 	<!-- Jar the toolkit -->
