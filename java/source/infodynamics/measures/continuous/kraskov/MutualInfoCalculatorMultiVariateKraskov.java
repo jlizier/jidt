@@ -195,13 +195,13 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	 * <ul>
 	 *  <li>{@link #PROP_K} -- number of k nearest neighbours to use in joint kernel space
 	 *      in the KSG algorithm (default is 4).</li>
-	 * 	<li>{@link #PROP_NORM_TYPE}</li> -- normalization type to apply to 
+	 * 	<li>{@link #PROP_NORM_TYPE} -- normalization type to apply to 
 	 * 		working out the norms between the points in each marginal space.
 	 * 		Options are defined by {@link KdTree#setNormType(String)} -
-	 * 		default is {@link EuclideanUtils#NORM_MAX_NORM}.
+	 * 		default is {@link EuclideanUtils#NORM_MAX_NORM}.</li>
 	 *  <li>{@link #PROP_NORMALISE} -- whether to normalise the incoming individual
 	 *      variables to mean 0 and standard deviation 1 (true by default)</li>
-	 *  <li>{@link #DYN_CORR_EXCL_TIME_NAME} -- a dynamics exclusion time window,
+	 *  <li>{@link #PROP_DYN_CORR_EXCL_TIME} -- a dynamics exclusion time window,
 	 *      also known as Theiler window (see Kantz and Schreiber);
 	 *      default is 0 which means no dynamic exclusion window.</li>
 	 *  <li>{@link #PROP_ADD_NOISE} -- a standard deviation for an amount of
