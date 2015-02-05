@@ -183,11 +183,11 @@ public abstract class MultiInfoCalculatorKraskov
 	 * <ul>
 	 *  <li>{@link #PROP_K} -- number of k nearest neighbours to use in joint kernel space
 	 *      in the KSG algorithm (default is 4).</li>
-	 *  <li>{@link #PROP_NORM_TYPE}</li> -- normalization type to apply to 
+	 *  <li>{@link #PROP_NORM_TYPE} -- normalization type to apply to 
 	 *      working out the norms between the points in each marginal space.
-	 * 	    Options are defined by {@link EuclideanUtils#setNormToUse(String)} -
-	 * 	    default is {@link EuclideanUtils#NORM_MAX_NORM}.
-	 *  <li>{@link #DYN_CORR_EXCL_TIME_NAME} -- a dynamics exclusion time window,
+	 * 	    Options are defined by {@link KdTree#setNormType(String)} -
+	 * 	    default is {@link EuclideanUtils#NORM_MAX_NORM}.</li>
+	 *  <li>{@link #PROP_DYN_CORR_EXCL_TIME} -- a dynamics exclusion time window,
 	 *      also known as Theiler window (see Kantz and Schreiber);
 	 *      default is 0 which means no dynamic exclusion window.</li>
 	 *  <li>{@link #PROP_ADD_NOISE} -- a standard deviation for an amount of
@@ -197,9 +197,6 @@ public abstract class MultiInfoCalculatorKraskov
 	 *      so can be considered as a number of standard deviations of the data.
 	 *      (Recommended by Kraskov. MILCA uses 1e-8; but adds in
 	 *      a random amount of noise in [0,noiseLevel) ). Default 0.</li>
-	 *  <li>{@link #PROP_TRY_TO_KEEP_ALL_PAIRS_NORM} -- whether to keep the norms
-	 * 		each time, making reordering very quick
-	 * 		(default is true, Should only be set to false for testing)</li>
 	 * </ul>
 	 * 
 	 * <p>Unknown property values are ignored.</p>
