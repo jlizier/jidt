@@ -1,18 +1,19 @@
 #summary A brief tutorial for how to use JIDT
 
-The tutorial slides are currently being written and will be posted here shortly.
+The distribution (from V1.2.1) ships with a tutorial for users in the `tutorial` folder, consisting of a PDF of tutorial slides, a further guide to exercises, and sample solutions.
 
-The tutorial also contains an exercise.
+Further description of these components follows.
 
 = Slides =
 
-Coming soon.
+A 3 hour tutorial on JIDT was presented at the Australian Conference on Artificial Life, Newcastle, on February 5, 2015.
+The slides from that tutorial are available in the `tutorial` folder of the distribution (from V1.2.1 onwards), or directly [https://information-dynamics-toolkit.googlecode.com/svn/trunk/tutorial/JIDT-TutorialSlides.pdf here].
 
-The slides will introduce the information-theoretic measures, then briefly introduce the toolkit, and walk through some of the demos.
+The slides introduce the information-theoretic measures and estimation techniques, then briefly introduce the toolkit, walk through some of the demos, and guide the user through an exercise (expanded on below).
 
 = Excercise =
 
-To consolidate your understanding of the toolkit, you will complete a task of applying one of the calculators to one of the sample data sets to create some new insights.
+To consolidate your understanding of the toolkit, you will complete a task of applying one of the calculators to one of the sample data sets to create some new insights. The exercise comes with some code to get started in Java, Matlab/Octave and Python.
 
 == 1. Compute MI in heart-breath interaction ==
 
@@ -20,16 +21,16 @@ The demonstration set SchreiberTeDemos uses our toolkit to recreate Schreiber's 
 
 Your exercise task is to:
  # Compute the Mutual Information between the heart and breath rate for this data set (using samples 2350 to 3550, inclusive);
- # Using KSG Mutual Information estimator (say with KSG algorithm 2) with 4 nearest neighbours.
+ # Using KSG Mutual Information estimator (with KSG algorithm 2) with 4 nearest neighbours.
 
 You can either:
- # write code for this from scratch in your preferred environment (the data set is at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Fdata%2FSFI-heartRate_breathVol_bloodOx.txt demos/data/SFI-heartRate_breathVol_bloodOx.txt]), or
+ # write code for this from scratch in your preferred environment (the data set is at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Fdata%2FSFI-heartRate_breathVol_bloodOx.txt demos/data/SFI-heartRate_breathVol_bloodOx.txt] with heart rate in the first column and breath rate in the second), or
  # you can start by using one of our sample scripts which calculate Transfer Entropy on this data set as a template. These samples include code to read in the data and parse the arguments. There are samples available for Transfer Entropy here in either:
   # Java ([http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Fjava%2Finfodynamics%2Fdemos%2FschreiberTransferEntropyExamples/HeartBreathRateKraskovRunner.java demos/java/infodynamics/demos/schreiberTransferEntropyExamples/HeartBreathRateKraskovRunner.java]) or
   # Octave ([http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave%2FSchreiberTransferEntropyExamples/runHeartBreathRateKraskov.m demos/octave/SchreiberTransferEntropyExamples/runHeartBreathRateKraskov.m]) or
   # Python ([http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Fpython%2FSchreiberTransferEntropyExamples/runHeartBreathRateKraskov.py demos/python/SchreiberTransferEntropyExamples/runHeartBreathRateKraskov.py]).
 
-*Answer: 0.123 nats.*
+The *answer* that you are looking for is *0.123 nats* if you only explicitly set properties mentioned above (e.g. don't add any noise to the data, or dynamic correlation exclusion, etc.).
 
 *HINT* -- If you're getting stuck, start with one of our sample TE scripts as above, and try to read through and understand how it is working first.
 Next, remember that in using any of the calculators, you should follow the following steps:
@@ -50,18 +51,3 @@ Sample results:
 [http://information-dynamics-toolkit.googlecode.com/svn/trunk/demos/octave/SchreiberTransferEntropyExamples/sampleResults/heartBreathResults-kraskovMI.png] 
 
 What would you interpret from the results? Can you think of some logical further investigations here?
-
-== 3. Challenge 2. Compute Local TE as a function of target's past ==
-
-This challenge task is best achieved in Matlab/Octave, since it involves plotting the results.
-
-Return to computing transfer entropy for heart to breath rate and vice-versa (using a KSG estimator, k=4 nearest neighbours) -- you can either write this from scratch or return to the demo code available as indicated above.
- # Compute the time-series of *local* TE here (*HINT*: see [SimpleJavaExamples#Example_4_-_Transfer_entropy_on_continuous_data_using_Kraskov_es Simple demo 4] if you're not sure how to do that)
- # Plot these local TE values as a function of the previous value of the target (heart or breath rate). Investigate both k and l=1 and k and l=2 for history embedding lengths here.
-
-This is inspired by Figure 4 in [http://arxiv.org/abs/1102.1507 arXiv:1102.1507]; the result will not be identical, since:
- * we are using a different estimator;
- * we use potentially different embedding lengths; and
- * our fully localised values will give a resulting _scatter_ plot (rather than the somewhat smoothed results there due to partially local values). To get something more comparable, try smoothing over a window of consecutive previous target values (will require sorting the results first ...)
-
-What can you conclude from your results? Are they similar to [http://arxiv.org/abs/1102.1507 arXiv:1102.1507] despite the different estimator? Do we get any new insights for breath -> heart transfer?
