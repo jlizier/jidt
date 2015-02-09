@@ -40,6 +40,8 @@ Next, remember that in using any of the calculators, you should follow the follo
  # Supply the data to the calculator using a `set/addObservations()` method
  # Calculate the average MI.
 
+(If you are really stuck, you can compare your answer to the sample provided at [https://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/tutorial/sampleExerciseSolutions/matlabOctave/runHeartBreathRateKraskovMI.m tutorial/sampleExerciseSolutions/matlabOctave/runHeartBreathRateKraskovMI.m] or the excerpt of this in the tutorial slides.)
+
 == 2. Challenge 1. Compute MI over various lags ==
 
 Extend your code from the above task to compute the Mutual Information between heart rate and breath rate, for a variety of lags between the two time-series. For instance, investigate lags of (0, 1, ..., 14, 15).
@@ -51,3 +53,5 @@ Sample results:
 [http://information-dynamics-toolkit.googlecode.com/svn/trunk/demos/octave/SchreiberTransferEntropyExamples/sampleResults/heartBreathResults-kraskovMI.png] 
 
 What would you interpret from the results? Can you think of some logical further investigations here?
+
+(If you are really stuck, you can compare your answer to the sample provided at [https://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/tutorial/sampleExerciseSolutions/matlabOctave/runHeartBreathRateKraskovMIWithLags.m tutorial/sampleExerciseSolutions/matlabOctave/runHeartBreathRateKraskovMIWithLags.m])
