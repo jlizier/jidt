@@ -190,6 +190,7 @@
 			<zipfileset dir="demos" includes="**/*.*,**/*" excludes="clojure/deploy,clojure/deploy/*.*,python/*.pyc" prefix="demos"/>
 			<zipfileset dir="javadocs" includes="**/*.*,**/*" prefix="javadocs"/>
 			<zipfileset dir="notices" includes="**/*.*,**/*" prefix="notices"/>
+			<zipfileset dir="tutorial" prefix="tutorial"/>
 		</zip>
 	</target>
 </project>
