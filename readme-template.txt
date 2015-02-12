@@ -130,7 +130,7 @@ Notices for this software are found in the notices/JAMA directory.
  Release notes
 ===============
 
-v1.2.1 12/2/2015 at r619
+v1.2.1 12/2/2015 at r621
 ------------------------
 Added tutorial slides, description of exercises and sample exercise solutions;
 Made jar target Java 1.6;
