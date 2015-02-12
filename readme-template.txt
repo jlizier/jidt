@@ -1,6 +1,6 @@
 Java Information Dynamics Toolkit (JIDT)
 Copyright (C) 2012-2014 Joseph T. Lizier
-Copyright (C) 2014 Joseph T. Lizier and Ipek Özdemir
+Copyright (C) 2014-2015 Joseph T. Lizier and Ipek Özdemir
 
 Version @VERSION@ (see release notes below)
 
@@ -31,7 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
    Website
 =============
 
-Full information on the JIDT (usage, etc) is provided at the project page on google code:
+Full information on the JIDT (usage, etc) is provided at the project page and wiki on google code:
 
 http://code.google.com/p/information-dynamics-toolkit/
 
@@ -58,13 +58,15 @@ Documentation
 
 A research paper describing the toolkit is included in the top level directory -- "InfoDynamicsToolkit.pdf".
 
+A tutorial, providing background to the information-theoretic measures, various estimators, and then to the JIDT toolkit itself is included in the tutorial folder (see "JIDT-TutorialSlides.pdf" for the tutorial slides, and "README-TutorialAndExercise.pdf" for further description of the tutorial exercises).
+
 Javadocs for the toolkit are included in the full distribution at javadocs.
 They can also be generated using "ant javadocs" (useful if you are on an SVN view).
 Further, they will soon be posted on the web.
 
 The project wiki also contains further information on various aspects; see http://code.google.com/p/information-dynamics-toolkit/ to start.
 
-Further documentation is provided by the Usage examples below.
+Further documentation is provided by the Usage demo examples below.
 
 You can also join our email discussion group jidt-discuss at http://groups.google.com/d/forum/jidt-discuss
 
@@ -127,6 +129,12 @@ Notices for this software are found in the notices/JAMA directory.
 ===============
  Release notes
 ===============
+
+v1.2.1 12/2/2015 at r619
+------------------------
+Added tutorial slides, description of exercises and sample exercise solutions;
+Made jar target Java 1.6;
+Added Schreiber TE heart-breath rate with KSG estimator demo code for Python.
 
 v1.2 28/1/2015 at r601
 -----------------------
