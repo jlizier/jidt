@@ -6,6 +6,7 @@
 The documentation available for the project is as follows:
  * These *wiki pages*, including [FAQs]! (See the side-bar on left to navigate);
  * The *paper* describing JIDT at [http://arxiv.org/abs/1408.3270 arXiv:1408.3270] (PDF is also distributed with the toolkit);
+ * A *[Tutorial]* describing JIDT, including exercises (PDF is also distributed with the toolkit);
  * The *[Demos]* distributed with the toolkit give examples on how to use the various classes, including how to use it in [OctaveMatlabExamples Matlab and GNU Octave], [PythonExamples Python] and [R_Examples R].
  * The [JUnitTestCases unit tests] distributed with the toolkit provide additional examples on how to run the code.
  * *Javadocs* fully describing the Java class hierarchy and API for each class are distributed in the `javadocs` folder of the distribution, and hosted online as follows:
