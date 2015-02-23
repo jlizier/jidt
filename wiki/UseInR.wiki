@@ -9,7 +9,7 @@ Several longer examples of using the toolkit in R can be viewed at [R_Examples].
 
 = Using Java objects in R =
 
-[http://www.rforge.net/rJava/ rJava] offers a standard R package for an R to Java interface. It can easily be installed from CRAN ([http://cran.r-project.org/ Comprehensive R Archive Network]), and is also packaged for ubuntu (my platform of choice). Further details on rJava are available at http://cran.r-project.org/web/packages/rJava/rJava.pdf
+[http://www.rforge.net/rJava/ rJava] offers a standard R package for an R to Java interface. It can easily be installed from CRAN ([http://cran.r-project.org/ Comprehensive R Archive Network]), and is also packaged for ubuntu (my platform of choice) as `r-cran-rjava`. Further details on rJava are available at http://cran.r-project.org/web/packages/rJava/rJava.pdf
 
 As such, we only describe using JIDT in R via rJava here, though it may be possible with other mechanisms.
 
