@@ -57,3 +57,7 @@ Sample results:
 What would you interpret from the results? Can you think of some logical further investigations here?
 
 (If you are really stuck, you can compare your answer to the sample provided at [https://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/tutorial/sampleExerciseSolutions/matlabOctave/runHeartBreathRateKraskovMIWithLags.m tutorial/sampleExerciseSolutions/matlabOctave/runHeartBreathRateKraskovMIWithLags.m])
+
+= Where this tutorial has been run =
+
+ # [http://www.newcastle.edu.au/about-uon/governance-and-leadership/faculties-and-schools/faculty-of-engineering-and-built-environment/school-of-electrical-engineering-and-computer-science/acalci-2015/workshops-and-tutorials Australian Conference on Artificial Life and Computational Intelligence], February 5, 2014
