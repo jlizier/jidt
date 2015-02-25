@@ -11,6 +11,8 @@ The slides from that tutorial are available in the `tutorial` folder of the dist
 
 The slides introduce the information-theoretic measures and estimation techniques, then briefly introduce the toolkit, walk through some of the demos, and guide the user through an exercise (expanded on below).
 
+A shorter 30-minute presentation is available [http://lizier.me/joseph/presentations/20150223-Lizier-JIDT-V1.1.pdf here], though obviously it does not walk the user through using JIDT in the same level of detail.
+
 = Excercise =
 
 To consolidate your understanding of the toolkit, you will complete a task of applying one of the calculators to one of the sample data sets to create some new insights. The exercise comes with some code to get started in Java, Matlab/Octave and Python.
