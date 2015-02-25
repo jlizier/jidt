@@ -1,0 +1,9 @@
+#summary JIDT tutorial at the European Conference on Artificial Life (ECAL) 2015
+
+Complex systems are increasingly being viewed as distributed information processing systems, particularly in Artificial Life, computational neuroscience and bioinformatics. This trend has resulted in a strong uptake of information-theoretic measures to analyse the dynamics of complex systems in these fields.
+
+This tutorial will review the use of these measures as applied to complex systems, and then introduce participants to a software toolkit for conducting such analysis -- the [https://code.google.com/p/information-dynamics-toolkit/ Java information dynamics toolkit (JIDT)]. JIDT provides a standalone, (GNU GPL v3) open-source code implementation of measures for information dynamics, i.e. measures to quantify information storage, transfer and modification, and the dynamics of these operations in space and time. Principally, the toolkit implements the transfer entropy, (conditional) mutual information and active information storage, for both discrete and continuous-valued data. Various types of estimator (e.g. Gaussian, Kraskov-Stoegbauer-Grassberger) are provided for each measure. Furthermore, while written in Java, the toolkit can be used directly in Matlab, Octave and Python .
+
+Participants will learn how to install the JIDT software, how to get started with typical usage scenarios, and where to seek further support information. Participants will gain an understanding of how the sample usage scripts function, how to modify them for new analysis on their own data sets, and how to run the software in their chosen environment. We will also showcase more complex demonstrations, e.g. analysing information dynamics of cellular automata.
+
+Ability to run code in your preferred environment (Java, Matlab/Octave, Python) is assumed, and to fully participate users should bring their own laptop (with that environment installed).
