@@ -1,18 +1,27 @@
 #summary JIDT tutorial at the European Conference on Artificial Life (ECAL) 2015
 
-*Tutorial*: Introduction to JIDT: An information-theoretic toolkit for studying the dynamics of complex systems<br/>
+= Tutorial -- Introduction to JIDT: An information-theoretic toolkit for studying the dynamics of complex systems =
 
 To be held at the [http://www.cs.york.ac.uk/nature/ecal2015/ European Conference on Artificial Life (ECAL)] 2015:
  * *Timing*: TBA (within July 20-24, 2015)
  * *Location*: TBA (at York, UK)
 
-Complex systems are increasingly being viewed as distributed information processing systems, particularly in Artificial Life, computational neuroscience and bioinformatics. This trend has resulted in a strong uptake of information-theoretic measures to analyse the dynamics of complex systems in these fields.
-
 == About the Tutorial ==
+
+Complex systems are increasingly being viewed as distributed information processing systems, particularly in Artificial Life, computational neuroscience and bioinformatics. This trend has resulted in a strong uptake of information-theoretic measures to analyse the dynamics of complex systems in these fields.
 
 This tutorial will review the use of these measures as applied to complex systems, and then introduce participants to a software toolkit for conducting such analysis -- the [https://code.google.com/p/information-dynamics-toolkit/ Java information dynamics toolkit (JIDT)]. JIDT provides a standalone, (GNU GPL v3) open-source code implementation of measures for information dynamics, i.e. measures to quantify information storage, transfer and modification, and the dynamics of these operations in space and time. Principally, the toolkit implements the transfer entropy, (conditional) mutual information and active information storage, for both discrete and continuous-valued data. Various types of estimator (e.g. Gaussian, Kraskov-Stoegbauer-Grassberger) are provided for each measure. Furthermore, while written in Java, the toolkit can be used directly in Matlab, Octave and Python .
 
 Participants will learn how to install the JIDT software, how to get started with typical usage scenarios, and where to seek further support information. Participants will gain an understanding of how the sample usage scripts function, how to modify them for new analysis on their own data sets, and how to run the software in their chosen environment. We will also showcase more complex demonstrations, e.g. analysing information dynamics of cellular automata.
+
+== Registration ==
+
+Will be via the [http://www.cs.york.ac.uk/nature/ecal2015/ ECAL] conference.
+
+In addition to that, I'd appreciate it if you could ([mailto:joseph.lizier_AT_gmail.com email me]) beforehand to tell me:
+ * Your preferred environment to use JIDT in (Java, Matlab/Octave, Python)
+ * Your level of coding proficiency in that language (Beginner/Intermediate/Advanced)
+ * Whether you will have your laptop at the tutorial (strongly recommended)
 
 == Requirements on participants ==
 
@@ -21,3 +30,7 @@ Ability to run code in your preferred environment (Java, Matlab/Octave, Python) 
 == Organiser ==
 
 [http://lizier.me/joseph/ Dr. Joseph Lizier] ([mailto:joseph.lizier_AT_gmail.com email]) -- The University of Sydney
+
+== See also ==
+
+Our [Tutorial] page giving slides from previous tutorials and an exercise, plus links to previous runs of the tutorial
