@@ -5,6 +5,7 @@
   * [Downloads]
   * [Installation]
   * [Documentation]
+  * [Tutorial]
   * [Demos]
  * ImplementedMeasures
  * [Demos]
