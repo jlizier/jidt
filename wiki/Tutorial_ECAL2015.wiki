@@ -3,7 +3,7 @@
 = Tutorial -- Introduction to JIDT: An information-theoretic toolkit for studying the dynamics of complex systems =
 
 To be held at the [http://www.cs.york.ac.uk/nature/ecal2015/ European Conference on Artificial Life (ECAL)] 2015:
- * *Timing*: TBA (within July 20-24, 2015)
+ * *Timing*: 17:00-19:00, Monday 20th July, 2015 (main ECAL conference runs July 20-24, 2015)
  * *Location*: TBA (at York, UK)
 
 == About the Tutorial ==
