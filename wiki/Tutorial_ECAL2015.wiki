@@ -1,10 +1,11 @@
 #summary JIDT tutorial at the European Conference on Artificial Life (ECAL) 2015
+#labels tutorials
 
 = Tutorial -- Introduction to JIDT: An information-theoretic toolkit for studying the dynamics of complex systems =
 
 To be held at the [http://www.cs.york.ac.uk/nature/ecal2015/ European Conference on Artificial Life (ECAL)] 2015:
- * *Timing*: 17:00-19:00, Monday 20th July, 2015 (main ECAL conference runs July 20-24, 2015)
- * *Location*: TBA (at York, UK)
+ * *Timing*: 13:30-15:30, Monday 20th July, 2015 (main ECAL conference runs July 20-24, 2015)
+ * *Location*: Room TBA, at [http://www.york.ac.uk/yccsa/ York Centre for Complex Systems Analysis] at the [http://www.york.ac.uk/ The University of York], UK.
 
 == About the Tutorial ==
 
@@ -18,7 +19,7 @@ Participants will learn how to install the JIDT software, how to get started wit
 
 You will need to register for the [http://www.cs.york.ac.uk/nature/ecal2015/ main ECAL conference], but the [http://www.cs.york.ac.uk/nature/ecal2015/tutorials.html ECAL website] suggests that you will not need to register explicitly for this tutorial with your main ECAL registration.
 
-In order to reserve a place in this tutorial then, please ([mailto:joseph.lizier_AT_gmail.com email me]) beforehand and provide the following information:
+In order to reserve a place in this tutorial rather than take your chances on the day, please ([mailto:joseph.lizier_AT_gmail.com email me]) beforehand and provide the following information:
  * Your preferred environment to use JIDT in (Java, Matlab/Octave, Python)
  * Your level of coding proficiency in that language (Beginner/Intermediate/Advanced)
  * Whether you will have your laptop at the tutorial (strongly recommended)
@@ -26,6 +27,8 @@ In order to reserve a place in this tutorial then, please ([mailto:joseph.lizier
 == Requirements on participants ==
 
 Ability to run code in your preferred environment (Java, Matlab/Octave, Python) is assumed, and to fully participate users should bring their own laptop (with that environment installed).
+
+If you can [Installation install] JIDT on your laptop beforehand, that would be helpful, but is not required as we will cover this during the tutorial.
 
 == Organiser ==
 
