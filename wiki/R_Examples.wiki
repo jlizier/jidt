@@ -5,7 +5,7 @@
 
 = R code examples =
 
-This page describes a basic set of demonstration scripts for using the toolkit in R. The .r files can be found at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Fr demos/r] in the svn or main distributions (from the V1.1 release at a future point in time ...).
+This page describes a basic set of demonstration scripts for using the toolkit in R. The .r files can be found at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Fr demos/r] in the distributions (from the V1.1 release onwards).
 
 Please see [UseInR] for instructions on how to begin using the java toolkit from inside R.
 
