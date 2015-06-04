@@ -335,6 +335,16 @@ public abstract class TransferEntropyCommon implements
 	}
 
 	@Override
+	public String getProperty(String propertyName) {
+		if (propertyName.equalsIgnoreCase(K_PROP_NAME)) {
+			return Integer.toString(k);
+		} else {
+			// No property valid matches for this class
+			return null;
+		}
+	}
+
+	@Override
 	public double getLastAverage() {
 		return lastAverage;
 	}

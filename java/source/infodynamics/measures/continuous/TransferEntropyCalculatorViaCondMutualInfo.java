@@ -257,6 +257,25 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 	}
 
 	@Override
+	public String getProperty(String propertyName) throws Exception {
+		if (propertyName.equalsIgnoreCase(K_PROP_NAME)) {
+			return Integer.toString(k);
+		} else if (propertyName.equalsIgnoreCase(K_TAU_PROP_NAME)) {
+			return Integer.toString(k_tau);
+		} else if (propertyName.equalsIgnoreCase(L_PROP_NAME)) {
+			return Integer.toString(l);
+		} else if (propertyName.equalsIgnoreCase(L_TAU_PROP_NAME)) {
+			return Integer.toString(l_tau);
+		} else if (propertyName.equalsIgnoreCase(DELAY_PROP_NAME)) {
+			return Integer.toString(delay);
+		} else {
+			// No property matches for this class, assume it is for the underlying
+			//  conditional MI calculator
+			return condMiCalc.getProperty(propertyName);
+		}
+	}
+	
+	@Override
 	public void setObservations(double[] source, double[] destination) throws Exception {
 		
 		if (source.length != destination.length) {
