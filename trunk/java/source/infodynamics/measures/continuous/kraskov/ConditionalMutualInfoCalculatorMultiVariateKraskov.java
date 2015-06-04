@@ -271,6 +271,24 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 		}
 	}
 
+	@Override
+	public String getProperty(String propertyName) {
+		if (propertyName.equalsIgnoreCase(PROP_K)) {
+			return Integer.toString(k);
+		} else if (propertyName.equalsIgnoreCase(PROP_NORM_TYPE)) {
+			return KdTree.convertNormTypeToString(normType);
+		} else if (propertyName.equalsIgnoreCase(PROP_DYN_CORR_EXCL_TIME)) {
+			return Integer.toString(dynCorrExclTime);
+		} else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
+			return Double.toString(noiseLevel);
+		} else if (propertyName.equalsIgnoreCase(PROP_NUM_THREADS)) {
+			return Integer.toString(numThreads);
+		} else {
+			// try the superclass:
+			return super.getProperty(propertyName);
+		}
+	}
+
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ConditionalMutualInfoMultiVariateCommon#finaliseAddObservations()
 	 */
