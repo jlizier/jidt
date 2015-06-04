@@ -3709,6 +3709,13 @@ public class MatrixUtils {
 		out.println();
 	}
 
+	public static void printArray(PrintStream out, int decimalPlaces, double[] array) {
+		for (int r = 0; r < array.length; r++) {
+				out.printf(String.format("%%.%df ", decimalPlaces), array[r]);
+		}
+		out.println();
+	}
+
 	public static void printArray(PrintStream out, int[] array) {
 		for (int r = 0; r < array.length; r++) {
 				out.print(array[r] + " ");

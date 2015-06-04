@@ -79,6 +79,12 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	protected boolean debug = false;
 	
 	/**
+	 * Storage for source observations supplied via {@link #addObservations(double[])}
+	 * type calls
+	 */
+	protected Vector<double[]> vectorOfObservationTimeSeries;
+
+	/**
 	 * Construct using an instantiation of the named MI calculator
 	 * 
 	 * @param miCalculatorClassName fully qualified class name of the MI calculator to instantiate
@@ -158,7 +164,6 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	public void initialise(int k, int tau) throws Exception {
 		this.k = k;
 		this.tau = tau;
-		miCalc.initialise(k, 1);
 	}
 
 	/**
@@ -210,20 +215,31 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 		}
 	}
 
+	@Override
+	public String getProperty(String propertyName)
+			throws Exception {
+		
+		if (propertyName.equalsIgnoreCase(K_PROP_NAME)) {
+			return Integer.toString(k);
+		} else if (propertyName.equalsIgnoreCase(TAU_PROP_NAME)) {
+			return Integer.toString(tau);
+		} else {
+			// No property was set on this class, assume it is for the underlying
+			//  MI calculator, even if it is for 
+			//  MutualInfoCalculatorMultiVariate.PROP_TIME_DIFF which
+			//  is not a valid property for the AIS calculator:
+			return miCalc.getProperty(propertyName);
+		}
+	}
+
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#setObservations(double[])
 	 */
 	@Override
 	public void setObservations(double[] observations) throws Exception {
-		if (observations.length - (k-1)*tau - 1 <= 0) {
-			// There are no observations to add here
-			throw new Exception("Not enough observations to set here given k and tau");
-		}
-		double[][] currentDestPastVectors = 
-				MatrixUtils.makeDelayEmbeddingVector(observations, k, tau, (k-1)*tau, observations.length - (k-1)*tau - 1);
-		double[][] currentDestNextVectors =
-				MatrixUtils.makeDelayEmbeddingVector(observations, 1, (k-1)*tau + 1, observations.length - (k-1)*tau - 1);
-		miCalc.setObservations(currentDestPastVectors, currentDestNextVectors);
+		startAddObservations();
+		addObservations(observations);
+		finaliseAddObservations();
 	}
 
 	/* (non-Javadoc)
@@ -231,7 +247,7 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	 */
 	@Override
 	public void startAddObservations() {
-		miCalc.startAddObservations();
+		vectorOfObservationTimeSeries = new Vector<double[]>();
 	}
 
 	/* (non-Javadoc)
@@ -239,6 +255,20 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	 */
 	@Override
 	public void addObservations(double[] observations) throws Exception {
+		// Store these observations in our vector for now
+		vectorOfObservationTimeSeries.add(observations);
+	}
+
+	/**
+	 * Protected method to internally parse and submit observations through
+	 *  to the underlying MI calculator once any internal parameter settings
+	 *  have been finalised (in the case of automatically determining the embedding
+	 *  parameters) 
+	 * 
+	 * @param observations time series of observations
+	 * @throws Exception
+	 */
+	protected void addObservationsAfterParamsDetermined(double[] observations) throws Exception {
 		if (observations.length - (k-1)*tau - 1 <= 0) {
 			// There are no observations to add here
 			// Don't throw an exception, do nothing since more observations
@@ -251,7 +281,7 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 				MatrixUtils.makeDelayEmbeddingVector(observations, 1, (k-1)*tau + 1, observations.length - (k-1)*tau - 1);
 		miCalc.addObservations(currentDestPastVectors, currentDestNextVectors);
 	}
-
+	
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#addObservations(double[], int, int)
 	 */
@@ -261,11 +291,37 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 		addObservations(MatrixUtils.select(observations, startTime, numTimeSteps));
 	}
 
+	/**
+	 * Hook in case child implementations need to perform any processing on the 
+	 *  observation time series prior to their being processed and supplied
+	 *  to the underlying MI calculator.
+	 * Primarily this is to allow the child implementation to automatically determine
+	 *  embedding parameters if desired.
+	 * Child implementations do not need to override this default empty implementation
+	 *  if no new functionality is required.
+	 */
+	public void preFinaliseAddObservations() throws Exception {
+		// Empty implementation supplied by default.
+	}
+	
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#finaliseAddObservations()
 	 */
 	@Override
 	public void finaliseAddObservations() throws Exception {
+		// Auto embed if required
+		preFinaliseAddObservations();
+		
+		// Initialise the MI calculator, including any auto-embedding length
+		miCalc.initialise(k, 1);
+		miCalc.startAddObservations();
+		// Send all of the observations through:
+		for (double[] observations : vectorOfObservationTimeSeries) {
+			addObservationsAfterParamsDetermined(observations);
+		}
+		vectorOfObservationTimeSeries = null; // No longer required
+		
+		// TODO do we need to throw an exception if there are no observations to add?
 		miCalc.finaliseAddObservations();
 	}
 
