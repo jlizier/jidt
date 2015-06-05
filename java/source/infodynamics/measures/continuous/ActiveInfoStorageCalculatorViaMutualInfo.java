@@ -18,6 +18,7 @@
 
 package infodynamics.measures.continuous;
 
+import java.util.Iterator;
 import java.util.Vector;
 
 import infodynamics.utils.EmpiricalMeasurementDistribution;
@@ -79,10 +80,15 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	protected boolean debug = false;
 	
 	/**
-	 * Storage for source observations supplied via {@link #addObservations(double[])}
+	 * Storage for observations supplied via {@link #addObservations(double[])}
 	 * type calls
 	 */
 	protected Vector<double[]> vectorOfObservationTimeSeries;
+	/**
+	 * Storage for validity arrays for supplied observations.
+	 * Entries are null where the whole corresponding observation time-series is valid
+	 */
+	protected Vector<boolean[]> vectorOfValidityOfObservations;
 
 	/**
 	 * Construct using an instantiation of the named MI calculator
@@ -164,6 +170,8 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	public void initialise(int k, int tau) throws Exception {
 		this.k = k;
 		this.tau = tau;
+		vectorOfObservationTimeSeries = null;
+		vectorOfValidityOfObservations = null;
 	}
 
 	/**
@@ -248,6 +256,7 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	@Override
 	public void startAddObservations() {
 		vectorOfObservationTimeSeries = new Vector<double[]>();
+		vectorOfValidityOfObservations = new Vector<boolean[]>();
 	}
 
 	/* (non-Javadoc)
@@ -257,6 +266,7 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	public void addObservations(double[] observations) throws Exception {
 		// Store these observations in our vector for now
 		vectorOfObservationTimeSeries.add(observations);
+		vectorOfValidityOfObservations.add(null); // All observations were valid
 	}
 
 	/**
@@ -282,6 +292,33 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 		miCalc.addObservations(currentDestPastVectors, currentDestNextVectors);
 	}
 	
+	/**
+	 * Protected method to internally parse and submit observations through
+	 *  to the underlying MI calculator once any internal parameter settings
+	 *  have been finalised (in the case of automatically determining the embedding
+	 *  parameters).
+	 * This is done given a time-series of booleans indicating whether each entry
+	 *  is valid
+	 * 
+	 * @param observations time series of observations
+	 * @param valid a time series (with indices the same as observations) indicating
+	 *  whether the entry in observations at that index is valid; we only take vectors
+	 *  as samples to add to the observation set where all points in the time series
+	 *  (even between points in the embedded k-vector with embedding delays) are valid.
+	 * @throws Exception
+	 */
+	protected void addObservationsAfterParamsDetermined(double[] observations, boolean[] valid) throws Exception {
+		
+		// compute the start and end times using our determined embedding parameters:
+		Vector<int[]> startAndEndTimePairs = computeStartAndEndTimePairs(valid);
+		
+		for (int[] timePair : startAndEndTimePairs) {
+			int startTime = timePair[0];
+			int endTime = timePair[1];
+			addObservationsAfterParamsDetermined(MatrixUtils.select(observations, startTime, endTime - startTime + 1));
+		}
+	}
+	
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#addObservations(double[], int, int)
 	 */
@@ -300,7 +337,7 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	 * Child implementations do not need to override this default empty implementation
 	 *  if no new functionality is required.
 	 */
-	public void preFinaliseAddObservations() throws Exception {
+	protected void preFinaliseAddObservations() throws Exception {
 		// Empty implementation supplied by default.
 	}
 	
@@ -316,10 +353,18 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 		miCalc.initialise(k, 1);
 		miCalc.startAddObservations();
 		// Send all of the observations through:
+		Iterator<boolean[]> validityIterator = vectorOfValidityOfObservations.iterator();
 		for (double[] observations : vectorOfObservationTimeSeries) {
-			addObservationsAfterParamsDetermined(observations);
+			boolean[] validity = validityIterator.next();
+			if (validity == null) {
+				// Add the whole time-series
+				addObservationsAfterParamsDetermined(observations);
+			} else {
+				addObservationsAfterParamsDetermined(observations, validity);
+			}
 		}
 		vectorOfObservationTimeSeries = null; // No longer required
+		vectorOfValidityOfObservations = null;
 		
 		// TODO do we need to throw an exception if there are no observations to add?
 		miCalc.finaliseAddObservations();
@@ -331,15 +376,10 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	@Override
 	public void setObservations(double[] observations, boolean[] valid)
 			throws Exception {
-		Vector<int[]> startAndEndTimePairs = computeStartAndEndTimePairs(valid);
-		
-		// We've found the set of start and end times for this pair
 		startAddObservations();
-		for (int[] timePair : startAndEndTimePairs) {
-			int startTime = timePair[0];
-			int endTime = timePair[1];
-			addObservations(observations, startTime, endTime - startTime + 1);
-		}
+		// Add these observations and the indication of their validity
+		vectorOfObservationTimeSeries.add(observations);
+		vectorOfValidityOfObservations.add(valid);
 		finaliseAddObservations();
 	}
 
