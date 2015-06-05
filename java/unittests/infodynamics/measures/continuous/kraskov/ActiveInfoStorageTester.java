@@ -1,5 +1,7 @@
 package infodynamics.measures.continuous.kraskov;
 
+import java.util.Arrays;
+
 import infodynamics.measures.continuous.ActiveInfoStorageCalculator;
 import infodynamics.utils.ArrayFileReader;
 import infodynamics.utils.MatrixUtils;
@@ -35,6 +37,8 @@ public class ActiveInfoStorageTester extends TestCase {
 	public void testAutoEmbeddingRagwitz() throws Exception {
 		ArrayFileReader afr = new ArrayFileReader("demos/data/SFI-heartRate_breathVol_bloodOx.txt");
 		double[][] data = afr.getDouble2DMatrix();
+		// Select data points 2350:3550
+		data = MatrixUtils.selectRows(data, 2349, 3550-2350+1);
 
 		ActiveInfoStorageCalculatorKraskov ais = new ActiveInfoStorageCalculatorKraskov();
 		// ais.setDebug(true);
@@ -54,8 +58,8 @@ public class ActiveInfoStorageTester extends TestCase {
 				" and tau=" + optimisedTau + " optimised over kNNs=" +
 				ais.getProperty(ActiveInfoStorageCalculatorKraskov.PROP_RAGWITZ_NUM_NNS));
 		
-		// Test that the answer was k=3, tau=1 for this data set
-		assertEquals(3, optimisedK);
+		// Test that the answer was k=2, tau=1 for this data set (k=3 for full data set)
+		assertEquals(2, optimisedK);
 		assertEquals(1, optimisedTau);
 		// Test that kNNs are equal to that used by the MI calculator when we have not set this
 		assertEquals(ais.getProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_K),
@@ -77,13 +81,35 @@ public class ActiveInfoStorageTester extends TestCase {
 		double aisManualParamSetting = ais.computeAverageLocalOfObservations();
 		assertEquals(aisOptimisedSingleThread, aisManualParamSetting, 0.00000001);
 		
+		// Test that it works if we supply a validity vector:
+		ais = new ActiveInfoStorageCalculatorKraskov();
+		ais.setProperty(ActiveInfoStorageCalculatorKraskov.PROP_AUTO_EMBED_METHOD,
+				ActiveInfoStorageCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ);
+		ais.setProperty(ActiveInfoStorageCalculatorKraskov.PROP_K_SEARCH_MAX, "4");
+		ais.setProperty(ActiveInfoStorageCalculatorKraskov.PROP_TAU_SEARCH_MAX, "2");
+		ais.initialise();
+		boolean[] validity = new boolean[data.length];
+		Arrays.fill(validity, true);
+		ais.setObservations(MatrixUtils.selectColumn(data, 0), validity);
+		double aisWithValidity = ais.computeAverageLocalOfObservations();
+		assertEquals(aisOptimisedSingleThread, aisWithValidity, 0.00000001);
+		assertEquals(optimisedK, Integer.parseInt(ais.getProperty(ActiveInfoStorageCalculator.K_PROP_NAME)));
+		assertEquals(optimisedTau, Integer.parseInt(ais.getProperty(ActiveInfoStorageCalculator.TAU_PROP_NAME)));
+
 		// Finally, test that we can use a different number of kNNs to the MI calculator
 		ais = new ActiveInfoStorageCalculatorKraskov();
-		ais.setProperty(ActiveInfoStorageCalculatorKraskov.PROP_RAGWITZ_NUM_NNS, "8");
-		ais.initialise(optimisedK, optimisedTau);
+		ais.setProperty(ActiveInfoStorageCalculatorKraskov.PROP_RAGWITZ_NUM_NNS, "10");
+		ais.setProperty(ActiveInfoStorageCalculatorKraskov.PROP_AUTO_EMBED_METHOD,
+				ActiveInfoStorageCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ);
+		ais.setProperty(ActiveInfoStorageCalculatorKraskov.PROP_K_SEARCH_MAX, "4");
+		ais.setProperty(ActiveInfoStorageCalculatorKraskov.PROP_TAU_SEARCH_MAX, "4");
+		ais.initialise();
 		ais.setObservations(MatrixUtils.selectColumn(data, 0));
-		ais.computeAverageLocalOfObservations();
-		assertEquals(8, Integer.parseInt(ais.getProperty(ActiveInfoStorageCalculatorKraskov.PROP_RAGWITZ_NUM_NNS)));
+		double differentNNResult = ais.computeAverageLocalOfObservations();
+		assertEquals(10, Integer.parseInt(ais.getProperty(ActiveInfoStorageCalculatorKraskov.PROP_RAGWITZ_NUM_NNS)));
+		System.out.printf("Confirmed that we can change the number of nearest neighbours for Ragwitz optimisation, using " +
+				"10 neighbours we get k=%s, tau=%s, ais=%.3f\n", ais.getProperty(ActiveInfoStorageCalculator.K_PROP_NAME),
+				ais.getProperty(ActiveInfoStorageCalculator.TAU_PROP_NAME), differentNNResult);
 	}
 	
 }
