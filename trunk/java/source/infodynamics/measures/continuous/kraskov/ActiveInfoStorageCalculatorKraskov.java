@@ -202,7 +202,10 @@ public class ActiveInfoStorageCalculatorKraskov
 	 * 		and embedding delay ({@link #TAU_PROP_NAME}). Default is {@link #AUTO_EMBED_METHOD_NONE} meaning
 	 * 		values are set manually; other accepted values include: {@link #AUTO_EMBED_METHOD_RAGWITZ} for use
 	 * 		of the Ragwitz criteria (searching up to {@link #PROP_K_SEARCH_MAX} and 
-	 * 		{@link #PROP_TAU_SEARCH_MAX})</li>
+	 * 		{@link #PROP_TAU_SEARCH_MAX}). Use of any value other than {@link #AUTO_EMBED_METHOD_NONE}
+	 * 		will lead to any previous settings for k and tau (via e.g. {@link #initialise(int, int)} or
+	 * 		auto-embedding during previous calculations) will be overwritten after observations
+	 * 		are supplied.</li>
 	 * 		<li>{@link #PROP_K_SEARCH_MAX} -- maximum embedded history length to search
 	 * 		up to if automatically determining the embedding parameters (as set by
 	 * 		{@link #PROP_AUTO_EMBED_METHOD}); default is 1</li>
