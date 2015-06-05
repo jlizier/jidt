@@ -17,6 +17,7 @@ This page contains the following code examples:
   * [#Example_6_-_Late_binding_Mutual_info_calculator Example 6 - Late binding Mutual info calculator]
   * [#Example_7_-_Ensemble_approach_for_multiple_samples Example 7 - Transfer entropy via an ensemble of samples]
   * [#Example_8_-_Transfer_entropy_on_continuous_data_using_binning Example 8 - Transfer entropy on continuous data using binning]
+  * [#Example_9_-_Transfer_entropy_on_continuous_data_using_Kraskov_es Example 9 - Transfer entropy on continuous data using Kraskov estimators with auto-embedding]
 
 = Example 1 - Transfer entropy on binary data =
 
@@ -387,9 +388,6 @@ System.out.printf("TE result %.4f nats; expected to be close to " +
 		result, Math.log(1.0/(1-Math.pow(covariance,2))));
 }}}
 
-
-
-
 = Example 8 - Transfer entropy on continuous data using binning =
 
 [http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/java/infodynamics/demos/Example8TeContinuousDataByBinning.java Example8TeContinuousDataByBinning.java] - Simple transfer entropy (TE) calculation on continuous-valued data by binning the continuous data to discrete, then using a discrete TE calculator.
@@ -429,4 +427,68 @@ double result = teCalc.computeAverageLocalOfObservations();
 System.out.printf("TE result %.4f bits; expected to be close to " +
 		"%.4f bits for these correlated Gaussians\n",
 		result, Math.log(1.0/(1-Math.pow(covariance,2)))/Math.log(2));
+}}}
+
+
+= Example 9 - Transfer entropy on continuous data using Kraskov estimators with auto-embedding =
+
+[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/java/infodynamics/demos/Example9TeKraskovAutoEmbedding.java Example9TeKraskovAutoEmbedding.java] - Transfer entropy (TE) calculation on continuous-valued data using the Kraskov-estimator TE calculator, with automatic selection of embedding parameters via the Ragwitz criteria
+
+{{{
+// Requires the following imports before the class definition:
+// import infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov;
+// import infodynamics.utils.MatrixUtils;
+// import infodynamics.utils.ArrayFileReader;
+
+// Examine the heart-breath interaction that Schreiber originally looked at:
+ArrayFileReader afr = new ArrayFileReader("../data/SFI-heartRate_breathVol_bloodOx.txt");
+double[][] data = afr.getDouble2DMatrix();
+// Select data points 2350:3550
+data = MatrixUtils.selectRows(data, 2349, 3550-2350+1);
+
+// Create a Kraskov TE calculator:
+TransferEntropyCalculatorKraskov teCalc = new TransferEntropyCalculatorKraskov();
+
+// Set properties for auto-embedding of both source and destination
+//  using the Ragwitz criteria:
+//  a. Auto-embedding method
+teCalc.setProperty(TransferEntropyCalculatorKraskov.PROP_AUTO_EMBED_METHOD,
+		TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ);
+//  b. Search range for embedding dimension (k) and delay (tau)
+teCalc.setProperty(TransferEntropyCalculatorKraskov.PROP_K_SEARCH_MAX, "6");
+teCalc.setProperty(TransferEntropyCalculatorKraskov.PROP_TAU_SEARCH_MAX, "6");
+// Since we're auto-embedding, no need to supply k, l, k_tau, l_tau here:
+teCalc.initialise();
+// Compute TE from breath (column 1) to heart (column 0) 
+teCalc.setObservations(MatrixUtils.selectColumn(data, 1), MatrixUtils.selectColumn(data, 0));
+double teBreathToHeart = teCalc.computeAverageLocalOfObservations();
+// Check the auto-selected parameters and print out the result:
+int optimisedK = Integer.parseInt(teCalc.getProperty(TransferEntropyCalculatorKraskov.K_PROP_NAME));
+int optimisedKTau = Integer.parseInt(teCalc.getProperty(TransferEntropyCalculatorKraskov.K_TAU_PROP_NAME));
+int optimisedL = Integer.parseInt(teCalc.getProperty(TransferEntropyCalculatorKraskov.L_PROP_NAME));
+int optimisedLTau = Integer.parseInt(teCalc.getProperty(TransferEntropyCalculatorKraskov.L_TAU_PROP_NAME));
+System.out.printf("TE(breath->heart) was %.3f nats for (heart embedding:) k=%d," +
+		"k_tau=%d, (breath embedding:) l=%d,l_tau=%d optimised via Ragwitz criteria\n",
+		teBreathToHeart, optimisedK, optimisedKTau, optimisedL, optimisedLTau);
+
+// Next, embed the destination only using the Ragwitz criteria:
+teCalc.setProperty(TransferEntropyCalculatorKraskov.PROP_AUTO_EMBED_METHOD,
+		TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY);
+teCalc.setProperty(TransferEntropyCalculatorKraskov.PROP_K_SEARCH_MAX, "6");
+teCalc.setProperty(TransferEntropyCalculatorKraskov.PROP_TAU_SEARCH_MAX, "6");
+// Since we're only auto-embedding the destination, we supply
+//  source embedding here (to overwrite the auto embeddings from above):
+teCalc.setProperty(TransferEntropyCalculatorKraskov.L_PROP_NAME, "1");
+teCalc.setProperty(TransferEntropyCalculatorKraskov.L_TAU_PROP_NAME, "1");
+// Since we're auto-embedding, no need to supply k and k_tau here:
+teCalc.initialise();
+// Compute TE from breath (column 1) to heart (column 0) 
+teCalc.setObservations(MatrixUtils.selectColumn(data, 1), MatrixUtils.selectColumn(data, 0));
+double teBreathToHeartDestEmbedding = teCalc.computeAverageLocalOfObservations();
+// Check the auto-selected parameters and print out the result:
+optimisedK = Integer.parseInt(teCalc.getProperty(TransferEntropyCalculatorKraskov.K_PROP_NAME));
+optimisedKTau = Integer.parseInt(teCalc.getProperty(TransferEntropyCalculatorKraskov.K_TAU_PROP_NAME));
+System.out.printf("TE(breath->heart) was %.3f nats for (heart embedding:) k=%d," + 
+		"k_tau=%d, optimised via Ragwitz criteria, plus (breath embedding:) l=1,l_tau=1\n",
+		teBreathToHeartDestEmbedding, optimisedK, optimisedKTau);
 }}}
