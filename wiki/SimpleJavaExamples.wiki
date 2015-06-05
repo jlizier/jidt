@@ -432,7 +432,9 @@ System.out.printf("TE result %.4f bits; expected to be close to " +
 
 = Example 9 - Transfer entropy on continuous data using Kraskov estimators with auto-embedding =
 
-[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/java/infodynamics/demos/Example9TeKraskovAutoEmbedding.java Example9TeKraskovAutoEmbedding.java] - Transfer entropy (TE) calculation on continuous-valued data using the Kraskov-estimator TE calculator, with automatic selection of embedding parameters via the Ragwitz criteria
+[http://code.google.com/p/information-dynamics-toolkit/source/browse/trunk/demos/java/infodynamics/demos/Example9TeKraskovAutoEmbedding.java Example9TeKraskovAutoEmbedding.java] - Transfer entropy (TE) calculation on continuous-valued data using the Kraskov-estimator TE calculator, with automatic selection of embedding parameters via the Ragwitz criteria.
+
+Available from release v1.3 (in future) or currently available via SVN
 
 {{{
 // Requires the following imports before the class definition:
