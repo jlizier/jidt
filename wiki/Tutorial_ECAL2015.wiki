@@ -17,7 +17,7 @@ Participants will learn how to install the JIDT software, how to get started wit
 
 == Registration ==
 
-You will need to register for the [http://www.cs.york.ac.uk/nature/ecal2015/ main ECAL conference], but the [http://www.cs.york.ac.uk/nature/ecal2015/tutorials.html ECAL website] suggests that you will not need to register explicitly for this tutorial with your main ECAL registration.
+You will need to register for the [http://www.cs.york.ac.uk/nature/ecal2015/ main ECAL conference] (at minimum registering for the single day of the tutorial), but you will not need to register explicitly for this tutorial with your main ECAL registration.
 
 In order to reserve a place in this tutorial rather than take your chances on the day, please ([mailto:joseph.lizier_AT_gmail.com email me]) beforehand and provide the following information:
  * Your preferred environment to use JIDT in (Java, Matlab/Octave, Python)
@@ -36,4 +36,5 @@ If you can [Installation install] JIDT on your laptop beforehand, that would be 
 
 == See also ==
 
-Our [Tutorial] page giving slides from previous tutorials and an exercise, plus links to previous runs of the tutorial
+* Our [Tutorial] page giving slides from previous tutorials and an exercise, plus links to previous runs of the tutorial
+* [http://www.cs.york.ac.uk/nature/ecal2015/tutorials.html ECAL tutorials website]
