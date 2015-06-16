@@ -96,7 +96,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	public static final String PROP_NORMALISE = "NORMALISE";
 	/**
 	 * Property name for an amount of random Gaussian noise to be
-	 *  added to the data (default is 0).
+	 *  added to the data (default is 1e-8, matching the MILCA toolkit).
 	 */
 	public static final String PROP_ADD_NOISE = "NOISE_LEVEL_TO_ADD";
 	/**
@@ -123,11 +123,11 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	/**
 	 * Whether to add an amount of random noise to the incoming data
 	 */
-	protected boolean addNoise = false;
+	protected boolean addNoise = true;
 	/**
 	 * Amount of random Gaussian noise to add to the incoming data
 	 */
-	protected double noiseLevel = 0.0;
+	protected double noiseLevel = (double) 1e-8;
 	/**
 	 * Whether we use dynamic correlation exclusion
 	 */
@@ -212,7 +212,8 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	 *      large counts. The amount is added in after any normalisation,
 	 *      so can be considered as a number of standard deviations of the data.
 	 *      (Recommended by Kraskov. MILCA uses 1e-8; but adds in
-	 *      a random amount of noise in [0,noiseLevel) ). Default 0.</li>
+	 *      a random amount of noise in [0,noiseLevel) ).
+	 *      Default 1e-8 to match the noise order in MILCA toolkit.</li>
 	 *  <li>{@link #PROP_NUM_THREADS} -- the integer number of parallel threads
 	 *  	to use in the computation. Can be passed as a string "USE_ALL"
 	 *      to use all available processors on the machine.
@@ -238,8 +239,13 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 			dynCorrExclTime = Integer.parseInt(propertyValue);
 			dynCorrExcl = (dynCorrExclTime > 0);
 		} else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
-			addNoise = true;
-			noiseLevel = Double.parseDouble(propertyValue);
+			if (propertyValue.equals("0")) {
+				addNoise = false;
+				noiseLevel = 0;
+			} else {
+				addNoise = true;
+				noiseLevel = Double.parseDouble(propertyValue);
+			}
 		} else if (propertyName.equalsIgnoreCase(PROP_NUM_THREADS)) {
 			if (propertyValue.equalsIgnoreCase(USE_ALL_THREADS)) {
 				numThreads = Runtime.getRuntime().availableProcessors();
