@@ -49,6 +49,7 @@ public class ActiveInfoStorageTester extends TestCase {
 				ActiveInfoStorageCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ);
 		ais.setProperty(ActiveInfoStorageCalculatorKraskov.PROP_K_SEARCH_MAX, "4");
 		ais.setProperty(ActiveInfoStorageCalculatorKraskov.PROP_TAU_SEARCH_MAX, "2");
+		ais.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "0"); // Need consistency of results for unit test
 		ais.initialise();
 		ais.setObservations(MatrixUtils.selectColumn(data, 0));
 		int optimisedK = Integer.parseInt(ais.getProperty(ActiveInfoStorageCalculator.K_PROP_NAME));
@@ -76,6 +77,7 @@ public class ActiveInfoStorageTester extends TestCase {
 
 		// Test that we get the same answer by setting these parameters
 		ais = new ActiveInfoStorageCalculatorKraskov();
+		ais.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "0"); // Need consistency of results for unit test
 		ais.initialise(optimisedK, optimisedTau);
 		ais.setObservations(MatrixUtils.selectColumn(data, 0));
 		double aisManualParamSetting = ais.computeAverageLocalOfObservations();
@@ -83,6 +85,7 @@ public class ActiveInfoStorageTester extends TestCase {
 		
 		// Test that it works if we supply a validity vector:
 		ais = new ActiveInfoStorageCalculatorKraskov();
+		ais.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "0"); // Need consistency of results for unit test
 		ais.setProperty(ActiveInfoStorageCalculatorKraskov.PROP_AUTO_EMBED_METHOD,
 				ActiveInfoStorageCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ);
 		ais.setProperty(ActiveInfoStorageCalculatorKraskov.PROP_K_SEARCH_MAX, "4");
@@ -98,6 +101,7 @@ public class ActiveInfoStorageTester extends TestCase {
 
 		// Finally, test that we can use a different number of kNNs to the MI calculator
 		ais = new ActiveInfoStorageCalculatorKraskov();
+		ais.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "0"); // Need consistency of results for unit test
 		ais.setProperty(ActiveInfoStorageCalculatorKraskov.PROP_RAGWITZ_NUM_NNS, "10");
 		ais.setProperty(ActiveInfoStorageCalculatorKraskov.PROP_AUTO_EMBED_METHOD,
 				ActiveInfoStorageCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ);
