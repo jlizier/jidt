@@ -229,7 +229,8 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	 *  <li>{@link #PROP_ADD_NOISE} -- a standard deviation for an amount of
 	 *  	random Gaussian noise to add to
 	 *      each variable, to avoid having neighbourhoods with artificially
-	 *      large counts. The amount is added in after any normalisation,
+	 *      large counts. (We also accept "false" to indicate "0".)
+	 *      The amount is added in after any normalisation,
 	 *      so can be considered as a number of standard deviations of the data.
 	 *      (Recommended by Kraskov. MILCA uses 1e-8; but adds in
 	 *      a random amount of noise in [0,noiseLevel) ).
@@ -258,7 +259,8 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 			dynCorrExclTime = Integer.parseInt(propertyValue);
 			dynCorrExcl = (dynCorrExclTime > 0);
 		} else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
-			if (propertyValue.equals("0")) {
+			if (propertyValue.equals("0") ||
+					propertyValue.equalsIgnoreCase("false")) {
 				addNoise = false;
 				noiseLevel = 0;
 			} else {
