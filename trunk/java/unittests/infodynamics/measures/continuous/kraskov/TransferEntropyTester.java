@@ -108,6 +108,8 @@ public class TransferEntropyTester
 		// We already normalised above, and this will do a different
 		//  normalisation without taking the extra values in to account if we did it
 		teCalc.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NORMALISE, "false");
+		// Need consistency for unit tests:
+		teCalc.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "0");
 		
 		teCalc.initialise(1);
 		teCalc.setObservations(col0, col1);
@@ -258,6 +260,8 @@ public class TransferEntropyTester
 		// We already normalised above, and this will do a different
 		//  normalisation without taking the extra values in to account if we did it
 		teCalc.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NORMALISE, "false");
+		// Need consistency for unit tests:
+		teCalc.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "0");
 
 		System.out.printf("Kraskov TE comparison 2 to TRENTOOL - univariate random data 1 (col 0->1)");
 		teCalc.initialise(1);
@@ -346,6 +350,8 @@ public class TransferEntropyTester
 		// We already normalised above, and this will do a different
 		//  normalisation without taking the extra values in to account if we did it
 		teCalc.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NORMALISE, "false");
+		// Need consistency for unit tests:
+		teCalc.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "0");
 
 		System.out.println("Kraskov Cond MI as TE - multivariate coupled data 1, k=2,l=2");
 		System.out.println("  (0->2)");
@@ -411,8 +417,10 @@ public class TransferEntropyTester
 		teCalc.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS, "1");
 		teCalc.setProperty(TransferEntropyCalculatorKraskov.PROP_AUTO_EMBED_METHOD,
 				TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ); // Embed both source and target
-		teCalc.setProperty(TransferEntropyCalculatorKraskov.PROP_K_SEARCH_MAX, "5");
-		teCalc.setProperty(TransferEntropyCalculatorKraskov.PROP_TAU_SEARCH_MAX, "5");
+		teCalc.setProperty(TransferEntropyCalculatorKraskov.PROP_K_SEARCH_MAX, "6");
+		teCalc.setProperty(TransferEntropyCalculatorKraskov.PROP_TAU_SEARCH_MAX, "4");
+		// Need consistency for unit tests:
+		teCalc.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "0");
 		teCalc.initialise();
 		teCalc.setObservations(MatrixUtils.selectColumn(data, 0), MatrixUtils.selectColumn(data, 1));
 		int optimisedK = Integer.parseInt(teCalc.getProperty(TransferEntropyCalculatorKraskov.K_PROP_NAME));
@@ -475,6 +483,8 @@ public class TransferEntropyTester
 
 		// Test that we get the same answer by setting these parameters
 		teCalc = new TransferEntropyCalculatorKraskov();
+		// Need consistency for unit tests:
+		teCalc.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "0");
 		teCalc.initialise(optimisedK, optimisedKTau, optimisedL, optimisedLTau, 1);
 		teCalc.setObservations(MatrixUtils.selectColumn(data, 0), MatrixUtils.selectColumn(data, 1));
 		double teManual = teCalc.computeAverageLocalOfObservations();
@@ -512,6 +522,8 @@ public class TransferEntropyTester
 		// TODO what happens with method to select start and end times if we 
 		// have not selected embedding parameters yet???
 		teCalc = new TransferEntropyCalculatorKraskov();
+		// Need consistency for unit tests:
+		teCalc.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "0");
 		teCalc.setProperty(TransferEntropyCalculatorKraskov.PROP_AUTO_EMBED_METHOD,
 				TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ);
 		teCalc.setProperty(TransferEntropyCalculatorKraskov.PROP_K_SEARCH_MAX, "5");
