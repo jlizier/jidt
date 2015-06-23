@@ -191,6 +191,7 @@
 			<zipfileset dir="javadocs" includes="**/*.*,**/*" prefix="javadocs"/>
 			<zipfileset dir="notices" includes="**/*.*,**/*" prefix="notices"/>
 			<zipfileset dir="tutorial" prefix="tutorial"/>
+			<zipfileset dir="web" includes="JIDT-logo.png" prefix=""/>
 		</zip>
 	</target>
 </project>
