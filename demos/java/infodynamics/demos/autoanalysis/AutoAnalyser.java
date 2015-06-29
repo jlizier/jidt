@@ -27,6 +27,7 @@ import infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov
 import infodynamics.utils.ArrayFileReader;
 import infodynamics.utils.MatrixUtils;
 
+import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -35,20 +36,27 @@ import javax.swing.JComboBox;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JFileChooser;
+import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.border.EtchedBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableColumn;
 
-import java.awt.EventQueue;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Image;
 import java.awt.MediaTracker;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.io.FileWriter;
 import java.util.HashMap;
 import java.util.Vector;
 
@@ -126,14 +134,16 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 	protected JTable propertiesTable;
 	// Table model (local class) for the table
 	protected PropertiesTableModel propertiesTableModel;
-	// Panel for the table
-	protected JPanel propertiesPanel;
 	// Names of the properties
 	protected Vector<String> fieldNames;
 	// Values of the properties
 	protected HashMap<String,String> propertyValues;
 	// Results text
 	protected JLabel resultsLabel;
+	// Text area for the generated code
+	protected JTextArea codeTextArea;
+	
+	protected String codeDefaultText = "    ... Awaiting new parameter selection (press compute) ...";
 	
 	/**
 	 * Constructor to generate the application windows
@@ -146,82 +156,112 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 			icon = new ImageIcon("../../web/JIDT-logo.png");
 		}
 		setIconImage(icon.getImage());
-		
-		GridBagLayout gridbag = new GridBagLayout();
-        GridBagConstraints c = new GridBagConstraints();
-        setLayout(gridbag);
-        c.fill = GridBagConstraints.BOTH;
-        c.weightx = 1.0;
-		
+			
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setSize(500,500);
+		setSize(1100,530);
 		setTitle("JIDT Transfer Entropy Auto-Analyser");
 		// Centre in the middle of the screen
 		setLocationRelativeTo(null);
 
-		// Create a panel for the calc type:
-		JPanel calcTypePanel = new JPanel();
+		// Create the fields for the calc type:
 		JLabel calcTypeLabel = new JLabel("TE Calculator Type:");
+		calcTypeLabel.setToolTipText("Select estimator type. \"Discrete\" is for discrete or pre-binned data; all others for continuous data.");
+		calcTypeLabel.setBorder(BorderFactory.createEmptyBorder(0,0,10,0));
 		calcTypeComboBox = (JComboBox<String>) new JComboBox<String>(calcTypes);
 		calcTypeComboBox.setSelectedIndex(2); // Select Kraskov by default
 		calcTypeComboBox.addActionListener(this);
-		calcTypePanel.add(calcTypeLabel);
-		calcTypePanel.add(calcTypeComboBox);
+		// Don't set an empty border as it becomes clickable as well,
+		//  we'll use an empty label instead
+		//calcTypeComboBox.setBorder(BorderFactory.createEmptyBorder(0,0,10,0));
 
-		JPanel dataFileChooserPanel = new JPanel();
+		// Create the fields for the data file
 		JLabel fileLabel = new JLabel("Data file:");
+		fileLabel.setToolTipText("Must be a text file of time-series values with time increasing in rows, and variables along columns");
 		dataFileTextField = new JTextField(30);
 		dataFileTextField.setEnabled(false);
-		dataFileChooserPanel.add(fileLabel);
-		dataFileChooserPanel.add(dataFileTextField);
+		// Don't set border around this text field as it doesn't look right
+		// TODO set action listener for on click of this field
 		// Button to open data file
 		openDataButton = new JButton("Select");
 		openDataButton.addActionListener(this);
-		dataFileChooserPanel.add(openDataButton);
-
+		// Description about the data
+		dataFileDescriptorLabel = new JLabel("No data file selected yet ...");
+		dataFileDescriptorLabel.setHorizontalAlignment(JLabel.RIGHT);
+		dataFileDescriptorLabel.setBorder(BorderFactory.createEmptyBorder(0,0,10,0));
+		
 		// From column:
-		JPanel sourceChooserPanel = new JPanel();
-		JLabel sourceLabel = new JLabel("Source column (first is 0):");
+		JLabel sourceLabel = new JLabel("Source column:");
+		sourceLabel.setToolTipText("(first is 0)");
 		sourceColTextField = new JTextField(5);
 		sourceColTextField.setEnabled(true);
 		sourceColTextField.setText("0");
+		// Must add document listener, not add action listener
 		sourceColTextField.getDocument().addDocumentListener(this);
-		sourceChooserPanel.add(sourceLabel);
-		sourceChooserPanel.add(sourceColTextField);
 		// To column:
-		JPanel destChooserPanel = new JPanel();
-		JLabel destLabel = new JLabel("Destination column (first is 0):");
+		JLabel destLabel = new JLabel("Destination column:");
+		destLabel.setToolTipText("(first is 0)");
 		destColTextField = new JTextField(5);
 		destColTextField.setEnabled(true);
 		destColTextField.setText("1");
-		destColTextField.addActionListener(this);
-		destChooserPanel.add(destLabel);
-		destChooserPanel.add(destColTextField);
+		destColTextField.getDocument().addDocumentListener(this);
 
-		
-		// Description about the data
-		JPanel dataFileDescriptorPanel = new JPanel();
-		dataFileDescriptorLabel = new JLabel("No data file selected yet ...");
-		dataFileDescriptorPanel.add(dataFileDescriptorLabel);
+		JLabel dummyLabel1 = new JLabel(" ");
+		dummyLabel1.setSize(10, 10);
+		JLabel dummyLabel2 = new JLabel(" ");
+		dummyLabel2.setSize(10, 10);
+		JLabel dummyLabel3 = new JLabel(" ");
+		dummyLabel3.setSize(10, 10);
 		
 		// TODO Need to set an appropriate width here
-		propertiesPanel = new JPanel();
 		putCalcPropertiesInTable();
 		propertiesTableModel = new PropertiesTableModel();
 		propertiesTable = new JTable(propertiesTableModel);
 		// Make sure any properties are saved when the compute button is clicked
 		propertiesTable.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
-		propertiesPanel.add(propertiesTable);
+		Font headerFont = propertiesTable.getTableHeader().getFont();
+		propertiesTable.getTableHeader().setFont(headerFont.deriveFont(Font.BOLD));
+		TableColumn valueColumn = propertiesTable.getColumn("Property value");
+		valueColumn.setMinWidth(130);
+		valueColumn.setMaxWidth(130);
+		JScrollPane propsTableScrollPane = new JScrollPane(propertiesTable);
+		// Set up for ~18 rows maximum (the +6 is exact to fit all props
+		//  for KRaskov in without scrollbar)
+		Dimension d = propertiesTable.getPreferredSize();
+		propsTableScrollPane.setPreferredSize(
+		    new Dimension(d.width,propertiesTable.getRowHeight()*17+6));
+		
 		
 		// Button to compute
 		computeButton = new JButton("Compute");
 		computeButton.addActionListener(this);
 		
 		// Results label
-		JPanel resultsPanel = new JPanel();
 		resultsLabel = new JLabel(" ");
-		resultsPanel.add(resultsLabel);
 
+		// Code panel
+		JPanel codePanel = new JPanel();
+		codePanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Generated code"),
+                BorderFactory.createEmptyBorder(5,5,5,5)));
+		codeTextArea = new JTextArea(codeDefaultText);
+		codeTextArea.setOpaque(false);
+		codeTextArea.setEditable(false);
+		//codeTextArea.setLineWrap(true); // This makes it all unreadable
+		//codeTextArea.setWrapStyleWord(true);
+		JScrollPane areaScrollPane = new JScrollPane(codeTextArea);
+        areaScrollPane.setVerticalScrollBarPolicy(
+        		JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        areaScrollPane.setHorizontalScrollBarPolicy(
+        		JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        int codeTextAreaWidth = 560;
+        int codeTextAreaHeight = 460;
+        Dimension codeTextAreaDimension = 
+        		new Dimension(codeTextAreaWidth, codeTextAreaHeight);
+        areaScrollPane.setPreferredSize(codeTextAreaDimension);
+        areaScrollPane.setMinimumSize(codeTextAreaDimension);
+        areaScrollPane.setMaximumSize(codeTextAreaDimension);
+		codePanel.add(areaScrollPane);
+		codePanel.setSize(codeTextAreaWidth+10, codeTextAreaHeight+10);
 		
 		// Add all the components in:
 		/*
@@ -232,27 +272,88 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 		*/
 		// gridbag.setConstraints(calcTypePanel, c);
 		// add(calcTypePanel);
-		c.gridwidth = 1;
-		c.gridx = 0;
-		add(calcTypePanel, c);
-		add(dataFileChooserPanel, c);
-		add(dataFileDescriptorPanel, c);
-		add(sourceChooserPanel, c);
-		add(destChooserPanel, c);
-		add(propertiesPanel, c);
-		add(computeButton, c);
-		c.gridwidth = GridBagConstraints.REMAINDER; //end row
-		c.anchor = GridBagConstraints.PAGE_START; // top of cell
-		add(resultsPanel, c);
+		JPanel paramsPanel = new JPanel();
+		paramsPanel.setBorder(BorderFactory.createCompoundBorder(
+                                BorderFactory.createTitledBorder("Calculation parameters"),
+                                BorderFactory.createEmptyBorder(5,5,5,5)));
+		GridBagLayout gridbag = new GridBagLayout();
+        GridBagConstraints c = new GridBagConstraints();
+        paramsPanel.setLayout(gridbag);
+        c.anchor = GridBagConstraints.EAST; // Not sure what I put EAST for?
+        
+        // Add the CalcType label and combobox
+        c.gridwidth = GridBagConstraints.RELATIVE; //next-to-last
+        c.fill = GridBagConstraints.NONE;      //reset to default
+        c.weightx = 0.0;                       //reset to default
+        paramsPanel.add(calcTypeLabel, c);
+        c.gridwidth = GridBagConstraints.REMAINDER;     //end row
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.weightx = 1.0;
+        paramsPanel.add(calcTypeComboBox, c);
+        // Add dummy label for spacing
+        paramsPanel.add(dummyLabel3, c);
+
+        
+        // Add the data file chooser fields
+        c.gridwidth = GridBagConstraints.RELATIVE; //next-to-last
+        c.fill = GridBagConstraints.NONE;      //reset to default
+        c.weightx = 0.0;                       //reset to default
+        paramsPanel.add(fileLabel, c);
+        c.gridwidth = GridBagConstraints.REMAINDER;     //end row
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.weightx = 1.0;
+        paramsPanel.add(dataFileTextField, c);
+        c.gridx = 1;
+        paramsPanel.add(openDataButton, c);
+        c.gridx = -1; // Reset to no indication
+        
+        paramsPanel.add(dataFileDescriptorLabel, c);
+
+        // Add the source selector
+        c.gridwidth = GridBagConstraints.RELATIVE; //next-to-last
+        c.fill = GridBagConstraints.NONE;      //reset to default
+        c.weightx = 0.0;                       //reset to default
+        paramsPanel.add(sourceLabel, c);
+        c.gridwidth = GridBagConstraints.REMAINDER;     //end row
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.weightx = 1.0;
+        paramsPanel.add(sourceColTextField, c);
+        // Add the destination selector
+        c.gridwidth = GridBagConstraints.RELATIVE; //next-to-last
+        c.fill = GridBagConstraints.NONE;      //reset to default
+        c.weightx = 0.0;                       //reset to default
+        paramsPanel.add(destLabel, c);
+        c.gridwidth = GridBagConstraints.REMAINDER;     //end row
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.weightx = 1.0;
+        paramsPanel.add(destColTextField, c);
+
+        // Add dummy label for spacing
+        paramsPanel.add(dummyLabel1, c);
+        // Add the properties table
+        paramsPanel.add(propsTableScrollPane, c);
+        // Add dummy label for spacing
+        paramsPanel.add(dummyLabel2, c);
+        // Add the compute button
+        paramsPanel.add(computeButton, c);
+        // Add the results text
+        paramsPanel.add(resultsLabel, c);
+        
 		// TODO Add the JIDT logo somewhere
-		// TODO Add a panel for auto generated code.
+		
+		// Add both panels into the frame with Border layout
+		add(paramsPanel, BorderLayout.WEST);
+		add(codePanel);
 		
 		setVisible(true);		
 	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		resultsLabel.setText(""); // Clear text for now if anything changes
+		// Clear text fields for now if anything changes
+		resultsLabel.setText(" ");
+		codeTextArea.setText(codeDefaultText);
+		
 		if (e.getSource() == computeButton) {
 			computeTE();
 		} else if (e.getSource() == openDataButton) {
@@ -276,7 +377,7 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 		//  one
 		JFileChooser dataFileChooser;
 		if (dataFile == null) {
-			dataFileChooser = new JFileChooser(System.getProperty("user.dir"));
+			dataFileChooser = new JFileChooser(System.getProperty("user.dir") + "/../data/");
 		} else {
 			dataFileChooser = new JFileChooser(dataFile);
 		}
@@ -338,32 +439,46 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 				calcTypeComboBox.getSelectedItem();
 		String units = unitsForEachCalc[calcTypeComboBox.getSelectedIndex()];
 		
-		StringBuffer code = new StringBuffer();
-		code.append("\tString dataFile = \"" + dataFile.getAbsolutePath() + "\";\n");
-		code.append("\tArrayFileReader afr = new ArrayFileReader(dataFile);\n");
-		code.append("\tdouble[][] data = afr.getDouble2DMatrix();\n");
-		
-		// Create a Kraskov TE calculator:
-		TransferEntropyCalculator teCalc;
-		code.append("\tTransferEntropyCalculator teCalc;\n");
-		
+		StringBuffer javaCode = new StringBuffer();
+		javaCode.append("package infodynamics.demos.autoanalysis;\n\n");
+		javaCode.append("import infodynamics.utils.ArrayFileReader;\n");
+		javaCode.append("import infodynamics.utils.MatrixUtils;\n\n");
+		javaCode.append("import infodynamics.measures.continuous.TransferEntropyCalculator;\n");
+
 		try{
+			// Create a Kraskov TE calculator:
+			TransferEntropyCalculator teCalc;
+			
 			// Construct an instance of the selected calculator:
+			String javaConstructorLine = null;
 			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
 				throw new Exception("Not implemented yet");
 			} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_GAUSSIAN)) {
 				teCalc = new TransferEntropyCalculatorGaussian();
-				code.append("\tteCalc = new TransferEntropyCalculatorGaussian();\n");
+				javaCode.append("import infodynamics.measures.continuous.gaussian.TransferEntropyCalculatorGaussian;\n");
+				javaConstructorLine = "    teCalc = new TransferEntropyCalculatorGaussian();\n";
 			} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_KRASKOV)) {
 				teCalc = new TransferEntropyCalculatorKraskov();
-				code.append("\tteCalc = new TransferEntropyCalculatorKraskov();\n");
+				javaCode.append("import infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov;\n");
+				javaConstructorLine = "    teCalc = new TransferEntropyCalculatorKraskov();\n";
 			} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_KERNEL)) {
 				teCalc = new TransferEntropyCalculatorKernel();
-				code.append("\tteCalc = new TransferEntropyCalculatorKernel();\n");
+				javaCode.append("import infodynamics.measures.continuous.kernel.TransferEntropyCalculatorKernel;\n");
+				javaConstructorLine = "    teCalc = new TransferEntropyCalculatorKernel();\n";
 			} else {
 				throw new Exception("No recognised calculator selected: " +
 						selectedCalcType);
 			}
+			
+			javaCode.append("\npublic class GeneratedTECalculator {\n\n");
+			javaCode.append("  public static void main(String[] args) throws Exception {\n");
+			
+			javaCode.append("    String dataFile = \"" + dataFile.getAbsolutePath() + "\";\n");
+			javaCode.append("    ArrayFileReader afr = new ArrayFileReader(dataFile);\n");
+			javaCode.append("    double[][] data = afr.getDouble2DMatrix();\n");
+			
+			javaCode.append("    TransferEntropyCalculator teCalc;\n");
+			javaCode.append(javaConstructorLine);
 			
 			// Set properties 
 			for (String propName : fieldNames) {
@@ -381,28 +496,36 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 				if (!propValue.equalsIgnoreCase(teCalc.getProperty(propName))) {
 					// We need to set this property:
 					teCalc.setProperty(propName, propValue);
-					code.append("\tteCalc.setProperty(\"" + propName + "\", \"" +
+					javaCode.append("    teCalc.setProperty(\"" + propName + "\", \"" +
 								propValue + "\");\n");
 				}
 			}
 			
 			teCalc.initialise();
-			code.append("\tteCalc.initialise();\n");
+			javaCode.append("    teCalc.initialise();\n");
 			// Compute TE 
 			teCalc.setObservations(
 					MatrixUtils.selectColumn(data, sourceColumn),
 					MatrixUtils.selectColumn(data, destColumn));
-			code.append("\tteCalc.setObservations(\n" +
-						"\t\tMatrixUtils.selectColumn(data, " + sourceColumn + "),\n" +
-						"\t\tMatrixUtils.selectColumn(data, " + destColumn + "));\n");
+			javaCode.append("    teCalc.setObservations(\n" +
+						"        MatrixUtils.selectColumn(data, " + sourceColumn + "),\n" +
+						"        MatrixUtils.selectColumn(data, " + destColumn + "));\n");
 			double teResult = teCalc.computeAverageLocalOfObservations();
-			code.append("\tdouble teResult = teCalc.computeAverageLocalOfObservations();\n");
+			javaCode.append("    double teResult = teCalc.computeAverageLocalOfObservations();\n");
 			String resultsPrefixString = String.format("TE_%s(col_%d -> col_%d) = ",
 					selectedCalcType, sourceColumn, destColumn);
 			resultsLabel.setText(String.format(resultsPrefixString + "%.4f %s", teResult, units));
-			code.append("\tSystem.out.printf(\"" + resultsPrefixString + "%.4f " + units + "\\n\", teResult);\n");
-			System.out.println("Code to generate this result:");
-			System.out.print(code);
+			javaCode.append("    System.out.printf(\"" + resultsPrefixString + "%.4f " + units + "\\n\", teResult);\n");
+			javaCode.append("  }\n");
+			javaCode.append("}\n\n");
+			// System.out.println("Code to generate this result:");
+			// System.out.print(code);
+			codeTextArea.setText(javaCode.toString());
+			
+			// Now write the Java code to a file
+			FileWriter javaFileWriter = new FileWriter("infodynamics/demos/autoanalysis/GeneratedTECalculator.java");
+			javaFileWriter.write(javaCode.toString());
+			javaFileWriter.close();
 		} catch (Exception ex) {
 			ex.printStackTrace(System.err);
 			JOptionPane.showMessageDialog(this,
@@ -532,29 +655,32 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 			propertyValues.put(propName, defaultPropValue);
 		}
 	}
+
+	@Override
+	public void changedUpdate(DocumentEvent e) {
+		// Source or dest col number updated
+		resultsLabel.setText(" "); // Clear text for now if anything changes
+		codeTextArea.setText(codeDefaultText);
+	}
+
+	@Override
+	public void insertUpdate(DocumentEvent e) {
+		// Source or dest col number updated
+		resultsLabel.setText(" "); // Clear text for now if anything changes
+		codeTextArea.setText(codeDefaultText);
+	}
+
+	@Override
+	public void removeUpdate(DocumentEvent e) {
+		// Source or dest col number updated
+		resultsLabel.setText(" "); // Clear text for now if anything changes
+		codeTextArea.setText(codeDefaultText);
+	}
 	
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
 		new AutoAnalyser();
-	}
-
-	@Override
-	public void changedUpdate(DocumentEvent e) {
-		// Source or dest col number updated
-		resultsLabel.setText(""); // Clear text for now if anything changes
-	}
-
-	@Override
-	public void insertUpdate(DocumentEvent e) {
-		// Source or dest col number updated
-		resultsLabel.setText(""); // Clear text for now if anything changes
-	}
-
-	@Override
-	public void removeUpdate(DocumentEvent e) {
-		// Source or dest col number updated
-		resultsLabel.setText(""); // Clear text for now if anything changes
 	}
 }
