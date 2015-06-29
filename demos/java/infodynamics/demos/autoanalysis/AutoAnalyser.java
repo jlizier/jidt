@@ -37,6 +37,7 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JFileChooser;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -140,8 +141,12 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 	protected HashMap<String,String> propertyValues;
 	// Results text
 	protected JLabel resultsLabel;
-	// Text area for the generated code
-	protected JTextArea codeTextArea;
+	// Text area for the generated Java code
+	protected JTextArea javaCodeTextArea;
+	// Text area for the generated Python code
+	protected JTextArea pythonCodeTextArea;
+	// Text area for the generated Matlab code
+	protected JTextArea matlabCodeTextArea;
 	
 	protected String codeDefaultText = "    ... Awaiting new parameter selection (press compute) ...";
 	
@@ -243,12 +248,17 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 		codePanel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder("Generated code"),
                 BorderFactory.createEmptyBorder(5,5,5,5)));
-		codeTextArea = new JTextArea(codeDefaultText);
-		codeTextArea.setOpaque(false);
-		codeTextArea.setEditable(false);
+		JTabbedPane codeTabbedPane = new JTabbedPane();
+		// Generate Java code text area
+		javaCodeTextArea = new JTextArea(codeDefaultText);
+		javaCodeTextArea.setOpaque(false);
+		javaCodeTextArea.setEditable(false);
+		javaCodeTextArea.setBorder(BorderFactory.createCompoundBorder(
+				javaCodeTextArea.getBorder(), 
+	            BorderFactory.createEmptyBorder(5,5,5,5)));
 		//codeTextArea.setLineWrap(true); // This makes it all unreadable
 		//codeTextArea.setWrapStyleWord(true);
-		JScrollPane areaScrollPane = new JScrollPane(codeTextArea);
+		JScrollPane areaScrollPane = new JScrollPane(javaCodeTextArea);
         areaScrollPane.setVerticalScrollBarPolicy(
         		JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         areaScrollPane.setHorizontalScrollBarPolicy(
@@ -260,7 +270,41 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
         areaScrollPane.setPreferredSize(codeTextAreaDimension);
         areaScrollPane.setMinimumSize(codeTextAreaDimension);
         areaScrollPane.setMaximumSize(codeTextAreaDimension);
-		codePanel.add(areaScrollPane);
+        codeTabbedPane.addTab("Java", areaScrollPane);
+		// Generate Python code text area
+		pythonCodeTextArea = new JTextArea(codeDefaultText);
+		pythonCodeTextArea.setOpaque(false);
+		pythonCodeTextArea.setEditable(false);
+		pythonCodeTextArea.setBorder(BorderFactory.createCompoundBorder(
+				pythonCodeTextArea.getBorder(), 
+	            BorderFactory.createEmptyBorder(5,5,5,5)));
+		JScrollPane pythonAreaScrollPane = new JScrollPane(pythonCodeTextArea);
+		pythonAreaScrollPane.setVerticalScrollBarPolicy(
+        		JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+		pythonAreaScrollPane.setHorizontalScrollBarPolicy(
+        		JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		pythonAreaScrollPane.setPreferredSize(codeTextAreaDimension);
+		pythonAreaScrollPane.setMinimumSize(codeTextAreaDimension);
+		pythonAreaScrollPane.setMaximumSize(codeTextAreaDimension);
+        codeTabbedPane.addTab("Python", pythonAreaScrollPane);
+		// Generate Matlab code text area
+		matlabCodeTextArea = new JTextArea(codeDefaultText);
+		matlabCodeTextArea.setOpaque(false);
+		matlabCodeTextArea.setEditable(false);
+		matlabCodeTextArea.setBorder(BorderFactory.createCompoundBorder(
+				matlabCodeTextArea.getBorder(), 
+	            BorderFactory.createEmptyBorder(5,5,5,5)));
+		JScrollPane matlabAreaScrollPane = new JScrollPane(matlabCodeTextArea);
+		matlabAreaScrollPane.setVerticalScrollBarPolicy(
+        		JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+		matlabAreaScrollPane.setHorizontalScrollBarPolicy(
+        		JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		matlabAreaScrollPane.setPreferredSize(codeTextAreaDimension);
+		matlabAreaScrollPane.setMinimumSize(codeTextAreaDimension);
+		matlabAreaScrollPane.setMaximumSize(codeTextAreaDimension);
+        codeTabbedPane.addTab("Matlab", matlabAreaScrollPane);
+        // Now add the tabbed pane to the panel
+		codePanel.add(codeTabbedPane);
 		codePanel.setSize(codeTextAreaWidth+10, codeTextAreaHeight+10);
 		
 		// Add all the components in:
@@ -352,7 +396,9 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 	public void actionPerformed(ActionEvent e) {
 		// Clear text fields for now if anything changes
 		resultsLabel.setText(" ");
-		codeTextArea.setText(codeDefaultText);
+		javaCodeTextArea.setText(codeDefaultText);
+		pythonCodeTextArea.setText(codeDefaultText);
+		matlabCodeTextArea.setText(codeDefaultText);
 		
 		if (e.getSource() == computeButton) {
 			computeTE();
@@ -416,6 +462,7 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 	protected void computeTE() {
 		
 		System.out.println("Compute button pressed ...");
+		resultsLabel.setText("Computing ...");
 		if (data == null) {
 			JOptionPane.showMessageDialog(this, "No valid data source selected");
 			return;
@@ -439,46 +486,88 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 				calcTypeComboBox.getSelectedItem();
 		String units = unitsForEachCalc[calcTypeComboBox.getSelectedIndex()];
 		
+		// Generate headers:
+		// 1. Java
 		StringBuffer javaCode = new StringBuffer();
 		javaCode.append("package infodynamics.demos.autoanalysis;\n\n");
 		javaCode.append("import infodynamics.utils.ArrayFileReader;\n");
 		javaCode.append("import infodynamics.utils.MatrixUtils;\n\n");
 		javaCode.append("import infodynamics.measures.continuous.TransferEntropyCalculator;\n");
-
+		// 2. Python
+		StringBuffer pythonCode = new StringBuffer();
+		pythonCode.append("from jpype import *\n");
+		pythonCode.append("import numpy\n");
+		pythonCode.append("# I think this is a bit of a hack, python users will do better on this:\n");
+		pythonCode.append("sys.path.append(\"../../python\")\n");
+		pythonCode.append("import readFloatsFile\n\n");
+		pythonCode.append("# Add JIDT jar library to the path\n\n");
+		pythonCode.append("jarLocation = \"../../../infodynamics.jar\"\n");
+		pythonCode.append("# Start the JVM (add the \"-Xmx\" option with say 1024M if you get crashes due to not enough memory space)\n");
+		pythonCode.append("startJVM(getDefaultJVMPath(), \"-ea\", \"-Djava.class.path=\" + jarLocation)\n\n");
+		// 3. Matlab:
+		StringBuffer matlabCode = new StringBuffer();
+		matlabCode.append("% Add JIDT jar library to the path\n");
+		matlabCode.append("javaaddpath('../../../infodynamics.jar');\n");
+		matlabCode.append("% Add utilities to the path\n");
+		matlabCode.append("addpath('../../octave');\n\n");
+		
 		try{
 			// Create a Kraskov TE calculator:
 			TransferEntropyCalculator teCalc;
 			
 			// Construct an instance of the selected calculator:
 			String javaConstructorLine = null;
+			String pythonPreConstructorLine = null;
+			String matlabConstructorLine = null;
 			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
 				throw new Exception("Not implemented yet");
 			} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_GAUSSIAN)) {
 				teCalc = new TransferEntropyCalculatorGaussian();
 				javaCode.append("import infodynamics.measures.continuous.gaussian.TransferEntropyCalculatorGaussian;\n");
 				javaConstructorLine = "    teCalc = new TransferEntropyCalculatorGaussian();\n";
+				pythonPreConstructorLine = "teCalcClass = JPackage(\"infodynamics.measures.continuous.gaussian\").TransferEntropyCalculatorGaussian\n";
+				matlabConstructorLine = "teCalc = javaObject('infodynamics.measures.continuous.gaussian.TransferEntropyCalculatorGaussian');\n";
 			} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_KRASKOV)) {
 				teCalc = new TransferEntropyCalculatorKraskov();
 				javaCode.append("import infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov;\n");
 				javaConstructorLine = "    teCalc = new TransferEntropyCalculatorKraskov();\n";
+				pythonPreConstructorLine = "teCalcClass = JPackage(\"infodynamics.measures.continuous.kraskov\").TransferEntropyCalculatorKraskov\n";
+				matlabConstructorLine = "teCalc = javaObject('infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov');\n";
 			} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_KERNEL)) {
 				teCalc = new TransferEntropyCalculatorKernel();
 				javaCode.append("import infodynamics.measures.continuous.kernel.TransferEntropyCalculatorKernel;\n");
 				javaConstructorLine = "    teCalc = new TransferEntropyCalculatorKernel();\n";
+				pythonPreConstructorLine = "teCalcClass = JPackage(\"infodynamics.measures.continuous.kernel\").TransferEntropyCalculatorKernel\n";
+				matlabConstructorLine = "teCalc = javaObject('infodynamics.measures.continuous.kernel.TransferEntropyCalculatorKernel');\n";
 			} else {
 				throw new Exception("No recognised calculator selected: " +
 						selectedCalcType);
 			}
 			
 			javaCode.append("\npublic class GeneratedTECalculator {\n\n");
-			javaCode.append("  public static void main(String[] args) throws Exception {\n");
+			javaCode.append("  public static void main(String[] args) throws Exception {\n\n");
 			
+			// Code to read in data:
+			// 1. Java
 			javaCode.append("    String dataFile = \"" + dataFile.getAbsolutePath() + "\";\n");
 			javaCode.append("    ArrayFileReader afr = new ArrayFileReader(dataFile);\n");
-			javaCode.append("    double[][] data = afr.getDouble2DMatrix();\n");
+			javaCode.append("    double[][] data = afr.getDouble2DMatrix();\n\n");
+			// 2. Python
+			pythonCode.append("dataRaw = readFloatsFile.readFloatsFile(\"" + dataFile.getAbsolutePath() + "\")\n");
+			pythonCode.append("# As numpy array:\n");
+			pythonCode.append("data = numpy.array(dataRaw)\n\n");
+			// 2. Matlab
+			matlabCode.append("data = load('" + dataFile.getAbsolutePath() + "');\n\n");
 			
+			// Construct the calculator:
+			// 1. Java
 			javaCode.append("    TransferEntropyCalculator teCalc;\n");
 			javaCode.append(javaConstructorLine);
+			// 2. Python
+			pythonCode.append(pythonPreConstructorLine);
+			pythonCode.append("teCalc = teCalcClass()\n");
+			// 3. Matlab
+			matlabCode.append(matlabConstructorLine);
 			
 			// Set properties 
 			for (String propName : fieldNames) {
@@ -496,36 +585,92 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 				if (!propValue.equalsIgnoreCase(teCalc.getProperty(propName))) {
 					// We need to set this property:
 					teCalc.setProperty(propName, propValue);
+					// 1. Java Code
 					javaCode.append("    teCalc.setProperty(\"" + propName + "\", \"" +
 								propValue + "\");\n");
+					// 2. Python code
+					pythonCode.append("teCalc.setProperty(\"" + propName + "\", \"" +
+							propValue + "\")\n");
+					// 3. Matlab code
+					matlabCode.append("teCalc.setProperty('" + propName + "', '" +
+							propValue + "');\n");
 				}
 			}
 			
+			// Initialise
 			teCalc.initialise();
 			javaCode.append("    teCalc.initialise();\n");
-			// Compute TE 
+			pythonCode.append("teCalc.initialise()\n");
+			matlabCode.append("teCalc.initialise();\n");
+			
+			// Set observations
 			teCalc.setObservations(
 					MatrixUtils.selectColumn(data, sourceColumn),
 					MatrixUtils.selectColumn(data, destColumn));
+			// 1. Java
 			javaCode.append("    teCalc.setObservations(\n" +
 						"        MatrixUtils.selectColumn(data, " + sourceColumn + "),\n" +
 						"        MatrixUtils.selectColumn(data, " + destColumn + "));\n");
+			// 2. Python
+			pythonCode.append("teCalc.setObservations(data[:," + sourceColumn + "], " +
+									"data[:," + destColumn + "])\n");
+			// 3. Matlab
+			matlabCode.append("% Column indices start from 1 in Matlab:\n");
+			matlabCode.append("teCalc.setObservations( ...\n    " + 
+					"octaveToJavaDoubleArray(data(:," + (sourceColumn+1) + ")), ...\n    " +
+					"octaveToJavaDoubleArray(data(:," + (destColumn+1) + ")));\n");
+			
+			// Compute TE 
 			double teResult = teCalc.computeAverageLocalOfObservations();
 			javaCode.append("    double teResult = teCalc.computeAverageLocalOfObservations();\n");
+			pythonCode.append("teResult = teCalc.computeAverageLocalOfObservations()\n");
+			matlabCode.append("teResult = teCalc.computeAverageLocalOfObservations();\n");
 			String resultsPrefixString = String.format("TE_%s(col_%d -> col_%d) = ",
 					selectedCalcType, sourceColumn, destColumn);
 			resultsLabel.setText(String.format(resultsPrefixString + "%.4f %s", teResult, units));
+			// And generate code to write the results and finalise:
+			// 1. Java
 			javaCode.append("    System.out.printf(\"" + resultsPrefixString + "%.4f " + units + "\\n\", teResult);\n");
 			javaCode.append("  }\n");
 			javaCode.append("}\n\n");
-			// System.out.println("Code to generate this result:");
-			// System.out.print(code);
-			codeTextArea.setText(javaCode.toString());
+			// 2. Python
+			pythonCode.append("print(\"" + resultsPrefixString + "%.4f " + units + "\\n\" % teResult)\n");
+			// 3. Matlab
+			matlabCode.append("fprintf('" + resultsPrefixString + "%.4f " + units + "\\n', teResult);\n");
 			
-			// Now write the Java code to a file
-			FileWriter javaFileWriter = new FileWriter("infodynamics/demos/autoanalysis/GeneratedTECalculator.java");
-			javaFileWriter.write(javaCode.toString());
-			javaFileWriter.close();
+			// Now set the code in the panel for the user
+			javaCodeTextArea.setText(javaCode.toString());
+			pythonCodeTextArea.setText(pythonCode.toString());
+			matlabCodeTextArea.setText(matlabCode.toString());
+			
+			// Now write the code to a file
+			// 1. Java
+			FileWriter codeFileWriter = new FileWriter("infodynamics/demos/autoanalysis/GeneratedTECalculator.java");
+			codeFileWriter.write(javaCode.toString());
+			codeFileWriter.close();
+			// 2. Python
+			codeFileWriter = new FileWriter("AutoAnalyser/GeneratedTECalculator.py");
+			codeFileWriter.write(pythonCode.toString());
+			codeFileWriter.close();
+			// 3. Matlab
+			codeFileWriter = new FileWriter("AutoAnalyser/GeneratedTECalculator.m");
+			codeFileWriter.write(matlabCode.toString());
+			codeFileWriter.close();
+			
+			// TODO Update the properties to pull out anything set internally by the calculator
+			for (String propName : fieldNames) {
+				String propValue = null;
+				try {
+					propValue = teCalc.getProperty(propName);
+					propertyValues.put(propName, propValue);
+				} catch (Exception ex) {
+					ex.printStackTrace(System.err);
+					JOptionPane.showMessageDialog(this,
+							ex.getMessage());
+					resultsLabel.setText("Cannot find a value for property " + propName);
+				}
+			}
+			propertiesTableModel.fireTableDataChanged(); // Alerts to refresh the table contents
 		} catch (Exception ex) {
 			ex.printStackTrace(System.err);
 			JOptionPane.showMessageDialog(this,
@@ -660,21 +805,27 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 	public void changedUpdate(DocumentEvent e) {
 		// Source or dest col number updated
 		resultsLabel.setText(" "); // Clear text for now if anything changes
-		codeTextArea.setText(codeDefaultText);
+		javaCodeTextArea.setText(codeDefaultText);
+		pythonCodeTextArea.setText(codeDefaultText);
+		matlabCodeTextArea.setText(codeDefaultText);
 	}
 
 	@Override
 	public void insertUpdate(DocumentEvent e) {
 		// Source or dest col number updated
 		resultsLabel.setText(" "); // Clear text for now if anything changes
-		codeTextArea.setText(codeDefaultText);
+		javaCodeTextArea.setText(codeDefaultText);
+		pythonCodeTextArea.setText(codeDefaultText);
+		matlabCodeTextArea.setText(codeDefaultText);
 	}
 
 	@Override
 	public void removeUpdate(DocumentEvent e) {
 		// Source or dest col number updated
 		resultsLabel.setText(" "); // Clear text for now if anything changes
-		codeTextArea.setText(codeDefaultText);
+		javaCodeTextArea.setText(codeDefaultText);
+		pythonCodeTextArea.setText(codeDefaultText);
+		matlabCodeTextArea.setText(codeDefaultText);
 	}
 	
 	/**
