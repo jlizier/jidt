@@ -297,7 +297,7 @@ public class AutoAnalyser extends JFrame
 		}
 		setIconImage(icon.getImage());
 		
-		Image watermarkImage = (new ImageIcon("AutoAnalyser/JIDT-logo-watermark.png")).getImage();
+		Image watermarkImage = (new ImageIcon("JIDT-logo-watermark.png")).getImage();
 		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setSize(1100,530);
@@ -644,18 +644,18 @@ public class AutoAnalyser extends JFrame
 		pythonCode.append("from jpype import *\n");
 		pythonCode.append("import numpy\n");
 		pythonCode.append("# I think this is a bit of a hack, python users will do better on this:\n");
-		pythonCode.append("sys.path.append(\"../../python\")\n");
+		pythonCode.append("sys.path.append(\"../python\")\n");
 		pythonCode.append("import readFloatsFile\n\n");
 		pythonCode.append("# Add JIDT jar library to the path\n\n");
-		pythonCode.append("jarLocation = \"../../../infodynamics.jar\"\n");
+		pythonCode.append("jarLocation = \"../../infodynamics.jar\"\n");
 		pythonCode.append("# Start the JVM (add the \"-Xmx\" option with say 1024M if you get crashes due to not enough memory space)\n");
 		pythonCode.append("startJVM(getDefaultJVMPath(), \"-ea\", \"-Djava.class.path=\" + jarLocation)\n\n");
 		// 3. Matlab:
 		StringBuffer matlabCode = new StringBuffer();
 		matlabCode.append("% Add JIDT jar library to the path\n");
-		matlabCode.append("javaaddpath('../../../infodynamics.jar');\n");
+		matlabCode.append("javaaddpath('../../infodynamics.jar');\n");
 		matlabCode.append("% Add utilities to the path\n");
-		matlabCode.append("addpath('../../octave');\n\n");
+		matlabCode.append("addpath('../octave');\n\n");
 		
 		try{
 			// Create a Kraskov TE calculator:
@@ -825,15 +825,15 @@ public class AutoAnalyser extends JFrame
 			
 			// Now write the code to a file
 			// 1. Java
-			FileWriter codeFileWriter = new FileWriter("infodynamics/demos/autoanalysis/GeneratedTECalculator.java");
+			FileWriter codeFileWriter = new FileWriter("../java/infodynamics/demos/autoanalysis/GeneratedTECalculator.java");
 			codeFileWriter.write(javaCode.toString());
 			codeFileWriter.close();
 			// 2. Python
-			codeFileWriter = new FileWriter("AutoAnalyser/GeneratedTECalculator.py");
+			codeFileWriter = new FileWriter("GeneratedTECalculator.py");
 			codeFileWriter.write(pythonCode.toString());
 			codeFileWriter.close();
 			// 3. Matlab
-			codeFileWriter = new FileWriter("AutoAnalyser/GeneratedTECalculator.m");
+			codeFileWriter = new FileWriter("GeneratedTECalculator.m");
 			codeFileWriter.write(matlabCode.toString());
 			codeFileWriter.close();
 			
