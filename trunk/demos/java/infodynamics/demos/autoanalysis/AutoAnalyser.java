@@ -29,6 +29,7 @@ import infodynamics.utils.MatrixUtils;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -41,27 +42,33 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.border.EtchedBorder;
+import javax.swing.ToolTipManager;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Image;
 import java.awt.MediaTracker;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.HashMap;
 import java.util.Vector;
 
-public class AutoAnalyser extends JFrame implements ActionListener, DocumentListener {
+public class AutoAnalyser extends JFrame
+	implements ActionListener, DocumentListener, MouseListener {
 
 	/**
 	 * Need serialVersionUID to be serializable
@@ -71,7 +78,7 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 	// Set options for the TE Calculator type:
 	public final static String CALC_TYPE_DISCRETE = "Discrete";
 	public final static String CALC_TYPE_GAUSSIAN = "Gaussian";
-	public final static String CALC_TYPE_KRASKOV  = "Kraskov";
+	public final static String CALC_TYPE_KRASKOV  = "Kraskov (KSG)";
 	public final static String CALC_TYPE_KERNEL   = "Kernel";
 	protected String[] calcTypes = {
 			CALC_TYPE_DISCRETE, CALC_TYPE_GAUSSIAN,
@@ -79,9 +86,14 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 	protected String[] unitsForEachCalc = {"bits", "nats", "nats", "bits"};
 	
 	// Store the properties for each calculator
-	protected String[] commonContProperties = {
-			TransferEntropyCalculator.K_PROP_NAME,
-			
+	protected String[] commonContPropertyNames = {
+			TransferEntropyCalculator.K_PROP_NAME
+	};
+	protected String[] commonContPropertiesFieldNames = {
+			"K_PROP_NAME"
+	};
+	protected String[] commonContPropertyDescriptions = {
+			"Destination history embedding length (k_HISTORY)"
 	};
 	protected String[] gaussianProperties = {
 			TransferEntropyCalculator.K_TAU_PROP_NAME, // Not common to Kernel
@@ -89,10 +101,36 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 			TransferEntropyCalculator.L_TAU_PROP_NAME, // Not common to Kernel
 			TransferEntropyCalculator.DELAY_PROP_NAME, // Not common to Kernel
 	};
+	protected String[] gaussianPropertiesFieldNames = {
+			"TransferEntropyCalculator.K_TAU_PROP_NAME", // Not common to Kernel
+			"TransferEntropyCalculator.L_PROP_NAME", // Not common to Kernel
+			"TransferEntropyCalculator.L_TAU_PROP_NAME", // Not common to Kernel
+			"TransferEntropyCalculator.DELAY_PROP_NAME", // Not common to Kernel
+	};
+	protected String[] gaussianPropertyDescriptions = {
+			"Destination history embedding delay (k_TAU)",
+			"Source history embedding length (l_HISTORY)",
+			"Source history embeding delay (l_TAU)",
+			"Delay from source to destination (in time steps)"
+	};
 	protected String[] kernelProperties = {
 			TransferEntropyCalculatorKernel.KERNEL_WIDTH_PROP_NAME,
 			TransferEntropyCalculatorKernel.DYN_CORR_EXCL_TIME_NAME,
 			TransferEntropyCalculatorKernel.NORMALISE_PROP_NAME,			
+	};
+	protected String[] kernelPropertiesFieldNames = {
+			"KERNEL_WIDTH_PROP_NAME",
+			"DYN_CORR_EXCL_TIME_NAME",
+			"NORMALISE_PROP_NAME"			
+	};
+	protected String[] kernelPropertyDescriptions = {
+			"Kernel width to be used in the calculation. <br/>If the property " +
+					TransferEntropyCalculatorKernel.NORMALISE_PROP_NAME +
+					" is set, then this is a number of standard deviations; " +
+					"otherwise it is an absolute value.",
+			"Dynamic correlation exclusion time or <br/>Theiler window (see Kantz and Schreiber); " +
+					"0 (default) means no dynamic exclusion window",
+			"(boolean) whether to normalise <br/>each incoming time-series to mean 0, standard deviation 1, or not  (recommended)",
 	};
 	protected String[] kraskovProperties = {
 			TransferEntropyCalculator.K_TAU_PROP_NAME, // Not common to Kernel
@@ -110,6 +148,51 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 			TransferEntropyCalculatorKraskov.PROP_K_SEARCH_MAX,
 			TransferEntropyCalculatorKraskov.PROP_TAU_SEARCH_MAX,
 			TransferEntropyCalculatorKraskov.PROP_RAGWITZ_NUM_NNS
+	};
+	protected String[] kraskovPropertiesFieldNames = {
+			"TransferEntropyCalculator.K_TAU_PROP_NAME", // Not common to Kernel
+			"TransferEntropyCalculator.L_PROP_NAME", // Not common to Kernel
+			"TransferEntropyCalculator.L_TAU_PROP_NAME", // Not common to Kernel
+			"TransferEntropyCalculator.DELAY_PROP_NAME", // Not common to Kernel
+			"ConditionalMutualInfoMultiVariateCommon.PROP_NORMALISE",
+			"ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_K",
+			"ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE",
+			"ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_DYN_CORR_EXCL_TIME",
+			"ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE",
+			"ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS",
+			"PROP_KRASKOV_ALG_NUM",
+			"PROP_AUTO_EMBED_METHOD",
+			"PROP_K_SEARCH_MAX",
+			"PROP_TAU_SEARCH_MAX",
+			"PROP_RAGWITZ_NUM_NNS"
+	};
+	protected String[] kraskovPropertyDescriptions = {
+			"Destination history embedding delay (k_TAU)",
+			"Source history embedding length (l)",
+			"Source history embeding delay (l_TAU)",
+			"Delay from source to destination (in time steps)",
+			"(boolean) whether to normalise <br/>each incoming time-series to mean 0, standard deviation 1, or not (recommended)",
+			"Number of k nearest neighbours to use <br/>in the full joint kernel space in the KSG algorithm",
+			"Standard deviation for an amount <br/>of random Gaussian noise to add to each variable, " +
+					"to avoid having neighbourhoods with artificially large counts. <br/>" +
+					"(\"false\" may be used to indicate \"0\".). The amount is added in after any normalisation.",
+			"Dynamic correlation exclusion time or <br/>Theiler window (see Kantz and Schreiber); " +
+					"0 (default) means no dynamic exclusion window",
+			"<br/>Norm type to use in KSG algorithm between the points in each marginal space. <br/>Options are: " +
+					"\"MAX_NORM\" (default), otherwise \"EUCLIDEAN\" or \"EUCLIDEAN_SQUARED\" (both equivalent here)",
+			"Number of parallel threads to use <br/>in computation: an integer > 0 or \"USE_ALL\" " +
+					"(default, to indicate to use all available processors)",
+			"Which KSG algorithm to use (1 or 2)",
+			"Method to automatically determine embedding lengths (k_HISTORY,l_HISTORY)<br/> and delays (k_TAU, l_TAU) for " +
+					"destination and potentially source time-series. Default is \"" + TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_NONE +
+					"\" meaning values are set manually; other values include: <br/>  -- \"" + TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ +
+					" for use of the Ragwitz criteria for both source and destination (searching up to \"" + TransferEntropyCalculatorKraskov.PROP_K_SEARCH_MAX +
+					"\" and \"" + TransferEntropyCalculatorKraskov.PROP_TAU_SEARCH_MAX + "\"); <br/>  -- \"" + TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY +
+					"\" for use of the Ragwitz criteria for the destination only. <br/>Use of values other than \"" + TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_NONE +
+					"\" leads to any previous settings for embedding lengths and delays for the destination and perhaps source to be overwritten after observations are supplied",
+			"Max. embedding length to search to <br/>if auto embedding (as determined by " + TransferEntropyCalculatorKraskov.PROP_AUTO_EMBED_METHOD + ")",
+			"Max. embedding delay to search to <br/>if auto embedding (as determined by " + TransferEntropyCalculatorKraskov.PROP_AUTO_EMBED_METHOD + ")",
+			"Number of k nearest neighbours for <br/>Ragwitz auto embedding (if used; defaults to match property \"k\")"
 	};
 	
 	protected JButton computeButton;
@@ -136,7 +219,11 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 	// Table model (local class) for the table
 	protected PropertiesTableModel propertiesTableModel;
 	// Names of the properties
-	protected Vector<String> fieldNames;
+	protected Vector<String> propertyNames;
+	// Names of the fields for the properties
+	protected Vector<String> propertyFieldNames;
+	// Descriptions of the fields for the properties
+	protected Vector<String> propertyDescriptions;
 	// Values of the properties
 	protected HashMap<String,String> propertyValues;
 	// Results text
@@ -150,10 +237,58 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 	
 	protected String codeDefaultText = "    ... Awaiting new parameter selection (press compute) ...";
 	
+	public class TextAreaWithImage extends JTextArea {
+
+	    /**
+		 * Default serialVersionUID
+		 */
+		private static final long serialVersionUID = 1L;
+		/**
+		 * Image for the background of the text area
+		 */
+		protected Image image;
+		protected boolean rescaled = false;
+		protected int xOffset = 0, yOffset = 0;
+
+	    public TextAreaWithImage(String defaultText, Image image) {
+	        super(defaultText);
+	        setOpaque(false); // I think this is set by default
+	        this.image = image;
+	    }
+
+	    @Override
+	    protected void paintComponent(Graphics g) {
+	    	if (!rescaled) {
+	    		int width = getWidth();
+	    		int height = getHeight();
+	    		if (width < height) {
+	    			image = image.getScaledInstance(width, -1, 0);
+	    			// TODO The following doesn't work because the image height is
+	    			//  not returned.
+	    			// yOffset = height - image.getHeight(null)/2;
+	    		} else {
+	    			image = image.getScaledInstance(-1, height, 0);
+	    			// The following doesn't work because the image height is
+	    			//  not returned.
+	    			// xOffset = width - image.getWidth(this)/2;
+	    		}
+	    		rescaled = true;
+	    	}
+	    	// Hacking an offset in because I haven't worked out how to
+	    	//  access the current width/height. This link might have a solution:
+	    	// http://stackoverflow.com/questions/26386422/how-to-set-background-image-to-a-jtextarea-in-a-jpanel
+	        // g.drawImage(image,xOffset,yOffset,null);
+	        g.drawImage(image,50,0,null);
+	        super.paintComponent(g);
+	    }
+	}
+	
 	/**
 	 * Constructor to generate the application windows
 	 */
 	public AutoAnalyser() {
+		
+		// Build the swing applet
 		
 		ImageIcon icon = new ImageIcon("../../JIDT-logo.png"); // Location for distributions
 		if (icon.getImageLoadStatus() != MediaTracker.COMPLETE) {
@@ -161,7 +296,9 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 			icon = new ImageIcon("../../web/JIDT-logo.png");
 		}
 		setIconImage(icon.getImage());
-			
+		
+		Image watermarkImage = (new ImageIcon("AutoAnalyser/JIDT-logo-watermark.png")).getImage();
+		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setSize(1100,530);
 		setTitle("JIDT Transfer Entropy Auto-Analyser");
@@ -184,8 +321,9 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 		fileLabel.setToolTipText("Must be a text file of time-series values with time increasing in rows, and variables along columns");
 		dataFileTextField = new JTextField(30);
 		dataFileTextField.setEnabled(false);
-		// Don't set border around this text field as it doesn't look right
 		// TODO set action listener for on click of this field
+		dataFileTextField.addMouseListener(this);
+		// Don't set border around this text field as it doesn't look right
 		// Button to open data file
 		openDataButton = new JButton("Select");
 		openDataButton.addActionListener(this);
@@ -217,10 +355,9 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 		JLabel dummyLabel3 = new JLabel(" ");
 		dummyLabel3.setSize(10, 10);
 		
-		// TODO Need to set an appropriate width here
 		putCalcPropertiesInTable();
 		propertiesTableModel = new PropertiesTableModel();
-		propertiesTable = new JTable(propertiesTableModel);
+		propertiesTable = new TableWithToolTip(propertiesTableModel);
 		// Make sure any properties are saved when the compute button is clicked
 		propertiesTable.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
 		Font headerFont = propertiesTable.getTableHeader().getFont();
@@ -250,7 +387,7 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
                 BorderFactory.createEmptyBorder(5,5,5,5)));
 		JTabbedPane codeTabbedPane = new JTabbedPane();
 		// Generate Java code text area
-		javaCodeTextArea = new JTextArea(codeDefaultText);
+		javaCodeTextArea = new TextAreaWithImage(codeDefaultText, watermarkImage);
 		javaCodeTextArea.setOpaque(false);
 		javaCodeTextArea.setEditable(false);
 		javaCodeTextArea.setBorder(BorderFactory.createCompoundBorder(
@@ -258,21 +395,21 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 	            BorderFactory.createEmptyBorder(5,5,5,5)));
 		//codeTextArea.setLineWrap(true); // This makes it all unreadable
 		//codeTextArea.setWrapStyleWord(true);
-		JScrollPane areaScrollPane = new JScrollPane(javaCodeTextArea);
-        areaScrollPane.setVerticalScrollBarPolicy(
+		JScrollPane javaAreaScrollPane = new JScrollPane(javaCodeTextArea);
+        javaAreaScrollPane.setVerticalScrollBarPolicy(
         		JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        areaScrollPane.setHorizontalScrollBarPolicy(
+        javaAreaScrollPane.setHorizontalScrollBarPolicy(
         		JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         int codeTextAreaWidth = 560;
         int codeTextAreaHeight = 460;
         Dimension codeTextAreaDimension = 
         		new Dimension(codeTextAreaWidth, codeTextAreaHeight);
-        areaScrollPane.setPreferredSize(codeTextAreaDimension);
-        areaScrollPane.setMinimumSize(codeTextAreaDimension);
-        areaScrollPane.setMaximumSize(codeTextAreaDimension);
-        codeTabbedPane.addTab("Java", areaScrollPane);
+        javaAreaScrollPane.setPreferredSize(codeTextAreaDimension);
+        javaAreaScrollPane.setMinimumSize(codeTextAreaDimension);
+        javaAreaScrollPane.setMaximumSize(codeTextAreaDimension);
+        codeTabbedPane.addTab("Java", javaAreaScrollPane);
 		// Generate Python code text area
-		pythonCodeTextArea = new JTextArea(codeDefaultText);
+		pythonCodeTextArea = new TextAreaWithImage(codeDefaultText, watermarkImage);
 		pythonCodeTextArea.setOpaque(false);
 		pythonCodeTextArea.setEditable(false);
 		pythonCodeTextArea.setBorder(BorderFactory.createCompoundBorder(
@@ -288,7 +425,7 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 		pythonAreaScrollPane.setMaximumSize(codeTextAreaDimension);
         codeTabbedPane.addTab("Python", pythonAreaScrollPane);
 		// Generate Matlab code text area
-		matlabCodeTextArea = new JTextArea(codeDefaultText);
+		matlabCodeTextArea = new TextAreaWithImage(codeDefaultText, watermarkImage);
 		matlabCodeTextArea.setOpaque(false);
 		matlabCodeTextArea.setEditable(false);
 		matlabCodeTextArea.setBorder(BorderFactory.createCompoundBorder(
@@ -382,14 +519,21 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
         paramsPanel.add(computeButton, c);
         // Add the results text
         paramsPanel.add(resultsLabel, c);
-        
-		// TODO Add the JIDT logo somewhere
-		
+        	
 		// Add both panels into the frame with Border layout
 		add(paramsPanel, BorderLayout.WEST);
 		add(codePanel);
 		
-		setVisible(true);		
+		setVisible(true);
+		
+		// The default tool tip delay before dismissing was too short to read these, so 
+		// I'm setting it to 30 sec.
+		ToolTipManager.sharedInstance().setDismissDelay(30000);
+		
+		// Try to force the watermark images to come up
+		javaCodeTextArea.repaint();
+		pythonCodeTextArea.repaint();
+		pythonCodeTextArea.repaint();
 	}
 
 	@Override
@@ -492,7 +636,9 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 		javaCode.append("package infodynamics.demos.autoanalysis;\n\n");
 		javaCode.append("import infodynamics.utils.ArrayFileReader;\n");
 		javaCode.append("import infodynamics.utils.MatrixUtils;\n\n");
-		javaCode.append("import infodynamics.measures.continuous.TransferEntropyCalculator;\n");
+		// Cover TransferEntropyCalculator and any common conditional MI classes
+		//  used for property names
+		javaCode.append("import infodynamics.measures.continuous.*;\n");
 		// 2. Python
 		StringBuffer pythonCode = new StringBuffer();
 		pythonCode.append("from jpype import *\n");
@@ -523,19 +669,22 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 				throw new Exception("Not implemented yet");
 			} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_GAUSSIAN)) {
 				teCalc = new TransferEntropyCalculatorGaussian();
-				javaCode.append("import infodynamics.measures.continuous.gaussian.TransferEntropyCalculatorGaussian;\n");
+				// Cover the TE calculator and any references to conditional MI calculator properties
+				javaCode.append("import infodynamics.measures.continuous.gaussian.*;\n");
 				javaConstructorLine = "    teCalc = new TransferEntropyCalculatorGaussian();\n";
 				pythonPreConstructorLine = "teCalcClass = JPackage(\"infodynamics.measures.continuous.gaussian\").TransferEntropyCalculatorGaussian\n";
 				matlabConstructorLine = "teCalc = javaObject('infodynamics.measures.continuous.gaussian.TransferEntropyCalculatorGaussian');\n";
 			} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_KRASKOV)) {
 				teCalc = new TransferEntropyCalculatorKraskov();
-				javaCode.append("import infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov;\n");
+				// Cover the TE calculator and any references to conditional MI calculator properties
+				javaCode.append("import infodynamics.measures.continuous.kraskov.*;\n");
 				javaConstructorLine = "    teCalc = new TransferEntropyCalculatorKraskov();\n";
 				pythonPreConstructorLine = "teCalcClass = JPackage(\"infodynamics.measures.continuous.kraskov\").TransferEntropyCalculatorKraskov\n";
 				matlabConstructorLine = "teCalc = javaObject('infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov');\n";
 			} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_KERNEL)) {
 				teCalc = new TransferEntropyCalculatorKernel();
-				javaCode.append("import infodynamics.measures.continuous.kernel.TransferEntropyCalculatorKernel;\n");
+				// Cover the TE calculator and any references to conditional MI calculator properties
+				javaCode.append("import infodynamics.measures.continuous.kernel.*;\n");
 				javaConstructorLine = "    teCalc = new TransferEntropyCalculatorKernel();\n";
 				pythonPreConstructorLine = "teCalcClass = JPackage(\"infodynamics.measures.continuous.kernel\").TransferEntropyCalculatorKernel\n";
 				matlabConstructorLine = "teCalc = javaObject('infodynamics.measures.continuous.kernel.TransferEntropyCalculatorKernel');\n";
@@ -548,30 +697,51 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 			javaCode.append("  public static void main(String[] args) throws Exception {\n\n");
 			
 			// Code to read in data:
+			String loadDataComment = "0. Load/prepare the data:\n";
 			// 1. Java
+			javaCode.append("    // " + loadDataComment);
 			javaCode.append("    String dataFile = \"" + dataFile.getAbsolutePath() + "\";\n");
 			javaCode.append("    ArrayFileReader afr = new ArrayFileReader(dataFile);\n");
-			javaCode.append("    double[][] data = afr.getDouble2DMatrix();\n\n");
+			javaCode.append("    double[][] data = afr.getDouble2DMatrix();\n");
+			javaCode.append("    double[] source = MatrixUtils.selectColumn(data, " + sourceColumn + ");\n");
+			javaCode.append("    double[] dest = MatrixUtils.selectColumn(data, " + destColumn + ");\n\n");
 			// 2. Python
+			pythonCode.append("# " + loadDataComment);
 			pythonCode.append("dataRaw = readFloatsFile.readFloatsFile(\"" + dataFile.getAbsolutePath() + "\")\n");
 			pythonCode.append("# As numpy array:\n");
-			pythonCode.append("data = numpy.array(dataRaw)\n\n");
+			pythonCode.append("data = numpy.array(dataRaw)\n");
+			pythonCode.append("source = data[:," + sourceColumn + "]\n");
+			pythonCode.append("dest = data[:," + destColumn + "]\n\n");
 			// 2. Matlab
-			matlabCode.append("data = load('" + dataFile.getAbsolutePath() + "');\n\n");
-			
+			matlabCode.append("% " + loadDataComment);
+			matlabCode.append("data = load('" + dataFile.getAbsolutePath() + "');\n");
+			matlabCode.append("% Column indices start from 1 in Matlab:\n");
+			matlabCode.append("source = octaveToJavaDoubleArray(data(:," + (sourceColumn+1) + "));\n");
+			matlabCode.append("dest = octaveToJavaDoubleArray(data(:," + (destColumn+1) + "));\n\n");
+
 			// Construct the calculator:
+			String constructComment = "1. Construct the calculator:\n";
 			// 1. Java
+			javaCode.append("    // " + constructComment);
 			javaCode.append("    TransferEntropyCalculator teCalc;\n");
 			javaCode.append(javaConstructorLine);
 			// 2. Python
+			pythonCode.append("# " + constructComment);
 			pythonCode.append(pythonPreConstructorLine);
 			pythonCode.append("teCalc = teCalcClass()\n");
 			// 3. Matlab
+			matlabCode.append("% " + constructComment);
 			matlabCode.append(matlabConstructorLine);
 			
 			// Set properties 
-			for (String propName : fieldNames) {
+			String setPropertiesComment = "2. Set any properties to non-default values:\n";
+			javaCode.append("    // " + setPropertiesComment);
+			pythonCode.append("# " + setPropertiesComment);
+			matlabCode.append("% " + setPropertiesComment);
+			int i = 0;
+			for (String propName : propertyNames) {
 				String propValue = null;
+				String propFieldName = propertyFieldNames.get(i++);
 				try {
 					propValue = propertyValues.get(propName);
 				} catch (Exception ex) {
@@ -585,8 +755,9 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 				if (!propValue.equalsIgnoreCase(teCalc.getProperty(propName))) {
 					// We need to set this property:
 					teCalc.setProperty(propName, propValue);
-					// 1. Java Code
-					javaCode.append("    teCalc.setProperty(\"" + propName + "\", \"" +
+					// 1. Java Code -- use full field name here
+					javaCode.append("    teCalc.setProperty(" + propFieldName +
+								",\n        \"" +
 								propValue + "\");\n");
 					// 2. Python code
 					pythonCode.append("teCalc.setProperty(\"" + propName + "\", \"" +
@@ -599,31 +770,37 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 			
 			// Initialise
 			teCalc.initialise();
+			String initialiseComment = "3. Initialise the calculator for (re-)use:\n";
+			javaCode.append("    // " + initialiseComment);
 			javaCode.append("    teCalc.initialise();\n");
+			pythonCode.append("# " + initialiseComment);
 			pythonCode.append("teCalc.initialise()\n");
+			matlabCode.append("% " + initialiseComment);
 			matlabCode.append("teCalc.initialise();\n");
 			
 			// Set observations
 			teCalc.setObservations(
 					MatrixUtils.selectColumn(data, sourceColumn),
 					MatrixUtils.selectColumn(data, destColumn));
+			String supplyDataComment = "4. Supply the sample data:\n";
 			// 1. Java
-			javaCode.append("    teCalc.setObservations(\n" +
-						"        MatrixUtils.selectColumn(data, " + sourceColumn + "),\n" +
-						"        MatrixUtils.selectColumn(data, " + destColumn + "));\n");
+			javaCode.append("    // " + supplyDataComment);
+			javaCode.append("    teCalc.setObservations(source, dest);\n");
 			// 2. Python
-			pythonCode.append("teCalc.setObservations(data[:," + sourceColumn + "], " +
-									"data[:," + destColumn + "])\n");
+			pythonCode.append("# " + supplyDataComment);
+			pythonCode.append("teCalc.setObservations(source, dest)\n");
 			// 3. Matlab
-			matlabCode.append("% Column indices start from 1 in Matlab:\n");
-			matlabCode.append("teCalc.setObservations( ...\n    " + 
-					"octaveToJavaDoubleArray(data(:," + (sourceColumn+1) + ")), ...\n    " +
-					"octaveToJavaDoubleArray(data(:," + (destColumn+1) + ")));\n");
+			matlabCode.append("% " + supplyDataComment);
+			matlabCode.append("teCalc.setObservations(source, dest);\n");
 			
 			// Compute TE 
 			double teResult = teCalc.computeAverageLocalOfObservations();
+			String computeComment = "5. Compute the estimate:\n";
+			javaCode.append("    // " + computeComment);
 			javaCode.append("    double teResult = teCalc.computeAverageLocalOfObservations();\n");
+			pythonCode.append("# " + computeComment);
 			pythonCode.append("teResult = teCalc.computeAverageLocalOfObservations()\n");
+			matlabCode.append("% " + computeComment);
 			matlabCode.append("teResult = teCalc.computeAverageLocalOfObservations();\n");
 			String resultsPrefixString = String.format("TE_%s(col_%d -> col_%d) = ",
 					selectedCalcType, sourceColumn, destColumn);
@@ -640,8 +817,11 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 			
 			// Now set the code in the panel for the user
 			javaCodeTextArea.setText(javaCode.toString());
+			javaCodeTextArea.setCaretPosition(0); // Pull focus to the top
 			pythonCodeTextArea.setText(pythonCode.toString());
+			pythonCodeTextArea.setCaretPosition(0); // Pull focus to the top
 			matlabCodeTextArea.setText(matlabCode.toString());
+			matlabCodeTextArea.setCaretPosition(0); // Pull focus to the top
 			
 			// Now write the code to a file
 			// 1. Java
@@ -657,8 +837,9 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 			codeFileWriter.write(matlabCode.toString());
 			codeFileWriter.close();
 			
-			// TODO Update the properties to pull out anything set internally by the calculator
-			for (String propName : fieldNames) {
+			// Read the current property values back out (in case of 
+			//  automated parameter assignment)
+			for (String propName : propertyNames) {
 				String propValue = null;
 				try {
 					propValue = teCalc.getProperty(propName);
@@ -678,6 +859,54 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 			resultsLabel.setText("Calculation failed, please see console");
 		}
 
+	}
+	
+	protected class TableWithToolTip extends JTable {
+		
+		/**
+		 * Default serialVersionUID
+		 */
+		private static final long serialVersionUID = 1L;
+
+		public TableWithToolTip(AbstractTableModel atm) {
+			super(atm);
+		}
+		
+		public Component prepareRenderer(TableCellRenderer renderer,
+				int rowIndex, int vColIndex) {
+			Component c = super.prepareRenderer(renderer, rowIndex, vColIndex);
+			if (c instanceof JComponent) {
+				if (vColIndex == 0) {
+					JComponent jc = (JComponent)c;
+					try {
+						jc.setToolTipText("<html>" + propertyFieldNames.get(rowIndex) + ": " + propertyDescriptions.get(rowIndex) + "</html>");
+					} catch (ArrayIndexOutOfBoundsException aioobe) {
+						// Catch if the row number was outside our array of descriptions (e.g. empty row)
+					}
+				}
+			}
+			return c;
+		}
+		/* Alternative method (this over-rides the above if both are in place)
+		public String getToolTipText(MouseEvent event) {
+			
+			Point point = event.getPoint();
+			int rowIndex = rowAtPoint(point);
+			int columnIndex = columnAtPoint(point);
+			
+			if (columnIndex == 0) {
+				try {
+					return propertyFieldNames.get(rowIndex) + ": " + propertyDescriptions.get(rowIndex);
+				} catch (ArrayIndexOutOfBoundsException aioobe) {
+					// Catch if the row number was outside our array of descriptions (e.g. empty row)
+					return null;
+				}
+			} else {
+				// No tool tip for the property values
+				return null;
+			}
+        }
+        */
 	}
 	
 	protected class PropertiesTableModel extends AbstractTableModel {
@@ -714,8 +943,14 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 				return;
 			}
 			// Else we've changed a property value -- which one?
-			String propName = fieldNames.get(rowIndex);
+			String propName = propertyNames.get(rowIndex);
 			propertyValues.put(propName, (String) aValue);
+			
+			// And clear the result and code panels because of this change:
+			resultsLabel.setText(" "); // Clear text for now if anything changes
+			javaCodeTextArea.setText(codeDefaultText);
+			pythonCodeTextArea.setText(codeDefaultText);
+			matlabCodeTextArea.setText(codeDefaultText);
 		}
 
 		@Override
@@ -725,12 +960,12 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 
 		@Override
 		public int getRowCount() {
-			return fieldNames.size();
+			return propertyNames.size();
 		}
 
 		@Override
 		public Object getValueAt(int rowIndex, int columnIndex) {
-			String propName = fieldNames.get(rowIndex);
+			String propName = propertyNames.get(rowIndex);
 			if (columnIndex == 0) {
 				return propName;
 			} else {
@@ -746,7 +981,9 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 				calcTypeComboBox.getSelectedItem();
 		@SuppressWarnings("rawtypes")
 		Class teCalcClass = null;
-		String[] classSpecificProperties = null;
+		String[] classSpecificPropertyNames = null;
+		String[] classSpecificPropertiesFieldNames = null;
+		String[] classSpecificPropertyDescriptions = null;
 		TransferEntropyCalculator teCalc = null;
 		try {
 			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
@@ -754,15 +991,21 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 			} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_GAUSSIAN)) {
 				teCalcClass = TransferEntropyCalculatorGaussian.class;
 				teCalc = new TransferEntropyCalculatorGaussian();
-				classSpecificProperties = gaussianProperties;
+				classSpecificPropertyNames = gaussianProperties;
+				classSpecificPropertiesFieldNames = gaussianPropertiesFieldNames;
+				classSpecificPropertyDescriptions = gaussianPropertyDescriptions;
 			} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_KRASKOV)) {
 				teCalcClass = TransferEntropyCalculatorKraskov.class;
 				teCalc = new TransferEntropyCalculatorKraskov();
-				classSpecificProperties = kraskovProperties;
+				classSpecificPropertyNames = kraskovProperties;
+				classSpecificPropertiesFieldNames = kraskovPropertiesFieldNames;
+				classSpecificPropertyDescriptions = kraskovPropertyDescriptions;
 			} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_KERNEL)) {
 				teCalcClass = TransferEntropyCalculatorKernel.class;
 				teCalc = new TransferEntropyCalculatorKernel();
-				classSpecificProperties = kernelProperties;
+				classSpecificPropertyNames = kernelProperties;
+				classSpecificPropertiesFieldNames = kernelPropertiesFieldNames;
+				classSpecificPropertyDescriptions = kernelPropertyDescriptions;
 			} else {
 				throw new Exception("No recognised calculator selected: " +
 						selectedCalcType);
@@ -775,19 +1018,43 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 		}
 		
 		// Now get all of the possible properties for this class:
-		fieldNames = new Vector<String>();
-		Vector<String> fieldDescriptions = new Vector<String>();
-		for (int i = 0; i < commonContProperties.length; i++) {
-			fieldNames.add(commonContProperties[i]);
-			System.out.println("Adding property name " + commonContProperties[i]);
+		propertyNames = new Vector<String>();
+		propertyFieldNames = new Vector<String>();
+		propertyDescriptions = new Vector<String>();
+		
+		// First for the common properties
+		int i = 0;
+		for (String fieldName : commonContPropertiesFieldNames) {
+			String propName = commonContPropertyNames[i];
+			String propertyDescription = commonContPropertyDescriptions[i];
+			i++;
+			System.out.println("Adding property name TransferEntropyCalculator." + fieldName + " = \"" + propName + "\"");
+			propertyFieldNames.add("TransferEntropyCalculator." + fieldName);
+			propertyNames.add(propName);
+			propertyDescriptions.add(propertyDescription);
 		}
-		for (int i = 0; i < classSpecificProperties.length; i++) {
-			fieldNames.add(classSpecificProperties[i]);
-			System.out.println("Adding property name " + classSpecificProperties[i]);
+		// Then for the specific estimator types
+		i = 0;
+		for (String fieldName : classSpecificPropertiesFieldNames) {
+			String propName = classSpecificPropertyNames[i];
+			String propertyDescription = classSpecificPropertyDescriptions[i];
+			i++;
+			propertyNames.add(propName);
+			propertyDescriptions.add(propertyDescription);
+			if (fieldName.contains(".")) {
+				System.out.println("Adding property name " + fieldName +
+						" = \"" + propName + "\"");
+				propertyFieldNames.add(fieldName);
+			} else {
+				System.out.println("Adding property name " + teCalcClass.getSimpleName() +
+						"." + fieldName + " = \"" + propName + "\"");
+				propertyFieldNames.add(teCalcClass.getSimpleName() + "." + fieldName);
+			}
 		}
+		
 		// Now extract the default values for all of these properties:
 		propertyValues = new HashMap<String,String>();
-		for (String propName : fieldNames) {
+		for (String propName : propertyNames) {
 			String defaultPropValue = null;
 			try {
 				defaultPropValue = teCalc.getProperty(propName);
@@ -833,5 +1100,39 @@ public class AutoAnalyser extends JFrame implements ActionListener, DocumentList
 	 */
 	public static void main(String[] args) {
 		new AutoAnalyser();
+	}
+
+	@Override
+	public void mouseClicked(MouseEvent me) {
+		// User clicked on the data file JLabel
+		
+		// Clear text fields for now if anything changes
+		resultsLabel.setText(" ");
+		javaCodeTextArea.setText(codeDefaultText);
+		pythonCodeTextArea.setText(codeDefaultText);
+		matlabCodeTextArea.setText(codeDefaultText);
+		if (me.getSource() == dataFileTextField) {
+			selectFileAction();
+		}
+	}
+
+	@Override
+	public void mouseEntered(MouseEvent me) {
+		// Do nothing
+	}
+
+	@Override
+	public void mouseExited(MouseEvent me) {
+		// Do nothing
+	}
+
+	@Override
+	public void mousePressed(MouseEvent me) {
+		// Do nothing
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent me) {
+		// Do nothing
 	}
 }
