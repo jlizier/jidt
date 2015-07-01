@@ -4,6 +4,7 @@
 = Demos =
 
 Several sets of demonstration code are distributed with the toolkit. Links to their wiki pages and their location in the distribution are given below:
+  * AutoAnalyser -- `demos/AutoAnalyser` -- a GUI tool to compute transfer entropy on a chosen data set with the toolkit, and also automatically generate code in Java, Python and Matlab to show how to do this calculation with the toolkit.
   * SimpleJavaExamples -- `demos/java` -- a set of basic examples using the Java toolkit;
   * Several demo sets mirror the `SimpleJavaExamples` to demonstrate the use of the toolkit in non-Java environments:
    * OctaveMatlabExamples -- `demos/octave` -- basic examples on using the Java toolkit from Octave or Matlab environments;
