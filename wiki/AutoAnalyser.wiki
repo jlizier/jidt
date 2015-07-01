@@ -1,0 +1,25 @@
+#summary Demo to allow the user to compute transfer entropy via a GUI, and to automatically generate the code to perform the given calculation
+#labels examples,octave,matlab,python
+
+[Demos] > Auto Analyser Demo
+
+= Auto Analyser Demo =
+
+This demonstration (available from release 1.3) gives you the simplest possible way to get started with JIDT.
+
+The demo provides a GUI for you to:
+ # select a data set,
+ # select a transfer entropy estimator, and
+ # make parameter settings for that estimator
+And once you press `Compute` the demo:
+ # Computes the transfer entropy from that data set without you needing to write any code, and
+ # Generates code to reproduce that calculation for you, in Java, Python and Matlab/Octave.
+
+You have no excuses left not to use JIDT -- it is simply too easy!
+
+This demonstration is found at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2FAutoAnalyser demos/AutoAnalyser] in the svn or [Downloads full distribution].
+
+
+== Running the Auto Analyser GUI app ==
+
+Run the `AutoAnalyser` GUI app from the `demos/AutoAnalyser` folder via the shell script `runTEAutoAnalyser.sh` (may require `chmod u+x`) or `runTEAutoAnalyser.bat` (for Windows).
