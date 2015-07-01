@@ -23,3 +23,5 @@ This demonstration is found at [http://code.google.com/p/information-dynamics-to
 == Running the Auto Analyser GUI app ==
 
 Run the `AutoAnalyser` GUI app from the `demos/AutoAnalyser` folder via the shell script `runTEAutoAnalyser.sh` (may require `chmod u+x`) or `runTEAutoAnalyser.bat` (for Windows).
+
+*TO BE COMPLETED*
