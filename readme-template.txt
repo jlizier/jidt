@@ -76,6 +76,8 @@ You can also join our email discussion group jidt-discuss at http://groups.googl
 
 Several sets of demonstration code are distributed with the toolkit:
 
+ a. demos/AutoAnalyser -- a GUI tool to compute transfer entropy on a chosen data set with the toolkit, and also automatically generate code in Java, Python and Matlab to show how to do this calculation with the toolkit. See description at https://code.google.com/p/information-dynamics-toolkit/wiki/AutoAnalyser
+
  a. demos/java -- basic examples on easily using the Java toolkit -- run these from the shell scripts in this directory -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/SimpleJavaExamples
 
  b. Several demo sets mirror the SimpleJavaExamples to demonstrate the use of the toolkit in non-Java environments: 
