@@ -24,6 +24,7 @@ import infodynamics.measures.continuous.gaussian.TransferEntropyCalculatorGaussi
 import infodynamics.measures.continuous.kernel.TransferEntropyCalculatorKernel;
 import infodynamics.measures.continuous.kraskov.ConditionalMutualInfoCalculatorMultiVariateKraskov;
 import infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov;
+import infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete;
 import infodynamics.utils.ArrayFileReader;
 import infodynamics.utils.MatrixUtils;
 
@@ -86,6 +87,21 @@ public class AutoAnalyser extends JFrame
 	protected String[] unitsForEachCalc = {"bits", "nats", "nats", "bits"};
 	
 	// Store the properties for each calculator
+	protected static final String DISCRETE_PROPNAME_K = "k_HISTORY";
+	protected static final String DISCRETE_PROPNAME_BASE = "base";
+	protected String[] discreteProperties = {
+			DISCRETE_PROPNAME_K,
+			DISCRETE_PROPNAME_BASE
+	};
+	protected String[] discretePropertyDefaultValues = {
+			"1",
+			"2"
+	};
+	protected String[] discretePropertyDescriptions = {
+			"Destination history embedding length",
+			"Number of discrete states available for each variable (i.e. 2 for binary)"
+	};
+	// Common property names for all continuous calculators:
 	protected String[] commonContPropertyNames = {
 			TransferEntropyCalculator.K_PROP_NAME
 	};
@@ -205,8 +221,10 @@ public class AutoAnalyser extends JFrame
 	protected JTextField dataFileTextField;
 	// Descriptor of the data:
 	protected JLabel dataFileDescriptorLabel;
-	// The data we're working with
+	// The continuous data we're working with
 	protected double[][] data = null;
+	// The discrete data we're working with
+	protected int[][] dataDiscrete = null;
 	// Number of rows and columns of the data:
 	protected int dataRows = 0;
 	protected int dataColumns = 0;
@@ -321,7 +339,6 @@ public class AutoAnalyser extends JFrame
 		fileLabel.setToolTipText("Must be a text file of time-series values with time increasing in rows, and variables along columns");
 		dataFileTextField = new JTextField(30);
 		dataFileTextField.setEnabled(false);
-		// TODO set action listener for on click of this field
 		dataFileTextField.addMouseListener(this);
 		// Don't set border around this text field as it doesn't look right
 		// Button to open data file
@@ -367,7 +384,7 @@ public class AutoAnalyser extends JFrame
 		valueColumn.setMaxWidth(130);
 		JScrollPane propsTableScrollPane = new JScrollPane(propertiesTable);
 		// Set up for ~18 rows maximum (the +6 is exact to fit all props
-		//  for KRaskov in without scrollbar)
+		//  for Kraskov in without scrollbar)
 		Dimension d = propertiesTable.getPreferredSize();
 		propsTableScrollPane.setPreferredSize(
 		    new Dimension(d.width,propertiesTable.getRowHeight()*17+6));
@@ -577,9 +594,24 @@ public class AutoAnalyser extends JFrame
 			dataFile = dataFileChooser.getSelectedFile();
 			dataFileTextField.setText(dataFile.getAbsolutePath());
 			System.out.println("Data file selected: " + dataFile.getAbsolutePath());
-			// Now load the file in:
-			ArrayFileReader afr = new ArrayFileReader(dataFile);
-			try {
+			// Now load the file in to check it:
+			loadData(false); // Assume is doubles for the moment
+		}
+		// Else do nothing
+	}
+	
+	protected void loadData(boolean isInts) {
+		ArrayFileReader afr = new ArrayFileReader(dataFile);
+		try {
+			if (isInts) {
+				dataDiscrete = afr.getInt2DMatrix();
+				dataRows = dataDiscrete.length;
+				if (dataRows > 0) {
+					dataColumns = dataDiscrete[0].length;
+				} else {
+					dataColumns = 0;
+				}
+			} else {
 				data = afr.getDouble2DMatrix();
 				dataRows = data.length;
 				if (dataRows > 0) {
@@ -587,27 +619,42 @@ public class AutoAnalyser extends JFrame
 				} else {
 					dataColumns = 0;
 				}
-				dataFileDescriptorLabel.setText(
-						String.format("Valid data file with %d rows and %d columns",
-						dataRows, dataColumns));
-				System.out.printf("Read in data with %d rows and %d columns\n",
-						dataRows, dataColumns);
-			} catch (Exception ex) {
-				ex.printStackTrace(System.err);
-				JOptionPane.showMessageDialog(this,
-						ex.getMessage());
-				dataFileDescriptorLabel.setText("Invalid data file, please load another");
+			}
+			dataFileDescriptorLabel.setText(
+					String.format("Valid data file with %d rows and %d columns",
+					dataRows, dataColumns));
+			System.out.printf("Read in data with %d rows and %d columns\n",
+					dataRows, dataColumns);
+		} catch (Exception ex) {
+			ex.printStackTrace(System.err);
+			JOptionPane.showMessageDialog(this, ex.getMessage());
+			dataFileDescriptorLabel.setText("Invalid data file, please load another");
+			if (isInts) {
+				dataDiscrete = null;
+			} else {
 				data = null;
 			}
 		}
-		// Else do nothing
 	}
 	
 	protected void computeTE() {
 		
 		System.out.println("Compute button pressed ...");
 		resultsLabel.setText("Computing ...");
-		if (data == null) {
+		
+		String selectedCalcType = (String)
+				calcTypeComboBox.getSelectedItem();
+		String units = unitsForEachCalc[calcTypeComboBox.getSelectedIndex()];
+		
+		if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+			// Try to read the data file as ints now:
+			loadData(true);
+			if (dataDiscrete == null) {
+				// An error message will have been shown by loadData() 
+				return;
+			}
+		} else if (data == null) {
+			// We need a file of continuous data but no file has been selected
 			JOptionPane.showMessageDialog(this, "No valid data source selected");
 			return;
 		}
@@ -626,26 +673,30 @@ public class AutoAnalyser extends JFrame
 			return;
 		}
 
-		String selectedCalcType = (String)
-				calcTypeComboBox.getSelectedItem();
-		String units = unitsForEachCalc[calcTypeComboBox.getSelectedIndex()];
-		
 		// Generate headers:
 		// 1. Java
 		StringBuffer javaCode = new StringBuffer();
 		javaCode.append("package infodynamics.demos.autoanalysis;\n\n");
 		javaCode.append("import infodynamics.utils.ArrayFileReader;\n");
 		javaCode.append("import infodynamics.utils.MatrixUtils;\n\n");
-		// Cover TransferEntropyCalculator and any common conditional MI classes
-		//  used for property names
-		javaCode.append("import infodynamics.measures.continuous.*;\n");
+		if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+			javaCode.append("import infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete;\n");
+		} else {
+			// Cover TransferEntropyCalculator and any common conditional MI classes
+			//  used for property names
+			javaCode.append("import infodynamics.measures.continuous.*;\n");
+		}
 		// 2. Python
 		StringBuffer pythonCode = new StringBuffer();
 		pythonCode.append("from jpype import *\n");
 		pythonCode.append("import numpy\n");
 		pythonCode.append("# I think this is a bit of a hack, python users will do better on this:\n");
 		pythonCode.append("sys.path.append(\"../python\")\n");
-		pythonCode.append("import readFloatsFile\n\n");
+		if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+			pythonCode.append("import readIntsFile\n\n");
+		} else {
+			pythonCode.append("import readFloatsFile\n\n");
+		}
 		pythonCode.append("# Add JIDT jar library to the path\n\n");
 		pythonCode.append("jarLocation = \"../../infodynamics.jar\"\n");
 		pythonCode.append("# Start the JVM (add the \"-Xmx\" option with say 1024M if you get crashes due to not enough memory space)\n");
@@ -658,15 +709,17 @@ public class AutoAnalyser extends JFrame
 		matlabCode.append("addpath('../octave');\n\n");
 		
 		try{
-			// Create a Kraskov TE calculator:
-			TransferEntropyCalculator teCalc;
+			// Create both discrete and continuous TE calculators to make
+			//  following code simpler:
+			TransferEntropyCalculator teCalc = null;
+			TransferEntropyCalculatorDiscrete teCalcDiscrete = null;
 			
 			// Construct an instance of the selected calculator:
 			String javaConstructorLine = null;
 			String pythonPreConstructorLine = null;
 			String matlabConstructorLine = null;
 			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
-				throw new Exception("Not implemented yet");
+				// Defer our processing for this to below ...
 			} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_GAUSSIAN)) {
 				teCalc = new TransferEntropyCalculatorGaussian();
 				// Cover the TE calculator and any references to conditional MI calculator properties
@@ -702,74 +755,143 @@ public class AutoAnalyser extends JFrame
 			javaCode.append("    // " + loadDataComment);
 			javaCode.append("    String dataFile = \"" + dataFile.getAbsolutePath() + "\";\n");
 			javaCode.append("    ArrayFileReader afr = new ArrayFileReader(dataFile);\n");
-			javaCode.append("    double[][] data = afr.getDouble2DMatrix();\n");
-			javaCode.append("    double[] source = MatrixUtils.selectColumn(data, " + sourceColumn + ");\n");
-			javaCode.append("    double[] dest = MatrixUtils.selectColumn(data, " + destColumn + ");\n\n");
+			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+				javaCode.append("    int[][] data = afr.getInt2DMatrix();\n");
+				javaCode.append("    int[] source = MatrixUtils.selectColumn(data, " + sourceColumn + ");\n");
+				javaCode.append("    int[] dest = MatrixUtils.selectColumn(data, " + destColumn + ");\n\n");
+			} else {
+				javaCode.append("    double[][] data = afr.getDouble2DMatrix();\n");
+				javaCode.append("    double[] source = MatrixUtils.selectColumn(data, " + sourceColumn + ");\n");
+				javaCode.append("    double[] dest = MatrixUtils.selectColumn(data, " + destColumn + ");\n\n");
+			}
 			// 2. Python
 			pythonCode.append("# " + loadDataComment);
-			pythonCode.append("dataRaw = readFloatsFile.readFloatsFile(\"" + dataFile.getAbsolutePath() + "\")\n");
+			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+				pythonCode.append("dataRaw = readIntsFile.readIntsFile(\"" + dataFile.getAbsolutePath() + "\")\n");
+			} else {
+				pythonCode.append("dataRaw = readFloatsFile.readFloatsFile(\"" + dataFile.getAbsolutePath() + "\")\n");
+			}
 			pythonCode.append("# As numpy array:\n");
 			pythonCode.append("data = numpy.array(dataRaw)\n");
 			pythonCode.append("source = data[:," + sourceColumn + "]\n");
 			pythonCode.append("dest = data[:," + destColumn + "]\n\n");
-			// 2. Matlab
+			// 3. Matlab
 			matlabCode.append("% " + loadDataComment);
 			matlabCode.append("data = load('" + dataFile.getAbsolutePath() + "');\n");
 			matlabCode.append("% Column indices start from 1 in Matlab:\n");
-			matlabCode.append("source = octaveToJavaDoubleArray(data(:," + (sourceColumn+1) + "));\n");
-			matlabCode.append("dest = octaveToJavaDoubleArray(data(:," + (destColumn+1) + "));\n\n");
+			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+				matlabCode.append("source = octaveToJavaIntArray(data(:," + (sourceColumn+1) + "));\n");
+				matlabCode.append("dest = octaveToJavaIntArray(data(:," + (destColumn+1) + "));\n\n");
+			} else {
+				matlabCode.append("source = octaveToJavaDoubleArray(data(:," + (sourceColumn+1) + "));\n");
+				matlabCode.append("dest = octaveToJavaDoubleArray(data(:," + (destColumn+1) + "));\n\n");
+			}
 
-			// Construct the calculator:
+			// Construct the calculator and set relevant properties:
 			String constructComment = "1. Construct the calculator:\n";
-			// 1. Java
 			javaCode.append("    // " + constructComment);
-			javaCode.append("    TransferEntropyCalculator teCalc;\n");
-			javaCode.append(javaConstructorLine);
-			// 2. Python
 			pythonCode.append("# " + constructComment);
-			pythonCode.append(pythonPreConstructorLine);
-			pythonCode.append("teCalc = teCalcClass()\n");
-			// 3. Matlab
 			matlabCode.append("% " + constructComment);
-			matlabCode.append(matlabConstructorLine);
-			
-			// Set properties 
-			String setPropertiesComment = "2. Set any properties to non-default values:\n";
-			javaCode.append("    // " + setPropertiesComment);
-			pythonCode.append("# " + setPropertiesComment);
-			matlabCode.append("% " + setPropertiesComment);
-			int i = 0;
-			for (String propName : propertyNames) {
-				String propValue = null;
-				String propFieldName = propertyFieldNames.get(i++);
+			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+				int k, base;
+				String kPropValueStr, basePropValueStr;
 				try {
-					propValue = propertyValues.get(propName);
+					kPropValueStr = propertyValues.get(DISCRETE_PROPNAME_K);
 				} catch (Exception ex) {
-					ex.printStackTrace(System.err);
 					JOptionPane.showMessageDialog(this,
 							ex.getMessage());
-					resultsLabel.setText("Cannot find a value for property " + propName);
+					resultsLabel.setText("Cannot find a value for property " + DISCRETE_PROPNAME_BASE);
+					return;
 				}
-				// Check whether this property value is different to the default for
-				//  this calculator. This is more for generating the minimal code.
-				if (!propValue.equalsIgnoreCase(teCalc.getProperty(propName))) {
-					// We need to set this property:
-					teCalc.setProperty(propName, propValue);
-					// 1. Java Code -- use full field name here
-					javaCode.append("    teCalc.setProperty(" + propFieldName +
-								",\n        \"" +
-								propValue + "\");\n");
-					// 2. Python code
-					pythonCode.append("teCalc.setProperty(\"" + propName + "\", \"" +
-							propValue + "\")\n");
-					// 3. Matlab code
-					matlabCode.append("teCalc.setProperty('" + propName + "', '" +
-							propValue + "');\n");
+				try {
+					basePropValueStr = propertyValues.get(DISCRETE_PROPNAME_BASE);
+				} catch (Exception ex) {
+					JOptionPane.showMessageDialog(this,
+							ex.getMessage());
+					resultsLabel.setText("Cannot find a value for property " + DISCRETE_PROPNAME_BASE);
+					return;
+				}
+				k = Integer.parseInt(kPropValueStr);
+				base = Integer.parseInt(basePropValueStr);
+				
+				// Now check that the data is ok:
+				int minInData = MatrixUtils.min(dataDiscrete);
+				int maxInData = MatrixUtils.max(dataDiscrete);
+				if ((minInData < 0) || (maxInData >= base)) {
+					throw new Exception("Values in data file (in range " + minInData +
+							":" + maxInData + ") lie outside the expected range 0:" +
+							(base-1) + " for base " + base);
+				}
+				
+				teCalcDiscrete = new TransferEntropyCalculatorDiscrete(base, k);
+				// 1. Java
+				javaCode.append("    TransferEntropyCalculatorDiscrete teCalc\n");
+				javaCode.append("        = new TransferEntropyCalculatorDiscrete(" +
+								base + ", " + k + ");\n");
+				// 2. Python
+				pythonCode.append("teCalcClass = JPackage(\"infodynamics.measures.discrete\").TransferEntropyCalculatorDiscrete\n");
+				pythonCode.append("teCalc = teCalcClass(" +
+								base + ", " + k + ")\n");
+				// 3. Matlab
+				matlabCode.append("teCalc = javaObject('infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete', " +
+								base + ", " + k + ");\n");
+				String setPropertiesComment = "2. No other properties to set for discrete calculators.\n";
+				javaCode.append("    // " + setPropertiesComment);
+				pythonCode.append("# " + setPropertiesComment);
+				matlabCode.append("% " + setPropertiesComment);
+			} else {
+				// Construct the calculator:
+				// 1. Java
+				javaCode.append("    TransferEntropyCalculator teCalc;\n");
+				javaCode.append(javaConstructorLine);
+				// 2. Python
+				pythonCode.append(pythonPreConstructorLine);
+				pythonCode.append("teCalc = teCalcClass()\n");
+				// 3. Matlab
+				matlabCode.append(matlabConstructorLine);
+			
+				// Set properties 
+				String setPropertiesComment = "2. Set any properties to non-default values:\n";
+				javaCode.append("    // " + setPropertiesComment);
+				pythonCode.append("# " + setPropertiesComment);
+				matlabCode.append("% " + setPropertiesComment);
+				int i = 0;
+				for (String propName : propertyNames) {
+					String propValue = null;
+					String propFieldName = propertyFieldNames.get(i++);
+					try {
+						propValue = propertyValues.get(propName);
+					} catch (Exception ex) {
+						ex.printStackTrace(System.err);
+						JOptionPane.showMessageDialog(this,
+								ex.getMessage());
+						resultsLabel.setText("Cannot find a value for property " + propName);
+					}
+					// Check whether this property value is different to the default for
+					//  this calculator. This is more for generating the minimal code.
+					if (!propValue.equalsIgnoreCase(teCalc.getProperty(propName))) {
+						// We need to set this property:
+						teCalc.setProperty(propName, propValue);
+						// 1. Java Code -- use full field name here
+						javaCode.append("    teCalc.setProperty(" + propFieldName +
+									",\n        \"" +
+									propValue + "\");\n");
+						// 2. Python code
+						pythonCode.append("teCalc.setProperty(\"" + propName + "\", \"" +
+								propValue + "\")\n");
+						// 3. Matlab code
+						matlabCode.append("teCalc.setProperty('" + propName + "', '" +
+								propValue + "');\n");
+					}
 				}
 			}
 			
 			// Initialise
-			teCalc.initialise();
+			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+				teCalcDiscrete.initialise();
+			} else {
+				teCalc.initialise();
+			}
 			String initialiseComment = "3. Initialise the calculator for (re-)use:\n";
 			javaCode.append("    // " + initialiseComment);
 			javaCode.append("    teCalc.initialise();\n");
@@ -779,22 +901,36 @@ public class AutoAnalyser extends JFrame
 			matlabCode.append("teCalc.initialise();\n");
 			
 			// Set observations
-			teCalc.setObservations(
-					MatrixUtils.selectColumn(data, sourceColumn),
-					MatrixUtils.selectColumn(data, destColumn));
 			String supplyDataComment = "4. Supply the sample data:\n";
+			String setObservationsMethod;
+			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+				setObservationsMethod = "addObservations";
+				teCalcDiscrete.addObservations(
+						MatrixUtils.selectColumn(dataDiscrete, sourceColumn),
+						MatrixUtils.selectColumn(dataDiscrete, destColumn));
+			} else {
+				setObservationsMethod = "setObservations";
+				teCalc.setObservations(
+						MatrixUtils.selectColumn(data, sourceColumn),
+						MatrixUtils.selectColumn(data, destColumn));
+			}
 			// 1. Java
 			javaCode.append("    // " + supplyDataComment);
-			javaCode.append("    teCalc.setObservations(source, dest);\n");
+			javaCode.append("    teCalc." + setObservationsMethod + "(source, dest);\n");
 			// 2. Python
 			pythonCode.append("# " + supplyDataComment);
-			pythonCode.append("teCalc.setObservations(source, dest)\n");
+			pythonCode.append("teCalc." + setObservationsMethod + "(source, dest)\n");
 			// 3. Matlab
 			matlabCode.append("% " + supplyDataComment);
-			matlabCode.append("teCalc.setObservations(source, dest);\n");
+			matlabCode.append("teCalc." + setObservationsMethod + "(source, dest);\n");
 			
 			// Compute TE 
-			double teResult = teCalc.computeAverageLocalOfObservations();
+			double teResult;
+			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+				teResult = teCalcDiscrete.computeAverageLocalOfObservations();
+			} else {
+				teResult = teCalc.computeAverageLocalOfObservations();
+			}
 			String computeComment = "5. Compute the estimate:\n";
 			javaCode.append("    // " + computeComment);
 			javaCode.append("    double teResult = teCalc.computeAverageLocalOfObservations();\n");
@@ -837,21 +973,23 @@ public class AutoAnalyser extends JFrame
 			codeFileWriter.write(matlabCode.toString());
 			codeFileWriter.close();
 			
-			// Read the current property values back out (in case of 
-			//  automated parameter assignment)
-			for (String propName : propertyNames) {
-				String propValue = null;
-				try {
-					propValue = teCalc.getProperty(propName);
-					propertyValues.put(propName, propValue);
-				} catch (Exception ex) {
-					ex.printStackTrace(System.err);
-					JOptionPane.showMessageDialog(this,
-							ex.getMessage());
-					resultsLabel.setText("Cannot find a value for property " + propName);
+			if (!selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+				// Read the current property values back out (in case of 
+				//  automated parameter assignment)
+				for (String propName : propertyNames) {
+					String propValue = null;
+					try {
+						propValue = teCalc.getProperty(propName);
+						propertyValues.put(propName, propValue);
+					} catch (Exception ex) {
+						ex.printStackTrace(System.err);
+						JOptionPane.showMessageDialog(this,
+								ex.getMessage());
+						resultsLabel.setText("Cannot find a value for property " + propName);
+					}
 				}
+				propertiesTableModel.fireTableDataChanged(); // Alerts to refresh the table contents
 			}
-			propertiesTableModel.fireTableDataChanged(); // Alerts to refresh the table contents
 		} catch (Exception ex) {
 			ex.printStackTrace(System.err);
 			JOptionPane.showMessageDialog(this,
@@ -987,7 +1125,11 @@ public class AutoAnalyser extends JFrame
 		TransferEntropyCalculator teCalc = null;
 		try {
 			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
-				throw new Exception("Not implemented yet");
+				teCalcClass = TransferEntropyCalculatorDiscrete.class;
+				teCalc = null; // Not used
+				classSpecificPropertyNames = discreteProperties;
+				classSpecificPropertiesFieldNames = null; // Not used
+				classSpecificPropertyDescriptions = discretePropertyDescriptions;
 			} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_GAUSSIAN)) {
 				teCalcClass = TransferEntropyCalculatorGaussian.class;
 				teCalc = new TransferEntropyCalculatorGaussian();
@@ -1022,49 +1164,66 @@ public class AutoAnalyser extends JFrame
 		propertyFieldNames = new Vector<String>();
 		propertyDescriptions = new Vector<String>();
 		
-		// First for the common properties
-		int i = 0;
-		for (String fieldName : commonContPropertiesFieldNames) {
-			String propName = commonContPropertyNames[i];
-			String propertyDescription = commonContPropertyDescriptions[i];
-			i++;
-			System.out.println("Adding property name TransferEntropyCalculator." + fieldName + " = \"" + propName + "\"");
-			propertyFieldNames.add("TransferEntropyCalculator." + fieldName);
-			propertyNames.add(propName);
-			propertyDescriptions.add(propertyDescription);
-		}
-		// Then for the specific estimator types
-		i = 0;
-		for (String fieldName : classSpecificPropertiesFieldNames) {
-			String propName = classSpecificPropertyNames[i];
-			String propertyDescription = classSpecificPropertyDescriptions[i];
-			i++;
-			propertyNames.add(propName);
-			propertyDescriptions.add(propertyDescription);
-			if (fieldName.contains(".")) {
-				System.out.println("Adding property name " + fieldName +
-						" = \"" + propName + "\"");
-				propertyFieldNames.add(fieldName);
-			} else {
-				System.out.println("Adding property name " + teCalcClass.getSimpleName() +
-						"." + fieldName + " = \"" + propName + "\"");
-				propertyFieldNames.add(teCalcClass.getSimpleName() + "." + fieldName);
+		if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+			// Simply add the properties for this estimator, along
+			//  with their default values
+			int i = 0;
+			propertyValues = new HashMap<String,String>();
+			for (String propName : discreteProperties) {
+				String propertyDescription = discretePropertyDescriptions[i];
+				String defaultPropertyValue = discretePropertyDefaultValues[i];
+				i++;
+				propertyNames.add(propName);
+				propertyDescriptions.add(propertyDescription);
+				propertyValues.put(propName, defaultPropertyValue);
+				System.out.println("Adding property name " + propName);
 			}
-		}
-		
-		// Now extract the default values for all of these properties:
-		propertyValues = new HashMap<String,String>();
-		for (String propName : propertyNames) {
-			String defaultPropValue = null;
-			try {
-				defaultPropValue = teCalc.getProperty(propName);
-			} catch (Exception ex) {
-				ex.printStackTrace(System.err);
-				JOptionPane.showMessageDialog(this,
-						ex.getMessage());
-				propertyValues.put(propName, "Cannot find a value");
+		} else {
+			// First for the common properties
+			int i = 0;
+			for (String fieldName : commonContPropertiesFieldNames) {
+				String propName = commonContPropertyNames[i];
+				String propertyDescription = commonContPropertyDescriptions[i];
+				i++;
+				System.out.println("Adding property name TransferEntropyCalculator." + fieldName + " = \"" + propName + "\"");
+				propertyFieldNames.add("TransferEntropyCalculator." + fieldName);
+				propertyNames.add(propName);
+				propertyDescriptions.add(propertyDescription);
 			}
-			propertyValues.put(propName, defaultPropValue);
+			
+			// Then for the specific estimator types
+			i = 0;
+			for (String fieldName : classSpecificPropertiesFieldNames) {
+				String propName = classSpecificPropertyNames[i];
+				String propertyDescription = classSpecificPropertyDescriptions[i];
+				i++;
+				propertyNames.add(propName);
+				propertyDescriptions.add(propertyDescription);
+				if (fieldName.contains(".")) {
+					System.out.println("Adding property name " + fieldName +
+							" = \"" + propName + "\"");
+					propertyFieldNames.add(fieldName);
+				} else {
+					System.out.println("Adding property name " + teCalcClass.getSimpleName() +
+							"." + fieldName + " = \"" + propName + "\"");
+					propertyFieldNames.add(teCalcClass.getSimpleName() + "." + fieldName);
+				}
+			}
+			
+			// Now extract the default values for all of these properties:
+			propertyValues = new HashMap<String,String>();
+			for (String propName : propertyNames) {
+				String defaultPropValue = null;
+				try {
+					defaultPropValue = teCalc.getProperty(propName);
+				} catch (Exception ex) {
+					ex.printStackTrace(System.err);
+					JOptionPane.showMessageDialog(this,
+							ex.getMessage());
+					propertyValues.put(propName, "Cannot find a value");
+				}
+				propertyValues.put(propName, defaultPropValue);
+			}
 		}
 	}
 
