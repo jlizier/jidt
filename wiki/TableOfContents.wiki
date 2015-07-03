@@ -9,7 +9,7 @@
   * [Demos]
  * ImplementedMeasures
  * [Demos]
-  * [AutoAnalyserDemo Auto analyser / Code generator demo]
+  * [AutoAnalyser Auto analyser / Code generator demo]
   * [SimpleJavaExamples Simple Java demos]
   * Non-Java environments
    * [OctaveMatlabExamples Matlab/Octave demos]
