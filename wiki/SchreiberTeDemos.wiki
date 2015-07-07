@@ -96,7 +96,12 @@ Continuing with a kernel estimator, one could use surrogates to compute the bias
 
 A better approach is to switch estimators to the newer nearest-neighbour based *Kraskov-Stoegbauer-Grassberger (KSG) estimator* for mutual information (ref. 4), extended to transfer entropy in (ref. 5). That is because this estimator includes automatic bias correction and is very stable to parameter selection (being the number of nearest neighbours). We continue with this type of estimator.
 
-Our first step is to check the embedding dimension. We use the script [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave%2FSchreiberTransferEntropyExamples/activeInfoStorageHeartBreathRatesKraskov.m activeInfoStorageHeartBreathRatesKraskov.m] for this purpose. For a given number of `K` nearest neighbours (here 4), this plots the active information storage (see (ref. 6)) as a function of embedded history length `k`, e.g.  
+Our first step is to check the embedding dimension. We can do this in two different ways:
+ # By enabling auto embedding via the Ragwitz criteria (see alternative call to `runHeartBreathRateKraskov` later); or
+ # By manual investigation of the active information storage (see (ref. 6)) as a function of embedded history length `k`.
+
+For the moment, we follow the latter for a deeper investigation here.
+We use the script [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave%2FSchreiberTransferEntropyExamples/activeInfoStorageHeartBreathRatesKraskov.m activeInfoStorageHeartBreathRatesKraskov.m] for this purpose. For a given number of `K` nearest neighbours (here 4), this plots the active information storage (see (ref. 6)) as a function of embedded history length `k`, e.g.  
 {{{
 [aisHeart, aisBreath] = activeInfoStorageHeartBreathRatesKraskov(1:15, 4);
 }}}
@@ -114,7 +119,13 @@ which produces the following plot:
 
 [http://information-dynamics-toolkit.googlecode.com/svn/trunk/demos/octave/SchreiberTransferEntropyExamples/sampleResults/heartBreathResults-kraskovTE.png] 
 
-There are a number of important items to observe here:
+Note that we can produce very similar plots using an alternative call to `runHeartBreathRateKraskov` which asks the estimators to auto-embed via the Ragwitz criteria, instead of using the values `k=l=2` as determined above. (Note: the auto-embedding generally uses embedding length 2 for the heart and 4 or 5 for the breath rate):
+{{{
+ [teHeartToBreath, teBreathToHeart] = runHeartBreathRateKraskov('auto', 'auto', 1:15);
+}}}
+
+
+There are a number of important items to observe from the above results:
  # The level of TE was dramatically reduced by proper embedding (to remove information storage) and proper bias correction;
  # The results are above the noise floor for approximately `K>=3` for breath->heart and approximately `K>=8` for heart->breath. That is, below this scale any apparent TE is a statistical fluctuation simply due to undersampling. One can explore this by using the fourth parameter `numSurrogates` to this script (use 100 to quickly get an estimate of the variance of the noise floor, though for formal results one should use at least 1000).
  # With an appropriate setting for the number of nearest neighbours `K` to set the scale avoiding undersampling, we see that the measure is very robust to this parameter.
