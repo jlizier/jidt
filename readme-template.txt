@@ -132,6 +132,15 @@ Notices for this software are found in the notices/JAMA directory.
  Release notes
 ===============
 
+v1.3 10/7/2015 at r677
+----------------------
+Added AutoAnalyser (Code Generator) GUI demo;
+Added auto-embedding capability via Ragwitz criteria for AIS and TE calculators (KSG estimators);
+Added Java demo 9 for showcasing use of Ragwitz auto-embedding;
+Adding small amount of noise to data in all KSG estimators now by default (may be disabled via setProperty());
+Added getProperty() methods for all conditional MI and TE calculators;
+Upgraded Python demos for Python 3 compatibility;
+
 v1.2.1 12/2/2015 at r621
 ------------------------
 Added tutorial slides, description of exercises and sample exercise solutions;
