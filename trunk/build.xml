@@ -116,8 +116,12 @@
 		<delete file="${jarversiondistnamezip}"/>
 		<delete file="${distnamezip}"/>
 		<delete file="${jarplainname}"/>
-		<delete file="demos/AutoAnalyser/GeneratedTECalculator.*"/>
-		<delete file="demos/java/infodynamics/demos/autoanalysis/GeneratedTECalculator.*"/>
+		<delete>
+			 <fileset dir="demos/AutoAnalyser" includes="GeneratedTECalculator.*"/>
+		</delete>
+		<delete>
+			 <fileset dir="demos/java/infodynamics/demos/autoanalysis" includes="GeneratedTECalculator.*"/>
+		</delete>
 		<!-- Don't delete the readme and version files - the user may not have the template to recreate them from -->
 	</target>
 	
