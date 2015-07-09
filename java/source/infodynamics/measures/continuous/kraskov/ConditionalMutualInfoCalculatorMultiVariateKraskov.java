@@ -222,7 +222,7 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	 *  <li>{@link #PROP_NORM_TYPE}</li> -- normalization type to apply to 
 	 *      working out the norms between the points in each marginal space.
 	 *      Options are defined by {@link KdTree#setNormType(String)} -
-	 *      default is {@link EuclideanUtils#NORM_MAX_NORM}.
+	 *      default is {@link EuclideanUtils#NORM_MAX_NORM_STRING}.
 	 *  <li>{@link #DYN_CORR_EXCL_TIME_NAME} -- a dynamics exclusion time window,
 	 *      also known as Theiler window (see Kantz and Schreiber);
 	 *      default is 0 which means no dynamic exclusion window.</li>
