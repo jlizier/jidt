@@ -18,13 +18,8 @@
 
 package infodynamics.demos.autoanalysis;
 
-import infodynamics.measures.continuous.ConditionalMutualInfoMultiVariateCommon;
-import infodynamics.measures.continuous.TransferEntropyCalculator;
-import infodynamics.measures.continuous.gaussian.TransferEntropyCalculatorGaussian;
-import infodynamics.measures.continuous.kernel.TransferEntropyCalculatorKernel;
-import infodynamics.measures.continuous.kraskov.ConditionalMutualInfoCalculatorMultiVariateKraskov;
-import infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov;
-import infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete;
+import infodynamics.measures.continuous.ChannelCalculatorCommon;
+import infodynamics.measures.discrete.ChannelCalculatorDiscrete;
 import infodynamics.utils.ArrayFileReader;
 import infodynamics.utils.MatrixUtils;
 
@@ -68,7 +63,16 @@ import java.io.FileWriter;
 import java.util.HashMap;
 import java.util.Vector;
 
-public class AutoAnalyser extends JFrame
+/**
+ * This abstract class provides a GUI to build a simple calculation,
+ *  and supply the code to execute it.
+ * Child classes fix this to a TE or MI calculation.
+ * 
+ * 
+ * @author Joseph Lizier
+ *
+ */
+public abstract class AutoAnalyser extends JFrame
 	implements ActionListener, DocumentListener, MouseListener {
 
 	/**
@@ -76,7 +80,7 @@ public class AutoAnalyser extends JFrame
 	 */
 	private static final long serialVersionUID = 1L;
 	
-	// Set options for the TE Calculator type:
+	// Set options for the Calculator type:
 	public final static String CALC_TYPE_DISCRETE = "Discrete";
 	public final static String CALC_TYPE_GAUSSIAN = "Gaussian";
 	public final static String CALC_TYPE_KRASKOV  = "Kraskov (KSG)";
@@ -86,130 +90,36 @@ public class AutoAnalyser extends JFrame
 			CALC_TYPE_KRASKOV, CALC_TYPE_KERNEL};
 	protected String[] unitsForEachCalc = {"bits", "nats", "nats", "bits"};
 	
-	// Store the properties for each calculator
-	protected static final String DISCRETE_PROPNAME_K = "k_HISTORY";
+	// Properties for each calculator
 	protected static final String DISCRETE_PROPNAME_BASE = "base";
-	protected String[] discreteProperties = {
-			DISCRETE_PROPNAME_K,
-			DISCRETE_PROPNAME_BASE
-	};
-	protected String[] discretePropertyDefaultValues = {
-			"1",
-			"2"
-	};
-	protected String[] discretePropertyDescriptions = {
-			"Destination history embedding length",
-			"Number of discrete states available for each variable (i.e. 2 for binary)"
-	};
+	protected String[] discreteProperties; // Children to initialise
+	protected String[] discretePropertyDefaultValues; // Children to initialise
+	protected String[] discretePropertyDescriptions; // Children to initialise
+	
 	// Common property names for all continuous calculators:
-	protected String[] commonContPropertyNames = {
-			TransferEntropyCalculator.K_PROP_NAME
-	};
-	protected String[] commonContPropertiesFieldNames = {
-			"K_PROP_NAME"
-	};
-	protected String[] commonContPropertyDescriptions = {
-			"Destination history embedding length (k_HISTORY)"
-	};
-	protected String[] gaussianProperties = {
-			TransferEntropyCalculator.K_TAU_PROP_NAME, // Not common to Kernel
-			TransferEntropyCalculator.L_PROP_NAME, // Not common to Kernel
-			TransferEntropyCalculator.L_TAU_PROP_NAME, // Not common to Kernel
-			TransferEntropyCalculator.DELAY_PROP_NAME, // Not common to Kernel
-	};
-	protected String[] gaussianPropertiesFieldNames = {
-			"TransferEntropyCalculator.K_TAU_PROP_NAME", // Not common to Kernel
-			"TransferEntropyCalculator.L_PROP_NAME", // Not common to Kernel
-			"TransferEntropyCalculator.L_TAU_PROP_NAME", // Not common to Kernel
-			"TransferEntropyCalculator.DELAY_PROP_NAME", // Not common to Kernel
-	};
-	protected String[] gaussianPropertyDescriptions = {
-			"Destination history embedding delay (k_TAU)",
-			"Source history embedding length (l_HISTORY)",
-			"Source history embeding delay (l_TAU)",
-			"Delay from source to destination (in time steps)"
-	};
-	protected String[] kernelProperties = {
-			TransferEntropyCalculatorKernel.KERNEL_WIDTH_PROP_NAME,
-			TransferEntropyCalculatorKernel.DYN_CORR_EXCL_TIME_NAME,
-			TransferEntropyCalculatorKernel.NORMALISE_PROP_NAME,			
-	};
-	protected String[] kernelPropertiesFieldNames = {
-			"KERNEL_WIDTH_PROP_NAME",
-			"DYN_CORR_EXCL_TIME_NAME",
-			"NORMALISE_PROP_NAME"			
-	};
-	protected String[] kernelPropertyDescriptions = {
-			"Kernel width to be used in the calculation. <br/>If the property " +
-					TransferEntropyCalculatorKernel.NORMALISE_PROP_NAME +
-					" is set, then this is a number of standard deviations; " +
-					"otherwise it is an absolute value.",
-			"Dynamic correlation exclusion time or <br/>Theiler window (see Kantz and Schreiber); " +
-					"0 (default) means no dynamic exclusion window",
-			"(boolean) whether to normalise <br/>each incoming time-series to mean 0, standard deviation 1, or not  (recommended)",
-	};
-	protected String[] kraskovProperties = {
-			TransferEntropyCalculator.K_TAU_PROP_NAME, // Not common to Kernel
-			TransferEntropyCalculator.L_PROP_NAME, // Not common to Kernel
-			TransferEntropyCalculator.L_TAU_PROP_NAME, // Not common to Kernel
-			TransferEntropyCalculator.DELAY_PROP_NAME, // Not common to Kernel
-			ConditionalMutualInfoMultiVariateCommon.PROP_NORMALISE,
-			ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_K,
-			ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE,
-			ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_DYN_CORR_EXCL_TIME,
-			ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE,
-			ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS,
-			TransferEntropyCalculatorKraskov.PROP_KRASKOV_ALG_NUM,
-			TransferEntropyCalculatorKraskov.PROP_AUTO_EMBED_METHOD,
-			TransferEntropyCalculatorKraskov.PROP_K_SEARCH_MAX,
-			TransferEntropyCalculatorKraskov.PROP_TAU_SEARCH_MAX,
-			TransferEntropyCalculatorKraskov.PROP_RAGWITZ_NUM_NNS
-	};
-	protected String[] kraskovPropertiesFieldNames = {
-			"TransferEntropyCalculator.K_TAU_PROP_NAME", // Not common to Kernel
-			"TransferEntropyCalculator.L_PROP_NAME", // Not common to Kernel
-			"TransferEntropyCalculator.L_TAU_PROP_NAME", // Not common to Kernel
-			"TransferEntropyCalculator.DELAY_PROP_NAME", // Not common to Kernel
-			"ConditionalMutualInfoMultiVariateCommon.PROP_NORMALISE",
-			"ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_K",
-			"ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE",
-			"ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_DYN_CORR_EXCL_TIME",
-			"ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE",
-			"ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS",
-			"PROP_KRASKOV_ALG_NUM",
-			"PROP_AUTO_EMBED_METHOD",
-			"PROP_K_SEARCH_MAX",
-			"PROP_TAU_SEARCH_MAX",
-			"PROP_RAGWITZ_NUM_NNS"
-	};
-	protected String[] kraskovPropertyDescriptions = {
-			"Destination history embedding delay (k_TAU)",
-			"Source history embedding length (l)",
-			"Source history embeding delay (l_TAU)",
-			"Delay from source to destination (in time steps)",
-			"(boolean) whether to normalise <br/>each incoming time-series to mean 0, standard deviation 1, or not (recommended)",
-			"Number of k nearest neighbours to use <br/>in the full joint kernel space in the KSG algorithm",
-			"Standard deviation for an amount <br/>of random Gaussian noise to add to each variable, " +
-					"to avoid having neighbourhoods with artificially large counts. <br/>" +
-					"(\"false\" may be used to indicate \"0\".). The amount is added in after any normalisation.",
-			"Dynamic correlation exclusion time or <br/>Theiler window (see Kantz and Schreiber); " +
-					"0 (default) means no dynamic exclusion window",
-			"<br/>Norm type to use in KSG algorithm between the points in each marginal space. <br/>Options are: " +
-					"\"MAX_NORM\" (default), otherwise \"EUCLIDEAN\" or \"EUCLIDEAN_SQUARED\" (both equivalent here)",
-			"Number of parallel threads to use <br/>in computation: an integer > 0 or \"USE_ALL\" " +
-					"(default, to indicate to use all available processors)",
-			"Which KSG algorithm to use (1 or 2)",
-			"Method to automatically determine embedding lengths (k_HISTORY,l_HISTORY)<br/> and delays (k_TAU, l_TAU) for " +
-					"destination and potentially source time-series. Default is \"" + TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_NONE +
-					"\" meaning values are set manually; other values include: <br/>  -- \"" + TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ +
-					" for use of the Ragwitz criteria for both source and destination (searching up to \"" + TransferEntropyCalculatorKraskov.PROP_K_SEARCH_MAX +
-					"\" and \"" + TransferEntropyCalculatorKraskov.PROP_TAU_SEARCH_MAX + "\"); <br/>  -- \"" + TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY +
-					"\" for use of the Ragwitz criteria for the destination only. <br/>Use of values other than \"" + TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_NONE +
-					"\" leads to any previous settings for embedding lengths and delays for the destination and perhaps source to be overwritten after observations are supplied",
-			"Max. embedding length to search to <br/>if auto embedding (as determined by " + TransferEntropyCalculatorKraskov.PROP_AUTO_EMBED_METHOD + ")",
-			"Max. embedding delay to search to <br/>if auto embedding (as determined by " + TransferEntropyCalculatorKraskov.PROP_AUTO_EMBED_METHOD + ")",
-			"Number of k nearest neighbours for <br/>Ragwitz auto embedding (if used; defaults to match property \"k\")"
-	};
+	protected String[] commonContPropertyNames;
+	protected String[] commonContPropertiesFieldNames;
+	protected String[] commonContPropertyDescriptions;
+	protected String[] gaussianProperties;
+	protected String[] gaussianPropertiesFieldNames;
+	protected String[] gaussianPropertyDescriptions;
+	protected String[] kernelProperties;
+	protected String[] kernelPropertiesFieldNames;
+	protected String[] kernelPropertyDescriptions;
+	protected String[] kraskovProperties;
+	protected String[] kraskovPropertiesFieldNames;
+	protected String[] kraskovPropertyDescriptions;
+
+	// Store which calculator type we're using:
+	@SuppressWarnings("rawtypes")
+	protected Class calcClass = null;
+	
+	@SuppressWarnings("rawtypes")
+	protected Class abstractContinuousClass = null;
+	@SuppressWarnings("rawtypes")
+	protected Class discreteClass = null;
+
+	protected String measureAcronym = null;
 	
 	protected JButton computeButton;
 	protected JButton openDataButton;
@@ -254,6 +164,8 @@ public class AutoAnalyser extends JFrame
 	protected JTextArea matlabCodeTextArea;
 	
 	protected String codeDefaultText = "    ... Awaiting new parameter selection (press compute) ...";
+	
+	protected String appletTitle;
 	
 	public class TextAreaWithImage extends JTextArea {
 
@@ -306,6 +218,8 @@ public class AutoAnalyser extends JFrame
 	 */
 	public AutoAnalyser() {
 		
+		makeSpecificInitialisations();
+		
 		// Build the swing applet
 		
 		ImageIcon icon = new ImageIcon("../../JIDT-logo.png"); // Location for distributions
@@ -319,12 +233,12 @@ public class AutoAnalyser extends JFrame
 		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setSize(1100,530);
-		setTitle("JIDT Transfer Entropy Auto-Analyser");
+		setTitle(appletTitle);
 		// Centre in the middle of the screen
 		setLocationRelativeTo(null);
 
 		// Create the fields for the calc type:
-		JLabel calcTypeLabel = new JLabel("TE Calculator Type:");
+		JLabel calcTypeLabel = new JLabel("Calculator Type:");
 		calcTypeLabel.setToolTipText("Select estimator type. \"Discrete\" is for discrete or pre-binned data; all others for continuous data.");
 		calcTypeLabel.setBorder(BorderFactory.createEmptyBorder(0,0,10,0));
 		calcTypeComboBox = (JComboBox<String>) new JComboBox<String>(calcTypes);
@@ -351,7 +265,7 @@ public class AutoAnalyser extends JFrame
 		
 		// From column:
 		JLabel sourceLabel = new JLabel("Source column:");
-		sourceLabel.setToolTipText("(first is 0)");
+		sourceLabel.setToolTipText("First column is 0.");
 		sourceColTextField = new JTextField(5);
 		sourceColTextField.setEnabled(true);
 		sourceColTextField.setText("0");
@@ -359,7 +273,7 @@ public class AutoAnalyser extends JFrame
 		sourceColTextField.getDocument().addDocumentListener(this);
 		// To column:
 		JLabel destLabel = new JLabel("Destination column:");
-		destLabel.setToolTipText("(first is 0)");
+		destLabel.setToolTipText("First column is 0.");
 		destColTextField = new JTextField(5);
 		destColTextField.setEnabled(true);
 		destColTextField.setText("1");
@@ -384,7 +298,7 @@ public class AutoAnalyser extends JFrame
 		valueColumn.setMaxWidth(130);
 		JScrollPane propsTableScrollPane = new JScrollPane(propertiesTable);
 		// Set up for ~18 rows maximum (the +6 is exact to fit all props
-		//  for Kraskov in without scrollbar)
+		//  for Kraskov TE in without scrollbar)
 		Dimension d = propertiesTable.getPreferredSize();
 		propsTableScrollPane.setPreferredSize(
 		    new Dimension(d.width,propertiesTable.getRowHeight()*17+6));
@@ -553,6 +467,11 @@ public class AutoAnalyser extends JFrame
 		pythonCodeTextArea.repaint();
 	}
 
+	/**
+	 * Child classes over-ride this to set strings etc specifically for their measure type
+	 */
+	protected abstract void makeSpecificInitialisations();
+	
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		// Clear text fields for now if anything changes
@@ -562,7 +481,7 @@ public class AutoAnalyser extends JFrame
 		matlabCodeTextArea.setText(codeDefaultText);
 		
 		if (e.getSource() == computeButton) {
-			computeTE();
+			compute();
 		} else if (e.getSource() == openDataButton) {
 			selectFileAction();
 		} else if (e.getSource() == calcTypeComboBox) {
@@ -637,7 +556,7 @@ public class AutoAnalyser extends JFrame
 		}
 	}
 	
-	protected void computeTE() {
+	protected void compute() {
 		
 		System.out.println("Compute button pressed ...");
 		resultsLabel.setText("Computing ...");
@@ -680,9 +599,10 @@ public class AutoAnalyser extends JFrame
 		javaCode.append("import infodynamics.utils.ArrayFileReader;\n");
 		javaCode.append("import infodynamics.utils.MatrixUtils;\n\n");
 		if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
-			javaCode.append("import infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete;\n");
+			// Cover all children:
+			javaCode.append("import infodynamics.measures.discrete.*;\n");
 		} else {
-			// Cover TransferEntropyCalculator and any common conditional MI classes
+			// Cover the calculator and any common conditional MI classes
 			//  used for property names
 			javaCode.append("import infodynamics.measures.continuous.*;\n");
 		}
@@ -709,10 +629,10 @@ public class AutoAnalyser extends JFrame
 		matlabCode.append("addpath('../octave');\n\n");
 		
 		try{
-			// Create both discrete and continuous TE calculators to make
+			// Create both discrete and continuous calculators to make
 			//  following code simpler:
-			TransferEntropyCalculator teCalc = null;
-			TransferEntropyCalculatorDiscrete teCalcDiscrete = null;
+			ChannelCalculatorCommon calcContinuous = null;
+			ChannelCalculatorDiscrete calcDiscrete = null;
 			
 			// Construct an instance of the selected calculator:
 			String javaConstructorLine = null;
@@ -720,33 +640,39 @@ public class AutoAnalyser extends JFrame
 			String matlabConstructorLine = null;
 			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
 				// Defer our processing for this to below ...
-			} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_GAUSSIAN)) {
-				teCalc = new TransferEntropyCalculatorGaussian();
-				// Cover the TE calculator and any references to conditional MI calculator properties
-				javaCode.append("import infodynamics.measures.continuous.gaussian.*;\n");
-				javaConstructorLine = "    teCalc = new TransferEntropyCalculatorGaussian();\n";
-				pythonPreConstructorLine = "teCalcClass = JPackage(\"infodynamics.measures.continuous.gaussian\").TransferEntropyCalculatorGaussian\n";
-				matlabConstructorLine = "teCalc = javaObject('infodynamics.measures.continuous.gaussian.TransferEntropyCalculatorGaussian');\n";
-			} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_KRASKOV)) {
-				teCalc = new TransferEntropyCalculatorKraskov();
-				// Cover the TE calculator and any references to conditional MI calculator properties
-				javaCode.append("import infodynamics.measures.continuous.kraskov.*;\n");
-				javaConstructorLine = "    teCalc = new TransferEntropyCalculatorKraskov();\n";
-				pythonPreConstructorLine = "teCalcClass = JPackage(\"infodynamics.measures.continuous.kraskov\").TransferEntropyCalculatorKraskov\n";
-				matlabConstructorLine = "teCalc = javaObject('infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov');\n";
-			} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_KERNEL)) {
-				teCalc = new TransferEntropyCalculatorKernel();
-				// Cover the TE calculator and any references to conditional MI calculator properties
-				javaCode.append("import infodynamics.measures.continuous.kernel.*;\n");
-				javaConstructorLine = "    teCalc = new TransferEntropyCalculatorKernel();\n";
-				pythonPreConstructorLine = "teCalcClass = JPackage(\"infodynamics.measures.continuous.kernel\").TransferEntropyCalculatorKernel\n";
-				matlabConstructorLine = "teCalc = javaObject('infodynamics.measures.continuous.kernel.TransferEntropyCalculatorKernel');\n";
 			} else {
-				throw new Exception("No recognised calculator selected: " +
-						selectedCalcType);
+				calcContinuous = assignCalcObjectContinuous(selectedCalcType);
+				if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_GAUSSIAN)) {
+					// Cover the calculator and any references to conditional MI calculator properties
+					javaCode.append("import infodynamics.measures.continuous.gaussian.*;\n");
+					javaConstructorLine = "    calc = new " + calcContinuous.getClass().getSimpleName() + "();\n";
+					pythonPreConstructorLine = "calcClass = JPackage(\"infodynamics.measures.continuous.gaussian\")." +
+							calcContinuous.getClass().getSimpleName() + "\n";
+					matlabConstructorLine = "calc = javaObject('infodynamics.measures.continuous.gaussian." +
+							calcContinuous.getClass().getSimpleName() + "');\n";
+				} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_KRASKOV)) {
+					// Cover the calculator and any references to conditional MI calculator properties
+					javaCode.append("import infodynamics.measures.continuous.kraskov.*;\n");
+					javaConstructorLine = "    calc = new " + calcContinuous.getClass().getSimpleName() + "();\n";
+					pythonPreConstructorLine = "calcClass = JPackage(\"infodynamics.measures.continuous.kraskov\")." +
+							calcContinuous.getClass().getSimpleName() + "\n";
+					matlabConstructorLine = "calc = javaObject('infodynamics.measures.continuous.kraskov." +
+							calcContinuous.getClass().getSimpleName() + "');\n";
+				} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_KERNEL)) {
+					// Cover the calculator and any references to conditional MI calculator properties
+					javaCode.append("import infodynamics.measures.continuous.kernel.*;\n");
+					javaConstructorLine = "    calc = new " + calcContinuous.getClass().getSimpleName() + "();\n";
+					pythonPreConstructorLine = "calcClass = JPackage(\"infodynamics.measures.continuous.kernel\")." +
+							calcContinuous.getClass().getSimpleName() + "\n";
+					matlabConstructorLine = "calc = javaObject('infodynamics.measures.continuous.kernel." +
+							calcContinuous.getClass().getSimpleName() + "');\n";
+				} else {
+					throw new Exception("No recognised calculator selected: " +
+							selectedCalcType);
+				}
 			}
 			
-			javaCode.append("\npublic class GeneratedTECalculator {\n\n");
+			javaCode.append("\npublic class GeneratedCalculator {\n\n");
 			javaCode.append("  public static void main(String[] args) throws Exception {\n\n");
 			
 			// Code to read in data:
@@ -793,27 +719,14 @@ public class AutoAnalyser extends JFrame
 			pythonCode.append("# " + constructComment);
 			matlabCode.append("% " + constructComment);
 			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
-				int k, base;
-				String kPropValueStr, basePropValueStr;
-				try {
-					kPropValueStr = propertyValues.get(DISCRETE_PROPNAME_K);
-				} catch (Exception ex) {
-					JOptionPane.showMessageDialog(this,
-							ex.getMessage());
-					resultsLabel.setText("Cannot find a value for property " + DISCRETE_PROPNAME_BASE);
+				DiscreteCalcAndArguments dcaa = assignCalcObjectDiscrete();
+				if (dcaa == null) {
 					return;
 				}
-				try {
-					basePropValueStr = propertyValues.get(DISCRETE_PROPNAME_BASE);
-				} catch (Exception ex) {
-					JOptionPane.showMessageDialog(this,
-							ex.getMessage());
-					resultsLabel.setText("Cannot find a value for property " + DISCRETE_PROPNAME_BASE);
-					return;
-				}
-				k = Integer.parseInt(kPropValueStr);
-				base = Integer.parseInt(basePropValueStr);
-				
+				calcDiscrete = dcaa.calc;
+				int base = dcaa.base;
+				String args = dcaa.arguments;
+
 				// Now check that the data is ok:
 				int minInData = MatrixUtils.min(dataDiscrete);
 				int maxInData = MatrixUtils.max(dataDiscrete);
@@ -823,18 +736,18 @@ public class AutoAnalyser extends JFrame
 							(base-1) + " for base " + base);
 				}
 				
-				teCalcDiscrete = new TransferEntropyCalculatorDiscrete(base, k);
 				// 1. Java
-				javaCode.append("    TransferEntropyCalculatorDiscrete teCalc\n");
-				javaCode.append("        = new TransferEntropyCalculatorDiscrete(" +
-								base + ", " + k + ");\n");
+				javaCode.append("    " + calcDiscrete.getClass().getSimpleName() + " calc\n");
+				javaCode.append("        = new " + calcDiscrete.getClass().getSimpleName() +
+								"(" + args + ");\n");
 				// 2. Python
-				pythonCode.append("teCalcClass = JPackage(\"infodynamics.measures.discrete\").TransferEntropyCalculatorDiscrete\n");
-				pythonCode.append("teCalc = teCalcClass(" +
-								base + ", " + k + ")\n");
+				pythonCode.append("calcClass = JPackage(\"infodynamics.measures.discrete\")." +
+						calcDiscrete.getClass().getSimpleName() + "\n");
+				pythonCode.append("calc = calcClass(" + args + ")\n");
 				// 3. Matlab
-				matlabCode.append("teCalc = javaObject('infodynamics.measures.discrete.TransferEntropyCalculatorDiscrete', " +
-								base + ", " + k + ");\n");
+				matlabCode.append("calc = javaObject('infodynamics.measures.discrete." +
+						calcDiscrete.getClass().getSimpleName() + "', " +
+						args + ");\n");
 				String setPropertiesComment = "2. No other properties to set for discrete calculators.\n";
 				javaCode.append("    // " + setPropertiesComment);
 				pythonCode.append("# " + setPropertiesComment);
@@ -842,11 +755,11 @@ public class AutoAnalyser extends JFrame
 			} else {
 				// Construct the calculator:
 				// 1. Java
-				javaCode.append("    TransferEntropyCalculator teCalc;\n");
+				javaCode.append("    " + abstractContinuousClass.getSimpleName() + " calc;\n");
 				javaCode.append(javaConstructorLine);
 				// 2. Python
 				pythonCode.append(pythonPreConstructorLine);
-				pythonCode.append("teCalc = teCalcClass()\n");
+				pythonCode.append("calc = calcClass()\n");
 				// 3. Matlab
 				matlabCode.append(matlabConstructorLine);
 			
@@ -869,18 +782,18 @@ public class AutoAnalyser extends JFrame
 					}
 					// Check whether this property value is different to the default for
 					//  this calculator. This is more for generating the minimal code.
-					if (!propValue.equalsIgnoreCase(teCalc.getProperty(propName))) {
+					if (!propValue.equalsIgnoreCase(calcContinuous.getProperty(propName))) {
 						// We need to set this property:
-						teCalc.setProperty(propName, propValue);
+						calcContinuous.setProperty(propName, propValue);
 						// 1. Java Code -- use full field name here
-						javaCode.append("    teCalc.setProperty(" + propFieldName +
+						javaCode.append("    calc.setProperty(" + propFieldName +
 									",\n        \"" +
 									propValue + "\");\n");
 						// 2. Python code
-						pythonCode.append("teCalc.setProperty(\"" + propName + "\", \"" +
+						pythonCode.append("calc.setProperty(\"" + propName + "\", \"" +
 								propValue + "\")\n");
 						// 3. Matlab code
-						matlabCode.append("teCalc.setProperty('" + propName + "', '" +
+						matlabCode.append("calc.setProperty('" + propName + "', '" +
 								propValue + "');\n");
 					}
 				}
@@ -888,68 +801,76 @@ public class AutoAnalyser extends JFrame
 			
 			// Initialise
 			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
-				teCalcDiscrete.initialise();
+				calcDiscrete.initialise();
 			} else {
-				teCalc.initialise();
+				calcContinuous.initialise();
 			}
 			String initialiseComment = "3. Initialise the calculator for (re-)use:\n";
 			javaCode.append("    // " + initialiseComment);
-			javaCode.append("    teCalc.initialise();\n");
+			javaCode.append("    calc.initialise();\n");
 			pythonCode.append("# " + initialiseComment);
-			pythonCode.append("teCalc.initialise()\n");
+			pythonCode.append("calc.initialise()\n");
 			matlabCode.append("% " + initialiseComment);
-			matlabCode.append("teCalc.initialise();\n");
+			matlabCode.append("calc.initialise();\n");
 			
 			// Set observations
 			String supplyDataComment = "4. Supply the sample data:\n";
 			String setObservationsMethod;
 			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
 				setObservationsMethod = "addObservations";
-				teCalcDiscrete.addObservations(
+				calcDiscrete.addObservations(
 						MatrixUtils.selectColumn(dataDiscrete, sourceColumn),
 						MatrixUtils.selectColumn(dataDiscrete, destColumn));
 			} else {
 				setObservationsMethod = "setObservations";
-				teCalc.setObservations(
+				// TODO We should be able to directly call setObservations(double[], double[])
+				//  here but we can't right now because ChannelCalculator does not
+				//  define this method. It would be complicated to fix this
+				//  because it involves Conditional MI calculator it seems.
+				// Revisit this later -- for now fix by deferring to child classes
+				// calcContinuous.setObservations(
+				//		MatrixUtils.selectColumn(data, sourceColumn),
+				//		MatrixUtils.selectColumn(data, destColumn));
+				setObservations(calcContinuous,
 						MatrixUtils.selectColumn(data, sourceColumn),
 						MatrixUtils.selectColumn(data, destColumn));
 			}
 			// 1. Java
 			javaCode.append("    // " + supplyDataComment);
-			javaCode.append("    teCalc." + setObservationsMethod + "(source, dest);\n");
+			javaCode.append("    calc." + setObservationsMethod + "(source, dest);\n");
 			// 2. Python
 			pythonCode.append("# " + supplyDataComment);
-			pythonCode.append("teCalc." + setObservationsMethod + "(source, dest)\n");
+			pythonCode.append("calc." + setObservationsMethod + "(source, dest)\n");
 			// 3. Matlab
 			matlabCode.append("% " + supplyDataComment);
-			matlabCode.append("teCalc." + setObservationsMethod + "(source, dest);\n");
+			matlabCode.append("calc." + setObservationsMethod + "(source, dest);\n");
 			
-			// Compute TE 
-			double teResult;
+			// Compute the result
+			double result;
 			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
-				teResult = teCalcDiscrete.computeAverageLocalOfObservations();
+				result = calcDiscrete.computeAverageLocalOfObservations();
 			} else {
-				teResult = teCalc.computeAverageLocalOfObservations();
+				result = calcContinuous.computeAverageLocalOfObservations();
 			}
 			String computeComment = "5. Compute the estimate:\n";
 			javaCode.append("    // " + computeComment);
-			javaCode.append("    double teResult = teCalc.computeAverageLocalOfObservations();\n");
+			javaCode.append("    double result = calc.computeAverageLocalOfObservations();\n");
 			pythonCode.append("# " + computeComment);
-			pythonCode.append("teResult = teCalc.computeAverageLocalOfObservations()\n");
+			pythonCode.append("result = calc.computeAverageLocalOfObservations()\n");
 			matlabCode.append("% " + computeComment);
-			matlabCode.append("teResult = teCalc.computeAverageLocalOfObservations();\n");
-			String resultsPrefixString = String.format("TE_%s(col_%d -> col_%d) = ",
+			matlabCode.append("result = calc.computeAverageLocalOfObservations();\n");
+			String resultsPrefixString = String.format(measureAcronym + "_%s(col_%d -> col_%d) = ",
 					selectedCalcType, sourceColumn, destColumn);
-			resultsLabel.setText(String.format(resultsPrefixString + "%.4f %s", teResult, units));
+			resultsLabel.setText(String.format(resultsPrefixString + "%.4f %s", result, units));
 			// And generate code to write the results and finalise:
 			// 1. Java
-			javaCode.append("    System.out.printf(\"" + resultsPrefixString + "%.4f " + units + "\\n\", teResult);\n");
+			javaCode.append("    System.out.printf(\"" + resultsPrefixString + "%.4f " + units + "\\n\", result);\n");
 			javaCode.append("  }\n");
 			javaCode.append("}\n\n");
 			// 2. Python
-			pythonCode.append("print(\"" + resultsPrefixString + "%.4f " + units + "\\n\" % teResult)\n");
+			pythonCode.append("print(\"" + resultsPrefixString + "%.4f " + units + "\\n\" % result)\n");
 			// 3. Matlab
-			matlabCode.append("fprintf('" + resultsPrefixString + "%.4f " + units + "\\n', teResult);\n");
+			matlabCode.append("fprintf('" + resultsPrefixString + "%.4f " + units + "\\n', result);\n");
 			
 			// Now set the code in the panel for the user
 			javaCodeTextArea.setText(javaCode.toString());
@@ -961,15 +882,15 @@ public class AutoAnalyser extends JFrame
 			
 			// Now write the code to a file
 			// 1. Java
-			FileWriter codeFileWriter = new FileWriter("../java/infodynamics/demos/autoanalysis/GeneratedTECalculator.java");
+			FileWriter codeFileWriter = new FileWriter("../java/infodynamics/demos/autoanalysis/GeneratedCalculator.java");
 			codeFileWriter.write(javaCode.toString());
 			codeFileWriter.close();
 			// 2. Python
-			codeFileWriter = new FileWriter("GeneratedTECalculator.py");
+			codeFileWriter = new FileWriter("GeneratedCalculator.py");
 			codeFileWriter.write(pythonCode.toString());
 			codeFileWriter.close();
 			// 3. Matlab
-			codeFileWriter = new FileWriter("GeneratedTECalculator.m");
+			codeFileWriter = new FileWriter("GeneratedCalculator.m");
 			codeFileWriter.write(matlabCode.toString());
 			codeFileWriter.close();
 			
@@ -979,7 +900,7 @@ public class AutoAnalyser extends JFrame
 				for (String propName : propertyNames) {
 					String propValue = null;
 					try {
-						propValue = teCalc.getProperty(propName);
+						propValue = calcContinuous.getProperty(propName);
 						propertyValues.put(propName, propValue);
 					} catch (Exception ex) {
 						ex.printStackTrace(System.err);
@@ -999,6 +920,56 @@ public class AutoAnalyser extends JFrame
 
 	}
 	
+	/**
+	 * Method to assign and initialise our continuous calculator class
+	 * @throws Exception 
+	 */
+	protected abstract ChannelCalculatorCommon assignCalcObjectContinuous(String selectedCalcType) throws Exception;
+	
+	/**
+	 * Method to assign and initialise our discrete calculator class
+	 * @throws Exception 
+	 */
+	protected abstract DiscreteCalcAndArguments assignCalcObjectDiscrete() throws Exception;
+	
+	/**
+	 * Structure used for return calculator and arguments from constructing
+	 *  the discrete calculator
+	 *  
+	 * @author Joseph Lizier
+	 *
+	 */
+	protected class DiscreteCalcAndArguments {
+		ChannelCalculatorDiscrete calc;
+		int base;
+		String arguments;
+		
+		DiscreteCalcAndArguments(ChannelCalculatorDiscrete calc, int base,
+				String arguments) {
+			this.calc = calc;
+			this.base = base;
+			this.arguments = arguments;
+		}
+	}
+	
+	/** 
+	 * Method to set the observations on the underlying calculator
+	 * 
+	 * @param calc
+	 * @param source
+	 * @param dest
+	 * @throws Exception
+	 */
+	protected abstract void setObservations(ChannelCalculatorCommon calc,
+			double[] source, double[] dest) throws Exception;
+
+
+	/**
+	 * Extends JTable to add ToolTipText to the property names
+	 * 
+	 * @author joseph
+	 *
+	 */
 	protected class TableWithToolTip extends JTable {
 		
 		/**
@@ -1117,40 +1088,37 @@ public class AutoAnalyser extends JFrame
 		System.out.println("Getting calc properties");
 		String selectedCalcType = (String)
 				calcTypeComboBox.getSelectedItem();
-		@SuppressWarnings("rawtypes")
-		Class teCalcClass = null;
 		String[] classSpecificPropertyNames = null;
 		String[] classSpecificPropertiesFieldNames = null;
 		String[] classSpecificPropertyDescriptions = null;
-		TransferEntropyCalculator teCalc = null;
+		ChannelCalculatorCommon calc = null;
 		try {
 			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
-				teCalcClass = TransferEntropyCalculatorDiscrete.class;
-				teCalc = null; // Not used
+				calcClass = discreteClass;
+				calc = null; // Not used
 				classSpecificPropertyNames = discreteProperties;
 				classSpecificPropertiesFieldNames = null; // Not used
 				classSpecificPropertyDescriptions = discretePropertyDescriptions;
-			} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_GAUSSIAN)) {
-				teCalcClass = TransferEntropyCalculatorGaussian.class;
-				teCalc = new TransferEntropyCalculatorGaussian();
-				classSpecificPropertyNames = gaussianProperties;
-				classSpecificPropertiesFieldNames = gaussianPropertiesFieldNames;
-				classSpecificPropertyDescriptions = gaussianPropertyDescriptions;
-			} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_KRASKOV)) {
-				teCalcClass = TransferEntropyCalculatorKraskov.class;
-				teCalc = new TransferEntropyCalculatorKraskov();
-				classSpecificPropertyNames = kraskovProperties;
-				classSpecificPropertiesFieldNames = kraskovPropertiesFieldNames;
-				classSpecificPropertyDescriptions = kraskovPropertyDescriptions;
-			} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_KERNEL)) {
-				teCalcClass = TransferEntropyCalculatorKernel.class;
-				teCalc = new TransferEntropyCalculatorKernel();
-				classSpecificPropertyNames = kernelProperties;
-				classSpecificPropertiesFieldNames = kernelPropertiesFieldNames;
-				classSpecificPropertyDescriptions = kernelPropertyDescriptions;
 			} else {
-				throw new Exception("No recognised calculator selected: " +
-						selectedCalcType);
+				calc = assignCalcObjectContinuous(selectedCalcType);
+				calcClass = calc.getClass();
+				if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_GAUSSIAN)) {
+					classSpecificPropertyNames = gaussianProperties;
+					classSpecificPropertiesFieldNames = gaussianPropertiesFieldNames;
+					classSpecificPropertyDescriptions = gaussianPropertyDescriptions;
+				} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_KRASKOV)) {
+					classSpecificPropertyNames = kraskovProperties;
+					classSpecificPropertiesFieldNames = kraskovPropertiesFieldNames;
+					classSpecificPropertyDescriptions = kraskovPropertyDescriptions;
+				} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_KERNEL)) {
+					classSpecificPropertyNames = kernelProperties;
+					classSpecificPropertiesFieldNames = kernelPropertiesFieldNames;
+					classSpecificPropertyDescriptions = kernelPropertyDescriptions;
+				} else {
+					calcClass = null;
+					throw new Exception("No recognised calculator selected: " +
+							selectedCalcType);
+				}
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace(System.err);
@@ -1185,8 +1153,10 @@ public class AutoAnalyser extends JFrame
 				String propName = commonContPropertyNames[i];
 				String propertyDescription = commonContPropertyDescriptions[i];
 				i++;
-				System.out.println("Adding property name TransferEntropyCalculator." + fieldName + " = \"" + propName + "\"");
-				propertyFieldNames.add("TransferEntropyCalculator." + fieldName);
+				System.out.println("Adding property name " + 
+						abstractContinuousClass.getSimpleName() + "." + fieldName +
+						" = \"" + propName + "\"");
+				propertyFieldNames.add(abstractContinuousClass.getSimpleName() + "." + fieldName);
 				propertyNames.add(propName);
 				propertyDescriptions.add(propertyDescription);
 			}
@@ -1204,9 +1174,9 @@ public class AutoAnalyser extends JFrame
 							" = \"" + propName + "\"");
 					propertyFieldNames.add(fieldName);
 				} else {
-					System.out.println("Adding property name " + teCalcClass.getSimpleName() +
+					System.out.println("Adding property name " + calcClass.getSimpleName() +
 							"." + fieldName + " = \"" + propName + "\"");
-					propertyFieldNames.add(teCalcClass.getSimpleName() + "." + fieldName);
+					propertyFieldNames.add(calcClass.getSimpleName() + "." + fieldName);
 				}
 			}
 			
@@ -1215,7 +1185,7 @@ public class AutoAnalyser extends JFrame
 			for (String propName : propertyNames) {
 				String defaultPropValue = null;
 				try {
-					defaultPropValue = teCalc.getProperty(propName);
+					defaultPropValue = calc.getProperty(propName);
 				} catch (Exception ex) {
 					ex.printStackTrace(System.err);
 					JOptionPane.showMessageDialog(this,
@@ -1254,13 +1224,6 @@ public class AutoAnalyser extends JFrame
 		matlabCodeTextArea.setText(codeDefaultText);
 	}
 	
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		new AutoAnalyser();
-	}
-
 	@Override
 	public void mouseClicked(MouseEvent me) {
 		// User clicked on the data file JLabel
