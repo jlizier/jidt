@@ -101,7 +101,7 @@ public class TransferEntropyCalculatorKraskov
 	public static final String COND_MI_CALCULATOR_KRASKOV2 = ConditionalMutualInfoCalculatorMultiVariateKraskov2.class.getName();
 	
 	/**
-	 * Property for setting which underlying Kraskov-Grassberger algorithm to use.
+	 * Property for setting which underlying Kraskov-Grassberger algorithm to use  (1 or 2).
 	 * Will only be applied at the next initialisation.
 	 */
 	public final static String PROP_KRASKOV_ALG_NUM = "ALG_NUM";
@@ -117,7 +117,10 @@ public class TransferEntropyCalculatorKraskov
 	protected Hashtable<String,String> props;
 
 	/**
-	 * Property name for the auto-embedding method. Defaults to {@link #AUTO_EMBED_METHOD_NONE}
+	 * Property name for specifying which (if any) auto-embedding method to use.
+	 * Valid values include {@link #AUTO_EMBED_METHOD_RAGWITZ}, {@link #AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY}
+	 *  and {@link #AUTO_EMBED_METHOD_NONE}.
+	 * Defaults to {@link #AUTO_EMBED_METHOD_NONE}
 	 */
 	public static final String PROP_AUTO_EMBED_METHOD = "AUTO_EMBED_METHOD";
 	/**
