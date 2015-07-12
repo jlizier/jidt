@@ -219,7 +219,7 @@ public class AutoAnalyserTE extends AutoAnalyser
 		} catch (Exception ex) {
 			JOptionPane.showMessageDialog(this,
 					ex.getMessage());
-			resultsLabel.setText("Cannot find a value for property " + DISCRETE_PROPNAME_BASE);
+			resultsLabel.setText("Cannot find a value for property " + DISCRETE_PROPNAME_K);
 			return null;
 		}
 		try {

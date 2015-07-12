@@ -300,8 +300,12 @@ public abstract class AutoAnalyser extends JFrame
 		// Set up for ~18 rows maximum (the +6 is exact to fit all props
 		//  for Kraskov TE in without scrollbar)
 		Dimension d = propertiesTable.getPreferredSize();
+		int rowHeight = propertiesTable.getRowHeight();
 		propsTableScrollPane.setPreferredSize(
-		    new Dimension(d.width,propertiesTable.getRowHeight()*17+6));
+		    new Dimension(d.width,rowHeight*17+6));
+		propsTableScrollPane.setMinimumSize(
+			new Dimension(d.width,rowHeight*17+6));
+		System.out.println("Row height was " + rowHeight);
 		
 		
 		// Button to compute
@@ -650,7 +654,8 @@ public abstract class AutoAnalyser extends JFrame
 							calcContinuous.getClass().getSimpleName() + "\n";
 					matlabConstructorLine = "calc = javaObject('infodynamics.measures.continuous.gaussian." +
 							calcContinuous.getClass().getSimpleName() + "');\n";
-				} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_KRASKOV)) {
+				} else if (selectedCalcType.startsWith(CALC_TYPE_KRASKOV)) {
+					// The if statement will work for both MI Kraskov calculators
 					// Cover the calculator and any references to conditional MI calculator properties
 					javaCode.append("import infodynamics.measures.continuous.kraskov.*;\n");
 					javaConstructorLine = "    calc = new " + calcContinuous.getClass().getSimpleName() + "();\n";
@@ -1106,7 +1111,8 @@ public abstract class AutoAnalyser extends JFrame
 					classSpecificPropertyNames = gaussianProperties;
 					classSpecificPropertiesFieldNames = gaussianPropertiesFieldNames;
 					classSpecificPropertyDescriptions = gaussianPropertyDescriptions;
-				} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_KRASKOV)) {
+				} else if (selectedCalcType.startsWith(CALC_TYPE_KRASKOV)) {
+					// The if statement will work for both MI Kraskov calculators
 					classSpecificPropertyNames = kraskovProperties;
 					classSpecificPropertiesFieldNames = kraskovPropertiesFieldNames;
 					classSpecificPropertyDescriptions = kraskovPropertyDescriptions;
