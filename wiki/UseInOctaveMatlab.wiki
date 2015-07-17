@@ -12,7 +12,8 @@ Several longer examples of using the toolkit in Octave/Matlab can be viewed at O
 = Use in Matlab =
 
 The ability to use Java from within Matlab comes with Matlab out of the box. Full info is available at:
-  * http://www.mathworks.com.au/help/techdoc/matlab_external/f44062.html
+  * http://au.mathworks.com/help/matlab/using-java-libraries-in-matlab.html
+  * http://au.mathworks.com/help/matlab/matlab_external/product-overview.html
 
 You can run your Java code inside Matlab fairly simply:
   # Tell Matlab about your jar, e.g.: `javaaddpath('../Information Dynamics/infoDynamics.jar');`
@@ -22,7 +23,7 @@ You can run your Java code inside Matlab fairly simply:
 
 For _static_ methods, note that you can simply call it on the class itself, or on  an object of the class - see http://www.mathworks.com.au/help/techdoc/matlab_external/f46719.html#f23705
 
-If you get any `java.lang.OutOfMemoryError` errors, then you need to increase the heap space allocated by Matlab (it is usually set to a rather low value) -- doing this is described e.g. [http://www.mathworks.com.au/help/matlab/matlab_env/preferences.html#bsemees-1 here].
+If you get any `java.lang.OutOfMemoryError` errors, then you need to increase the heap space allocated by Matlab (it is usually set to a rather low value) -- doing this is described e.g. [http://au.mathworks.com/help/matlab/matlab_external/java-heap-memory-preferences.html here].
 
 Finally, sometimes Matlab can give warnings such as `Warning: Objects of infodynamics/measures/continuous/kraskovTransferEntropyCalculatorMultiVariateKraskov class exist - not clearing java`. To get rid of these errors, then you can clear the relevant Java variables in Matlab, e.g. `clear teCalc`, or clear all Java variables: `clear java`.
 
