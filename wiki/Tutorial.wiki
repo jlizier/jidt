@@ -1,4 +1,5 @@
 #summary A brief tutorial for how to use JIDT
+#labels tutorials
 
 The distribution (from V1.2.1) ships with a tutorial for users in the `tutorial` folder, consisting of a PDF of tutorial slides, a further guide to exercises, and sample solutions.
 
@@ -6,8 +7,8 @@ Further description of these components follows.
 
 = Slides =
 
-A 3 hour tutorial on JIDT was presented at the Australian Conference on Artificial Life, Newcastle, on February 5, 2015.
-The slides from that tutorial are available in the `tutorial` folder of the distribution (from V1.2.1 onwards), or directly [https://information-dynamics-toolkit.googlecode.com/svn/trunk/tutorial/JIDT-TutorialSlides.pdf here].
+A 2-3 hour tutorial on JIDT has been presented at several conferences (see below).
+The slides from the tutorial are available in the `tutorial` folder of the distribution (from V1.2.1 onwards), or directly [https://information-dynamics-toolkit.googlecode.com/svn/trunk/tutorial/JIDT-TutorialSlides.pdf here].
 
 The slides introduce the information-theoretic measures and estimation techniques, then briefly introduce the toolkit, walk through some of the demos, and guide the user through an exercise (expanded on below).
 
@@ -28,14 +29,15 @@ Your exercise task is to:
 You can either:
  # write code for this from scratch in your preferred environment (the data set is at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Fdata%2FSFI-heartRate_breathVol_bloodOx.txt demos/data/SFI-heartRate_breathVol_bloodOx.txt] with heart rate in the first column and breath rate in the second), or
  # you can start by using one of our sample scripts which calculate Transfer Entropy on this data set as a template. These samples include code to read in the data and parse the arguments. There are samples available for Transfer Entropy here in either:
-  # Java ([http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Fjava%2Finfodynamics%2Fdemos%2FschreiberTransferEntropyExamples/HeartBreathRateKraskovRunner.java demos/java/infodynamics/demos/schreiberTransferEntropyExamples/HeartBreathRateKraskovRunner.java]) or
+  # Java (source file at [http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn/trunk/demos/java/infodynamics/demos/schreiberTransferEntropyExamples/HeartBreathRateKraskovRunner.java demos/java/infodynamics/demos/schreiberTransferEntropyExamples/HeartBreathRateKraskovRunner.java] and shell script to run it at [[http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn/trunk/demos/java/SchreiberTransferEntropyExamples/heartRateBreathRateKraskov.sh demos/java/SchreiberTransferEntropyExamples/heartRateBreathRateKraskov.sh]]) or
   # Octave ([http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Foctave%2FSchreiberTransferEntropyExamples/runHeartBreathRateKraskov.m demos/octave/SchreiberTransferEntropyExamples/runHeartBreathRateKraskov.m]) or
   # Python ([http://code.google.com/p/information-dynamics-toolkit/source/browse/#svn%2Ftrunk%2Fdemos%2Fpython%2FSchreiberTransferEntropyExamples/runHeartBreathRateKraskov.py demos/python/SchreiberTransferEntropyExamples/runHeartBreathRateKraskov.py]).
+ # (*easiest way*) you can auto-generate some code to get started by using our AutoAnalyser demo. Follow the steps for using this demo described on its [AutoAnalyser webpage], including using the MI AutoAnalyser, and selecting the correct data file, the columns for the variables and the properties for the calculator. Note that the auto-generated code will use the entire data set from the file; to use the smaller set of samples you would need to edit the auto-generated code.
 
-The *answer* that you are looking for is *0.123 nats* if you only explicitly set properties mentioned above (e.g. don't add any noise to the data, or dynamic correlation exclusion, etc.).
+The *answer* that you are looking for is *0.134 nats* (+/- 0.002 nats, due to use of noise addition by the calculator) if you set only the properties mentioned above (e.g. don't change addition of noise to the data, or add dynamic correlation exclusion, etc.).
 
-*HINT* -- If you're getting stuck, start with one of our sample TE scripts as above, and try to read through and understand how it is working first.
-Next, remember that in using any of the calculators, you should follow the following steps:
+*HINT* -- If you're getting stuck, you really should start with option 3 above. If you're keen for a bigger challenge then that but still not sure what to do, then start with one of our sample TE scripts as in step 2 above, and try to read through and understand how it is working first, before aiming to convert it to MI and set the required properties.
+Remember that in using any of the calculators, you should follow the following steps:
  # Construct the calculator -- which class should you be using to achieve this calculation? (Remember we want MI, by KSG estimator, algorithm 2)
  # Set relevant properties for the calculator -- what properties are available? (Check the [Documentation Javadocs] for this class)
  # Initialise the calculator -- what parameters should be supplied here? (Check the [Documentation Javadocs] for this class)
@@ -60,4 +62,5 @@ What would you interpret from the results? Can you think of some logical further
 
 = Where this tutorial has been run =
 
- # [http://www.newcastle.edu.au/about-uon/governance-and-leadership/faculties-and-schools/faculty-of-engineering-and-built-environment/school-of-electrical-engineering-and-computer-science/acalci-2015/workshops-and-tutorials Australian Conference on Artificial Life and Computational Intelligence], February 5, 2014
+ # [http://www.cs.york.ac.uk/nature/ecal2015/ European Conference on Artificial Life], July 20, 2015 -- see [Tutorial_ECAL2015 our page] for this tutorial
+ # [http://www.newcastle.edu.au/about-uon/governance-and-leadership/faculties-and-schools/faculty-of-engineering-and-built-environment/school-of-electrical-engineering-and-computer-science/acalci-2015/workshops-and-tutorials Australian Conference on Artificial Life and Computational Intelligence], February 5, 2015
