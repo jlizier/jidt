@@ -78,9 +78,9 @@ Several sets of demonstration code are distributed with the toolkit:
 
  a. demos/AutoAnalyser -- a GUI tool to compute transfer entropy on a chosen data set with the toolkit, and also automatically generate code in Java, Python and Matlab to show how to do this calculation with the toolkit. See description at https://code.google.com/p/information-dynamics-toolkit/wiki/AutoAnalyser
 
- a. demos/java -- basic examples on easily using the Java toolkit -- run these from the shell scripts in this directory -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/SimpleJavaExamples
+ b. demos/java -- basic examples on easily using the Java toolkit -- run these from the shell scripts in this directory -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/SimpleJavaExamples
 
- b. Several demo sets mirror the SimpleJavaExamples to demonstrate the use of the toolkit in non-Java environments: 
+ c. Several demo sets mirror the SimpleJavaExamples to demonstrate the use of the toolkit in non-Java environments: 
  
    i. demos/octave -- basic examples on easily using the Java toolkit from Octave or Matlab environments -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/OctaveMatlabExamples
  
@@ -92,17 +92,17 @@ Several sets of demonstration code are distributed with the toolkit:
 
    v. demos/clojure -- basic examples on easily using the Java toolkit from Clojure -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/Clojure_Examples
 
- c. demos/octave/CellularAutomata -- using the Java toolkit to plot local information dynamics profiles in cellular automata; the toolkit is run under Octave or Matlab -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/CellularAutomataDemos
+ d. demos/octave/CellularAutomata -- using the Java toolkit to plot local information dynamics profiles in cellular automata; the toolkit is run under Octave or Matlab -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/CellularAutomataDemos
  
- d. demos/octave/SchreiberTransferEntropyExamples -- recreates the transfer entropy examples in Schreiber's original paper presenting this measure; shows the correct parameter settings to reproduce these results  -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/SchreiberTeDemos
+ e. demos/octave/SchreiberTransferEntropyExamples -- recreates the transfer entropy examples in Schreiber's original paper presenting this measure; shows the correct parameter settings to reproduce these results  -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/SchreiberTeDemos
  
- e. demos/octave/DetectingInteractionLags -- demonstration of using the transfer entropy with source-destination lags; the demo is run under Octave or Matlab -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/DetectingInteractionLags
+ f. demos/octave/DetectingInteractionLags -- demonstration of using the transfer entropy with source-destination lags; the demo is run under Octave or Matlab -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/DetectingInteractionLags
 
- f. demos/java/InterregionalTransfer -- higher level example using collective transfer entropy to infer effective connections between "regions" of data -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/InterregionalTransfer
+ g. demos/java/InterregionalTransfer -- higher level example using collective transfer entropy to infer effective connections between "regions" of data -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/InterregionalTransfer
 
- g. demos/octave/NullDistributions --  investigating the correspondence between analytic and bootstrapped distributions for TE and MI under null hypotheses of no relationship; the demo is run under Octave or Matlab -- see description at https://code.google.com/p/information-dynamics-toolkit/wiki/NullDistributions
+ h. demos/octave/NullDistributions --  investigating the correspondence between analytic and bootstrapped distributions for TE and MI under null hypotheses of no relationship; the demo is run under Octave or Matlab -- see description at https://code.google.com/p/information-dynamics-toolkit/wiki/NullDistributions
 
- h. java/unittests -- the JUnit test cases for the Java toolkit are included in the distribution -- these case also be browsed to see simple use cases for the various calculators in the toolkit -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/JUnitTestCases
+ i. java/unittests -- the JUnit test cases for the Java toolkit are included in the distribution -- these case also be browsed to see simple use cases for the various calculators in the toolkit -- see description at http://code.google.com/p/information-dynamics-toolkit/wiki/JUnitTestCases
 
 =============
   Citation
@@ -132,14 +132,16 @@ Notices for this software are found in the notices/JAMA directory.
  Release notes
 ===============
 
-v1.3 10/7/2015 at r677
+v1.3 10/7/2015 at r690
 ----------------------
-Added AutoAnalyser (Code Generator) GUI demo;
+Added AutoAnalyser (Code Generator) GUI demo for MI and TE;
 Added auto-embedding capability via Ragwitz criteria for AIS and TE calculators (KSG estimators);
 Added Java demo 9 for showcasing use of Ragwitz auto-embedding;
 Adding small amount of noise to data in all KSG estimators now by default (may be disabled via setProperty());
 Added getProperty() methods for all conditional MI and TE calculators;
 Upgraded Python demos for Python 3 compatibility;
+Fixed bias correction on mixed discrete-continuous KSG calculators;
+Updated the tutorial slides to those in use for ECAL 2015 JIDT tutorial;
 
 v1.2.1 12/2/2015 at r621
 ------------------------
