@@ -132,7 +132,7 @@ Notices for this software are found in the notices/JAMA directory.
  Release notes
 ===============
 
-v1.3 10/7/2015 at r690
+v1.3 10/7/2015 at r691
 ----------------------
 Added AutoAnalyser (Code Generator) GUI demo for MI and TE;
 Added auto-embedding capability via Ragwitz criteria for AIS and TE calculators (KSG estimators);
