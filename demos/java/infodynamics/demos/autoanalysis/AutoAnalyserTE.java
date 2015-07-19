@@ -181,7 +181,7 @@ public class AutoAnalyserTE extends AutoAnalyser
 				"Method to automatically determine embedding lengths (k_HISTORY,l_HISTORY)<br/> and delays (k_TAU, l_TAU) for " +
 						"destination and potentially source time-series. Default is \"" + TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_NONE +
 						"\" meaning values are set manually; other values include: <br/>  -- \"" + TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ +
-						" for use of the Ragwitz criteria for both source and destination (searching up to \"" + TransferEntropyCalculatorKraskov.PROP_K_SEARCH_MAX +
+						"\" for use of the Ragwitz criteria for both source and destination (searching up to \"" + TransferEntropyCalculatorKraskov.PROP_K_SEARCH_MAX +
 						"\" and \"" + TransferEntropyCalculatorKraskov.PROP_TAU_SEARCH_MAX + "\"); <br/>  -- \"" + TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY +
 						"\" for use of the Ragwitz criteria for the destination only. <br/>Use of values other than \"" + TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_NONE +
 						"\" leads to any previous settings for embedding lengths and delays for the destination and perhaps source to be overwritten after observations are supplied",
