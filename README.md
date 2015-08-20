@@ -2,7 +2,7 @@
 
 Copyright (C) 2012-2014 [Joseph T. Lizier](http://lizier.me/joseph/); 2014-2015 [Joseph T. Lizier](http://lizier.me/joseph/) and Ipek Özdemir
 
-*JIDT* provides a stand-alone, open-source code Java implementation (also usable in [Matlab, Octave](wiki/UseInOctaveMatlab), [Python](UseInPython), [R](UseInR), [Julia](UseInJulia) and [Clojure](UseInClojure)) of information-theoretic measures of distributed computation in complex systems: i.e. information storage, transfer and modification.
+*JIDT* provides a stand-alone, open-source code Java implementation (also usable in [Matlab, Octave](../../wiki/UseInOctaveMatlab), [Python](../../wiki/UseInPython), [R](../../wiki/UseInR), [Julia](../../wiki/UseInJulia) and [Clojure](../../wiki/UseInClojure)) of information-theoretic measures of distributed computation in complex systems: i.e. information storage, transfer and modification.
 
 JIDT includes implementations:
  * principally for the measures **transfer entropy**, **mutual information**, and their conditional variants, as well as **active information storage**, entropy, etc;
@@ -14,15 +14,15 @@ JIDT is distributed under the [GNU GPL v3 license](http://www.gnu.org/licenses/g
 
 # Getting started
 
- 1. [Download](Downloads) and [Installation](Installation) is very easy!
+ 1. [Download](../../wiki/Downloads) and [Installation](../../wiki/Installation) is very easy!
    1. _Quick start_: download the latest [v1.3 full distribution](http://lizier.me/joseph/software/jidt/download.php?file=infodynamics-dist-1.3.zip) (suitable for all platforms) and see the readme.txt file therein.
- 1. [Documentation](Documentation) including: the paper describing JIDT at [arXiv:1408.3270](http://arxiv.org/abs/1408.3270) (distributed with the toolkit), a [Tutorial](Tutorial), and [Javadocs (v1.3 here)](http://lizier.me/joseph/software/jidt/javadocs/v1.3/);
- 1. [Demos](Demos) are included with the full distribution, including a [GUI app](AutoAnalyser) for automatic analysis and code generation, [simple java demos](SimpleJavaExamples) and [cellular automata (CA) demos](CellularAutomataDemos).
-  1. These Java tools can easily be used in [Matlab/Octave](OctaveMatlabExamples), [Python](PythonExamples), [R](R_Examples), [Julia](JuliaExamples) and [Clojure](Clojure_Examples)! (click on each language here for examples)
+ 1. [Documentation](../../wiki/Documentation) including: the paper describing JIDT at [arXiv:1408.3270](http://arxiv.org/abs/1408.3270) (distributed with the toolkit), a [Tutorial](../../wiki/Tutorial), and [Javadocs (v1.3 here)](http://lizier.me/joseph/software/jidt/javadocs/v1.3/);
+ 1. [Demos](../../wiki/Demos) are included with the full distribution, including a [GUI app](../../wiki/AutoAnalyser) for automatic analysis and code generation, [simple java demos](../../wiki/SimpleJavaExamples) and [cellular automata (CA) demos](../../wiki/CellularAutomataDemos).
+  1. These Java tools can easily be used in [Matlab/Octave](../../wiki/OctaveMatlabExamples), [Python](../../wiki/PythonExamples), [R](../../wiki/R_Examples), [Julia](../../wiki/JuliaExamples) and [Clojure](../../wiki/Clojure_Examples)! (click on each language here for examples)
 
 For further information or announcements:
  * Join our discussion group: http://groups.google.com/d/forum/jidt-discuss
- * See also the [FAQs](FAQs)
+ * See also the [FAQs](../../wiki/FAQs)
  * Follow [@infodynamicstkt](http://twitter.com/infodynamicstkt) on twitter
 
 # Citation
@@ -33,7 +33,7 @@ Joseph T. Lizier, "JIDT: An information-theoretic toolkit for studying the dynam
 
 And please [let me know](mailto:joseph.lizier_AT_gmail.com) about any publications resulting from its use!
 
-See other PublicationsUsingThisToolkit.
+See other [PublicationsUsingThisToolkit](../../wiki/PublicationsUsingThisToolkit).
 
 # News
 
@@ -85,9 +85,9 @@ _20/4/2014_ - New jar and full distribution files available for v0.2.0; Moved do
 
 _11/9/2013_ - New jar and full distribution files available for v0.1.4; added scripts to generate CA figures for 2013 book chapters; added general Java demo code; added Python demo code; made Octave/Matlab demos and CA demos properly compatible for Matlab; added extra Octave/Matlab general demos; added more unit tests for MI and conditional MI calculators, including against results from Wibral's TRENTOOL; bug fixes.
 
-_11/9/2013_ - New CA demo scripts for several review book chapters we're preparing in 2013 have been uploaded - see [CellularAutomataDemos](CellularAutomataDemos).
+_11/9/2013_ - New CA demo scripts for several review book chapters we're preparing in 2013 have been uploaded - see [CellularAutomataDemos](../../wiki/CellularAutomataDemos).
 
-_4/6/2013_ - Added instructions on how to [use in python](UseInPython) and several [PythonExamples](PythonExamples).
+_4/6/2013_ - Added instructions on how to [use in python](../../wiki/UseInPython) and several [PythonExamples](../../wiki/PythonExamples).
 
 _13/01/2013_ - New jar and full distribution files available for v0.1.3; existing Octave/Matlab demo code made compatible with Matlab; several bug fixes, including using max norm by default in Kraskov calculator (instead of requiring this to be set explicitly); more unit tests (including against results from Kraskov's own MI implementation)
 
