@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="JIDT : JIDT: Java Information Dynamics Toolkit for studying information-theoretic measures of computation in complex systems">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>JIDT</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/jlizier/jidt">View on GitHub</a>
+
+          <h1 id="project_title">JIDT</h1>
+          <h2 id="project_tagline">JIDT: Java Information Dynamics Toolkit for studying information-theoretic measures of computation in complex systems</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/jlizier/jidt/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/jlizier/jidt/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a id="java-information-dynamics-toolkit-jidt" class="anchor" href="#java-information-dynamics-toolkit-jidt" aria-hidden="true"><span class="octicon octicon-link"></span></a>Java Information Dynamics Toolkit (JIDT)</h1>
+
+<p>Copyright (C) 2012-2014 <a href="http://lizier.me/joseph/">Joseph T. Lizier</a>; 2014-2015 <a href="http://lizier.me/joseph/">Joseph T. Lizier</a> and Ipek Özdemir</p>
+
+<p><em>JIDT</em> provides a stand-alone, open-source code Java implementation (also usable in <a href="../../wiki/UseInOctaveMatlab">Matlab, Octave</a>, <a href="../../wiki/UseInPython">Python</a>, <a href="../../wiki/UseInR">R</a>, <a href="../../wiki/UseInJulia">Julia</a> and <a href="../../wiki/UseInClojure">Clojure</a>) of information-theoretic measures of distributed computation in complex systems: i.e. information storage, transfer and modification.</p>
+
+<p>JIDT includes implementations:</p>
+
+<ul>
+<li>principally for the measures <strong>transfer entropy</strong>, <strong>mutual information</strong>, and their conditional variants, as well as <strong>active information storage</strong>, entropy, etc;</li>
+<li>for both <em>discrete</em> and <em>continuous</em>-valued data;</li>
+<li>using various types of estimators (e.g. <em>Kraskov-Stögbauer-Grassberger estimators</em>, <em>box-kernel estimation</em>, <em>linear-Gaussian</em>),
+as described in full at ImplementedMeasures.</li>
+</ul>
+
+<p>JIDT is distributed under the <a href="http://www.gnu.org/licenses/gpl.html">GNU GPL v3 license</a> (or later).</p>
+
+<h1>
+<a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span class="octicon octicon-link"></span></a>Getting started</h1>
+
+<ol>
+<li>
+<a href="../../wiki/Downloads">Download</a> and <a href="../../wiki/Installation">Installation</a> is very easy!
+
+<ol>
+<li>
+<em>Quick start</em>: download the latest <a href="http://lizier.me/joseph/software/jidt/download.php?file=infodynamics-dist-1.3.zip">v1.3 full distribution</a> (suitable for all platforms) and see the readme.txt file therein.</li>
+</ol>
+</li>
+<li>
+<a href="../../wiki/Documentation">Documentation</a> including: the paper describing JIDT at <a href="http://arxiv.org/abs/1408.3270">arXiv:1408.3270</a> (distributed with the toolkit), a <a href="../../wiki/Tutorial">Tutorial</a>, and <a href="http://lizier.me/joseph/software/jidt/javadocs/v1.3/">Javadocs (v1.3 here)</a>;</li>
+<li>
+<a href="../../wiki/Demos">Demos</a> are included with the full distribution, including a <a href="../../wiki/AutoAnalyser">GUI app</a> for automatic analysis and code generation, <a href="../../wiki/SimpleJavaExamples">simple java demos</a> and <a href="../../wiki/CellularAutomataDemos">cellular automata (CA) demos</a>.
+
+<ol>
+<li>These Java tools can easily be used in <a href="../../wiki/OctaveMatlabExamples">Matlab/Octave</a>, <a href="../../wiki/PythonExamples">Python</a>, <a href="../../wiki/R_Examples">R</a>, <a href="../../wiki/JuliaExamples">Julia</a> and <a href="../../wiki/Clojure_Examples">Clojure</a>! (click on each language here for examples)</li>
+</ol>
+</li>
+</ol>
+
+<p>For further information or announcements:</p>
+
+<ul>
+<li>Join our discussion group: <a href="http://groups.google.com/d/forum/jidt-discuss">http://groups.google.com/d/forum/jidt-discuss</a>
+</li>
+<li>See also the <a href="../../wiki/FAQs">FAQs</a>
+</li>
+<li>Follow <a href="http://twitter.com/infodynamicstkt">@infodynamicstkt</a> on twitter</li>
+</ul>
+
+<h1>
+<a id="citation" class="anchor" href="#citation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Citation</h1>
+
+<p>Please <strong>cite</strong> your use of this toolkit as:</p>
+
+<p>Joseph T. Lizier, "JIDT: An information-theoretic toolkit for studying the dynamics of complex systems", <em>Frontiers in Robotics and AI</em> 1:11, 2014; doi:<a href="http://dx.doi.org/10.3389/frobt.2014.00011">10.3389/frobt.2014.00011</a> (pre-print: <a href="http://arxiv.org/abs/1408.3270">arXiv:1408.3270</a>)</p>
+
+<p>And please <a href="mailto:joseph.lizier_AT_gmail.com">let me know</a> about any publications resulting from its use!</p>
+
+<p>See other <a href="../../wiki/PublicationsUsingThisToolkit">PublicationsUsingThisToolkit</a>.</p>
+
+<h1>
+<a id="news" class="anchor" href="#news" aria-hidden="true"><span class="octicon octicon-link"></span></a>News</h1>
+
+<p><em>19/7/2015</em> - New jar and full distribution files available for <strong>release v1.3</strong>; Changes for v1.3 include:
+Added AutoAnalyser (Code Generator) GUI demo for MI and TE;
+Added auto-embedding capability via Ragwitz criteria for AIS and TE calculators (KSG estimators);
+Added Java demo 9 for showcasing use of Ragwitz auto-embedding;
+Adding small amount of noise to data in all KSG estimators now by default (may be disabled via setProperty());
+Added getProperty() methods for all conditional MI and TE calculators;
+Upgraded Python demos for Python 3 compatibility;
+Fixed bias correction on mixed discrete-continuous KSG calculators;
+Updated the tutorial slides to those in use for ECAL 2015 JIDT tutorial.</p>
+
+<p><em>12/2/2015</em> - New jar and full distribution files available for <strong>release v1.2.1</strong>; Changes for v1.2.1 include:
+Added tutorial slides, description of exercises and sample exercise solutions;
+Made jar target Java 1.6;
+Added Schreiber TE heart-breath rate with KSG estimator demo code for Python.</p>
+
+<p><em>28/1/2015</em> - New jar and full distribution files available for <strong>release v1.2</strong>; Changes for v1.2 include:
+Dynamic correlation exclusion, or Theiler window, added to all Kraskov estimators;
+Added univariate MI calculation to simple demo 6;
+Added Java code for Schreiber TE heart-breath rate with KSG estimator, ready for use as a template in Tutorial;
+Patch for crashes in KSG conditional MI algorithm 2.</p>
+
+<p><em>20/11/2014</em> - New jar and full distribution files available for <strong>release v1.1</strong>; Changes for v1.1 include:
+Implemented Fast Nearest Neighbour Search for Kraskov-Stögbauer-Grassberger (KSG) estimators for MI, conditional MI, TE, conditional TE, AIS, Predictive info, and multi-information. This includes a general (multivariate) k-d tree implementation;
+Added multi-threading (using all available processors by default) for the KSG estimators -- code contributed by Ipek Özdemir;
+Added Predictive information / Excess entropy implementations for KSG, kernel and Gaussian estimators;
+Added R, Julia, and Clojure demos;
+Added Windows batch files for the Simple Java Demos;
+Added property for adding a small amount of noise to data in all KSG estimators;</p>
+
+<p><em>15/8/2014</em> JIDT paper finalised and uploaded to the website and <a href="http://arxiv.org/abs/1408.3270">arXiv:1408.3270</a></p>
+
+<p><em>14/8/2014</em> - New jar and full distribution files available for our <strong>first official release, v1.0</strong>; Changes for v1.0 include: Added the draft of the paper on the toolkit to the release;
+Javadocs made ready for release;
+Switched source-&gt;destination arguments for discrete TE calculators to be with source first in line with continuous calculators;
+Renamed all discrete calculators to have Discrete suffix -- TE and conditional TE calculators also renamed to remove "Apparent" prefix and change "Complete" to "Conditional";
+Kraskov estimators now using 4 nearest neighbours by default;
+Unit test for Gaussian TE against ChaLearn Granger causality measurement;
+Added Schreiber TE demos; Interregional transfer demos; documentation for Interaction lag demos; added examples 7 and 8 to Simple Java demos;
+Added property to add noise to data for Kraskov MI;
+Added derivation of Apache Commons Math code for chi square distribution, and included relevant notices in our release;
+Inserted translation class for arrays between Octave and Java;
+Added analytic statistical significance calculation to Gaussian calculators and discrete TE;
+Corrected Kraskov algorithm 2 for conditional MI to follow equation in Wibral et al. 2014.</p>
+
+<p><em>20/4/2014</em> - New jar and full distribution files available for v0.2.0; Moved downloads to <a href="http://lizier.me/joseph/">http://lizier.me/joseph/</a> since google code has stopped the download facility here :(. Changes for v0.2.0 include: Rearchitected (most) Transfer Entropy and Multivariate TE calculators to use an underlying conditional mutual information calculator, and have arbitrary embedding delay, source-dest delay; this includes moving Kraskov-Grassberger Transfer Entropy calculator to use a single conditional mutual information estimator instead of two mutual information estimators; Rearchitected (most) Active Information Storage calculators to use an underlying mutual information calculator; Added Conditional Transfer Entropy calculators using underlying conditional mutual information calculators; Moved mixed discrete-continuous calculators to a new "mixed" package; bug fixes.</p>
+
+<p><em>11/9/2013</em> - New jar and full distribution files available for v0.1.4; added scripts to generate CA figures for 2013 book chapters; added general Java demo code; added Python demo code; made Octave/Matlab demos and CA demos properly compatible for Matlab; added extra Octave/Matlab general demos; added more unit tests for MI and conditional MI calculators, including against results from Wibral's TRENTOOL; bug fixes.</p>
+
+<p><em>11/9/2013</em> - New CA demo scripts for several review book chapters we're preparing in 2013 have been uploaded - see <a href="../../wiki/CellularAutomataDemos">CellularAutomataDemos</a>.</p>
+
+<p><em>4/6/2013</em> - Added instructions on how to <a href="../../wiki/UseInPython">use in python</a> and several <a href="../../wiki/PythonExamples">PythonExamples</a>.</p>
+
+<p><em>13/01/2013</em> - New jar and full distribution files available for v0.1.3; existing Octave/Matlab demo code made compatible with Matlab; several bug fixes, including using max norm by default in Kraskov calculator (instead of requiring this to be set explicitly); more unit tests (including against results from Kraskov's own MI implementation)</p>
+
+<p><em>19/11/2012</em> - New jar and full distribution files available for v0.1.2, including demo code for two newly submitted papers</p>
+
+<p><em>31/10/2012</em> - Jar and full distribution files available for v0.1.1 (first distribution)</p>
+
+<p><em>7/5/2012</em> - JIDT project created and code uploaded</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">JIDT maintained by <a href="https://github.com/jlizier">jlizier</a></p>
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+              <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-8354270-7");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+
+  </body>
+</html>
