@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project basedir="." default="build" name="Java Information Dynamics Toolkit">
+<project basedir="." default="build" name="Java Information Dynamics Toolkit" xmlns:if="ant:if">
 	<description>
 		Build file for the Java Information Dynamics Toolkit
 	</description>
@@ -19,18 +19,25 @@
 	<property name="reports.tests" location="${unittestsouttoplevel}/reports"/>
 	<property name="javadocsdir" location="javadocs"/>
 	<property name="versionfile" value="version-${version}.txt"/>
+  <!-- To enable GPU code, uncomment from here... -->
+  <property name="enablegpu" value="true"/>
+  <!-- ...to here -->
 	
 	<path id="project.classpath">
 		<pathelement location="bin"/>
 	</path>
-	
+
+  <path id="apache-classpath">
+    <pathelement path="./share/commons-math3-3.5.jar"/>
+  </path>
+
 	<!-- Make required directories -->
 	<target name="init" description="Create the compiled code directories">
 		<mkdir dir="${bin}"/>
 		<mkdir dir="${unittestsbin}"/>
 		<mkdir dir="${reports.tests}"/>
 	</target>
-	
+
 	<!-- Compile the java toolkit -->
 	<target name="compile" depends="init" description="compile the source and unittests">
 		<!-- Compile to Java 6 to provide compatibility for users with older JREs.
@@ -43,7 +50,13 @@
 		     ignore the warning, and I don't want to bother installing Java 6 just to compile
 		     like this. I'll endeavour not to use JDK 7 libraries so as not to cause
 		     any issues here ... -->
-		<javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false" target="1.6" source="1.6"/>
+		<javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false" target="1.6" source="1.6">
+			<classpath refid="apache-classpath"/>
+    </javac>
+
+    <!-- Compiling Cpp code -->
+    <exec executable="make" dir="${src}/infodynamics/measures/continuous/kraskov/cuda/" if:set="enablegpu"/>
+
 	</target>
 
 	<!-- Jar the toolkit -->
@@ -55,17 +68,19 @@
 	<!-- Compile and run the JUnit tests -->
 	<target name="junit" depends="compile" description="Run the junit tests and make sure they compile">
 		<!-- Compile the junit tests first -->
-		<javac destdir="${unittestsbin}" includeAntRuntime="true">
+		<javac destdir="${unittestsbin}" includeAntRuntime="true" debug="true">
 			<!-- Need includeAntRuntime=true if you want to pick up junit.jar and ant-junit.jar in ANT_HOME/lib;
 			     Otherwise you will need to set the classpath to include these here. -->
 			<src path="${unittestssrc}"/>
 			<classpath refid="project.classpath"/>
+			<classpath refid="apache-classpath"/>
 		</javac>
 		<!-- Run the junit tests and make sure they complete ok -->
-		<junit printsummary="yes" showoutput="yes" haltonfailure="yes" haltonerror="yes" includeantruntime="true">
+		<junit printsummary="yes" showoutput="yes" fork="true" forkmode="once" haltonfailure="yes" haltonerror="yes" includeantruntime="true">
 			<classpath>
 				<path refid="project.classpath"/>
 				<pathelement path="${unittestsbin}"/>
+        <pathelement location="${basedir}/clover.jar"/>
 			</classpath>
 			<formatter type="plain"/>
 			<batchtest todir="${reports.tests}"> <!-- Writes full reports with stdout and stderr to ${reports.tests} -->
@@ -137,6 +152,21 @@
 	
 	***********************************
 	-->
+
+  <!-- Compile and jar the toolkit with debug symbols -->
+  <target name="debug" depends="init" description="compile and jar with debug symbols">
+    <echo message="Compiling for debug"/>
+    <javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false" target="1.6" source="1.6" debug="true">
+			<classpath refid="apache-classpath"/>
+    </javac>
+
+    <!-- Compiling Cpp code -->
+    <exec executable="make" dir="${src}/infodynamics/measures/continuous/kraskov/cuda/" if:set="enablegpu">
+      <env key="DEBUG" value="1"/>
+    </exec>
+
+    <jar jarfile="${jarplainname}" basedir="${bin}"/>
+  </target>
 
 	<!-- Developer build - creates readme and version files -->
 	<target name="readmefiles" description="developer: create the readme and version files from templates">

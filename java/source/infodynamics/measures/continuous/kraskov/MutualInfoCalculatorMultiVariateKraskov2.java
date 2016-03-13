@@ -129,4 +129,5 @@ public class MutualInfoCalculatorMultiVariateKraskov2
 			return new double[] {sumDiGammas, sumNx, sumNy};
 		}
 	}
+
 }
