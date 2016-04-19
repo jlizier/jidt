@@ -100,6 +100,62 @@ public class ActiveInfoStorageCalculatorMultiVariateKraskov
 	 * Storage for the properties ready to pass onto the underlying conditional MI calculators should they change 
 	 */
 	protected Hashtable<String,String> props;
+
+	/**
+	 * Property name for the auto-embedding method. Defaults to {@link #AUTO_EMBED_METHOD_NONE}
+	 */
+	public static final String PROP_AUTO_EMBED_METHOD = "AUTO_EMBED_METHOD";
+	/**
+	 * Valid value for the property {@link #PROP_AUTO_EMBED_METHOD} indicating that
+	 *  no auto embedding should be done (i.e. to use manually supplied parameters)
+	 */
+	public static final String AUTO_EMBED_METHOD_NONE = "NONE";
+	/**
+	 * Valid value for the property {@link #PROP_AUTO_EMBED_METHOD} indicating that
+	 *  the Ragwitz optimisation technique should be used for automatic embedding
+	 */
+	public static final String AUTO_EMBED_METHOD_RAGWITZ = "RAGWITZ";
+	/**
+	 * Internal variable tracking what type of auto embedding (if any)
+	 *  we are using
+	 */
+	protected String autoEmbeddingMethod = AUTO_EMBED_METHOD_NONE;
+	
+	/**
+	 * Property name for maximum k (embedding length) for the auto-embedding search. Default to 1
+	 */
+	public static final String PROP_K_SEARCH_MAX = "AUTO_EMBED_K_SEARCH_MAX";
+	/**
+	 * Internal variable for storing the maximum embedding length to search up to for
+	 *  automating the parameters.
+	 */
+	protected int k_search_max = 1;
+
+	/**
+	 * Property name for maximum tau (embedding delay) for the auto-embedding search. Default to 1
+	 */
+	public static final String PROP_TAU_SEARCH_MAX = "AUTO_EMBED_TAU_SEARCH_MAX";
+	/**
+	 * Internal variable for storing the maximum embedding delay to search up to for
+	 *  automating the parameters.
+	 */
+	protected int tau_search_max = 1;
+
+	/**
+	 * Property name for the number of nearest neighbours to use for the auto-embedding search (Ragwitz criteria).
+	 * Defaults to match the value in use for {@link MutualInfoCalculatorMultiVariateKraskov#PROP_K}
+	 */
+	public static final String PROP_RAGWITZ_NUM_NNS = "AUTO_EMBED_RAGWITZ_NUM_NNS";
+	/**
+	 * Internal variable for storing the number of nearest neighbours to use for the
+	 *  auto embedding search (Ragwitz criteria)
+	 */
+	protected int ragwitz_num_nns = 1;
+	/** 
+	 * Internal variable to track whether the property {@link #PROP_RAGWITZ_NUM_NNS} has been
+	 * set yet
+	 */
+	protected boolean ragwitz_num_nns_set = false;
 	
 	/**
 	 * Creates a new instance of the Kraskov-Stoegbauer-Grassberger style AIS calculator.
@@ -191,7 +247,29 @@ public class ActiveInfoStorageCalculatorMultiVariateKraskov
 	 * <p>Valid property names, and what their
 	 * values should represent, include:</p>
 	 * <ul>
+	 * 		<li>{@link #PROP_AUTO_EMBED_METHOD} -- method by which the calculator
+	 * 		automatically determines the embedding history length ({@link #K_PROP_NAME})
+	 * 		and embedding delay ({@link #TAU_PROP_NAME}). Default is {@link #AUTO_EMBED_METHOD_NONE} meaning
+	 * 		values are set manually; other accepted values include: {@link #AUTO_EMBED_METHOD_RAGWITZ} for use
+	 * 		of the Ragwitz criteria (searching up to {@link #PROP_K_SEARCH_MAX} and 
+	 * 		{@link #PROP_TAU_SEARCH_MAX}). Use of any value other than {@link #AUTO_EMBED_METHOD_NONE}
+	 * 		will lead to any previous settings for k and tau (via e.g. {@link #initialise(int, int)} or
+	 * 		auto-embedding during previous calculations) will be overwritten after observations
+	 * 		are supplied.</li>
+	 * 		<li>{@link #PROP_K_SEARCH_MAX} -- maximum embedded history length to search
+	 * 		up to if automatically determining the embedding parameters (as set by
+	 * 		{@link #PROP_AUTO_EMBED_METHOD}); default is 1</li>
+	 * 		<li>{@link #PROP_TAU_SEARCH_MAX} -- maximum embedded history length to search
+	 * 		up to if automatically determining the embedding parameters (as set by
+	 * 		{@link #PROP_AUTO_EMBED_METHOD}); default is 1</li>
+	 * 		<li>{@link #PROP_RAGWITZ_NUM_NNS} -- number of nearest neighbours to use
+	 * 		in the auto-embedding if the property {@link #PROP_AUTO_EMBED_METHOD}
+	 * 		has been set to {@link #AUTO_EMBED_METHOD_RAGWITZ}. Defaults to the property value
+	 *      set for {@link MutualInfoCalculatorMultiVariateKraskov.PROP_K}</li>
 	 * 		<li>{@link #PROP_KRASKOV_ALG_NUM} -- which KSG algorithm to use, 1 or 2.
+	 * 		<li>Any properties accepted by {@link super#setProperty(String, String)}</li>
+	 * 		<li>Or properties accepted by the underlying
+	 * 		{@link MutualInfoCalculatorMultiVariateKraskov#setProperty(String, String)} implementation.</li>
 	 * </ul>
 	 * <p>One should set {@link MutualInfoCalculatorMultiVariateKraskov#PROP_K} here, the number
 	 *  of neighbouring points one should count up to in determining the joint kernel size.</p> 
@@ -202,7 +280,21 @@ public class ActiveInfoStorageCalculatorMultiVariateKraskov
 	 */
 	public void setProperty(String propertyName, String propertyValue)
 			throws Exception {
-		if (propertyName.equalsIgnoreCase(PROP_KRASKOV_ALG_NUM)) {
+		boolean propertySet = true;
+		if (propertyName.equalsIgnoreCase(PROP_AUTO_EMBED_METHOD)) {
+			// New method set for determining the embedding parameters
+			autoEmbeddingMethod = propertyValue;
+		} else if (propertyName.equalsIgnoreCase(PROP_K_SEARCH_MAX)) {
+			// Set max embedding history length for auto determination of embedding
+			k_search_max = Integer.parseInt(propertyValue);
+		} else if (propertyName.equalsIgnoreCase(PROP_TAU_SEARCH_MAX)) {
+			// Set maximum embedding delay for auto determination of embedding
+			tau_search_max = Integer.parseInt(propertyValue);
+		} else if (propertyName.equalsIgnoreCase(PROP_RAGWITZ_NUM_NNS)) {
+			// Set the number of nearest neighbours to use in case of Ragwitz auto embedding:
+			ragwitz_num_nns = Integer.parseInt(propertyValue);
+			ragwitz_num_nns_set = true;
+		} else if (propertyName.equalsIgnoreCase(PROP_KRASKOV_ALG_NUM)) {
 			int previousAlgNumber = kraskovAlgorithmNumber;
 			kraskovAlgorithmNumber = Integer.parseInt(propertyValue);
 			if ((kraskovAlgorithmNumber != 1) && (kraskovAlgorithmNumber != 2)) {
@@ -212,14 +304,116 @@ public class ActiveInfoStorageCalculatorMultiVariateKraskov
 			if (kraskovAlgorithmNumber != previousAlgNumber) {
 				algChanged = true;
 			}
-			if (debug) {
-				System.out.println(this.getClass().getSimpleName() + ": Set property " + propertyName +
-						" to " + propertyValue);
-			}
 		} else {
-			// Assume it was a property for the parent class or underlying conditional MI calculator
+      propertySet = false;
+			// Assume it was a property for the parent class or underlying MI calculator
 			super.setProperty(propertyName, propertyValue);
 			props.put(propertyName, propertyValue); // This will keep properties for the super class as well as the MI calculator, but this is ok
+		}
+    if (debug && propertySet) {
+      System.out.println(this.getClass().getSimpleName() + ": Set property " + propertyName +
+          " to " + propertyValue);
+    }
+	}
+
+  // TODO: PEDRO: should I implement a getProperty here?
+
+	@Override
+	public void preFinaliseAddObservations() throws Exception {
+		// Automatically determine the embedding parameters for the given time series
+		
+		if (autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_NONE)) {
+			return;
+		}
+		// Else we need to auto embed
+		
+		double bestPredictionError = Double.POSITIVE_INFINITY;
+		int k_candidate_best = 1;
+		int tau_candidate_best = 1;
+		
+		if (autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_RAGWITZ)) {
+			if (debug) {
+				System.out.printf("Beginning Ragwitz auto-embedding with k_max=%d, tau_max=%d\n",
+						k_search_max, tau_search_max);
+			}
+			
+			for (int k_candidate = 1; k_candidate <= k_search_max; k_candidate++) {
+				for (int tau_candidate = 1; tau_candidate <= tau_search_max; tau_candidate++) {
+					// Use our internal MI calculator in case it has any particular 
+					//  properties we need to have been set already
+					miCalc.initialise(k_candidate*dimensions, dimensions);
+					miCalc.startAddObservations();
+					// Send all of the observations through:
+          if (dimensions == 1) {
+
+            for (double[] observations : vectorOfObservationTimeSeries) {
+              double[][] currentDestPastVectors = 
+                  MatrixUtils.makeDelayEmbeddingVector(observations, k_candidate,
+                      tau_candidate, (k_candidate-1)*tau_candidate,
+                      observations.length - (k_candidate-1)*tau_candidate - 1);
+              double[][] currentDestNextVectors =
+                  MatrixUtils.makeDelayEmbeddingVector(observations, 1,
+                      (k_candidate-1)*tau_candidate + 1,
+                      observations.length - (k_candidate-1)*tau_candidate - 1);
+              miCalc.addObservations(currentDestPastVectors, currentDestNextVectors);
+            }
+
+          } else {
+
+            for (double[][] observations : vectorOfMultiVariateObservationTimeSeries) {
+              double[][] currentDestPastVectors = 
+                  MatrixUtils.makeDelayEmbeddingVector(observations, k_candidate,
+                      tau_candidate, (k_candidate-1)*tau_candidate,
+                      observations.length - (k_candidate-1)*tau_candidate - 1);
+              double[][] currentDestNextVectors =
+                  MatrixUtils.makeDelayEmbeddingVector(observations, 1,
+                      (k_candidate-1)*tau_candidate + 1,
+                      observations.length - (k_candidate-1)*tau_candidate - 1);
+              miCalc.addObservations(currentDestPastVectors, currentDestNextVectors);
+            }
+
+          }
+					miCalc.finaliseAddObservations();
+					// Now grab the prediction errors of the next value from the required number of
+					// nearest neighbours of the previous state. Since the prediction error is a sum
+          // of squared terms, we can also sum the prediction error across dimensions.
+					double[] predictionError;
+					if (ragwitz_num_nns_set) {
+						predictionError = 
+							((MutualInfoCalculatorMultiVariateKraskov) miCalc).
+								computePredictionErrorsFromObservations(false, ragwitz_num_nns);
+					} else {
+						predictionError = 
+								((MutualInfoCalculatorMultiVariateKraskov) miCalc).
+									computePredictionErrorsFromObservations(false);
+					}
+					if (debug) {
+						System.out.printf("Embedding prediction error (dim=%d) for k=%d,tau=%d is %.3f\n",
+								predictionError.length, k_candidate, tau_candidate,
+								MatrixUtils.sum(predictionError) / (double) miCalc.getNumObservations());
+					}
+					if ((MatrixUtils.sum(predictionError) / (double) miCalc.getNumObservations())
+							< bestPredictionError) {
+						// This parameter setting is the best so far:
+						// (Note division by number of observations to normalise
+						//  for less observations for larger k and tau)
+						bestPredictionError = MatrixUtils.sum(predictionError) / (double) miCalc.getNumObservations();
+						k_candidate_best = k_candidate;
+						tau_candidate_best = tau_candidate;
+					}
+					if (k_candidate == 1) {
+						// tau is irrelevant, so no point testing other values
+						break;
+					}
+				}
+			}
+		}
+		// Make sure the embedding length and delay are set here
+		k = k_candidate_best;
+		tau = tau_candidate_best;
+		if (debug) {
+			System.out.printf("Embedding parameters set to k=%d,tau=%d (for prediction error %.3f)\n",
+				k, tau, bestPredictionError);
 		}
 	}
 
