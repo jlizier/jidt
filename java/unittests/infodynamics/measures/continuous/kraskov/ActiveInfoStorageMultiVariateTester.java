@@ -8,6 +8,10 @@ import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.RandomGenerator;
 import junit.framework.TestCase;
 
+/**
+ * @author Pedro AM Mediano (<a href="pmediano at imperial.ac.uk">email</a>,
+ * <a href="https://www.doc.ic.ac.uk/~pam213/">www</a>)
+ */
 public class ActiveInfoStorageMultiVariateTester extends TestCase {
 
 	protected String NUM_THREADS_TO_USE_DEFAULT = MutualInfoCalculatorMultiVariateKraskov.USE_ALL_THREADS;
@@ -46,7 +50,7 @@ public class ActiveInfoStorageMultiVariateTester extends TestCase {
     double[] oneDArray = new double[] {1, 2, 3, 4, 5, 6, 7, 8, 9};
     double[][] twoDArray = new double[][] {{1, 1.5}, {2, 2.5}, {3, 3.5}, {4, 4.5}, {5, 5.5}, {6, 6.5}, {7, 7.5}, {8, 8.5} ,{9, 9.5}};
 
-    // Add 1D observations to a 1D calculator. Should not throw exceptio.
+    // Add 1D observations to a 1D calculator. Should not throw exception.
     try {
       ais.initialise(1);
       ais.startAddObservations();
@@ -132,6 +136,8 @@ public class ActiveInfoStorageMultiVariateTester extends TestCase {
     double[][] data = new double[T][dim];
     double[][] A = new double[][] {{0.4, 0.4}, {0.4, 0.4}};
     RandomGenerator rg = new RandomGenerator();
+    // TODO: This is an AR process, so we could calculate the true stationary
+    // covariance in Matlab and test we get the same result here
     for (int t = 1; t < T; t++) {
       data[t] = MatrixUtils.add(MatrixUtils.matrixProduct(A, data[t-1]),
                                 rg.generateNormalData(dim, 0, 1));

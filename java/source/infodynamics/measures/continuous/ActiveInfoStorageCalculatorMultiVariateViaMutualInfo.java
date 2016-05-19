@@ -77,6 +77,17 @@ public class ActiveInfoStorageCalculatorMultiVariateViaMutualInfo
    * time-series observations. 
 	 */
 	protected int timeForFirstEmbedding;
+
+	/**
+	 * Storage for observations supplied via {@link #addObservations(double[][])}
+	 * type calls
+	 */
+	protected Vector<double[][]> vectorOfMultiVariateObservationTimeSeries;
+	/**
+	 * Storage for validity arrays for supplied observations.
+	 * Entries are null where the whole corresponding observation time-series is valid
+	 */
+	protected Vector<boolean[]> vectorOfValidityOfObservations;
 	
 	/**
 	 * Construct using an instantiation of the named MI calculator
@@ -142,7 +153,8 @@ public class ActiveInfoStorageCalculatorMultiVariateViaMutualInfo
 
     timeForFirstEmbedding = tau*(k-1);
 
-    miCalc.initialise(k*dimensions, dimensions);
+    // PEDRO: we can probably remove this
+    // miCalc.initialise(k*dimensions, dimensions);
 	}
 
 	/**
@@ -174,17 +186,21 @@ public class ActiveInfoStorageCalculatorMultiVariateViaMutualInfo
    */
   public void setObservations(double[][] observations) throws Exception {
 
-    if (observations.length <= timeForFirstEmbedding + 1) {
-			// There are no observations to add here, the time series is too short
-			throw new Exception("Not enough observations to set here given k and tau parameters");
-		}
+		startAddObservations();
+		addObservations(observations);
+		finaliseAddObservations();
 
-    double[][] past = MatrixUtils.makeDelayEmbeddingVector(observations,
-        k, tau, tau*(k-1), observations.length - (k-1)*tau - 1);
-    double[][] next = MatrixUtils.makeDelayEmbeddingVector(observations,
-        1, (k-1)*tau + 1, observations.length - (k-1)*tau - 1);
+    // if (observations.length <= timeForFirstEmbedding + 1) {
+		// 	// There are no observations to add here, the time series is too short
+		// 	throw new Exception("Not enough observations to set here given k and tau parameters");
+		// }
 
-    miCalc.setObservations(past, next);
+    // double[][] past = MatrixUtils.makeDelayEmbeddingVector(observations,
+    //     k, tau, tau*(k-1), observations.length - (k-1)*tau - 1);
+    // double[][] next = MatrixUtils.makeDelayEmbeddingVector(observations,
+    //     1, (k-1)*tau + 1, observations.length - (k-1)*tau - 1);
+
+    // miCalc.setObservations(past, next);
   }
 
 	/* (non-Javadoc)
@@ -195,6 +211,8 @@ public class ActiveInfoStorageCalculatorMultiVariateViaMutualInfo
       super.startAddObservations();
     } else {
       miCalc.startAddObservations();
+      vectorOfMultiVariateObservationTimeSeries = new Vector<double[][]>();
+      vectorOfValidityOfObservations = new Vector<boolean[]>();
     }
   }
 
@@ -205,7 +223,30 @@ public class ActiveInfoStorageCalculatorMultiVariateViaMutualInfo
     if (dimensions == 1) {
       super.finaliseAddObservations();
     } else {
+
+      // Auto embed if required
+      preFinaliseAddObservations();
+      
+      // Initialise the MI calculator, including any auto-embedding length
+      miCalc.initialise(dimensions*k, dimensions);
+      miCalc.startAddObservations();
+      // Send all of the observations through:
+      Iterator<boolean[]> validityIterator = vectorOfValidityOfObservations.iterator();
+      for (double[][] observations : vectorOfMultiVariateObservationTimeSeries) {
+        boolean[] validity = validityIterator.next();
+        if (validity == null) {
+          // Add the whole time-series
+          addObservationsAfterParamsDetermined(observations);
+        } else {
+          addObservationsAfterParamsDetermined(observations, validity);
+        }
+      }
+      vectorOfMultiVariateObservationTimeSeries = null; // No longer required
+      vectorOfValidityOfObservations = null;
+      
+      // TODO do we need to throw an exception if there are no observations to add?
       miCalc.finaliseAddObservations();
+
     }
   }
 
@@ -233,19 +274,25 @@ public class ActiveInfoStorageCalculatorMultiVariateViaMutualInfo
 	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#addObservations(double[])
 	 */
   public void addObservations(double[][] observations) throws Exception {
-		if (observations.length <= timeForFirstEmbedding + 1) {
-			// There are no observations to add here, the time series is too short
-			// Don't throw an exception, do nothing since more observations
-			//  can be added later.
-			return;
-		}
 
-    double[][] past = MatrixUtils.makeDelayEmbeddingVector(observations,
-        k, tau, tau*(k-1), observations.length - (k-1)*tau - 1);
-    double[][] next = MatrixUtils.makeDelayEmbeddingVector(observations,
-        1, (k-1)*tau + 1, observations.length - (k-1)*tau - 1);
+		// Store these observations in our vector for now
+		vectorOfMultiVariateObservationTimeSeries.add(observations);
+		vectorOfValidityOfObservations.add(null); // All observations were valid
 
-    miCalc.addObservations(past, next);
+
+		// if (observations.length <= timeForFirstEmbedding + 1) {
+		// 	// There are no observations to add here, the time series is too short
+		// 	// Don't throw an exception, do nothing since more observations
+		// 	//  can be added later.
+		// 	return;
+		// }
+
+    // double[][] past = MatrixUtils.makeDelayEmbeddingVector(observations,
+    //     k, tau, tau*(k-1), observations.length - (k-1)*tau - 1);
+    // double[][] next = MatrixUtils.makeDelayEmbeddingVector(observations,
+    //     1, (k-1)*tau + 1, observations.length - (k-1)*tau - 1);
+
+    // miCalc.addObservations(past, next);
   }
 
 	/* (non-Javadoc)
@@ -291,6 +338,51 @@ public class ActiveInfoStorageCalculatorMultiVariateViaMutualInfo
 
     super.setObservations(observations, valid);
 	}
+
+  /**
+   * TODO: docs
+   */
+	public void setObservations(double[][] observations, boolean[] valid)
+			throws Exception {
+		startAddObservations();
+		// Add these observations and the indication of their validity
+		vectorOfMultiVariateObservationTimeSeries.add(observations);
+		vectorOfValidityOfObservations.add(valid);
+		finaliseAddObservations();
+	}
+
+  /**
+   * TODO: docs
+   */
+	protected void addObservationsAfterParamsDetermined(double[][] observations) throws Exception {
+		if (observations.length - (k-1)*tau - 1 <= 0) {
+			// There are no observations to add here
+			// Don't throw an exception, do nothing since more observations
+			//  can be added later.
+			return;
+		}
+		double[][] currentDestPastVectors = 
+				MatrixUtils.makeDelayEmbeddingVector(observations, k, tau, (k-1)*tau, observations.length - (k-1)*tau - 1);
+		double[][] currentDestNextVectors =
+				MatrixUtils.makeDelayEmbeddingVector(observations, 1, (k-1)*tau + 1, observations.length - (k-1)*tau - 1);
+		miCalc.addObservations(currentDestPastVectors, currentDestNextVectors);
+	}
+
+  /**
+   * TODO: docs
+   */
+	protected void addObservationsAfterParamsDetermined(double[][] observations, boolean[] valid) throws Exception {
+		
+		// compute the start and end times using our determined embedding parameters:
+		Vector<int[]> startAndEndTimePairs = computeStartAndEndTimePairs(valid);
+		
+		for (int[] timePair : startAndEndTimePairs) {
+			int startTime = timePair[0];
+			int endTime = timePair[1];
+			addObservationsAfterParamsDetermined(MatrixUtils.selectRows(observations, startTime, endTime - startTime + 1));
+		}
+	}
+
 
 	/**
 	 * <p>Computes the local values of the active information storage
