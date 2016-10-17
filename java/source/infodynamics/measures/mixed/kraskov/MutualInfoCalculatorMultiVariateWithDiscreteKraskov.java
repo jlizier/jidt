@@ -41,6 +41,20 @@ import infodynamics.utils.RandomGenerator;
  * {@link MutualInfoCalculatorMultiVariate}
  * </p>
  * 
+ * <p>This calculator effectively implements the nearest neighbour method
+ * laid out <a href="http://journals.plos.org/plosone/article?id=10.1371%2Fjournal.pone.0087357">here</a>
+ * (see Ross reference below),
+ * but we have subtract out the sample point from the count in the discrete space,
+ * following the original KSG method.
+ * </p>
+ * 
+ * <p><b>References:</b><br/>
+ * <ul>
+ * 	<li> B.C. Ross, "Mutual Information between Discrete and Continuous Data Sets",
+ * 	PLoS ONE 9(2): e87357. doi:
+ * <a href="http://journals.plos.org/plosone/article?id=10.1371%2Fjournal.pone.0087357">10.1371/journal.pone.0087357</a></li>
+ * </ul>
+ * 
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
@@ -571,8 +585,11 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 					continuousNewStates, means, stds);
 		}
 		
-		int N = continuousNewStates.length; // number of observations
-		double[] locals = new double[N];
+		// Thanks to Rosalind Wang for picking up the bug in not using two different N's here
+		int N_newObservations = continuousNewStates.length; // number of new observations we're evaluating
+		int N_samplesForPdfs = continuousData.length; // number of observations we're using to compute the PDFs
+		
+		double[] locals = new double[N_newObservations];
 		
 		// Don't need the 1/k correction here because the conditional entropy term
 		//  is taken over the continuous space only. The correction is (m-1)/k
@@ -580,16 +597,16 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		// double fixedPartOfLocals = MathsUtils.digamma(k) - 1.0/(double)k +
 		//							MathsUtils.digamma(N);
 		// Instead do:
-		double fixedPartOfLocals = MathsUtils.digamma(k) + MathsUtils.digamma(N);
+		double fixedPartOfLocals = MathsUtils.digamma(k) + MathsUtils.digamma(N_samplesForPdfs); // Use N_samplesForPdfs here because that's what would be in denominator of probability functions
 		double testSum = 0.0;
 		if (debug) {
 			System.out.printf("digamma(k)=%.3f + digamma(N)=%.3f\n",
-					MathsUtils.digamma(k), MathsUtils.digamma(N));
+					MathsUtils.digamma(k), MathsUtils.digamma(N_samplesForPdfs));
 		}
 		double avNx = 0;
 		double avNy = 0;
 		
-		for (int t = 0; t < N; t++) {
+		for (int t = 0; t < N_newObservations; t++) {
 			// Compute eps_x and eps_y for this time step:
 			//  First get x norms to all points in the previously
 			//   given observations.
@@ -629,8 +646,8 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 			}
 		}
 		if (debug) {
-			avNx /= (double)N;
-			avNy /= (double)N;
+			avNx /= (double)N_newObservations;
+			avNy /= (double)N_newObservations;
 			System.out.printf("Average n_x=%.3f, Average n_y=%.3f\n", avNx, avNy);
 		}
 		
