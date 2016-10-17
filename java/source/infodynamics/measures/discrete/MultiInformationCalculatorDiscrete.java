@@ -91,8 +91,29 @@ public class MultiInformationCalculatorDiscrete extends InfoMeasureCalculatorDis
 		MatrixUtils.fill(marginalCounts, 0);
 	}
 	
-	// TODO Define just a simple addObservations for 
-	//  int[][] states where there are just numVars variables
+	/**
+	 * Given multiple time samples of a homogeneous array of variables (states),
+	 * add the observations of all sets of numVars of these
+	 * Do this for every time point
+	 *  
+	 * @param states 2D array of values of an array of variables
+	 *  at many observations (first index is time, second is variable index)
+	 */
+	public void addObservations(int[][] states) {
+		for (int t = 0; t < states.length; t++) {
+			// Add the marginal observations in, and compute the joint state value
+			//  for this sample at time t
+			int jointValue = 0;
+			for (int i = 0; i < numVars; i++) {
+				int thisValue = states[t][i];
+				marginalCounts[i][thisValue]++;
+				jointValue *= base;
+				jointValue += thisValue;
+			}
+			jointCount[jointValue]++;
+			observations++;
+		}
+	}
 	
 	/**
 	 * Given one time sample of a homogeneous array of variables (states),
