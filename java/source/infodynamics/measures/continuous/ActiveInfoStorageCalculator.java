@@ -232,6 +232,22 @@ public interface ActiveInfoStorageCalculator {
 			boolean[] valid) throws Exception;
 
 	/**
+	 * Add more time-series for the computation of the PDF,
+	 *  subject to the validity of each sample in that series.
+	 * The array observations must not be over-written by the user
+	 *  until after finaliseAddObservations() has been called.
+	 *  
+	 * @param observations time-series array of (univariate) samples,
+	 *  where the array index is time.
+	 * @param valid a time series (with indices the same as observations)
+	 *  indicating whether the entry in observations at that index is valid; 
+	 *  we only take vectors as samples to add to the observation set where
+	 *  all points in the time series (even between points in 
+	 *  the embedded k-vector with embedding delays) are valid.
+	 */
+	public void addObservations(double[] observations, boolean[] valid) throws Exception;
+
+	/**
 	 * Compute the AIS from the previously-supplied samples.
 	 * 
 	 * @return the AIS estimate
@@ -377,4 +393,5 @@ public interface ActiveInfoStorageCalculator {
 	 * @throws Exception
 	 */
 	public int getNumObservations() throws Exception;
+
 }

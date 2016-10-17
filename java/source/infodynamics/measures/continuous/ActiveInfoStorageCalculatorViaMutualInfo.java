@@ -268,6 +268,16 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 		vectorOfObservationTimeSeries.add(observations);
 		vectorOfValidityOfObservations.add(null); // All observations were valid
 	}
+	
+	/* (non-Javadoc)
+	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#addObservations(double[])
+	 */
+	@Override
+	public void addObservations(double[] observations, boolean[] valid) throws Exception {
+		// Store these observations in our vector for now
+		vectorOfObservationTimeSeries.add(observations);
+		vectorOfValidityOfObservations.add(valid); // All observations were valid
+	}
 
 	/**
 	 * Protected method to internally parse and submit observations through
