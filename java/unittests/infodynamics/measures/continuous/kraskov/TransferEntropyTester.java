@@ -537,4 +537,70 @@ public class TransferEntropyTester
 		assertEquals(teOptimisedSingleThread, teOptimisedWithValidity, 0.00000001);
 		System.out.println("Answer unchanged by setting validity");
 	}
+	
+	public void testGetSeparateNumObservations() throws Exception {
+		ArrayFileReader afr = new ArrayFileReader("demos/data/SFI-heartRate_breathVol_bloodOx.txt");
+		double[][] data = afr.getDouble2DMatrix();
+		
+		TransferEntropyCalculatorKraskov teCalc = new TransferEntropyCalculatorKraskov();
+		
+		teCalc.initialise();
+		teCalc.startAddObservations();
+		int timeStepsPerCall = 100;
+		int calls = 10;
+		for (int i = 0; i < calls; i++) {
+			// Add more samples
+			teCalc.addObservations(MatrixUtils.selectColumn(data, 0, i*timeStepsPerCall, timeStepsPerCall),
+					MatrixUtils.selectColumn(data, 1, i*timeStepsPerCall, timeStepsPerCall));
+		}
+		teCalc.finaliseAddObservations();
+		@SuppressWarnings("unused")
+		double result = teCalc.computeAverageLocalOfObservations();
+		
+		// Now we want to check how many observations were added at each call:
+		int[] samplesPerCall = teCalc.getSeparateNumObservations();
+		assertEquals(calls, samplesPerCall.length);
+		for (int i = 0; i < calls; i++) {
+			// For k = l = 1, we should have timeStepsPerCall - 1 samples per addObservations() call: 
+			assertEquals(timeStepsPerCall - 1, samplesPerCall[i]);
+		}
+		
+		// =====================
+		// Now run it again with different k and l and embedding lags, etc:
+		teCalc.initialise();
+		teCalc.startAddObservations();
+		// auto embed destination only
+		teCalc.setProperty(TransferEntropyCalculatorKraskov.PROP_AUTO_EMBED_METHOD,
+				TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY);
+		teCalc.setProperty(TransferEntropyCalculatorKraskov.PROP_K_SEARCH_MAX, "5");
+		teCalc.setProperty(TransferEntropyCalculatorKraskov.PROP_TAU_SEARCH_MAX, "5");
+		// Explicitly set the source embedding params
+		teCalc.setProperty(TransferEntropyCalculatorKraskov.L_PROP_NAME, "1");
+		teCalc.setProperty(TransferEntropyCalculatorKraskov.L_TAU_PROP_NAME, "1");
+		int[] timeStepsPerCallArray = new int[] {100, 200, 150, 300, 99, 54};
+		int startTime = 0;
+		for (int i = 0; i < timeStepsPerCallArray.length; i++) {
+			// Add more samples
+			teCalc.addObservations(MatrixUtils.selectColumn(data, 0, startTime, timeStepsPerCallArray[i]),
+					MatrixUtils.selectColumn(data, 1, startTime, timeStepsPerCallArray[i]));
+			startTime += timeStepsPerCallArray[i];
+		}
+		teCalc.finaliseAddObservations();
+		result = teCalc.computeAverageLocalOfObservations();
+		int optimisedK = Integer.parseInt(teCalc.getProperty(TransferEntropyCalculatorKraskov.K_PROP_NAME));
+		int optimisedKTau = Integer.parseInt(teCalc.getProperty(TransferEntropyCalculatorKraskov.K_TAU_PROP_NAME));
+		int timeOfFirstObservationPerSet = (optimisedK - 1)*optimisedKTau + 1;
+		System.out.printf("In testing tracking of observations per addObservations() call" +
+				" we have auto-embedding dimension %d and lag %d, timeOfFirstObservationPerSet %d\n",
+				optimisedK, optimisedKTau, timeOfFirstObservationPerSet);
+		
+		// Now we want to check how many observations were added at each call:
+		samplesPerCall = teCalc.getSeparateNumObservations();
+		assertEquals(timeStepsPerCallArray.length, samplesPerCall.length);
+		for (int i = 0; i < timeStepsPerCallArray.length; i++) {
+			// For timeOfFirstObservationPerSet, we should have timeStepsPerCall - timeOfFirstObservationPerSet
+			//  samples per addObservations() call: 
+			assertEquals(timeStepsPerCallArray[i] - timeOfFirstObservationPerSet, samplesPerCall[i]);
+		}
+	}
 }
