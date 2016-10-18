@@ -134,6 +134,39 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	public static final String PROP_NORMALISE = "NORMALISE";
 	protected boolean normalise = true;
 
+	/**
+	 * Cache for the means of each dimension in variable 1, in case we need to normalise 
+	 *  new observations later
+	 */
+	protected double[] var1Means = null;
+	/**
+	 * Cache for the standard deviations of each dimension in variable 1, in case we need to normalise 
+	 *  new observations later
+	 */
+	protected double[] var1Stds = null;
+	/**
+	 * Cache for the means of each dimension in variable 2, in case we need to normalise 
+	 *  new observations later
+	 */
+	protected double[] var2Means = null;
+	/**
+	 * Cache for the standard deviations of each dimension in variable 2, in case we need to normalise 
+	 *  new observations later
+	 */
+	protected double[] var2Stds = null;
+	/**
+	 * Cache for the means of each dimension in conditional variable, in case we need to normalise 
+	 *  new observations later
+	 */
+	protected double[] condMeans = null;
+	/**
+	 * Cache for the standard deviations of each dimension in conditional variable, in case we need to normalise 
+	 *  new observations later
+	 */
+	protected double[] condStds = null;
+
+	
+	
 	@Override
 	public void initialise(int var1Dimensions, int var2Dimensions, int condDimensions) {
 		dimensionsVar1 = var1Dimensions;
@@ -146,6 +179,12 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		var2Observations = null;
 		condObservations = null;
 		addedMoreThanOneObservationSet = false;
+		var1Means = null;
+		var1Stds = null;
+		var2Means = null;
+		var2Stds = null;
+		condMeans = null;
+		condStds = null;
 	}
 
 	/**
@@ -159,7 +198,8 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	 *  	<li>{@link #PROP_NORMALISE} - whether to normalise the individual
 	 *      variables to mean 0, standard deviation 1
 	 *      (true by default, except for child class
-	 *      {@link infodynamics.measures.continuous.gaussian.ConditionalMutualInfoCalculatorMultiVariateGaussian})</li>
+	 *      {@link infodynamics.measures.continuous.gaussian.ConditionalMutualInfoCalculatorMultiVariateGaussian}
+	 *      for which this property is false and cannot be altered)</li>
 	 * </ul>
 	 * 
 	 * <p>Unknown property values are ignored.</p>
@@ -208,7 +248,8 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 			// startAddObservations was not called first
 			throw new RuntimeException("User did not call startAddObservations before addObservations");
 		}
-		if ((var1.length != var2.length) || (var1.length != cond.length)) {
+		if ((var1.length != var2.length) ||
+				((dimensionsCond != 0) && (var1.length != cond.length))) {
 			throw new Exception(String.format("Observation vector lengths (%d, %d and %d) must match!",
 					var1.length, var2.length, cond.length));
 		}
@@ -220,7 +261,7 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 			throw new Exception("Number of joint variables in var2 data " +
 					"does not match the initialised value");
 		}
-		if (cond[0].length != dimensionsCond) {
+		if ((dimensionsCond != 0) && (cond[0].length != dimensionsCond)) {
 			throw new Exception("Number of joint variables in cond data " +
 					"does not match the initialised value");
 		}
@@ -244,8 +285,11 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		System.arraycopy(var1, startTime, var1ToAdd, 0, numTimeSteps);
 		double[][] var2ToAdd = new double[numTimeSteps][];
 		System.arraycopy(var2, startTime, var2ToAdd, 0, numTimeSteps);
-		double[][] condToAdd = new double[numTimeSteps][];
-		System.arraycopy(cond, startTime, condToAdd, 0, numTimeSteps);
+		double[][] condToAdd = null;
+		if (dimensionsCond != 0) {
+			condToAdd = new double[numTimeSteps][];
+			System.arraycopy(cond, startTime, condToAdd, 0, numTimeSteps);
+		}
 		addObservations(var1ToAdd, var2ToAdd, condToAdd);
 	}
 
@@ -317,17 +361,27 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 			MatrixUtils.arrayCopy(var2, 0, 0,
 					var2Observations, startObservation, 0,
 					var2.length, dimensionsVar2);
-			MatrixUtils.arrayCopy(cond, 0, 0,
+			if (dimensionsCond != 0) {
+				MatrixUtils.arrayCopy(cond, 0, 0,
 					condObservations, startObservation, 0,
 					cond.length, dimensionsCond);
+			} // else we can do nothing there
 			startObservation += var2.length;
 		}
 		
 		// Normalise the data if required
 		if (normalise) {
-			MatrixUtils.normalise(var1Observations);
-			MatrixUtils.normalise(var2Observations);
-			MatrixUtils.normalise(condObservations);
+			var1Means = MatrixUtils.means(var1Observations);
+			var1Stds = MatrixUtils.stdDevs(var1Observations, var1Means);
+			MatrixUtils.normalise(var1Observations, var1Means, var1Stds);
+			var2Means = MatrixUtils.means(var2Observations);
+			var2Stds = MatrixUtils.stdDevs(var2Observations, var2Means);
+			MatrixUtils.normalise(var2Observations, var2Means, var2Stds);
+			if (dimensionsCond != 0) {
+				condMeans = MatrixUtils.means(condObservations);
+				condStds = MatrixUtils.stdDevs(condObservations, condMeans);
+				MatrixUtils.normalise(condObservations, condMeans, condStds);
+			}
 		}
 		
 		// We don't need to keep the vectors of observation sets anymore:

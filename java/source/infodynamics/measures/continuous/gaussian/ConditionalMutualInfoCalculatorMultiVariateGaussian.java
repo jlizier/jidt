@@ -158,6 +158,22 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 		var2IndicesInCovariance = null;
 	}
 
+	@Override
+	public void setProperty(String propertyName, String propertyValue) {
+		if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
+			// We do not allow the user to alter this property away from false,
+			//  otherwise we would need to alter the functionality of the 
+			//  local calculations, etc.
+			return;
+		}
+		super.setProperty(propertyName, propertyValue);
+	}
+
+	@Override
+	protected Object clone() throws CloneNotSupportedException {
+		return super.clone();
+	}
+
 	/**
 	 * @throws Exception if the observation variables are not linearly independent
 	 *  (leading to a non-positive definite covariance matrix).
