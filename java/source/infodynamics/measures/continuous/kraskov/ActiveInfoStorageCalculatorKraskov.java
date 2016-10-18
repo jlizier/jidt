@@ -46,8 +46,10 @@ import infodynamics.utils.MatrixUtils;
  *      (except {@link MutualInfoCalculatorMultiVariate#PROP_TIME_DIFF} as outlined
  *      in {@link ActiveInfoStorageCalculatorViaMutualInfo#setProperty(String, String)}).
  *      Embedding parameters may be automatically determined as per the Ragwitz criteria
- *      by setting the property {@link #PROP_AUTO_EMBED_METHOD} to {@link #AUTO_EMBED_METHOD_RAGWITZ}
- *      (plus additional parameter settings for this).</li>
+ *      by setting the property {@link #PROP_AUTO_EMBED_METHOD} to {@link #AUTO_EMBED_METHOD_RAGWITZ},
+ *      or as per the max. bias-corrected AIS criteria by 
+ *      setting the property {@link #PROP_AUTO_EMBED_METHOD} to {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS}
+ *      (plus additional parameter settings for these).</li>
  *  <li>Computed values are in <b>nats</b>, not bits!</li>
  *  </ul>
  * </p>
@@ -60,6 +62,9 @@ import infodynamics.utils.MatrixUtils;
  * 		Information Sciences, vol. 208, pp. 39-54, 2012.</li>
  * 	<li>Ragwitz and Kantz, "Markov models from data by simple nonlinear time series
  *  	predictors in delay embedding spaces", Physical Review E, vol 65, 056201 (2002).</li>
+ *  <li>J. Garland, R. G. James, E. Bradley, <a href="http://dx.doi.org/10.1103/physreve.93.022221">
+ *  	"Leveraging information storage to select forecast-optimal parameters for delay-coordinate reconstructions"</a>,
+ *  	Physical Review E, Vol. 93 (2016), 022221, doi:</li>
  * </ul>
  * 
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
@@ -82,7 +87,9 @@ public class ActiveInfoStorageCalculatorKraskov
 	public static final String MI_CALCULATOR_KRASKOV2 = MutualInfoCalculatorMultiVariateKraskov2.class.getName();
 	
 	/**
-	 * Property name for the auto-embedding method. Defaults to {@link #AUTO_EMBED_METHOD_NONE}
+	 * Property name for the auto-embedding method. Defaults to {@link #AUTO_EMBED_METHOD_NONE}.
+	 * Other valid values are {@link #AUTO_EMBED_METHOD_RAGWITZ} or
+	 * {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS}
 	 */
 	public static final String PROP_AUTO_EMBED_METHOD = "AUTO_EMBED_METHOD";
 	/**
@@ -95,6 +102,12 @@ public class ActiveInfoStorageCalculatorKraskov
 	 *  the Ragwitz optimisation technique should be used for automatic embedding
 	 */
 	public static final String AUTO_EMBED_METHOD_RAGWITZ = "RAGWITZ";
+	/**
+	 * Valid value for the property {@link #PROP_AUTO_EMBED_METHOD} indicating that
+	 *  the automatic embedding should be done by maximising the bias corrected
+	 *  AIS (as per Garland et al. in the references above).
+	 */
+	public static final String AUTO_EMBED_METHOD_MAX_CORR_AIS = "MAX_CORR_AIS";
 	/**
 	 * Internal variable tracking what type of auto embedding (if any)
 	 *  we are using
@@ -201,8 +214,10 @@ public class ActiveInfoStorageCalculatorKraskov
 	 * 		automatically determines the embedding history length ({@link #K_PROP_NAME})
 	 * 		and embedding delay ({@link #TAU_PROP_NAME}). Default is {@link #AUTO_EMBED_METHOD_NONE} meaning
 	 * 		values are set manually; other accepted values include: {@link #AUTO_EMBED_METHOD_RAGWITZ} for use
-	 * 		of the Ragwitz criteria (searching up to {@link #PROP_K_SEARCH_MAX} and 
-	 * 		{@link #PROP_TAU_SEARCH_MAX}). Use of any value other than {@link #AUTO_EMBED_METHOD_NONE}
+	 * 		of the Ragwitz criteria and {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS} for using
+	 * 		the maz bias-corrected AIS criteria (both searching up to {@link #PROP_K_SEARCH_MAX} and 
+	 * 		{@link #PROP_TAU_SEARCH_MAX}, as outlined by Garland et al. in the references list above).
+	 * 		Use of any value other than {@link #AUTO_EMBED_METHOD_NONE}
 	 * 		will lead to any previous settings for k and tau (via e.g. {@link #initialise(int, int)} or
 	 * 		auto-embedding during previous calculations) will be overwritten after observations
 	 * 		are supplied.</li>
@@ -297,11 +312,13 @@ public class ActiveInfoStorageCalculatorKraskov
 		}
 		// Else we need to auto embed
 		
-		double bestPredictionError = Double.POSITIVE_INFINITY;
+		// TODO Should make sure the rest of the code could handle k=0
+		//  as default if nothing can improve on this
 		int k_candidate_best = 1;
 		int tau_candidate_best = 1;
 		
 		if (autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_RAGWITZ)) {
+			double bestPredictionError = Double.POSITIVE_INFINITY;
 			if (debug) {
 				System.out.printf("Beginning Ragwitz auto-embedding with k_max=%d, tau_max=%d\n",
 						k_search_max, tau_search_max);
@@ -358,13 +375,61 @@ public class ActiveInfoStorageCalculatorKraskov
 					}
 				}
 			}
+		} else if (autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_MAX_CORR_AIS)) {
+			double bestAIS = Double.NEGATIVE_INFINITY;
+			if (debug) {
+				System.out.printf("Beginning max bias corrected AIS auto-embedding with k_max=%d, tau_max=%d\n",
+						k_search_max, tau_search_max);
+			}
+			
+			for (int k_candidate = 1; k_candidate <= k_search_max; k_candidate++) {
+				for (int tau_candidate = 1; tau_candidate <= tau_search_max; tau_candidate++) {
+					// Use our internal MI calculator in case it has any particular 
+					//  properties we need to have been set already
+					miCalc.initialise(k_candidate, 1);
+					miCalc.startAddObservations();
+					// Send all of the observations through:
+					for (double[] observations : vectorOfObservationTimeSeries) {
+						double[][] currentDestPastVectors = 
+								MatrixUtils.makeDelayEmbeddingVector(observations, k_candidate,
+										tau_candidate, (k_candidate-1)*tau_candidate,
+										observations.length - (k_candidate-1)*tau_candidate - 1);
+						double[][] currentDestNextVectors =
+								MatrixUtils.makeDelayEmbeddingVector(observations, 1,
+										(k_candidate-1)*tau_candidate + 1,
+										observations.length - (k_candidate-1)*tau_candidate - 1);
+						miCalc.addObservations(currentDestPastVectors, currentDestNextVectors);
+					}
+					miCalc.finaliseAddObservations();
+					// Now grab the AIS estimate here -- it's already bias corrected for 
+					double thisAIS = miCalc.computeAverageLocalOfObservations();
+					if (debug) {
+						System.out.printf("AIS for k=%d,tau=%d is %.3f\n",
+								k_candidate, tau_candidate, thisAIS);
+					}
+					if (thisAIS > bestAIS) {
+						// This parameter setting is the best so far:
+						bestAIS = thisAIS;
+						k_candidate_best = k_candidate;
+						tau_candidate_best = tau_candidate;
+					}
+					if (k_candidate == 1) {
+						// tau is irrelevant, so no point testing other values
+						break;
+					}
+				}
+			}
+		} else {
+			throw new RuntimeException("Unexpected value " + autoEmbeddingMethod +
+					" for property " + PROP_AUTO_EMBED_METHOD);
 		}
+
 		// Make sure the embedding length and delay are set here
 		k = k_candidate_best;
 		tau = tau_candidate_best;
 		if (debug) {
-			System.out.printf("Embedding parameters set to k=%d,tau=%d (for prediction error %.3f)\n",
-				k, tau, bestPredictionError);
+			System.out.printf("Embedding parameters set to k=%d,tau=%d\n",
+				k, tau);
 		}
 	}
 	
