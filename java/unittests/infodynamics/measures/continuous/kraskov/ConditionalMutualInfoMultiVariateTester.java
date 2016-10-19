@@ -18,8 +18,13 @@
 
 package infodynamics.measures.continuous.kraskov;
 
+import java.util.Calendar;
+
 import infodynamics.utils.ArrayFileReader;
+import infodynamics.utils.EmpiricalMeasurementDistribution;
+import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
+import infodynamics.utils.RandomGenerator;
 
 public class ConditionalMutualInfoMultiVariateTester
 	extends infodynamics.measures.continuous.ConditionalMutualInfoMultiVariateAbstractTester {
@@ -423,7 +428,109 @@ public class ConditionalMutualInfoMultiVariateTester
 				1, 1,
 				kNNs, expectedFromTRENTOOL);		
 	}
-	
+
+	/**
+	 * Unit test for conditional MI on new observations.
+	 * We can test this against the calculator itself. If we send in the original data set as new observations,
+	 *  we can recreate the neighbour counts (plus one) by setting K to 1 larger (to account for the data point itself), and
+	 *  account for the change in bias. 
+	 * 
+	 * @throws Exception
+	 */
+	public void testMultivariateCondMIForNewObservations() throws Exception {
+		
+		ArrayFileReader afr = new ArrayFileReader("demos/data/4ColsPairedOneStepNoisyDependence-1.txt");
+		double[][] data = afr.getDouble2DMatrix();
+		// RandomGenerator rg = new RandomGenerator();
+		//double[][] data = rg.generateNormalData(50, 4, 0, 1);
+
+		// Use various Kraskov k nearest neighbours parameter
+		int[] kNNs = {4};
+		
+		System.out.println("Kraskov Cond MI testing new Observations:");
+		
+		for (int ki = 0; ki < kNNs.length; ki++) {
+			ConditionalMutualInfoCalculatorMultiVariateKraskov condMiCalc = getNewCalc(1);
+			ConditionalMutualInfoCalculatorMultiVariateKraskov condMiCalcForNew = getNewCalc(1);
+			// Let it normalise by default
+			// And no noise addition to protect the integrity of our neighbour counts under both techniques here:
+			condMiCalc.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "0");
+			condMiCalcForNew.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "0");
+			double[][] var1 = MatrixUtils.selectColumns(data, new int[] {0});
+			double[][] var2 = MatrixUtils.selectColumns(data, new int[] {1});
+			double[][] condVar = MatrixUtils.selectColumns(data, new int[] {2, 3});
+			
+			// Compute MI(0;1|2,3) :
+			condMiCalc.setProperty(
+					ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_K,
+					Integer.toString(kNNs[ki]));
+			System.out.println("Main calc normalisation is " + condMiCalc.getProperty(condMiCalc.PROP_NORMALISE));
+			condMiCalc.initialise(var1[0].length, var2[0].length, condVar[0].length);
+			condMiCalc.setObservations(var1, var2, condVar);
+			double miAverage = condMiCalc.computeAverageLocalOfObservations();
+			// Now compute as new observations:
+			condMiCalcForNew.setProperty(
+					ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_K,
+					Integer.toString(kNNs[ki] + 1)); // Using K = K + 1
+			// condMiCalcForNew.setProperty(
+			//		ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS,
+			//		"1");
+			System.out.println("New obs calc normalisation is " + condMiCalcForNew.getProperty(condMiCalc.PROP_NORMALISE));
+			condMiCalcForNew.initialise(var1[0].length, var2[0].length, condVar[0].length);
+			condMiCalcForNew.setObservations(var1, var2, condVar);
+			// condMiCalc.setDebug(true);
+			//condMiCalcForNew.setDebug(true);
+			double[] newLocals = condMiCalcForNew.computeLocalUsingPreviousObservations(var1, var2, condVar);
+			//condMiCalcForNew.setDebug(false);
+			double averageFromNewObservations = MatrixUtils.mean(newLocals);
+			// We can't check this directly, so test each point individually:
+			for (int t = 0; t < data.length; t++) {
+				double[] originalNeighbourCounts = condMiCalc.partialComputeFromObservations(t, 1, false);
+				// Need to normalise the data before passing it in here -- this is
+				//  what is happening inside computeLocalUsingPreviousObservations above
+				double[] newObsNeighbourCounts = condMiCalcForNew.partialComputeFromNewObservations(
+						t, 1,
+						MatrixUtils.normaliseIntoNewArray(var1),
+						MatrixUtils.normaliseIntoNewArray(var2),
+						MatrixUtils.normaliseIntoNewArray(condVar), false);
+				// Now check each return count in the array:
+				if (originalNeighbourCounts[1] != newObsNeighbourCounts[1] - 1) {
+					System.out.println("Assertion failure for t=" + t + ": expected " + originalNeighbourCounts[1] +
+							" from original, plus 1, but got " + newObsNeighbourCounts[1]);
+					System.out.print("Actual raw data was: ");
+					MatrixUtils.printArray(System.out, data[0]);
+				}
+				assertEquals(originalNeighbourCounts[1], newObsNeighbourCounts[1] - 1); // Nxz should be 1 higher
+				assertEquals(originalNeighbourCounts[2], newObsNeighbourCounts[2] - 1); // Nyz should be 1 higher
+				assertEquals(originalNeighbourCounts[3], newObsNeighbourCounts[3] - 1); // Nz should be 1 higher
+				// Now check the local value at each point using these verified counts:
+				double newLocalValue = condMiCalcForNew.digammaK -
+						MathsUtils.digamma((int) newObsNeighbourCounts[1] + 1) -
+						MathsUtils.digamma((int) newObsNeighbourCounts[2] + 1) +
+						MathsUtils.digamma((int) newObsNeighbourCounts[3] + 1);
+				/* System.out.printf("n=%d, n_xz=%d, n_yz=%d, n_z=%d, local=%.4f," +
+						" digamma(n_xz+1)=%.5f, digamma(n_yz+1)=%.5f, digamma(n_z+1)=%.5f, \n",
+						t, (int) newObsNeighbourCounts[1], (int) newObsNeighbourCounts[2],
+						(int) newObsNeighbourCounts[3], newLocalValue,
+						MathsUtils.digamma((int) newObsNeighbourCounts[1] + 1), 
+						MathsUtils.digamma((int) newObsNeighbourCounts[2] + 1),
+						MathsUtils.digamma((int) newObsNeighbourCounts[3] + 1)); */
+				if (Math.abs(newLocalValue - newLocals[t]) > 0.00000001) {
+					System.out.printf("t=%d: Assertion failed: computed local was %.5f, local from nn counts was %.5f\n",
+							t, newLocals[t], newLocalValue);
+				}
+				assertEquals(newLocalValue, newLocals[t], 0.00000001);
+			}
+			
+			// And check that the two methods are equivalent, after correcting for the different K biases:
+			// CAN'T EXPECT THIS TO WORK though, because different neighbour counts (by one in each case) puts
+			//  different inputs to the digamma functions, and we have no way to check that for the average here;
+			//  Our above checks on the counts for each point suffice though.
+			// assertEquals(miAverage, averageFromNewObservations - MathsUtils.digamma(kNNs[ki]+1) + MathsUtils.digamma(kNNs[ki]),
+			//		0.00000001);
+		}
+	}
+
 	/**
 	 * Test the computed univariate TE as a conditional MI
 	 * using various numbers of threads.
@@ -501,5 +608,134 @@ public class ConditionalMutualInfoMultiVariateTester
 						0, 501),
 				kNNs, expectedValue);
 		NUM_THREADS_TO_USE = NUM_THREADS_TO_USE_DEFAULT;
+	}
+	
+	/**
+	 * Test the conditional MI without any conditionals
+	 * against the MI calculated by Kraskov's own MILCA
+	 * tool on the same data.
+	 * 
+	 * To run Kraskov's tool (http://www.klab.caltech.edu/~kraskov/MILCA/) for this 
+	 * data, run:
+	 * ./MIxnyn <dataFile> 1 1 3000 <kNearestNeighbours> 0
+	 * 
+	 * @throws Exception if file not found 
+	 * 
+	 */
+	public void testNoConditionalsIsMIforRandomVariablesFromFile() throws Exception {
+		
+		// Test set 1:
+		
+		ArrayFileReader afr = new ArrayFileReader("demos/data/2randomCols-1.txt");
+		double[][] data = afr.getDouble2DMatrix();
+		
+		// Use various Kraskov k nearest neighbours parameter
+		int[] kNNs = {1, 2, 3, 4, 5, 6, 10, 15};
+		// Expected values from Kraskov's MILCA toolkit:
+		double[] expectedFromMILCA = {-0.05294175, -0.03944338, -0.02190217,
+				0.00120807, -0.00924771, -0.00316402, -0.00778205, -0.00565778};
+		
+		System.out.println("Kraskov comparison 1 - univariate random data 1 --");
+		// Check for algorithm 1 first (no expected results from MILCA included):
+		System.out.println("Algorithm 1:");
+		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0}),
+				MatrixUtils.selectColumns(data, new int[] {1}),
+				kNNs, null);
+		// then check for algorithm 2 with expected results from MILCA
+		System.out.println("Algorithm 2:");
+		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0}),
+				MatrixUtils.selectColumns(data, new int[] {1}),
+				kNNs, expectedFromMILCA);
+		
+		//------------------
+		// Test set 2:
+		
+		// We'll just take the first two columns from this data set
+		afr = new ArrayFileReader("demos/data/4randomCols-1.txt");
+		data = afr.getDouble2DMatrix();
+		
+		// Expected values from Kraskov's MILCA toolkit:
+		double[] expectedFromMILCA_2 = {-0.04614525, -0.00861460, -0.00164540,
+				-0.01130354, -0.01339670, -0.00964035, -0.00237072, -0.00096891};
+		
+		System.out.println("Kraskov comparison 2 - univariate random data 2 --");
+		// Check for algorithm 1 first (no expected results from MILCA included):
+		System.out.println("Algorithm 1:");
+		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0}),
+				MatrixUtils.selectColumns(data, new int[] {1}),
+				kNNs, null);
+		// then check for algorithm 2 with expected results from MILCA
+		System.out.println("Algorithm 2:");
+		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0}),
+				MatrixUtils.selectColumns(data, new int[] {1}),
+				kNNs, expectedFromMILCA_2);
+
+	}
+
+	/**
+	 * Utility function to run Kraskov MI for data with known results
+	 * 
+	 * @param var1
+	 * @param var2
+	 * @param kNNs array of Kraskov k nearest neighbours parameter to check
+	 * @param expectedResults array of expected results for each k
+	 */
+	protected void checkMIForGivenData(double[][] var1, double[][] var2,
+			int[] kNNs, double[] expectedResults) throws Exception {
+				
+		// The Kraskov MILCA toolkit MIhigherdim executable 
+		//  uses algorithm 2 by default (this is what it means by rectangular);
+		// These are the only ones we have expected results for
+		ConditionalMutualInfoCalculatorMultiVariateKraskov condMiCalc = getNewCalc(expectedResults == null ? 1 : 2);
+		
+		for (int kIndex = 0; kIndex < kNNs.length; kIndex++) {
+			int k = kNNs[kIndex];
+			condMiCalc.setProperty(
+					MutualInfoCalculatorMultiVariateKraskov.PROP_K,
+					Integer.toString(k));
+			condMiCalc.setProperty(
+					MutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS,
+					NUM_THREADS_TO_USE);
+			// No longer need to set this property as it's set by default:
+			//miCalc.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE,
+			//		EuclideanUtils.NORM_MAX_NORM_STRING);
+			condMiCalc.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "0"); // Need consistency for unit tests
+			condMiCalc.initialise(var1[0].length, var2[0].length, 0);
+			condMiCalc.setObservations(var1, var2, null);
+			// condMiCalc.setDebug(true);
+			double mi = condMiCalc.computeAverageLocalOfObservations();
+			// condMiCalc.setDebug(false);
+			
+			// And compute also passing in an array of vectors of length 0
+			condMiCalc.initialise(var1[0].length, var2[0].length, 0);
+			condMiCalc.setObservations(var1, var2, new double[var1.length][]);
+			// condMiCalc.setDebug(true);
+			double miFromEmptyVectors = condMiCalc.computeAverageLocalOfObservations();
+			
+			double expectedMi = 0.0;
+			if (expectedResults == null) {
+				// We don't have expected results from MILCA toolkit for algorithm 1.
+				// In this case, we'll generate our own expectations:
+				MutualInfoCalculatorMultiVariateKraskov1 miCalc = new MutualInfoCalculatorMultiVariateKraskov1();
+				miCalc.setProperty(
+						MutualInfoCalculatorMultiVariateKraskov.PROP_K,
+						Integer.toString(k));
+				miCalc.setProperty(
+						MutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS,
+						NUM_THREADS_TO_USE);
+				miCalc.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "0"); // Need consistency for unit tests
+				miCalc.initialise(var1[0].length, var2[0].length);
+				miCalc.setObservations(var1, var2);
+				expectedMi = miCalc.computeAverageLocalOfObservations();
+			} else {
+				expectedMi = expectedResults[kIndex];
+			}
+			System.out.printf("k=%d: Average MI %.8f (expected %.8f)\n",
+					k, mi, expectedMi);
+			// Dropping required accuracy by one order of magnitude, due
+			//  to faster but slightly less accurate digamma estimator change
+			assertEquals(expectedMi, mi, 0.0000001);
+			assertEquals(expectedMi, miFromEmptyVectors, 0.0000001);
+		}
 	}
 }
