@@ -438,7 +438,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete extends InfoMeasureCal
  	 *  multivariate time series.
  	 *  to our estimates of the pdfs.
  	 * This call should be made as opposed to addObservations(int states[][])
- 	 *  for computing active info for heterogeneous agents.
+ 	 *  for computing conditional TE for heterogeneous agents.
 	 *
 	 * @param states multivariate time series, indexed first by time
 	 *  then by variable number.
@@ -783,7 +783,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete extends InfoMeasureCal
 	}
 	
 	/**
-	 * Computes local active information storage for the given
+	 * Computes local conditional transfer entropy for the given
 	 *  states, using pdfs built up from observations previously
 	 *  sent in via the addObservations method.
 	 * This method is suitable for heterogeneous agents
@@ -871,6 +871,134 @@ public class ConditionalTransferEntropyCalculatorDiscrete extends InfoMeasureCal
 				pastVal -= maxShiftedValue[states[r-k][destCol]];
 				pastVal *= base;
 				pastVal += states[r][destCol];
+			}
+		}
+
+		average = average/(double) (rows - startObservationTime);
+		
+		return localTE;
+	}
+
+	/**
+	 * Computes local conditional transfer entropy for the given
+	 *  samples, using pdfs built up from observations previously
+	 *  sent in via the addObservations method.
+	 *
+ 	 * <p>This method takes in a univariate conditionals time series - it is assumed
+ 	 * that either numOtherInfoContributors == 1 or the user has combined the 
+ 	 * multivariate tuples into a single value for each observation, e.g. by calling
+ 	 * {@link MatrixUtils#computeCombinedValues(int[][], int)}. This cannot be
+ 	 * checked here however, so use at your own risk!
+ 	 * </p>
+	 *
+	 * @param source source time series samples
+	 * @param dest dest time series samples
+	 * @param conditional time series for conditionals
+	 *   (indexed only by time step)
+	 * @return time-series of local conditional TE values
+	 */
+	private double[] computeLocalFromPreviousObservations
+		(int source[], int dest[], int[] conditional){
+
+		int rows = source.length;
+
+		// Allocate for all rows even though we'll leave the first ones as zeros
+		double[] localTE = new double[rows];
+		average = 0;
+		max = 0;
+		min = 0;
+
+		// Initialise and store the current previous value for each column
+		int pastVal = 0; 
+		pastVal = 0;
+		for (int p = 0; p < k; p++) {
+			pastVal *= base;
+			pastVal += dest[p];
+		}
+		int destVal, sourceVal, conditionalVal;
+		double logTerm;
+		for (int r = startObservationTime; r < rows; r++) {
+			destVal = dest[r];
+			sourceVal = source[r-1];
+			conditionalVal = conditional[r-1];
+			// Now compute the local value
+			logTerm = ((double) sourceDestPastOthersCount[sourceVal][destVal][pastVal][conditionalVal] / (double) sourcePastOthersCount[sourceVal][pastVal][conditionalVal]) /
+		 		((double) destPastOthersCount[destVal][pastVal][conditionalVal] / (double) pastOthersCount[pastVal][conditionalVal]);
+			localTE[r] = Math.log(logTerm) / log_2;
+			average += localTE[r];
+			if (localTE[r] > max) {
+				max = localTE[r];
+			} else if (localTE[r] < min) {
+				min = localTE[r];
+			}
+			// Update the previous value:
+			if (k > 0) {
+				pastVal -= maxShiftedValue[dest[r-k]];
+				pastVal *= base;
+				pastVal += dest[r];
+			}
+		}
+
+		average = average/(double) (rows - startObservationTime);
+		
+		return localTE;
+	}
+
+	/**
+	 * Computes local conditional transfer entropy for the given
+	 *  samples, using pdfs built up from observations previously
+	 *  sent in via the addObservations method.
+	 *
+	 * @param source source time series samples
+	 * @param dest dest time series samples
+	 * @param conditionals multivariate time series for conditionals
+	 *   (indexed first by time step then by variable number)
+	 * @return time-series of local conditional TE values
+	 */
+	private double[] computeLocalFromPreviousObservations
+		(int source[], int dest[], int[][] conditionals){
+
+		int rows = source.length;
+
+		// Allocate for all rows even though we'll leave the first ones as zeros
+		double[] localTE = new double[rows];
+		average = 0;
+		max = 0;
+		min = 0;
+
+		// Initialise and store the current previous value for each column
+		int pastVal = 0; 
+		pastVal = 0;
+		for (int p = 0; p < k; p++) {
+			pastVal *= base;
+			pastVal += dest[p];
+		}
+		int destVal, sourceVal, conditionalsVal;
+		double logTerm;
+		for (int r = startObservationTime; r < rows; r++) {
+			destVal = dest[r];
+			sourceVal = source[r-1];
+			conditionalsVal = 0;
+			for (int o = 0; o < conditionals[r-1].length; o++) {
+				// Include this other contributor
+				conditionalsVal *= base;
+				conditionalsVal += conditionals[r-1][o];
+			}
+			// Now compute the local value
+			logTerm = ((double) sourceDestPastOthersCount[sourceVal][destVal][pastVal][conditionalsVal] / (double) sourcePastOthersCount[sourceVal][pastVal][conditionalsVal]) /
+		 		((double) destPastOthersCount[destVal][pastVal][conditionalsVal] / (double) pastOthersCount[pastVal][conditionalsVal]);
+			localTE[r] = Math.log(logTerm) / log_2;
+			average += localTE[r];
+			if (localTE[r] > max) {
+				max = localTE[r];
+			} else if (localTE[r] < min) {
+				min = localTE[r];
+			}
+			// Update the previous value:
+			if (k > 0) {
+				pastVal -= maxShiftedValue[dest[r-k]];
+				pastVal *= base;
+				pastVal += dest[r];
 			}
 		}
 
