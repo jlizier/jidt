@@ -68,16 +68,19 @@ result = teCalc.computeAverageLocalOfObservations()
 print("TE result %.4f nats; expected to be close to %.4f nats for these correlated Gaussians " % \
 	(result, math.log(1.0/(1-math.pow(covariance,2)))))
 
-# And here's how to pull the local TEs out corresponding to each input time series.
-# Normally you would need to track how to split these up yourself -- here
-# it's easy because our input time series are all of the same length
+# And here's how to pull the local TEs out corresponding to each input time
+# series under the ensemble method (i.e. for multiple trials).
 localTEs=teCalc.computeLocalOfPreviousObservations()
-localValuesPerTrial = int(len(localTEs)/numTrials)  # Need to convert to int for indices later
-for trial in range(0,numTrials):
-	startIndex = localValuesPerTrial*trial
-	endIndex = localValuesPerTrial*(trial+1)-1
+localValuesPerTrial = teCalc.getSeparateNumObservations()  # Need to convert to int for indices later
+startIndex = 0
+for localValuesInThisTrial in localValuesPerTrial:
+	endIndex = startIndex + localValuesInThisTrial - 1
 	print("Local TEs for trial %d go from array index %d to %d" % (trial, startIndex, endIndex))
 	print("  corresponding to time points %d:%d (indexed from 0) of that trial" % (kHistoryLength, numObservations-1))
 	# Access the local TEs for this trial as:
 	localTEForThisTrial = localTEs[startIndex:endIndex]
+	# Now update the startIndex before we go to the next trial
+	startIndex = endIndex + 1
+# And make a sanity check that we've looked at all of the local values here:
+print("We've looked at %d local values in total, matching the number of samples we have (%d)" % (startIndex, teCalc.getNumObservations()))
 
