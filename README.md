@@ -1,6 +1,6 @@
 # Java Information Dynamics Toolkit (JIDT)
 
-Copyright (C) 2012-2014 [Joseph T. Lizier](http://lizier.me/joseph/); 2014-2015 [Joseph T. Lizier](http://lizier.me/joseph/) and Ipek Özdemir
+Copyright (C) 2012-2014 [Joseph T. Lizier](http://lizier.me/joseph/); 2014-2016 [Joseph T. Lizier](http://lizier.me/joseph/) and Ipek Özdemir
 
 *JIDT* provides a stand-alone, open-source code Java implementation (also usable in [Matlab, Octave](../../wiki/UseInOctaveMatlab), [Python](../../wiki/UseInPython), [R](../../wiki/UseInR), [Julia](../../wiki/UseInJulia) and [Clojure](../../wiki/UseInClojure)) of information-theoretic measures of distributed computation in complex systems: i.e. information storage, transfer and modification.
 
@@ -15,10 +15,12 @@ JIDT is distributed under the [GNU GPL v3 license](http://www.gnu.org/licenses/g
 # Getting started
 
  1. [Download](../../wiki/Downloads) and [Installation](../../wiki/Installation) is very easy!
-   1. _Quick start_: download the latest [v1.3 full distribution](http://lizier.me/joseph/software/jidt/download.php?file=infodynamics-dist-1.3.zip) (suitable for all platforms) and see the readme.txt file therein.
- 1. [Documentation](../../wiki/Documentation) including: the paper describing JIDT at [arXiv:1408.3270](http://arxiv.org/abs/1408.3270) (distributed with the toolkit), a [Tutorial](../../wiki/Tutorial), and [Javadocs (v1.3 here)](http://lizier.me/joseph/software/jidt/javadocs/v1.3/);
- 1. [Demos](../../wiki/Demos) are included with the full distribution, including a [GUI app](../../wiki/AutoAnalyser) for automatic analysis and code generation, [simple java demos](../../wiki/SimpleJavaExamples) and [cellular automata (CA) demos](../../wiki/CellularAutomataDemos).
+   1. _Quick start_: download the latest [v1.3.1 full distribution](http://lizier.me/joseph/software/jidt/download.php?file=infodynamics-dist-1.3.1.zip) (suitable for all platforms) and see the readme.txt file therein.
+ 1. [Documentation](../../wiki/Documentation) including: the paper describing JIDT at [arXiv:1408.3270](http://arxiv.org/abs/1408.3270) (distributed with the toolkit), a [Tutorial](../../wiki/Tutorial), and [Javadocs (v1.3.1 here)](http://lizier.me/joseph/software/jidt/javadocs/v1.3.1/);
+ 1. [Demos](../../wiki/Demos) are included with the full distribution, including a [GUI app](../../wiki/AutoAnalyser) for automatic analysis and code generation (see picture below), [simple java demos](../../wiki/SimpleJavaExamples) and [cellular automata (CA) demos](../../wiki/CellularAutomataDemos).
   1. These Java tools can easily be used in [Matlab/Octave](../../wiki/OctaveMatlabExamples), [Python](../../wiki/PythonExamples), [R](../../wiki/R_Examples), [Julia](../../wiki/JuliaExamples) and [Clojure](../../wiki/Clojure_Examples)! (click on each language here for examples)
+
+![Computing in the GUI app image](https://raw.githubusercontent.com/jlizier/jidt/master/web/AutoAnalyserGUI-2-Compute.png)
 
 For further information or announcements:
  * Join our discussion group: http://groups.google.com/d/forum/jidt-discuss
@@ -36,6 +38,23 @@ And please [let me know](mailto:joseph.lizier_AT_gmail.com) about any publicatio
 See other [PublicationsUsingThisToolkit](../../wiki/PublicationsUsingThisToolkit).
 
 # News
+
+_17/12/2016_ - New book out from J. Lizier et al., ["An Introduction to Transfer Entropy: Information Flow in Complex Systems"](http://bit.ly/te-book-2016) published by Springer, which contains various examples using JIDT (distributed in our releases)
+
+_21/10/2016_ - New jar and full distribution files available for **release v1.3.1**; Changes for v1.3.1 include:
+Major update to TransferEntropyCalculatorDiscrete so as to implement arbitrary source and dest embeddings and source-dest delay;
+Conditional TE calculators (continuous) handle empty conditional variables;
+Added new auto-embedding method for AIS and TE which maximises bias corrected AIS;
+Added getNumSeparateObservations() method to TE calculators to make reconstructing/separating local values easier after multiple addObservations() calls;
+Fixed kernel estimator classes to return proper densities, not probabilities;
+Bug fix in mixed discrete-continuous MI (Kraskov) implementation;
+Added simple interface for adding joint observations for MultiInfoCalculatorDiscrete
+Including compiled class files for the AutoAnalyser demo in distribution;
+Updated Python demo 1 to show use of numpy arrays with ints;
+Added Python demo 7 and 9 for TE Kraskov with ensemble method and auto-embedding respectively;
+Added Matlab/Octave example 10 for conditional TE via Kraskov (KSG) algorithm;
+Added utilities to prepare for enhancing surrogate calculations with fast nearest neighbour search;
+Minor bug patch to Python readFloatsFile utility.
 
 _19/7/2015_ - New jar and full distribution files available for **release v1.3**; Changes for v1.3 include:
 Added AutoAnalyser (Code Generator) GUI demo for MI and TE;
