@@ -21,6 +21,8 @@ package infodynamics.measures.continuous.gaussian;
 import infodynamics.measures.continuous.ActiveInfoStorageCalculator;
 import infodynamics.measures.continuous.ActiveInfoStorageCalculatorViaMutualInfo;
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
+import infodynamics.utils.AnalyticNullDistributionComputer;
+import infodynamics.utils.ChiSquareMeasurementDistribution;
 
 /**
  * An Active Information Storage (AIS) calculator (implementing {@link ActiveInfoStorageCalculator})
@@ -62,7 +64,8 @@ import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
  * @see MutualInfoCalculatorMultiVariateGaussian
  */
 public class ActiveInfoStorageCalculatorGaussian
-	extends ActiveInfoStorageCalculatorViaMutualInfo {
+	extends ActiveInfoStorageCalculatorViaMutualInfo
+	implements AnalyticNullDistributionComputer {
 	
 	public static final String MI_CALCULATOR_GAUSSIAN = MutualInfoCalculatorMultiVariateGaussian.class.getName();
 	
@@ -75,5 +78,32 @@ public class ActiveInfoStorageCalculatorGaussian
 	 */
 	public ActiveInfoStorageCalculatorGaussian() throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		super(MI_CALCULATOR_GAUSSIAN);
+	}
+	
+	/**
+	 * Generate an <b>analytic</b> distribution of what the AIS would look like,
+	 * under a null hypothesis that our variables had no relation.
+	 * This is performed without bootstrapping (which is done in
+	 * {@link #computeSignificance(int, int)} and {@link #computeSignificance(int, int[][])}).
+	 * The method is implemented using the corresponding method of the
+	 *  underlying {@link MutualInfoCalculatorMultiVariateGaussian}
+	 * 
+	 * <p>See Section II.E "Statistical significance testing" of 
+	 * the JIDT paper below, and the other papers referenced in
+	 * {@link AnalyticNullDistributionComputer#computeSignificance()}
+	 * (in particular Brillinger and Geweke),
+	 * for a description of how this is done for MI.
+	 * Basically, the null distribution is a chi-square distribution.
+	 * </p>
+	 * 
+	 * @return ChiSquareMeasurementDistribution object which describes
+	 * the proportion of AIS scores from the null distribution
+	 *  which have higher or equal AISs to our actual value.
+	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
+	 *    toolkit for studying the dynamics of complex systems', 2014."
+	 * @throws Exception
+	 */
+	public ChiSquareMeasurementDistribution computeSignificance() {
+		return ((MutualInfoCalculatorMultiVariateGaussian) miCalc).computeSignificance();
 	}
 }
