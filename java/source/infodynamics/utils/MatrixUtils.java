@@ -1299,6 +1299,14 @@ public class MatrixUtils {
 		return returnData;
 	}
 
+	public static boolean[] selectColumn(boolean matrix[][], int columnNo) {
+		boolean[] column = new boolean[matrix.length];
+		for (int r = 0; r < matrix.length; r++) {
+			column[r] = matrix[r][columnNo];
+		}
+		return column;
+	}
+	
 	public static int[] selectColumn(int matrix[][], int columnNo) {
 		int[] column = new int[matrix.length];
 		for (int r = 0; r < matrix.length; r++) {
@@ -1340,6 +1348,25 @@ public class MatrixUtils {
 			column[r] = matrix[startRow + r][columnNo];
 		}
 		return column;
+	}
+
+	/**
+	 * Extract the required columns from the matrix
+	 * 
+	 * @param matrix
+	 * @param fromCol
+	 * @param cols
+	 * @return
+	 */
+	public static double[][] selectColumns(double matrix[][], 
+			int fromCol, int cols) {
+		double[][] data = new double[matrix.length][cols];
+		for (int r = 0; r < matrix.length; r++) {
+			for (int cIndex = 0; cIndex < cols; cIndex++) {
+				data[r][cIndex] = matrix[r][cIndex + fromCol];
+			}
+		}
+		return data;
 	}
 
 	/**
@@ -1430,6 +1457,27 @@ public class MatrixUtils {
 		for (int rIndex = 0; rIndex < rows.length; rIndex++) {
 			for (int cIndex = 0; cIndex < columns.length; cIndex++) {
 				data[rIndex][cIndex] = matrix[rows[rIndex]][columns[cIndex]];
+			}
+		}
+		return data;
+	}
+
+	/**
+	 * Extract the required rows and columns from the matrix
+	 * 
+	 * @param matrix 2D data array
+	 * @param fromRow index of the first row to return
+	 * @param rows number of rows (including the first) to return
+	 * @param fromCol index of the first column to return
+	 * @param cols number of columns (including the first) to return
+	 * @return a 2D data array of the selected rows and columns
+	 */
+	public static double[][] selectRowsAndColumns(double matrix[][],
+			int fromRow, int rows, int fromCol, int cols) {
+		double[][] data = new double[rows][cols];
+		for (int rIndex = 0; rIndex < rows; rIndex++) {
+			for (int cIndex = 0; cIndex < cols; cIndex++) {
+				data[rIndex][cIndex] = matrix[rIndex + fromRow][cIndex + fromCol];				
 			}
 		}
 		return data;
