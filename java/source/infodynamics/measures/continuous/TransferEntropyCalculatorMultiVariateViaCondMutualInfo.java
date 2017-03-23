@@ -228,6 +228,12 @@ public class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
 			throw new Exception(String.format("Source and destination lengths (%d and %d) must match!",
 					source.length, destination.length));
 		}
+		if ((sourceDimensions == 1) && (destDimensions == 1)) {
+			// We'll be using the superclass for the computation
+			super.setObservations(MatrixUtils.selectColumn(source, 0),
+					MatrixUtils.selectColumn(destination, 0));
+			return;
+		}
 		if (source.length < startTimeForFirstDestEmbedding + 2) {
 			// There are no observations to add here, the time series is too short
 			throw new Exception("Not enough observations to set here given k, k_tau, l, l_tau and delay parameters");
@@ -245,6 +251,17 @@ public class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
 						startTimeForFirstDestEmbedding + 1 - delay,
 						source.length - startTimeForFirstDestEmbedding - 1);
 		condMiCalc.setObservations(currentSourcePastVectors, currentDestNextVectors, currentDestPastVectors);
+	}
+
+	@Override
+	public void startAddObservations() {
+		if ((sourceDimensions == 1) && (destDimensions == 1)) {
+			// We'll be using the superclass for the computation
+			super.startAddObservations();
+			return;
+		}
+		// Otherwise initialise ourselves:
+		condMiCalc.startAddObservations();
 	}
 
 	/**
@@ -278,6 +295,12 @@ public class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
 		if (source.length != destination.length) {
 			throw new Exception(String.format("Source and destination lengths (%d and %d) must match!",
 					source.length, destination.length));
+		}
+		if ((sourceDimensions == 1) && (destDimensions == 1)) {
+			// We'll be using the superclass for the computation
+			super.addObservations(MatrixUtils.selectColumn(source, 0),
+					MatrixUtils.selectColumn(destination, 0));
+			return;
 		}
 		if (source.length < startTimeForFirstDestEmbedding + 2) {
 			// There are no observations to add here, the time series is too short
@@ -332,6 +355,13 @@ public class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
 			throw new Exception(String.format("Source and destination lengths (%d and %d) must match!",
 					source.length, destination.length));
 		}
+		if ((sourceDimensions == 1) && (destDimensions == 1)) {
+			// We'll be using the superclass for the computation
+			super.addObservations(MatrixUtils.selectColumn(source, 0),
+					MatrixUtils.selectColumn(destination, 0),
+					startTime, numTimeSteps);
+			return;
+		}
 		if (source.length < startTime + numTimeSteps) {
 			// There are not enough observations given the arguments here
 			throw new Exception("Not enough observations to set here given startTime and numTimeSteps parameters");
@@ -369,6 +399,14 @@ public class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
 	public void setObservations(double[][] source, double[][] destination,
 			boolean[] sourceValid, boolean[] destValid) throws Exception {
 		
+		if ((sourceDimensions == 1) && (destDimensions == 1)) {
+			// We'll be using the superclass for the computation
+			super.setObservations(MatrixUtils.selectColumn(source, 0),
+					MatrixUtils.selectColumn(destination, 0),
+					sourceValid, destValid);
+			return;
+		}
+
 		Vector<int[]> startAndEndTimePairs = computeStartAndEndTimePairs(sourceValid, destValid);
 		
 		// We've found the set of start and end times for this pair
@@ -387,9 +425,29 @@ public class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
 	@Override
 	public void setObservations(double[][] source, double[][] destination,
 			boolean[][] sourceValid, boolean[][] destValid) throws Exception {
+		
+		if ((sourceDimensions == 1) && (destDimensions == 1)) {
+			// We'll be using the superclass for the computation
+			super.setObservations(MatrixUtils.selectColumn(source, 0),
+					MatrixUtils.selectColumn(destination, 0),
+					MatrixUtils.selectColumn(sourceValid, 0),
+					MatrixUtils.selectColumn(destValid, 0));
+			return;
+		}
 		boolean[] jointSourceValid = MatrixUtils.andRows(sourceValid);
 		boolean[] jointDestValid = MatrixUtils.andRows(destValid);
 		setObservations(source, destination, jointSourceValid, jointDestValid);
+	}
+
+	@Override
+	public void finaliseAddObservations() throws Exception {
+		if ((sourceDimensions == 1) && (destDimensions == 1)) {
+			// We'll be using the superclass for the computation
+			super.finaliseAddObservations();
+			return;
+		}
+		// Otherwise finalise ourselves:
+		condMiCalc.finaliseAddObservations();
 	}
 
 	/**

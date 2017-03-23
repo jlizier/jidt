@@ -20,6 +20,7 @@ package infodynamics.measures.continuous.kraskov;
 
 import infodynamics.utils.ArrayFileReader;
 import infodynamics.utils.MatrixUtils;
+import infodynamics.utils.RandomGenerator;
 
 public class TransferEntropyMultiVariateTester
 	extends infodynamics.measures.continuous.TransferEntropyMultiVariateAbstractTester {
@@ -440,5 +441,22 @@ public class TransferEntropyMultiVariateTester
 						0, 501),
 				kNNs, expectedValue);
 		NUM_THREADS_TO_USE = NUM_THREADS_TO_USE_DEFAULT;
+	}
+	
+	public void testMulitvariateAddObservations() throws Exception {
+		// Just make sure the code runs (we had an execution error earlier)
+		TransferEntropyCalculatorMultiVariateKraskov teCalc = 
+				new TransferEntropyCalculatorMultiVariateKraskov();
+		teCalc.setProperty("k", "4");
+		teCalc.initialise(1,3,3);
+		teCalc.startAddObservations();
+		RandomGenerator rg = new RandomGenerator();
+		for (int i = 0; i < 5; i++) {
+			double[][] source = rg.generateNormalData(100, 3, 0, 1);
+			double[][] target = rg.generateNormalData(100, 3, 0, 1);
+			teCalc.addObservations(source, target);
+		}
+		teCalc.finaliseAddObservations();
+		teCalc.computeAverageLocalOfObservations();
 	}
 }
