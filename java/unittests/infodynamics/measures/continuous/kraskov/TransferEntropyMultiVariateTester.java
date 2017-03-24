@@ -444,7 +444,7 @@ public class TransferEntropyMultiVariateTester
 	}
 	
 	public void testMulitvariateAddObservations() throws Exception {
-		// Just make sure the code runs (we had an execution error earlier)
+		// Just make sure the code runs first (we had an execution error earlier)
 		TransferEntropyCalculatorMultiVariateKraskov teCalc = 
 				new TransferEntropyCalculatorMultiVariateKraskov();
 		teCalc.setProperty("k", "4");
@@ -458,5 +458,24 @@ public class TransferEntropyMultiVariateTester
 		}
 		teCalc.finaliseAddObservations();
 		teCalc.computeAverageLocalOfObservations();
+		
+		// Now make sure the ensemble method returns the same value as for
+		//  a single time series
+		teCalc.initialise(1,3,3);
+		double[][] source = rg.generateNormalData(100, 3, 0, 1);
+		double[][] target = rg.generateNormalData(100, 3, 0, 1);
+		teCalc.setObservations(source, target);
+		int numObervationsSingle = teCalc.getNumObservations();
+		double resultSingle = teCalc.computeAverageLocalOfObservations();
+		teCalc.initialise(1,3,3);
+		teCalc.startAddObservations();
+		teCalc.addObservations(source, target, 0, 50); // Give first 50 time steps
+		teCalc.addObservations(source, target, 49, 51); // Give next 50 with 
+			// one previous as the embedded history
+		teCalc.finaliseAddObservations();
+		int numObervationsEnsemble = teCalc.getNumObservations();
+		double resultEnsemble = teCalc.computeAverageLocalOfObservations();
+		assertEquals(numObervationsSingle, numObervationsEnsemble);
+		assertEquals(resultSingle, resultEnsemble, 0.00001);
 	}
 }
