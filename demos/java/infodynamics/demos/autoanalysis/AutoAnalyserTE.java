@@ -50,6 +50,10 @@ public class AutoAnalyserTE extends AutoAnalyser
 	private static final long serialVersionUID = 1L;
 	
 	protected static final String DISCRETE_PROPNAME_K = "k_HISTORY";
+	protected static final String DISCRETE_PROPNAME_K_TAU = "k_TAU";
+	protected static final String DISCRETE_PROPNAME_L = "l_HISTORY";
+	protected static final String DISCRETE_PROPNAME_L_TAU = "l_TAU";
+	protected static final String DISCRETE_PROPNAME_DELAY = "DELAY";
 	
 	/**
 	 * Constructor to initialise the GUI for TE
@@ -63,16 +67,28 @@ public class AutoAnalyserTE extends AutoAnalyser
 		// Discrete:
 		discreteClass = TransferEntropyCalculatorDiscrete.class;
 		discreteProperties = new String[] {
+				DISCRETE_PROPNAME_BASE,
 				DISCRETE_PROPNAME_K,
-				DISCRETE_PROPNAME_BASE
+				DISCRETE_PROPNAME_K_TAU,
+				DISCRETE_PROPNAME_L,
+				DISCRETE_PROPNAME_L_TAU,
+				DISCRETE_PROPNAME_DELAY
 		};
 		discretePropertyDefaultValues = new String[] {
+				"2",
 				"1",
-				"2"
+				"1",
+				"1",
+				"1",
+				"1"
 		};
 		discretePropertyDescriptions = new String[] {
-				"Destination history embedding length",
-				"Number of discrete states available for each variable (i.e. 2 for binary)"
+				"Number of discrete states available for each variable (i.e. 2 for binary)",
+				"Destination history embedding length (k_HISTORY)",
+				"Destination history embedding delay (k_TAU)",
+				"Source history embedding length (l_HISTORY)",
+				"Source history embeding delay (l_TAU)",
+				"Delay from source to destination (in time steps)",
 		};
 		
 		// Continuous:
@@ -216,30 +232,66 @@ public class AutoAnalyserTE extends AutoAnalyser
 	 * Method to assign and initialise our discrete calculator class
 	 */
 	protected DiscreteCalcAndArguments assignCalcObjectDiscrete() throws Exception {
-		String kPropValueStr, basePropValueStr;
+		int base, k, k_tau, l, l_tau, delay;
 		try {
-			kPropValueStr = propertyValues.get(DISCRETE_PROPNAME_K);
+			String basePropValueStr = propertyValues.get(DISCRETE_PROPNAME_BASE);
+			base = Integer.parseInt(basePropValueStr);
 		} catch (Exception ex) {
 			JOptionPane.showMessageDialog(this,
 					ex.getMessage());
-			resultsLabel.setText("Cannot find a value for property " + DISCRETE_PROPNAME_K);
+			resultsLabel.setText("Cannot read a value for property " + DISCRETE_PROPNAME_BASE);
 			return null;
 		}
 		try {
-			basePropValueStr = propertyValues.get(DISCRETE_PROPNAME_BASE);
+			String kPropValueStr = propertyValues.get(DISCRETE_PROPNAME_K);
+			k = Integer.parseInt(kPropValueStr);
 		} catch (Exception ex) {
 			JOptionPane.showMessageDialog(this,
 					ex.getMessage());
-			resultsLabel.setText("Cannot find a value for property " + DISCRETE_PROPNAME_BASE);
+			resultsLabel.setText("Cannot read a value for property " + DISCRETE_PROPNAME_K);
 			return null;
 		}
-		int k = Integer.parseInt(kPropValueStr);
-		int base = Integer.parseInt(basePropValueStr);
+		try {
+			String kTauPropValueStr = propertyValues.get(DISCRETE_PROPNAME_K_TAU);
+			k_tau = Integer.parseInt(kTauPropValueStr);
+		} catch (Exception ex) {
+			JOptionPane.showMessageDialog(this,
+					ex.getMessage());
+			resultsLabel.setText("Cannot read a value for property " + DISCRETE_PROPNAME_K_TAU);
+			return null;
+		}
+		try {
+			String lPropValueStr = propertyValues.get(DISCRETE_PROPNAME_L);
+			l = Integer.parseInt(lPropValueStr);
+		} catch (Exception ex) {
+			JOptionPane.showMessageDialog(this,
+					ex.getMessage());
+			resultsLabel.setText("Cannot read a value for property " + DISCRETE_PROPNAME_L);
+			return null;
+		}
+		try {
+			String lTauPropValueStr = propertyValues.get(DISCRETE_PROPNAME_L_TAU);
+			l_tau = Integer.parseInt(lTauPropValueStr);
+		} catch (Exception ex) {
+			JOptionPane.showMessageDialog(this,
+					ex.getMessage());
+			resultsLabel.setText("Cannot read a value for property " + DISCRETE_PROPNAME_L_TAU);
+			return null;
+		}
+		try {
+			String delayPropValueStr = propertyValues.get(DISCRETE_PROPNAME_DELAY);
+			delay = Integer.parseInt(delayPropValueStr);
+		} catch (Exception ex) {
+			JOptionPane.showMessageDialog(this,
+					ex.getMessage());
+			resultsLabel.setText("Cannot read a value for property " + DISCRETE_PROPNAME_DELAY);
+			return null;
+		}
 		
 		return new DiscreteCalcAndArguments(
-				new TransferEntropyCalculatorDiscrete(base, k),
+				new TransferEntropyCalculatorDiscrete(base, k, k_tau, l, l_tau, delay),
 				base,
-				base + ", " + k);
+				base + ", " + k + ", " + k_tau + ", " + l + ", " + l_tau + ", " + delay);
 	}
 
 	protected void setObservations(ChannelCalculatorCommon calc,
