@@ -10,7 +10,7 @@
 NVCC       ?= nvcc
 GCC        ?= g++
 CCFLAGS    ?= -O3
-NVCCFLAGS  ?= -O3 -arch=sm_30
+NVCCFLAGS  ?= -O3 -arch=sm_30 -D_FORCE_INLINES
 # NVCCFLAGS  ?= -O3
 
 ifdef DEBUG
