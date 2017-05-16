@@ -19,7 +19,7 @@ ifdef DEBUG
 endif
 
 # Common includes and paths for CUDA. This assumes the CUDA toolkit is in PATH
-INCLUDES      := -I. -I/usr/lib/jvm/java-7-openjdk-amd64/include
+INCLUDES      := -I. -I/usr/lib/jvm/java-8-openjdk-amd64/include -I/usr/lib/jvm/java-8-openjdk-amd64/include/linux
 LDFLAGS       += -L. -lcuda -lcudart
 
 # Target rules
