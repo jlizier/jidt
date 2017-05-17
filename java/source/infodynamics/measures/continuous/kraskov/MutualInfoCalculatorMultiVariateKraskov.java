@@ -664,7 +664,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
         throw new Exception("Unable to load GPU library.");
       }
       String jarFolder = jarPath.toString().substring(0, jarPath.toString().lastIndexOf(fileSep));
-      String relPath = fileSep + "java" + fileSep + "source" + fileSep +
+      String relPath = fileSep + "bin" + fileSep +
                       "infodynamics" + fileSep + "measures" + fileSep +
                       "continuous" + fileSep + "kraskov" + fileSep + "cuda" +
                       fileSep + "libKraskov.so";

@@ -55,14 +55,16 @@
     </javac>
 
     <!-- Compiling Cpp code -->
-    <exec executable="make" dir="${src}/infodynamics/measures/continuous/kraskov/cuda/" if:set="enablegpu"/>
+    <antcall target="gpu" if:set="enablegpu">
+      <param name="DEBUG" value="0"/>
+    </antcall>
 
 	</target>
 
 	<!-- Jar the toolkit -->
 	<target name="jar" depends="compile" description="Create the jar for distribution">
 		<!-- Put everything in ${bin} into the infodynamics-${version}.jar file -->
-		<jar jarfile="${jarplainname}" basedir="${bin}"/>
+    <jar jarfile="${jarplainname}" basedir="${bin}" excludes="**/cuda/"/>
 	</target>
 
 	<!-- Compile and run the JUnit tests -->
@@ -137,6 +139,7 @@
 		<delete>
 			 <fileset dir="demos/java/infodynamics/demos/autoanalysis" includes="GeneratedCalculator.*"/>
 		</delete>
+    <antcall target="gpuclean"/>
 		<!-- Don't delete the readme and version files - the user may not have the template to recreate them from -->
 	</target>
 	
@@ -161,11 +164,32 @@
     </javac>
 
     <!-- Compiling Cpp code -->
-    <exec executable="make" dir="${src}/infodynamics/measures/continuous/kraskov/cuda/" if:set="enablegpu">
-      <env key="DEBUG" value="1"/>
-    </exec>
+    <antcall target="gpu" if:set="enablegpu">
+      <param name="DEBUG" value="1"/>
+    </antcall>
 
     <jar jarfile="${jarplainname}" basedir="${bin}"/>
+  </target>
+
+  <!-- Compile GPU code -->
+  <target name="gpu" depends="init" description="compile only C/C++ GPU code">
+    <exec executable="make" dir="${src}/infodynamics/measures/continuous/kraskov/cuda/">
+      <env key="DEBUG" value="${DEBUG}"/>
+    </exec>
+    <move todir="${bin}/infodynamics/measures/continuous/kraskov/cuda">
+      <filelist dir="${src}/infodynamics/measures/continuous/kraskov/cuda">
+        <file name="gpuKnnLibrary.o"/>
+        <file name="libgpuKnnLibrary.a"/>
+        <file name="libKraskov.so"/>
+      </filelist>
+    </move>
+  </target>
+
+  <!-- Clean GPU code -->
+  <target name="gpuclean" description="clean only C/C++ GPU code">
+    <exec executable="make" dir="${src}/infodynamics/measures/continuous/kraskov/cuda/">
+      <arg value="clean"/>
+    </exec>
   </target>
 
 	<!-- Developer build - creates readme and version files -->
