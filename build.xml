@@ -69,6 +69,7 @@
 
 	<!-- Compile and run the JUnit tests -->
 	<target name="junit" depends="compile" description="Run the junit tests and make sure they compile">
+
 		<!-- Compile the junit tests first -->
 		<javac destdir="${unittestsbin}" includeAntRuntime="true" debug="true">
 			<!-- Need includeAntRuntime=true if you want to pick up junit.jar and ant-junit.jar in ANT_HOME/lib;
@@ -77,6 +78,16 @@
 			<classpath refid="project.classpath"/>
 			<classpath refid="apache-classpath"/>
 		</javac>
+
+		<!-- Compile the GPU unit tests -->
+    <exec executable="make" dir="${src}/infodynamics/measures/continuous/kraskov/cuda/">
+      <arg value="test"/>
+    </exec>
+    <move todir="${unittestsbin}/infodynamics/measures/continuous/kraskov/cuda"
+      file="${src}/infodynamics/measures/continuous/kraskov/cuda/unittest"/>
+    <copy todir="${unittestsbin}/infodynamics/measures/continuous/kraskov/cuda"
+      file="${bin}/infodynamics/measures/continuous/kraskov/cuda/libKraskov.so"/>
+
 		<!-- Run the junit tests and make sure they complete ok -->
 		<junit printsummary="yes" showoutput="yes" fork="true" forkmode="once" haltonfailure="yes" haltonerror="yes" includeantruntime="true">
 			<classpath>
@@ -94,6 +105,7 @@
 				</fileset>
 			</batchtest>
 		</junit>
+    <exec executable="./unittest" dir="${unittestsbin}/infodynamics/measures/continuous/kraskov/cuda/"/>
 	</target>
 
 	<!-- Make javadocs, excluding the classes we've derived from Apache Commons Math -->
