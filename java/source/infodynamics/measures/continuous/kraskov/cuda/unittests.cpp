@@ -9,6 +9,10 @@ extern "C" int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_po
     float* h_query, int kth, int thelier, int nchunks, int pointdim,
     int signallength, unsigned int useMaxNorm);
 
+extern "C" int cudaFindRSAll(int* h_bf_npointsrange, float* h_pointset, float* h_query,
+    float* h_vecradius, int thelier, int nchunks, int pointdim,
+    int signallength, unsigned int useMaxNorm);
+
 const lest::test specification[] = {
 
 CASE("Basic kNN test")
@@ -101,7 +105,7 @@ CASE("Test kNN test with longer sequences")
 
 },
 
-CASE("Smoke test with big random dataset")
+CASE("Smoke kNN test with big random dataset")
 {
   int thelier = 0;
   int useMaxNorm = 1;
@@ -122,7 +126,7 @@ CASE("Smoke test with big random dataset")
 
 },
 
-CASE("Test with multiple trials in the same call")
+CASE("Test kNN with multiple trials in the same call")
 {
   int thelier = 0;
   int useMaxNorm = 1;
@@ -158,12 +162,90 @@ CASE("Test with multiple trials in the same call")
   EXPECT(distances[6] == approx(0.4));
   EXPECT(distances[7] == approx(0.1));
 
+},
+
+CASE("Basic RS test")
+{
+  int thelier = 0;
+  int nchunks = 1;
+  int dim = 1;
+  int N = 5;
+  int useMaxNorm = 1;
+  int npoints[5];
+  float pointset[] = {0, 2, 2.1, 3.2, 3.5};
+  float radii[]    = {1, 1,   1,   1,   1};
+
+  int err = cudaFindRSAll(npoints, pointset, pointset, radii, thelier, nchunks,
+              dim, N, useMaxNorm);
+
+  EXPECT(err == 1);
+
+  EXPECT(npoints[0] == 0);
+  EXPECT(npoints[1] == 1);
+  EXPECT(npoints[2] == 1);
+  EXPECT(npoints[3] == 1);
+  EXPECT(npoints[4] == 1);
+
+},
+
+CASE("Test RS with different radii")
+{
+  int thelier = 0;
+  int nchunks = 1;
+  int dim = 1;
+  int N = 5;
+  int useMaxNorm = 1;
+  int npoints[5];
+  float pointset[] = {   0, 2,  2.1, 3.2, 3.5};
+  float radii[]    = {2.05, 6, 0.01,   1,   1};
+
+  int err = cudaFindRSAll(npoints, pointset, pointset, radii, thelier, nchunks,
+              dim, N, useMaxNorm);
+
+  EXPECT(err == 1);
+
+  EXPECT(npoints[0] == 1);
+  EXPECT(npoints[1] == 4);
+  EXPECT(npoints[2] == 0);
+  EXPECT(npoints[3] == 1);
+  EXPECT(npoints[4] == 1);
+
+},
+
+CASE("Test RS with multiple trials in the same call")
+{
+  int thelier = 0;
+  int nchunks = 2;
+  int dim = 1;
+  int N = 10;
+  int useMaxNorm = 1;
+  int npoints[10];
+  float pointset[] = {0, 2, 2.1, 3.2, 3.5, 0, 2, 2.1, 3.2, 3.5};
+  float radii[]    = {1, 1,   1,   1,   1, 1, 1,   1,   1,   1};
+
+  int err = cudaFindRSAll(npoints, pointset, pointset, radii, thelier, nchunks,
+              dim, N, useMaxNorm);
+
+  EXPECT(err == 1);
+
+  EXPECT(npoints[0] == 0);
+  EXPECT(npoints[1] == 1);
+  EXPECT(npoints[2] == 1);
+  EXPECT(npoints[3] == 1);
+  EXPECT(npoints[4] == 1);
+  EXPECT(npoints[5] == 0);
+  EXPECT(npoints[6] == 1);
+  EXPECT(npoints[7] == 1);
+  EXPECT(npoints[8] == 1);
+  EXPECT(npoints[9] == 1);
 
 },
 
 };
 
 int main(int argc, char *argv[]){
-  return lest::run( specification, argc, argv );
+  if (int failures = lest::run(specification, argc, argv))
+    return failures;
+  return std::cout << "ALL PASSED, YEA BOI\n", EXIT_SUCCESS;
 }
 
