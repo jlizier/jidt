@@ -121,6 +121,13 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
    * Property name for the flag to enable or disable the GPU module.
    */
   public static final String PROP_USE_GPU = "USE_GPU";
+  /**
+   * Property name for the path to JIDT GPU library.
+   *
+   * Path must be full and contain the library filename.
+   * Example: /home/johndoe/myfolder/libKraskov.so
+   */
+  public static final String PROP_GPU_LIBRARY_PATH = "GPU_LIBRARY_PATH";
   
   /**
    * Whether to normalise the incoming data 
@@ -156,6 +163,10 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
    * Whether to enable the GPU module
    */
   protected boolean useGPU = false;
+  /**
+   * Path to JIDT GPU library
+   */
+  protected String gpuLibraryPath = "";
   /**
    * Check whether C native code has been loaded
    */
@@ -270,6 +281,8 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
       }
     } else if (propertyName.equalsIgnoreCase(PROP_USE_GPU)) {
       useGPU = Boolean.parseBoolean(propertyValue);
+    } else if (propertyName.equalsIgnoreCase(PROP_GPU_LIBRARY_PATH)) {
+      gpuLibraryPath = propertyValue;
     } else {
       // No property was set here
       propertySet = false;
@@ -658,18 +671,37 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 
     if (!cudaLibraryLoaded) {
 
-      Path jarPath = Paths.get(MutualInfoCalculatorMultiVariateKraskov.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-      String fileSep = System.getProperty("file.separator", "");
-      if (fileSep.length() == 0) {
-        throw new Exception("Unable to load GPU library.");
+      String fullPath;
+
+      if (gpuLibraryPath.length() < 1) {
+        // If user didn't provide a path, try the default
+        Path jarPath = Paths.get(MutualInfoCalculatorMultiVariateKraskov.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+        String fileSep = System.getProperty("file.separator", "");
+        if (fileSep.length() == 0) {
+          throw new Exception("Unable to load GPU library.");
+        }
+        String jarFolder = jarPath.toString().substring(0, jarPath.toString().lastIndexOf(fileSep));
+        String relPath = fileSep + "bin" + fileSep +
+                        "infodynamics" + fileSep + "measures" + fileSep +
+                        "continuous" + fileSep + "kraskov" + fileSep + "cuda" +
+                        fileSep + "libKraskov.so";
+        fullPath = jarFolder + relPath;
+      } else {
+        // Otherwise, use the provided path.
+        fullPath = gpuLibraryPath;
       }
-      String jarFolder = jarPath.toString().substring(0, jarPath.toString().lastIndexOf(fileSep));
-      String relPath = fileSep + "bin" + fileSep +
-                      "infodynamics" + fileSep + "measures" + fileSep +
-                      "continuous" + fileSep + "kraskov" + fileSep + "cuda" +
-                      fileSep + "libKraskov.so";
-      String fullPath = jarFolder + relPath;
-      System.load(fullPath);
+
+      try {
+        System.load(fullPath);
+      } catch (Throwable e) {
+        if (gpuLibraryPath.length() > 1) {
+          System.err.println("GPU library was not found in the path provided. Provide full path including library file name.");
+          System.err.println("Example: /home/johndoe/myfolder/libKraskov.so");
+        }
+        throw(e);
+      }
+
+      System.out.println("CUDA native library loaded.");
       cudaLibraryLoaded = true;
 
     }
