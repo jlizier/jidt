@@ -275,4 +275,13 @@ int computeSumDigammas(float *sumDiGammas, int *nx, int *ny, unsigned int N) {
 }
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+void device_reset(void) {
+  cudaDeviceReset();
+}
+#ifdef __cplusplus
+}
+#endif
 

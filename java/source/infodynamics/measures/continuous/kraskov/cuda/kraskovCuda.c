@@ -41,7 +41,7 @@ JNIEXPORT jdoubleArray JNICALL
   jsize destLength = (*env)->GetArrayLength(env, j_destArray);
 
   if (sourceLength != j_N || destLength != j_N) {
-    cudaDeviceReset();
+    device_reset();
     jclass Exception = (*env)->FindClass(env, "java/lang/Exception");
     (*env)->ThrowNew(env, Exception, "Data has wrong length.");
   }
@@ -70,7 +70,7 @@ JNIEXPORT jdoubleArray JNICALL
 
   if (NULL == source || NULL == dest || NULL == pointset) {
     printf("Error allocating data.\n");
-    cudaDeviceReset();
+    device_reset();
     jclass Exception = (*env)->FindClass(env, "java/lang/Exception");
     (*env)->ThrowNew(env, Exception, "Error allocating data.");
   }
@@ -148,7 +148,7 @@ JNIEXPORT jdoubleArray JNICALL
   err = cudaFindKnn(indexes, distances, pointset, pointset, k,
       thelier, nchunks, dims, N, useMaxNorm);
   if (err != 1) {
-    cudaDeviceReset();
+    device_reset();
     jclass Exception = (*env)->FindClass(env, "java/lang/Exception");
     (*env)->ThrowNew(env, Exception, "Cuda error finding nearest neighbours.");
   }
@@ -207,7 +207,7 @@ JNIEXPORT jdoubleArray JNICALL
   nx = (int *) malloc(N * sizeof(int));
   err = cudaFindRSAll(nx, source, source, radii, thelier, nchunks, dimx, N, useMaxNorm);
   if (err != 1) {
-    cudaDeviceReset();
+    device_reset();
     jclass Exception = (*env)->FindClass(env, "java/lang/Exception");
     (*env)->ThrowNew(env, Exception, "Cuda error during source range search.");
   }
@@ -228,7 +228,7 @@ JNIEXPORT jdoubleArray JNICALL
   ny = (int *) malloc(N * sizeof(int));
   err = cudaFindRSAll(ny, dest, dest, radii, thelier, nchunks, dimy, N, useMaxNorm);
   if (err != 1) {
-    cudaDeviceReset();
+    device_reset();
     jclass Exception = (*env)->FindClass(env, "java/lang/Exception");
     (*env)->ThrowNew(env, Exception, "Cuda error during dest range search.");
   }
@@ -296,7 +296,7 @@ JNIEXPORT jdoubleArray JNICALL
   // Set Java array for return
   jdoubleArray outJNIArray = (*env)->NewDoubleArray(env, result_size);  // allocate
   if (NULL == outJNIArray) {
-    cudaDeviceReset();
+    device_reset();
     jclass Exception = (*env)->FindClass(env, "java/lang/Exception");
     (*env)->ThrowNew(env, Exception, "Error creating return array.");
   }
