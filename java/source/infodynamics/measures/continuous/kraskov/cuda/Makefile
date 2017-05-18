@@ -38,5 +38,5 @@ test:	libKraskov.so
 	${GCC} -std=c++11 -o unittest unittests.cpp -L. -lKraskov
 
 clean:
-	rm -f *.o *.so *.a
+	rm -f *.o *.so *.a unittest
 
