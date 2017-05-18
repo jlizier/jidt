@@ -55,7 +55,7 @@
     </javac>
 
     <!-- Compiling Cpp code -->
-    <antcall target="gpu" if:set="enablegpu">
+    <antcall target="gpu" if:true="${enablegpu}">
       <param name="DEBUG" value="0"/>
     </antcall>
 
@@ -164,7 +164,7 @@
     </javac>
 
     <!-- Compiling Cpp code -->
-    <antcall target="gpu" if:set="enablegpu">
+    <antcall target="gpu" if:true="${enablegpu}">
       <param name="DEBUG" value="1"/>
     </antcall>
 
