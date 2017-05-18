@@ -76,8 +76,8 @@ JNIEXPORT jdoubleArray JNICALL
   }
 
   for (i = 0; i < N; i++) {
-    jdoubleArray j_sourceRow = (*env)->GetObjectArrayElement(env, j_sourceArray, i);
-    jdoubleArray j_destRow   = (*env)->GetObjectArrayElement(env, j_destArray, i);
+    jdoubleArray j_sourceRow = (jdoubleArray) (*env)->GetObjectArrayElement(env, j_sourceArray, i);
+    jdoubleArray j_destRow   = (jdoubleArray) (*env)->GetObjectArrayElement(env, j_destArray, i);
 
     jdouble *sourceRow = (*env)->GetDoubleArrayElements(env, j_sourceRow, NULL);
     jdouble *destRow = (*env)->GetDoubleArrayElements(env, j_destRow, NULL);
