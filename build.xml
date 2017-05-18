@@ -199,7 +199,7 @@
   </target>
 
   <!-- Test GPU code -->
-  <target name="gputest" description="compile and run C unit tests for GPU code">
+  <target name="gputest" depends="gpu" description="compile and run C unit tests for GPU code">
 
 		<!-- Compile the GPU unit tests -->
     <exec executable="make" dir="${src}/infodynamics/measures/continuous/kraskov/cuda/">
