@@ -129,55 +129,50 @@ JNIEXPORT jdoubleArray JNICALL
    jint j_k, jboolean j_returnLocals, jboolean j_useMaxNorm,
    jboolean j_isAlgorithm1, jint j_nbSurrogates) {
 
-  // Declare variables
-  // Variables starting with j_ are Java types
-  float *source, *dest, *pointset, *radii, *distances;
-  int *nx, *ny, *indexes;
-  jdouble *jd_source, *jd_dest;
-  unsigned int N, dimx, dimy, dims, k, returnLocals, useMaxNorm, isAlgorithm1, result_size;
-  float sumNx, sumNy, sumDiGammas;
-  unsigned int i, j;
-  long double digammaK, digammaN;
-  int thelier = 0, nchunks = 1, err, nb_surrogates;
+  int thelier = 0, err;
 
   // Check that incoming data has correct size
+  // =====================
   jsize sourceLength = (*env)->GetArrayLength(env, j_sourceArray);
   jsize destLength = (*env)->GetArrayLength(env, j_destArray);
 
-  if (sourceLength != j_N || destLength != j_N) {
-    device_reset();
+  if (sourceLength != j_N || destLength != j_N || (j_N%(j_nbSurrogates+1) != 0)) {
     jclass Exception = (*env)->FindClass(env, "java/lang/Exception");
     (*env)->ThrowNew(env, Exception, "Data has wrong length.");
   }
 
+  if (!j_isAlgorithm1) {
+    jclass Exception = (*env)->FindClass(env, "java/lang/Exception");
+    (*env)->ThrowNew(env, Exception, "Only algorithm 1 is supported.");
+  }
+
+  if ((j_returnLocals || !j_isAlgorithm1) && (j_nbSurrogates > 0)) {
+    jclass Exception = (*env)->FindClass(env, "java/lang/Exception");
+    (*env)->ThrowNew(env, Exception, "Surrogates only supported for average MI with KSG1.");
+  }
+
   // Copy variables from Java
   // =====================
-  N = j_N;
-  k = j_k;
-  dimx = j_dimx;
-  dimy = j_dimy;
-  dims = dimx + dimy;
-  returnLocals = j_returnLocals ? 1 : 0;
-  useMaxNorm   = j_useMaxNorm   ? 1 : 0;
-  isAlgorithm1 = j_isAlgorithm1 ? 1 : 0;
-  nb_surrogates = j_nbSurrogates;
+  int N = j_N;
+  int k = j_k;
+  int dimx = j_dimx;
+  int dimy = j_dimy;
+  int dims = dimx + dimy;
+  int returnLocals = j_returnLocals ? 1 : 0;
+  int useMaxNorm   = j_useMaxNorm   ? 1 : 0;
+  int isAlgorithm1 = j_isAlgorithm1 ? 1 : 0;
+  int nb_surrogates = j_nbSurrogates;
+  int nchunks      = j_nbSurrogates + 1;
   
-  source   = (float *) malloc(N * dimx * sizeof(float));
-  dest     = (float *) malloc(N * dimy * sizeof(float));
+  float *source = (float *) malloc(N * dimx * sizeof(float));
+  float *dest   = (float *) malloc(N * dimy * sizeof(float));
 
   if (NULL == source || NULL == dest) {
     jclass Exception = (*env)->FindClass(env, "java/lang/Exception");
     (*env)->ThrowNew(env, Exception, "Error allocating data.");
   }
 
-
-  if ((returnLocals || !isAlgorithm1) && (nb_surrogates > 0)) {
-    jclass Exception = (*env)->FindClass(env, "java/lang/Exception");
-    (*env)->ThrowNew(env, Exception, "Surrogates only supported for average MI with KSG1.");
-  }
-
-
-  for (i = 0; i < N; i++) {
+  for (int i = 0; i < N; i++) {
     jdoubleArray j_sourceRow = (jdoubleArray) (*env)->GetObjectArrayElement(env, j_sourceArray, i);
     jdoubleArray j_destRow   = (jdoubleArray) (*env)->GetObjectArrayElement(env, j_destArray, i);
 
@@ -190,11 +185,11 @@ JNIEXPORT jdoubleArray JNICALL
     // The following two for-loops get two matrices in T-by-D indexing (i.e.
     // first dimension is time, second is variable) and return the data in
     // column-major form
-    for (j = 0; j < dimx; j++) {
+    for (int j = 0; j < dimx; j++) {
       source[N*j + i]   = (float) sourceRow[j];
     }
 
-    for (j = 0; j < dimy; j++) {
+    for (int j = 0; j < dimy; j++) {
       dest[N*j + i] = (float) destRow[j];
     }
 
@@ -211,7 +206,6 @@ JNIEXPORT jdoubleArray JNICALL
     //   dest[dimy*i + j] = x
     //   pointset[i*dims + dimx + j] = x;
     // }
-
 
     (*env)->ReleaseDoubleArrayElements(env, j_sourceRow, sourceRow, 0);
     (*env)->ReleaseDoubleArrayElements(env, j_destRow, destRow, 0);
@@ -231,7 +225,7 @@ JNIEXPORT jdoubleArray JNICALL
   if (returnLocals) {
     resultSize = N;
   } else if (nb_surrogates > 0) {
-    resultSize = nb_surrogates + 1;
+    resultSize = nchunks;
   } else {
     resultSize = 3;
   }
@@ -242,7 +236,7 @@ JNIEXPORT jdoubleArray JNICALL
 
   if (JIDT_ERROR == ret) {
     jclass Exception = (*env)->FindClass(env, "java/lang/Exception");
-    (*env)->ThrowNew(env, Exception, "Surrogates only supported for average MI with KSG1.");
+    (*env)->ThrowNew(env, Exception, "Error in GPU execution.");
   }
 
   // Free memory and return
@@ -251,8 +245,8 @@ JNIEXPORT jdoubleArray JNICALL
   if (dest)    free(dest);
 
   jdouble outCArray[resultSize];
-  for (int ii = 0; ii < resultSize; ii++) {
-    outCArray[ii] = result[ii];
+  for (int i = 0; i < resultSize; i++) {
+    outCArray[i] = result[i];
   }
 
   // Set Java array for return
@@ -268,7 +262,7 @@ JNIEXPORT jdoubleArray JNICALL
   return outJNIArray;
 
 
-} // End of function MIKraskov1
+} // End of function MIKraskov
 
 
 #ifdef __cplusplus
