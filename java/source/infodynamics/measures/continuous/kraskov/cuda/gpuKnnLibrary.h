@@ -1,6 +1,9 @@
 #ifndef GPUKNNLIBRARY_H
 #define GPUKNNLIBRARY_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_pointset,
     float* h_query, int kth, int thelier, int nchunks, int pointdim,
     int signallength, unsigned int useMaxNorm);
@@ -23,6 +26,9 @@ int findRadiiAlgorithm2(float *radii, const float *data, const int *indexes,
 int computeSumDigammas(float *sumDiGammas, int *nx, int *ny, unsigned int N);
 
 void device_reset(void);
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

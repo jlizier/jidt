@@ -3,15 +3,10 @@
 #include <stdio.h>
 #include "lest.hpp"
 
+#include "gpuKnnLibrary.h"
+#include "gpuMILibrary.h"
+
 using lest::approx;
-
-extern "C" int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_pointset,
-    float* h_query, int kth, int thelier, int nchunks, int pointdim,
-    int signallength, unsigned int useMaxNorm);
-
-extern "C" int cudaFindRSAll(int* h_bf_npointsrange, float* h_pointset, float* h_query,
-    float* h_vecradius, int thelier, int nchunks, int pointdim,
-    int signallength, unsigned int useMaxNorm);
 
 const lest::test specification[] = {
 
