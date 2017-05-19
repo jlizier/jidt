@@ -33,6 +33,7 @@ import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.NearestNeighbourSearcher;
 import infodynamics.utils.NeighbourNodeData;
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 
 /**
  * <p>Computes the differential mutual information of two given multivariate sets of
@@ -618,7 +619,8 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 
     try {
       res = MIKraskov(totalObservations, sourceObservations, dimensionsSource,
-          destObservations, dimensionsDest, k, returnLocals, useMaxNorm, isAlgorithm1);
+          destObservations, dimensionsDest, k, returnLocals, useMaxNorm, isAlgorithm1, 0);
+      MatrixUtils.printArray(System.out, res);
     } catch (Throwable e) {
       System.out.println("WARNING. Error in GPU code. Reverting back to CPU.");
       e.printStackTrace();
@@ -634,7 +636,8 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
    */
   private native double[] MIKraskov(
       int N, double[][] source, int dimx, double[][] dest, int dimy,
-      int k, boolean returnLocals, boolean useMaxNorm, boolean isAlgorithm1);
+      int k, boolean returnLocals, boolean useMaxNorm, boolean isAlgorithm1,
+      int nb_surrogates);
 
   /**
    * Internal method to ensure that the Kd-tree data structures to represent the
@@ -667,6 +670,8 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
   /**
    * Internal method to ensure that the Cuda native library has been correctly
    * loaded.
+   *
+   * @throws Exception if library not found or unable to load
    */
   protected void ensureCudaLibraryLoaded() throws Exception {
 
@@ -709,6 +714,21 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
       System.out.println("CUDA native library loaded.");
       cudaLibraryLoaded = true;
 
+    }
+  }
+
+  /**
+   * {@inheritDoc} 
+   */
+  @Override
+  public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck)
+      throws Exception {
+    if (useGPU) {
+      double[] res = gpuComputeFromObservations(0, totalObservations, false); // TODO FIXME
+      return new EmpiricalMeasurementDistribution(
+          MatrixUtils.select(res, 1, res.length - 1), res[0]);
+    } else {
+      return super.computeSignificance(numPermutationsToCheck);
     }
   }
   
