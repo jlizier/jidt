@@ -2,116 +2,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "digamma.c"
-#include "gpuKnnLibrary.h"
-
 #define check(ans) { _check((ans), __FILE__, __LINE__); }
 
-typedef enum { JIDT_SUCCESS, JIDT_ERROR } jidt_error_t;
-
-jidt_error_t MIKraskov_C(int N, float *source, int dimx, float *dest, int dimy,
-    int k, int thelier, int nchunks, int returnLocals, int useMaxNorm,
-    int isAlgorithm1, int nb_surrogates, float *result) {
-
-  int dims = dimx + dimy;
-  int err;
-  int i, j;
-  const int verbose = 0;
-  nb_surrogates = 0;
-
-  float *pointset = (float *) malloc(N * dims * sizeof(float));
-  for (i = 0; i < N; i++) {
-    for (j = 0; j < dimx; j++) {
-      register int idx = N*j + i;
-      pointset[idx] = source[idx];
-    }
-
-    for (j = 0; j < dimy; j++) {
-      register int idx = N*j + i;
-      pointset[N*dimx + idx] = dest[idx];
-    }
-  }
-
-  int *indexes = (int *) malloc(N * k * sizeof(int));
-  float *distances = (float *) malloc(N * k * sizeof(float));
-  if (!cudaFindKnn(indexes, distances, pointset, pointset, k,
-          thelier, nchunks, dims, N, useMaxNorm)) {
-    device_reset();
-    return JIDT_ERROR;
-  }
-
-
-  // 3. Find distance R from each point to its k-th neighbour in joint space
-  // ======================
-  
-  float *radii = (float *) malloc(N * sizeof(float));
-  for (i = 0; i < N; i++) {
-    radii[i] = distances[N*(k-1) + i];
-  }
-
-
-  // 4. Count points strictly within R in the X-space
-  // ======================
-
-  // If we're using algorithm 2 then we need the radius in the marginal space,
-  // not the joint (as calculated above)
-  if (!isAlgorithm1) {
-    findRadiiAlgorithm2(radii, source, indexes, k, dimx, N);
-  }
-
-  int *nx = (int *) malloc(N * sizeof(int));
-  if (!cudaFindRSAll(nx, source, source, radii, thelier, nchunks, dimx, N, useMaxNorm)) {
-    device_reset();
-    return JIDT_ERROR;
-  }
-
-  if (!isAlgorithm1) {
-    findRadiiAlgorithm2(radii, dest, indexes, k, dimy, N);
-  }
-
-  int *ny = (int *) malloc(N * sizeof(int));
-  if (!cudaFindRSAll(ny, dest, dest, radii, thelier, nchunks, dimy, N, useMaxNorm)) {
-    device_reset();
-    return JIDT_ERROR;
-  }
-
-
-  // 6. Set locals or digammas for return
-  // ======================
-
-  float sumNx, sumNy, sumDiGammas, digammaK, digammaN;
-  int result_size;
-
-  if (nb_surrogates > 0) {
-    printf("Surrogates not supported yet\n");
-    return JIDT_ERROR;
-
-  } else if (returnLocals) {
-    digammaK = cpuDigamma(k);
-    digammaN = cpuDigamma(N);
-    for (i = 0; i < N; i++) {
-      result[i] = digammaK + digammaN - cpuDigamma(nx[i] + 1) - cpuDigamma(ny[i] + 1);
-    }
-
-  } else {
-    sumNx = 0;
-    sumNy = 0;
-    sumDiGammas = 0;
-    for (i = 0; i < N; i++) {
-      sumNx       += nx[i];
-      sumNy       += ny[i];
-      sumDiGammas += cpuDigamma(nx[i] + 1) + cpuDigamma(ny[i] + 1);
-    }
-
-    result[0] = (float) sumDiGammas;
-    result[1] = (float) sumNx;
-    result[2] = (float) sumNy;
-
-  }
-
-  return JIDT_SUCCESS;
-}
-
+#include "gpuMILibrary.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -232,7 +125,7 @@ JNIEXPORT jdoubleArray JNICALL
   float *result = (float *) malloc(resultSize * sizeof(float));
   jidt_error_t ret = MIKraskov_C(N, source, dimx, dest, dimy,
                        k, thelier, nchunks, returnLocals, useMaxNorm,
-                       isAlgorithm1, nb_surrogates, result);
+                       isAlgorithm1, result);
 
   if (JIDT_ERROR == ret) {
     jclass Exception = (*env)->FindClass(env, "java/lang/Exception");

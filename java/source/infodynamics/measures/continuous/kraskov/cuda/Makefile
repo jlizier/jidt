@@ -32,7 +32,7 @@ libgpuKnnLibrary.a: gpuKnnLibrary.o
 	${AR} -r libgpuKnnLibrary.a gpuKnnLibrary.o
 
 libKraskov.so: libgpuKnnLibrary.a kraskovCuda.c
-	${NVCC} ${NVCCFLAGS} ${INCLUDES} -Xcompiler -fPIC -shared -o libKraskov.so kraskovCuda.c ${LDFLAGS} -lgpuKnnLibrary
+	${NVCC} ${NVCCFLAGS} ${INCLUDES} -Xcompiler -fPIC -shared -o libKraskov.so gpuMILibrary.c kraskovCuda.c ${LDFLAGS} -lgpuKnnLibrary
 
 test:	libKraskov.so
 	${GCC} -std=c++11 -o unittest unittests.cpp -L. -lKraskov
