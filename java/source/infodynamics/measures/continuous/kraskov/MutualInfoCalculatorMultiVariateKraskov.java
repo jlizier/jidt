@@ -620,7 +620,6 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
     try {
       res = MIKraskov(totalObservations, sourceObservations, dimensionsSource,
           destObservations, dimensionsDest, k, returnLocals, useMaxNorm, isAlgorithm1, 0);
-      MatrixUtils.printArray(System.out, res);
     } catch (Throwable e) {
       System.out.println("WARNING. Error in GPU code. Reverting back to CPU.");
       e.printStackTrace();
