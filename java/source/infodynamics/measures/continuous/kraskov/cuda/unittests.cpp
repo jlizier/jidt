@@ -159,6 +159,36 @@ CASE("Test kNN with multiple trials in the same call")
 
 },
 
+CASE("Smoke test for kNN with custom GPU")
+{
+  int thelier = 0;
+  int useMaxNorm = 1;
+  int N = 4;
+  int dims = 2;
+  int k = 1;
+  int nchunks = 1;
+  int indexes[4];
+  float distances[4];
+  float pointset[8] = {-1, 0.5, 1.1, 2,
+                       -1, 0.5, 1.1, 2};
+
+  int err = cudaFindKnnSetGPU(indexes, distances, pointset, pointset, k, thelier,
+              nchunks, dims, N, useMaxNorm, 0);
+
+  EXPECT(err == 1);
+
+  EXPECT(indexes[0] == 1);
+  EXPECT(indexes[1] == 2);
+  EXPECT(indexes[2] == 1);
+  EXPECT(indexes[3] == 2);
+
+  EXPECT(distances[0] == approx(1.5));
+  EXPECT(distances[1] == approx(0.6));
+  EXPECT(distances[2] == approx(0.6));
+  EXPECT(distances[3] == approx(0.9));
+
+},
+
 CASE("Basic RS test")
 {
   int thelier = 0;
@@ -233,6 +263,80 @@ CASE("Test RS with multiple trials in the same call")
   EXPECT(npoints[7] == 1);
   EXPECT(npoints[8] == 1);
   EXPECT(npoints[9] == 1);
+
+},
+
+CASE("Smoke test for RS with custom GPU")
+{
+  int thelier = 0;
+  int nchunks = 1;
+  int dim = 1;
+  int N = 5;
+  int useMaxNorm = 1;
+  int npoints[5];
+  float pointset[] = {0, 2, 2.1, 3.2, 3.5};
+  float radii[]    = {1, 1,   1,   1,   1};
+
+  int err = cudaFindRSAllSetGPU(npoints, pointset, pointset, radii, thelier, nchunks,
+              dim, N, useMaxNorm, 0);
+
+  EXPECT(err == 1);
+
+  EXPECT(npoints[0] == 0);
+  EXPECT(npoints[1] == 1);
+  EXPECT(npoints[2] == 1);
+  EXPECT(npoints[3] == 1);
+  EXPECT(npoints[4] == 1);
+
+},
+
+CASE("Smoke test of full MI function")
+{
+  int N = 10;
+  int dimx = 1;
+  int dimy = 1;
+  float source[10] = {0.4, 1, -4, 1, 1, 0.2, 98, 12, 1.2, 1.3};
+  float dest[10]   = {-3, 1, 3, -2, 2.1, 8.5, 4.2, 100, 12, 0};
+  int k = 2;
+  int thelier = 0;
+  int nchunks = 1;
+  int returnLocals = 0;
+  int useMaxNorm = 1;
+  int isAlgorithm1 = 1;
+  float result[3];
+
+  jidt_error_t err = MIKraskov_C(N, source, dimx, dest, dimy, k, thelier,
+      nchunks, returnLocals, useMaxNorm, isAlgorithm1, result);
+
+  EXPECT(err == JIDT_SUCCESS);
+
+},
+
+CASE("Test that same sample in repeated chunks gives same result")
+{
+  int N = 20;
+  int dimx = 1;
+  int dimy = 1;
+  float source[20] = {0.4, 1, -4,  1,   1, 0.2,  98,  12, 1.2, 1.3, 0.4, 1, -4,  1,   1, 0.2,  98,  12, 1.2, 1.3};
+  float dest[20]   = { -3, 1,  3, -2, 2.1, 8.5, 4.2, 100,  12,   0,  -3, 1,  3, -2, 2.1, 8.5, 4.2, 100,  12,   0};
+  int k = 2;
+  int thelier = 0;
+  int nchunks = 2;
+  int returnLocals = 0;
+  int useMaxNorm = 1;
+  int isAlgorithm1 = 1;
+  float result[2];
+
+  jidt_error_t err = MIKraskov_C(N, source, dimx, dest, dimy, k, thelier,
+      nchunks, returnLocals, useMaxNorm, isAlgorithm1, result);
+
+  EXPECT(err == JIDT_SUCCESS);
+  EXPECT(result[0] == approx(result[1]));
+
+},
+
+CASE("Test that two samples with same joints in two chunks give same result")
+{
 
 },
 
