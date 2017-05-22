@@ -603,6 +603,10 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
   protected double[] gpuComputeFromObservations(int startTimePoint,
       int numTimePoints, boolean returnLocals, int nb_surrogates) throws Exception {
 
+    if (debug) {
+      System.out.println("Start GPU calculation");
+    }
+
     ensureCudaLibraryLoaded();
 
     boolean useMaxNorm;
@@ -620,6 +624,9 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
     try {
       res = MIKraskov(totalObservations, sourceObservations, dimensionsSource,
           destObservations, dimensionsDest, k, returnLocals, useMaxNorm, isAlgorithm1, nb_surrogates);
+      if (debug) {
+        System.out.println("GPU calculation finished successfully. Returning results");
+      }
     } catch (Throwable e) {
       System.out.println("WARNING. Error in GPU code. Reverting back to CPU.");
       e.printStackTrace();

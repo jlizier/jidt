@@ -18,6 +18,7 @@ public class GPUMutualInfoTester extends TestCase {
 
     MutualInfoCalculatorMultiVariateKraskov miCalc = 
       new MutualInfoCalculatorMultiVariateKraskov1();
+    miCalc.setDebug(true);
 
     boolean gpuLoaded = true;
     try {
@@ -53,6 +54,7 @@ public class GPUMutualInfoTester extends TestCase {
                            MatrixUtils.selectColumn(data, 1));
     gpu_val = miCalc.computeAverageLocalOfObservations();
 
+    System.out.printf("GPU calculation on 2randomCols data. Expected: %f. Got %f\n", cpu_val, gpu_val);
     assertEquals(cpu_val, gpu_val, 0.00001);
 
     // Test for slightly higher-dimensional data
@@ -71,6 +73,7 @@ public class GPUMutualInfoTester extends TestCase {
                            MatrixUtils.selectColumns(data, new int[]{2,3}));
     gpu_val = miCalc.computeAverageLocalOfObservations();
 
+    System.out.printf("GPU calculation on 4ColsPaired data. Expected: %f. Got %f\n", cpu_val, gpu_val);
     assertEquals(cpu_val, gpu_val, 0.00001);
 
   }
