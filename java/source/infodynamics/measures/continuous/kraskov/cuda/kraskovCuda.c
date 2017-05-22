@@ -22,14 +22,15 @@ JNIEXPORT jdoubleArray JNICALL
    jint j_k, jboolean j_returnLocals, jboolean j_useMaxNorm,
    jboolean j_isAlgorithm1, jint j_nbSurrogates) {
 
-  int thelier = 0, err;
+  int thelier = 0;
 
   // Check that incoming data has correct size
   // =====================
   jsize sourceLength = (*env)->GetArrayLength(env, j_sourceArray);
   jsize destLength = (*env)->GetArrayLength(env, j_destArray);
 
-  if (sourceLength != j_N || destLength != j_N || (j_N%(j_nbSurrogates+1) != 0)) {
+  // if (sourceLength != j_N || destLength != j_N || (j_N%(j_nbSurrogates+1) != 0)) {
+  if (sourceLength != j_N || destLength != j_N) {
     jclass Exception = (*env)->FindClass(env, "java/lang/Exception");
     (*env)->ThrowNew(env, Exception, "Data has wrong length.");
   }
@@ -50,12 +51,10 @@ JNIEXPORT jdoubleArray JNICALL
   int k = j_k;
   int dimx = j_dimx;
   int dimy = j_dimy;
-  int dims = dimx + dimy;
   int returnLocals = j_returnLocals ? 1 : 0;
   int useMaxNorm   = j_useMaxNorm   ? 1 : 0;
   int isAlgorithm1 = j_isAlgorithm1 ? 1 : 0;
   int nb_surrogates = j_nbSurrogates;
-  int nchunks      = j_nbSurrogates + 1;
   
   float *source = (float *) malloc(N * dimx * sizeof(float));
   float *dest   = (float *) malloc(N * dimy * sizeof(float));
@@ -118,13 +117,13 @@ JNIEXPORT jdoubleArray JNICALL
   if (returnLocals) {
     resultSize = N;
   } else if (nb_surrogates > 0) {
-    resultSize = nchunks;
+    resultSize = nb_surrogates + 1;
   } else {
     resultSize = 3;
   }
   float *result = (float *) malloc(resultSize * sizeof(float));
   jidt_error_t ret = MIKraskov_C(N, source, dimx, dest, dimy,
-                       k, thelier, nchunks, returnLocals, useMaxNorm,
+                       k, thelier, nb_surrogates, returnLocals, useMaxNorm,
                        isAlgorithm1, result);
 
   if (JIDT_ERROR == ret) {
