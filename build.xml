@@ -99,7 +99,6 @@
 
     <!-- If applicable, run also GPU tests -->
     <antcall target="gputest" if:true="${enablegpu}"/>
-
 	</target>
 
 	<!-- Make javadocs, excluding the classes we've derived from Apache Commons Math -->
@@ -199,9 +198,9 @@
   </target>
 
   <!-- Test GPU code -->
-  <target name="gputest" depends="gpu" description="compile and run C unit tests for GPU code">
+  <target name="gputest" depends="gpu, compile" description="compile and run C unit tests for GPU code">
 
-		<!-- Compile the GPU unit tests -->
+		<!-- Compile and run the C-only GPU unit tests -->
     <exec executable="make" dir="${src}/infodynamics/measures/continuous/kraskov/cuda/">
       <arg value="test"/>
     </exec>
@@ -211,6 +210,28 @@
       file="${bin}/infodynamics/measures/continuous/kraskov/cuda/libKraskov.so"/>
 
     <exec executable="./unittest" dir="${unittestsbin}/infodynamics/measures/continuous/kraskov/cuda/"/>
+
+		<!-- Compile and run the Java+C GPU tests -->
+		<javac destdir="${unittestsbin}" includeAntRuntime="true" debug="true">
+      <src path="${unittestssrc}"/>
+			<classpath refid="project.classpath"/>
+			<classpath refid="apache-classpath"/>
+		</javac>
+
+		<junit printsummary="yes" showoutput="yes" fork="true" forkmode="once" haltonfailure="yes" haltonerror="yes" includeantruntime="true">
+			<classpath>
+				<path refid="project.classpath"/>
+				<pathelement path="${unittestsbin}"/>
+        <pathelement location="${basedir}/clover.jar"/>
+			</classpath>
+			<formatter type="plain"/>
+			<batchtest todir="${reports.tests}"> <!-- Writes full reports with stdout and stderr to ${reports.tests} -->
+				<fileset dir="${unittestsbin}">
+					<include name="**/GPUMutualInfoTester.class"/>
+					<include name="**/GPUPerformanceTester.class"/>
+				</fileset>
+			</batchtest>
+		</junit>
 
   </target>
 
