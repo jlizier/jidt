@@ -209,7 +209,12 @@
     <copy todir="${unittestsbin}/infodynamics/measures/continuous/kraskov/cuda"
       file="${bin}/infodynamics/measures/continuous/kraskov/cuda/libKraskov.so"/>
 
-    <exec executable="./unittest" dir="${unittestsbin}/infodynamics/measures/continuous/kraskov/cuda/"/>
+    <exec executable="./unittest" dir="${unittestsbin}/infodynamics/measures/continuous/kraskov/cuda/" resultproperty="return.code"/>
+    <fail>
+      <condition>
+        <isfailure code="${return.code}"/>
+      </condition>
+    </fail>
 
 		<!-- Compile and run the Java+C GPU tests -->
 		<javac destdir="${unittestsbin}" includeAntRuntime="true" debug="true">
