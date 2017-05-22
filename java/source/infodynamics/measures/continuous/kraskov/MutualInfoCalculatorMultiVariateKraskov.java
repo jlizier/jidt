@@ -600,8 +600,8 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
    *   and implement a GPU routine to calculate all values in a single call
    *   to the GPU code.
    */
-  protected double[] gpuComputeFromObservations(
-      int startTimePoint, int numTimePoints, boolean returnLocals) throws Exception {
+  protected double[] gpuComputeFromObservations(int startTimePoint,
+      int numTimePoints, boolean returnLocals, int nb_surrogates) throws Exception {
 
     ensureCudaLibraryLoaded();
 
@@ -619,7 +619,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 
     try {
       res = MIKraskov(totalObservations, sourceObservations, dimensionsSource,
-          destObservations, dimensionsDest, k, returnLocals, useMaxNorm, isAlgorithm1, 0);
+          destObservations, dimensionsDest, k, returnLocals, useMaxNorm, isAlgorithm1, nb_surrogates);
     } catch (Throwable e) {
       System.out.println("WARNING. Error in GPU code. Reverting back to CPU.");
       e.printStackTrace();
@@ -629,6 +629,14 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
     return res;
   }
 
+
+  /**
+   * FIXME
+   */
+  protected double[] gpuComputeFromObservations(int startTimePoint,
+      int numTimePoints, boolean returnLocals) throws Exception {
+    return gpuComputeFromObservations(startTimePoint, numTimePoints, returnLocals, 0);
+  }
 
   /**
    * Native method to calculate MI in GPU.
@@ -723,7 +731,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
   public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck)
       throws Exception {
     if (useGPU) {
-      double[] res = gpuComputeFromObservations(0, totalObservations, false); // TODO FIXME
+      double[] res = gpuComputeFromObservations(0, totalObservations, false, numPermutationsToCheck);
       return new EmpiricalMeasurementDistribution(
           MatrixUtils.select(res, 1, res.length - 1), res[0]);
     } else {
