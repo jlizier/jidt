@@ -42,9 +42,13 @@ jcall(teCalc, "setProperty", Void, (JString, JString), "NORMALISE", "true"); # N
 jcall(teCalc, "initialise", Void, (jint, jdouble), 1, 0.5); # Use history length 1 (Schreiber k=1), kernel width of 0.5 normalised units
 jcall(teCalc, "setObservations", Void, (Array{jdouble,1}, Array{jdouble,1}),
 				     sourceArray, destArray);
-# For copied source, should give something close to expected value for correlated Gaussians:
 result = jcall(teCalc, "computeAverageLocalOfObservations", jdouble, ());
-@printf("TE result %.4f bits; expected to be close to %.4f bits for these correlated Gaussians but biased upwards\n", result, log(1/(1-covariance^2))/log(2));
+# For copied source, should give something close to expected value for correlated Gaussians:
+# Expected correlation is expected covariance / product of expected standard deviations:
+#  (where square of destArray standard dev is sum of squares of std devs of
+#  underlying distributions)
+corr_expected = covariance / (1 * sqrt(covariance^2 + (1-covariance)^2));
+@printf("TE result %.4f bits; expected to be close to %.4f bits for these correlated Gaussians but biased upwards\n", result, -0.5*log(1-corr_expected^2)/log(2));
 
 jcall(teCalc, "initialise", Void, ()); # Initialise leaving the parameters the same
 jcall(teCalc, "setObservations", Void, (Array{jdouble,1}, Array{jdouble,1}),
