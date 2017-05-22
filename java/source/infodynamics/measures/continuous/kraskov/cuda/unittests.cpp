@@ -322,31 +322,130 @@ CASE("Smoke test of full MI function")
 
 },
 
-CASE("Test that same sample in repeated chunks gives same result")
+CASE("Test correct pointset arrangement")
 {
-  int N = 20;
+  int N = 10;
   int dimx = 1;
   int dimy = 1;
-  float source[20] = {0.4, 1, -4,  1,   1, 0.2,  98,  12, 1.2, 1.3, 0.4, 1, -4,  1,   1, 0.2,  98,  12, 1.2, 1.3};
-  float dest[20]   = { -3, 1,  3, -2, 2.1, 8.5, 4.2, 100,  12,   0,  -3, 1,  3, -2, 2.1, 8.5, 4.2, 100,  12,   0};
   int k = 2;
   int thelier = 0;
-  int nchunks = 2;
   int returnLocals = 0;
   int useMaxNorm = 1;
   int isAlgorithm1 = 1;
-  float result[2];
 
-  jidt_error_t err = MIKraskov_C(N, source, dimx, dest, dimy, k, thelier,
-      nchunks, returnLocals, useMaxNorm, isAlgorithm1, result);
+  float source[10] = {0.4, 1, -4,  1,   1, 0.2,  98,  12, 1.2, 1.3};
+  float dest[10]   = { -3, 1,  3, -2, 2.1, 8.5, 4.2, 100,  12,   0};
+
+  float pointset[20] = {0.4, 1, -4,  1,   1, 0.2,  98,  12, 1.2, 1.3,
+                         -3, 1,  3, -2, 2.1, 8.5, 4.2, 100,  12,   0};
+
+  float result1[3];
+  float result2[3];
+  jidt_error_t err;
+
+  err = MIKraskov_C(N, source, dimx, dest, dimy, k, thelier,
+      0, returnLocals, useMaxNorm, isAlgorithm1, result1);
+  EXPECT(err == JIDT_SUCCESS);
+
+  err = MIKraskovByPointsetChunks(N, source, dimx, dest, dimy, k, thelier,
+      1, returnLocals, useMaxNorm, isAlgorithm1, result2, pointset);
+  EXPECT(err == JIDT_SUCCESS);
+
+  EXPECT(result1[0] == approx(result2[0]));
+  EXPECT(result1[1] == approx(result2[1]));
+  EXPECT(result1[2] == approx(result2[2]));
+},
+
+CASE("Test correct pointset arrangement in more than one dimension")
+{
+  int N = 5;
+  int dimx = 2;
+  int dimy = 2;
+  int k = 2;
+  int thelier = 0;
+  int returnLocals = 0;
+  int useMaxNorm = 1;
+  int isAlgorithm1 = 1;
+
+  // Source points:  X      Y
+  //               0.4    0.2
+  //                 1     98
+  //                -4     12
+  //                 1    1.2
+  //                 1    1.3
+  //
+  // Dest points:    X      Y
+  //                -3    8.5
+  //                 1    4.2
+  //                 3    100
+  //                -2     12
+  //                2.1     0
+
+  float source[10] = {0.4, 1, -4,  1,   1, 0.2,  98,  12, 1.2, 1.3};
+  float dest[10]   = { -3, 1,  3, -2, 2.1, 8.5, 4.2, 100,  12,   0};
+
+  float pointset[20] = {0.4, 1, -4,  1,   1, 0.2,  98,  12, 1.2, 1.3,
+                         -3, 1,  3, -2, 2.1, 8.5, 4.2, 100,  12,   0};
+
+  float result1[3];
+  float result2[3];
+  jidt_error_t err;
+
+  err = MIKraskov_C(N, source, dimx, dest, dimy, k, thelier,
+      0, returnLocals, useMaxNorm, isAlgorithm1, result1);
+  EXPECT(err == JIDT_SUCCESS);
+
+  err = MIKraskovByPointsetChunks(N, source, dimx, dest, dimy, k, thelier,
+      1, returnLocals, useMaxNorm, isAlgorithm1, result2, pointset);
+  EXPECT(err == JIDT_SUCCESS);
+
+  EXPECT(result1[0] == approx(result2[0]));
+  EXPECT(result1[1] == approx(result2[1]));
+  EXPECT(result1[2] == approx(result2[2]));
+},
+
+CASE("Test that same sample in repeated chunks gives same result")
+{
+  int N = 5;
+  int dimx = 1;
+  int dimy = 1;
+
+  // Sample source and dest data
+  float source[5] = {0.4, 1, -4,  1,   1};
+  float dest[5]   = { -3, 1,  3, -2, 2.1};
+
+  // Pointset with source and dest repeated twice
+  float double_pointset[20] = {0.4, 1, -4,  1,   1, 0.4, 1, -4,  1,   1,
+                                -3, 1,  3, -2, 2.1,  -3, 1,  3, -2, 2.1};
+
+  int k = 2;
+  int thelier = 0;
+  int returnLocals = 0;
+  int useMaxNorm = 1;
+  int isAlgorithm1 = 1;
+  float result1[3];
+  float result2[2];
+  jidt_error_t err;
+
+  printf("===============================\n");
+  err = MIKraskov_C(N, source, dimx, dest, dimy, k, thelier,
+      0, returnLocals, useMaxNorm, isAlgorithm1, result1);
+
+  printf("===============================\n");
+  err = MIKraskovByPointsetChunks(N*2, source, dimx, dest, dimy, k, thelier,
+      2, returnLocals, useMaxNorm, isAlgorithm1, result2, double_pointset);
+
+  float MI1 = cpuDigamma(k) + cpuDigamma(N) - result1[0]/((double) N);
 
   EXPECT(err == JIDT_SUCCESS);
-  EXPECT(result[0] == approx(result[1]));
+  EXPECT(result2[0] == approx(MI1));
+  EXPECT(result2[0] == approx(result2[1]));
 
 },
 
 CASE("Test that two samples with same joints in two chunks give same result")
 {
+  EXPECT(1 == 1);
 
 },
 
