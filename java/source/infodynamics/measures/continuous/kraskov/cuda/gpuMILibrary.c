@@ -3,7 +3,7 @@
 
 #include "gpuMILibrary.h"
 #include "gpuKnnLibrary.h"
-#include "digamma.c"
+#include "digamma.h"
 
 jidt_error_t MIKraskov_C(int N, float *source, int dimx, float *dest, int dimy,
     int k, int thelier, int nchunks, int returnLocals, int useMaxNorm,

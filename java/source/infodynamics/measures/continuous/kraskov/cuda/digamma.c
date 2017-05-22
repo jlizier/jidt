@@ -10,6 +10,7 @@
  Richard J. Mathar, 2005-11-24
  ***************************************/
 #include <math.h>
+#include "digamma.h"
 
 #ifndef M_PIl
 /** The constant Pi in high precision */
@@ -30,9 +31,6 @@
  * @author Richard J. Mathar
  * @since 2005-11-24
  */
-#ifdef __cplusplus
-extern "C" {
-#endif
 long double cpuDigamma(long double x)
 {
   int n;
@@ -114,7 +112,4 @@ long double cpuDigamma(long double x)
     return resul ;
   }
 }
-#ifdef __cplusplus
-}
-#endif
 
