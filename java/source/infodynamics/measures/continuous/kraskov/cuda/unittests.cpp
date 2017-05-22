@@ -5,6 +5,7 @@
 
 #include "gpuKnnLibrary.h"
 #include "gpuMILibrary.h"
+#include "digamma.h"
 
 using lest::approx;
 
@@ -50,6 +51,13 @@ CASE("Basic kNN test with L2 norm")
   int nchunks = 1;
   int indexes[4];
   float distances[4];
+
+  // Points:  X     Y
+  //         -1    -1
+  //        0.5   0.5
+  //        1.1   1.1
+  //          2     2
+
   float pointset[8] = {-1, 0.5, 1.1, 2,
                        -1, 0.5, 1.1, 2};
 
@@ -80,6 +88,8 @@ CASE("Test kNN test with longer sequences")
   int nchunks = 1;
   int indexes[10];
   float distances[10];
+  // This is the same sequence as in the previous test case, padded with a
+  // bunch of points very far away.
   float pointset[20] = {-1, 0.5, 1.1, 2, 10, 11, 10.5, -100, -50, 666,
                         -1, 0.5, 1.1, 2, 98, -9, -200, 45.3, -53, 0.1};
 
@@ -299,14 +309,14 @@ CASE("Smoke test of full MI function")
   float dest[10]   = {-3, 1, 3, -2, 2.1, 8.5, 4.2, 100, 12, 0};
   int k = 2;
   int thelier = 0;
-  int nchunks = 1;
+  int nb_surrogates = 0;
   int returnLocals = 0;
   int useMaxNorm = 1;
   int isAlgorithm1 = 1;
   float result[3];
 
   jidt_error_t err = MIKraskov_C(N, source, dimx, dest, dimy, k, thelier,
-      nchunks, returnLocals, useMaxNorm, isAlgorithm1, result);
+      nb_surrogates, returnLocals, useMaxNorm, isAlgorithm1, result);
 
   EXPECT(err == JIDT_SUCCESS);
 
