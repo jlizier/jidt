@@ -44,8 +44,8 @@
 % - cells - number of cells in the CA
 % - steps - number of rows to execute the CA for (including the random initial row)
 % - debug - turn on various debug messages
-% - seedOrState - if a scalar, it is the state input for the random number generator (so one can repeat CA investigations for the same initial state).
-%               - if a vector, it is the initial state for the CA (must be of length cells)
+% - seedOrState (optional) - if a scalar, it is the state input for the random number generator (so one can repeat CA investigations for the same initial state).
+%                          - if a vector, it is the initial state for the CA (must be of length cells)
 %
 % Outputs:
 % - caStates - a run, from random initial conditions, of a CA of the given parameters.
@@ -128,7 +128,7 @@ function [caStates, ruleTable, executedRules] = runCA(neighbourhood, base, rule,
 			fprintf('%d', ruleTable(i));
 		end
 		fprintf('\n');
-	else
+	elseif (isscalar(rule))
 		% The rule is specified as an integer
 		if (rule > base .^ (base .^ neighbourhood) - 1)
 			error(sprintf('Rule %d is not within the limits of this base %d and neighbourhood %d (max is %d)', ...
@@ -156,6 +156,12 @@ function [caStates, ruleTable, executedRules] = runCA(neighbourhood, base, rule,
 			fprintf('%d', ruleTable(i));
 		end
 		fprintf('\n');
+	else
+		% We have a vector supplied for the rule, as a rule table already
+		if (length(rule) ~= base .^ neighbourhood)
+			error('Rule table vector (length %d) is not of expected length %d\n', length(rule), base .^ neighbourhood);
+		end
+		ruleTable = rule;
 	end
 	
 	caStates = zeros(steps, cells);
