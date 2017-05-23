@@ -427,11 +427,9 @@ CASE("Test that same sample in repeated chunks gives same result")
   float result2[2];
   jidt_error_t err;
 
-  printf("===============================\n");
   err = MIKraskov_C(N, source, dimx, dest, dimy, k, thelier,
       0, returnLocals, useMaxNorm, isAlgorithm1, result1);
 
-  printf("===============================\n");
   err = MIKraskovByPointsetChunks(N*2, source, dimx, dest, dimy, k, thelier,
       2, returnLocals, useMaxNorm, isAlgorithm1, result2, double_pointset);
 
@@ -443,9 +441,116 @@ CASE("Test that same sample in repeated chunks gives same result")
 
 },
 
-CASE("Test that two samples with same joints in two chunks give same result")
+CASE("Test that sample and identity reordering have same MI")
 {
-  EXPECT(1 == 1);
+  int N = 5;
+  int dimx = 1;
+  int dimy = 1;
+  float source[5] = {0.4, 1, -4,  1,   1};
+  float dest[5]   = { -3, 1,  3, -2, 2.1};
+  int k = 2;
+  int thelier = 0;
+  int returnLocals = 0;
+  int useMaxNorm = 1;
+  int isAlgorithm1 = 1;
+  float result[2];
+  int reorderingsGiven = 1;
+  int order[5] = {0, 1, 2, 3, 4};
+  int *order_p = order;
+  int **reorderings = &order_p;
+  jidt_error_t err;
+
+  printf("====================================\n");
+  err = MIKraskovWithReorderings(N, source, dimx, dest, dimy, k, thelier,
+      1, returnLocals, useMaxNorm, isAlgorithm1, result, reorderingsGiven, reorderings);
+
+  EXPECT(err == JIDT_SUCCESS);
+
+  printf("Test results: %f\t%f\n", result[0], result[1]);
+  EXPECT(result[0] == approx(result[1]));
+
+},
+
+CASE("Test identity reordering with more than one dimension")
+{
+  int N = 5;
+  int dimx = 3;
+  int dimy = 2;
+
+  // Source points:  X      Y    Z
+  //               0.4    0.2    0
+  //                 1     98   13
+  //                -4     12    7
+  //                 1    1.2   -1
+  //                 1    1.3    0
+  //
+  // Dest points:    X      Y
+  //                -3    8.5
+  //                 1    4.2
+  //                 3    100
+  //                -2     12
+  //                2.1     0
+
+  float source[15] = {0.4, 1, -4,  1,   1, 0.2,  98,  12, 1.2, 1.3, 0, 13, 7, -1, 0};
+  float dest[10]   = { -3, 1,  3, -2, 2.1, 8.5, 4.2, 100,  12,   0};
+  int k = 2;
+  int thelier = 0;
+  int returnLocals = 0;
+  int useMaxNorm = 1;
+  int isAlgorithm1 = 1;
+  float result[2];
+  int reorderingsGiven = 1;
+  int order[5] = {0, 1, 2, 3, 4};
+  int *order_p = order;
+  int **reorderings = &order_p;
+  jidt_error_t err;
+
+  printf("====================================\n");
+  err = MIKraskovWithReorderings(N, source, dimx, dest, dimy, k, thelier,
+      1, returnLocals, useMaxNorm, isAlgorithm1, result, reorderingsGiven, reorderings);
+
+  EXPECT(err == JIDT_SUCCESS);
+
+  printf("Test results: %f\t%f\n", result[0], result[1]);
+  EXPECT(result[0] == approx(result[1]));
+
+},
+
+CASE("Test identity reordering with larger dataset")
+{
+  int thelier = 0;
+  int useMaxNorm = 1;
+  int N = 1000;
+  int dimx = 3;
+  int dimy = 2;
+  int k = 4;
+  int isAlgorithm1 = 1;
+  int returnLocals = 0;
+
+  float *source = (float *) malloc(N * dimx * sizeof(float));
+  for (int i = 0; i < N*dimx; i++) { source[i] = rand()/((float) RAND_MAX); };
+
+  float *dest   = (float *) malloc(N * dimy * sizeof(float));
+  for (int i = 0; i < N*dimy; i++) { dest[i] = rand()/((float) RAND_MAX); };
+
+  int reorderingsGiven = 1;
+  int *order = (int *) malloc(N * sizeof(int));
+  for (int i = 0; i < N; i++) { order[i] = i; };
+  int **reorderings = &order;
+
+  float result[2];
+
+  jidt_error_t err;
+  printf("====================================\n");
+  err = MIKraskovWithReorderings(N, source, dimx, dest, dimy, k, thelier,
+      1, returnLocals, useMaxNorm, isAlgorithm1, result, reorderingsGiven, reorderings);
+
+  free(source); free(dest); free(order);
+
+  EXPECT(err == JIDT_SUCCESS);
+
+  printf("Test results: %f\t%f\n", result[0], result[1]);
+  EXPECT(result[0] == approx(result[1]));
 
 },
 
