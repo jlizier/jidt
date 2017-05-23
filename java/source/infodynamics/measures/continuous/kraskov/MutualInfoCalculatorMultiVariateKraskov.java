@@ -601,7 +601,8 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
    *   to the GPU code.
    */
   protected double[] gpuComputeFromObservations(int startTimePoint,
-      int numTimePoints, boolean returnLocals, int nb_surrogates) throws Exception {
+      int numTimePoints, boolean returnLocals, int nb_surrogates,
+      int[][] newOrderings) throws Exception {
 
     if (debug) {
       System.out.println("Start GPU calculation");
@@ -622,8 +623,12 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
     double[] res;
 
     try {
+      if (debug) {
+        System.out.printf("Calling GPU calculation with returnLocals=%b and nb_surrogates=%d\n", returnLocals, nb_surrogates);
+      }
       res = MIKraskov(totalObservations, sourceObservations, dimensionsSource,
-          destObservations, dimensionsDest, k, returnLocals, useMaxNorm, isAlgorithm1, nb_surrogates);
+          destObservations, dimensionsDest, k, returnLocals, useMaxNorm,
+          isAlgorithm1, nb_surrogates, null!=newOrderings, newOrderings);
       if (debug) {
         System.out.println("GPU calculation finished successfully. Returning results");
       }
@@ -642,7 +647,16 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
    */
   protected double[] gpuComputeFromObservations(int startTimePoint,
       int numTimePoints, boolean returnLocals) throws Exception {
-    return gpuComputeFromObservations(startTimePoint, numTimePoints, returnLocals, 0);
+    return gpuComputeFromObservations(startTimePoint, numTimePoints, returnLocals, 0, null);
+  }
+
+  /**
+   * FIXME
+   */
+  protected double[] gpuComputeFromObservations(int startTimePoint,
+      int numTimePoints, boolean returnLocals, int[][] newOrderings) throws Exception {
+    return gpuComputeFromObservations(startTimePoint, numTimePoints,
+        returnLocals, newOrderings.length, newOrderings);
   }
 
   /**
@@ -651,7 +665,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
   private native double[] MIKraskov(
       int N, double[][] source, int dimx, double[][] dest, int dimy,
       int k, boolean returnLocals, boolean useMaxNorm, boolean isAlgorithm1,
-      int nb_surrogates);
+      int nb_surrogates, boolean orderingsGiven, int[][] newOrderings);
 
   /**
    * Internal method to ensure that the Kd-tree data structures to represent the
@@ -738,11 +752,26 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
   public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck)
       throws Exception {
     if (useGPU) {
-      double[] res = gpuComputeFromObservations(0, totalObservations, false, numPermutationsToCheck);
+      double[] res = gpuComputeFromObservations(0, totalObservations, false, numPermutationsToCheck, null);
       return new EmpiricalMeasurementDistribution(
           MatrixUtils.select(res, 1, res.length - 1), res[0]);
     } else {
       return super.computeSignificance(numPermutationsToCheck);
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings)
+      throws Exception {
+    if (useGPU) {
+      double[] res = gpuComputeFromObservations(0, totalObservations, false, newOrderings.length, newOrderings);
+      return new EmpiricalMeasurementDistribution(
+          MatrixUtils.select(res, 1, res.length - 1), res[0]);
+    } else {
+      return super.computeSignificance(newOrderings);
     }
   }
   

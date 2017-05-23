@@ -12,7 +12,7 @@ extern "C" {
 /*
  * Class:     infodynamics_measures_continuous_kraskov_MutualInfoCalculatorMultiVariateKraskov
  * Method:    MIKraskov
- * Signature: (I[DI[DIIZZZI)[D
+ * Signature: (I[DI[DIIZZZIZ[I)[D
  */
 JNIEXPORT jdoubleArray JNICALL
   Java_infodynamics_measures_continuous_kraskov_MutualInfoCalculatorMultiVariateKraskov_MIKraskov(
@@ -20,7 +20,8 @@ JNIEXPORT jdoubleArray JNICALL
    jobjectArray j_sourceArray, jint j_dimx,
    jobjectArray j_destArray,   jint j_dimy,
    jint j_k, jboolean j_returnLocals, jboolean j_useMaxNorm,
-   jboolean j_isAlgorithm1, jint j_nbSurrogates) {
+   jboolean j_isAlgorithm1, jint j_nbSurrogates,
+   jboolean j_reorderingsGiven, jobjectArray j_orderings) {
 
   int thelier = 0;
 
@@ -55,6 +56,7 @@ JNIEXPORT jdoubleArray JNICALL
   int useMaxNorm   = j_useMaxNorm   ? 1 : 0;
   int isAlgorithm1 = j_isAlgorithm1 ? 1 : 0;
   int nb_surrogates = j_nbSurrogates;
+  int reorderingsGiven = j_reorderingsGiven ? 1 : 0;
   
   float *source = (float *) malloc(N * dimx * sizeof(float));
   float *dest   = (float *) malloc(N * dimy * sizeof(float));
@@ -110,6 +112,24 @@ JNIEXPORT jdoubleArray JNICALL
 
   }
 
+  int **reorderings = NULL;
+  if (reorderingsGiven) {
+    reorderings = (int **) malloc(nb_surrogates * sizeof(int *));
+    for (int i = 0; i < nb_surrogates; i++) {
+      jintArray j_order = (jdoubleArray) (*env)->GetObjectArrayElement(env, j_orderings, i);
+      jint *order = (*env)->GetIntArrayElements(env, j_order, NULL);
+
+      reorderings[i] = (int *) malloc(N * sizeof(int));
+      for (int j = 0; j < N; j++) {
+        reorderings[i][j] = order[j];
+      }
+
+      (*env)->ReleaseIntArrayElements(env, j_order, order, 0);
+      (*env)->DeleteLocalRef(env, j_order);
+    }
+  }
+
+
 
   // Call C function
   // =========================
@@ -122,9 +142,18 @@ JNIEXPORT jdoubleArray JNICALL
     resultSize = 3;
   }
   float *result = (float *) malloc(resultSize * sizeof(float));
-  jidt_error_t ret = MIKraskov_C(N, source, dimx, dest, dimy,
-                       k, thelier, nb_surrogates, returnLocals, useMaxNorm,
-                       isAlgorithm1, result);
+  jidt_error_t ret;
+  if (!reorderingsGiven) {
+    ret = MIKraskov_C(N, source, dimx, dest, dimy,
+                      k, thelier, nb_surrogates, returnLocals, useMaxNorm,
+                      isAlgorithm1, result);
+
+  } else {
+    ret = MIKraskovWithReorderings(N, source, dimx, dest, dimy, k, thelier,
+                                   nb_surrogates, returnLocals, useMaxNorm,
+                                   isAlgorithm1, result, reorderingsGiven,
+                                   reorderings);
+  }
 
   if (JIDT_ERROR == ret) {
     jclass Exception = (*env)->FindClass(env, "java/lang/Exception");
@@ -135,6 +164,13 @@ JNIEXPORT jdoubleArray JNICALL
   // =========================
   if (source)  free(source);
   if (dest)    free(dest);
+
+  if (reorderingsGiven) {
+    for (int i = 0; i < nb_surrogates; i++) {
+      if (reorderings[i]) free(reorderings[i]);
+    }
+    if (reorderings) free (reorderings);
+  }
 
   jdouble outCArray[resultSize];
   for (int i = 0; i < resultSize; i++) {
