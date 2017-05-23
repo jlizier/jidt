@@ -2,6 +2,7 @@ package infodynamics.measures.continuous.kraskov;
 
 import infodynamics.utils.ArrayFileReader;
 import infodynamics.utils.MatrixUtils;
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 
 import junit.framework.TestCase;
 
@@ -149,4 +150,64 @@ public class GPUMutualInfoTester extends TestCase {
     }
 
   }
+
+
+  /**
+   * Test that GPU MI calculations with given reordering match the CPU version.
+   *
+   * Only runs if CUDA code has been precompiled.
+   *
+   * @throws Exception if something goes wrong
+   */
+  public void testGPUMutualInfoReordering() throws Exception {
+
+    MutualInfoCalculatorMultiVariateKraskov miCalc = 
+      new MutualInfoCalculatorMultiVariateKraskov1();
+    miCalc.setDebug(true);
+
+    boolean gpuLoaded = true;
+    try {
+      miCalc.ensureCudaLibraryLoaded();
+    } catch (Throwable e) {
+      gpuLoaded = false;
+    }
+
+    // This will effectively ignore the test if GPU library not loaded properly
+    if (!gpuLoaded) {
+      return;
+    }
+
+    // Now starts the actual test. Set up variables and properties
+    miCalc.setProperty("NOISE_LEVEL_TO_ADD", "0");
+    ArrayFileReader afr;
+    double[][] data;
+    EmpiricalMeasurementDistribution cpu_dist, gpu_dist;
+
+    // Test for low-dimensional data
+		afr = new ArrayFileReader("demos/data/2coupledRandomCols-1.txt");
+		data = afr.getDouble2DMatrix();
+    int[][] newOrderings = new int[][] { MatrixUtils.range(0, data.length-1) };
+
+    miCalc.setProperty("USE_GPU", "false");
+    miCalc.initialise(1,1);
+    miCalc.setObservations(MatrixUtils.selectColumn(data, 0),
+                           MatrixUtils.selectColumn(data, 1));
+    cpu_dist = miCalc.computeSignificance(newOrderings);
+
+    miCalc.setProperty("USE_GPU", "true");
+    miCalc.initialise(1,1);
+    miCalc.setObservations(MatrixUtils.selectColumn(data, 0),
+                           MatrixUtils.selectColumn(data, 1));
+    gpu_dist = miCalc.computeSignificance(newOrderings);
+
+    System.out.printf("GPU calculation on 2randomCols data. CPU got (%f,%f)\n", cpu_dist.actualValue, cpu_dist.distribution[0]);
+    System.out.printf("GPU calculation on 2randomCols data. GPU got (%f,%f)\n", gpu_dist.actualValue, gpu_dist.distribution[0]);
+
+    assertEquals(cpu_dist.actualValue, cpu_dist.distribution[0], 0.00001);
+    assertEquals(gpu_dist.actualValue, gpu_dist.distribution[0], 0.00001);
+    assertEquals(cpu_dist.actualValue, gpu_dist.distribution[0], 0.00001);
+    assertEquals(gpu_dist.actualValue, cpu_dist.distribution[0], 0.00001);
+  }
+
 }
+
