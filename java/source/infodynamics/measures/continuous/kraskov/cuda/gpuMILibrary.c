@@ -22,51 +22,65 @@ void randperm(int perm[], int n) {
 }
 
 
-/**
- * Calculate Mutual Information using the KSG algorithm.
- */
 jidt_error_t MIKraskov_C(int N, float *source, int dimx, float *dest, int dimy,
     int k, int thelier, int nb_surrogates, int returnLocals, int useMaxNorm,
     int isAlgorithm1, float *result) {
+  return MIKraskovWithReorderings(N, source, dimx, dest, dimy, k, thelier, nb_surrogates,
+      returnLocals, useMaxNorm, isAlgorithm1, result, 0, NULL);
+}
+
+/**
+ * Calculate Mutual Information using the KSG algorithm.
+ */
+jidt_error_t MIKraskovWithReorderings(int N, float *source, int dimx, float *dest, int dimy,
+    int k, int thelier, int nb_surrogates, int returnLocals, int useMaxNorm,
+    int isAlgorithm1, float *result, int reorderingsGiven, int **reorderings) {
 
   // Allocate more space if surrogates are requested
   int nchunks = nb_surrogates + 1;
   int dims = dimx + dimy;
   float *pointset = (float *) malloc(N * dims * nchunks * sizeof(float));
 
-  if (nb_surrogates == 0) {
-    // If no surrogates requested, copy source and dest as usual
-    for (int i = 0; i < N; i++) {
-      for (int j = 0; j < dimx; j++) {
-        register int idx = N*j + i;
-        pointset[idx] = source[idx];
-      }
-
-      for (int j = 0; j < dimy; j++) {
-        register int idx = N*j + i;
-        pointset[N*dimx + idx] = dest[idx];
-      }
+  // If no surrogates requested, copy source and dest as usual
+  for (int i = 0; i < N; i++) {
+    for (int j = 0; j < dimx; j++) {
+      register int idx = N*j + i;
+      pointset[idx] = source[idx];
     }
 
-  } else {
-    // If surrogates requested, copy including random permutations
+    for (int j = 0; j < dimy; j++) {
+      register int idx = N*j + i;
+      pointset[nchunks*N*dimx + idx] = dest[idx];
+    }
+  }
+
+  if (nb_surrogates > 0) {
+    // If surrogates requested, copy permutations as well
+    int *order;
     int perm[N];
-    for (int i = 0; i < N; i++) {
-      perm[i] = i;
+    if (!reorderingsGiven) {
+      for (int i = 0; i < N; i++) {
+        perm[i] = i;
+      }
     }
 
-    for (int chunk = 0; chunk < nchunks; chunk++) {
-      randperm(perm, N);
+    for (int s = 0; s < nb_surrogates; s++) {
+      if (reorderingsGiven) {
+        order = reorderings[s];
+      } else {
+        randperm(perm, N);
+        order = perm;
+      }
 
       for (int i = 0; i < N; i++) {
         for (int j = 0; j < dimx; j++) {
           register int idx = N*j + i;
-          pointset[N*dims + idx] = source[idx];
+          pointset[(s+1)*N*dimx + idx] = source[N*j + order[i]];
         }
 
         for (int j = 0; j < dimy; j++) {
           register int idx = N*j + i;
-          pointset[N*dims + N*dimx + idx] = dest[idx];
+          pointset[nchunks*N*dimx + (s+1)*N*dimy + idx] = dest[N*j + order[i]];
         }
       }
     }
