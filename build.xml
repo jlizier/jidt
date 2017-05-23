@@ -178,9 +178,14 @@
 
   <!-- Compile GPU code -->
   <target name="gpu" depends="init" description="compile only C/C++ GPU code">
-    <exec executable="make" dir="${src}/infodynamics/measures/continuous/kraskov/cuda/">
+    <exec executable="make" dir="${src}/infodynamics/measures/continuous/kraskov/cuda/" resultproperty="return.code">
       <env key="DEBUG" value="${DEBUG}"/>
     </exec>
+    <fail>
+      <condition>
+        <isfailure code="${return.code}"/>
+      </condition>
+    </fail>
     <move todir="${bin}/infodynamics/measures/continuous/kraskov/cuda">
       <filelist dir="${src}/infodynamics/measures/continuous/kraskov/cuda">
         <file name="gpuKnnLibrary.o"/>
@@ -201,9 +206,14 @@
   <target name="gputest" depends="gpu, compile" description="compile and run C unit tests for GPU code">
 
 		<!-- Compile and run the C-only GPU unit tests -->
-    <exec executable="make" dir="${src}/infodynamics/measures/continuous/kraskov/cuda/">
+    <exec executable="make" dir="${src}/infodynamics/measures/continuous/kraskov/cuda/" resultproperty="return.code">
       <arg value="test"/>
     </exec>
+    <fail>
+      <condition>
+        <isfailure code="${return.code}"/>
+      </condition>
+    </fail>
     <move todir="${unittestsbin}/infodynamics/measures/continuous/kraskov/cuda"
       file="${src}/infodynamics/measures/continuous/kraskov/cuda/unittest"/>
     <copy todir="${unittestsbin}/infodynamics/measures/continuous/kraskov/cuda"
