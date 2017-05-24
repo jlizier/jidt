@@ -251,34 +251,45 @@ extern "C" {
 int computeSumDigammas(float *sumDiGammas, int *nx, int *ny, unsigned int N) {
 
   int *d_nx, *d_ny;
-  float *d_sumDiGammas;
-
-  checkCudaErrors( cudaMalloc((void **) &d_nx, N * sizeof(int)) );
-  checkCudaErrors( cudaMalloc((void **) &d_ny, N * sizeof(int)) );
-  checkCudaErrors( cudaMalloc((void **) &d_sumDiGammas, sizeof(float)) );
-
-  checkCudaErrors( cudaMemcpy(d_nx, nx, N*sizeof(int), cudaMemcpyHostToDevice) );
-  checkCudaErrors( cudaMemcpy(d_ny, ny, N*sizeof(int), cudaMemcpyHostToDevice) );
+  float *d_sumDiGammas, *partialSumDiGammas;
 
   unsigned int threads_per_block = 512;
   dim3 n_blocks, n_threads;
   n_blocks.x = ((N % threads_per_block) != 0) ? (N / threads_per_block + 1) : (N / threads_per_block);
   n_threads.x = threads_per_block;
+  int memkernel = sizeof(int)*n_threads.x;
 
-  printf("blocks = %i, threads = %i\n", n_blocks.x, n_threads.x);
+  partialSumDiGammas = (float *) malloc(n_blocks.x * sizeof(float));
+
+  checkCudaErrors( cudaMalloc((void **) &d_nx, N * sizeof(int)) );
+  checkCudaErrors( cudaMalloc((void **) &d_ny, N * sizeof(int)) );
+  checkCudaErrors( cudaMalloc((void **) &d_sumDiGammas, n_blocks.x * sizeof(float)) );
+
+  checkCudaErrors( cudaMemcpy(d_nx, nx, N*sizeof(int), cudaMemcpyHostToDevice) );
+  checkCudaErrors( cudaMemcpy(d_ny, ny, N*sizeof(int), cudaMemcpyHostToDevice) );
+
+  // printf("blocks = %i, threads = %i\n", n_blocks.x, n_threads.x);
 
   // reduce6<<<n_blocks, n_threads>>>(d_nx, d_ny, d_sumDiGammas, N);
-  reduce1<<<n_blocks, n_threads>>>(d_nx, d_ny, d_sumDiGammas, N);
+  reduce1<<<n_blocks, n_threads, memkernel>>>(d_nx, d_ny, d_sumDiGammas, N);
 
   checkCudaErrors( cudaDeviceSynchronize() );
 
-  checkCudaErrors( cudaMemcpy(sumDiGammas, d_sumDiGammas, sizeof(float), cudaMemcpyDeviceToHost) );
+  checkCudaErrors( cudaMemcpy(partialSumDiGammas, d_sumDiGammas, n_blocks.x * sizeof(float), cudaMemcpyDeviceToHost) );
 
+  checkCudaErrors( cudaDeviceSynchronize() );
+
+  float tmp = 0;
+  for (int i = 0; i < n_blocks.x; i++) {
+    // printf("From block %d we got %f\n", i, partialSumDiGammas[i]);
+    tmp += partialSumDiGammas[i];
+  }
+  *sumDiGammas = tmp;
+
+  free(partialSumDiGammas);
   cudaFree(d_nx);
   cudaFree(d_ny);
   cudaFree(d_sumDiGammas);
-
-  *sumDiGammas = 0.0;
 
   return 1;
 
