@@ -945,6 +945,80 @@ CASE("Test that the first result of calculation with surrogates is the same as w
   EXPECT(result2[0] != result2[1]);
 },
 
+CASE("Basic digamma sum test")
+{
+  int N = 2;
+  int nx[2] = {10, 12};
+  int ny[2] = {2, 5};
+  float sumDiGammas;
+
+  int err = computeSumDigammas(&sumDiGammas, nx, ny, N);
+
+  EXPECT(err == 1);
+
+  float cpu_sumDigammas = 0;
+  for (int i = 0; i < N; i++) {
+    cpu_sumDigammas += cpuDigamma(nx[i] + 1) + cpuDigamma(ny[i] + 1);
+  }
+
+  EXPECT(sumDiGammas == approx(cpu_sumDigammas));
+  
+},
+
+CASE("Digamma sum test with more data (but still one GPU block)")
+{
+  int N = 500;
+  int *nx = (int *) malloc(N * sizeof(int));
+  int *ny = (int *) malloc(N * sizeof(int));
+  float sumDiGammas;
+
+  for (int i = 0; i < N; i++) {
+    nx[i] = rand() % 300;
+    ny[i] = rand() % 300;
+  }
+
+  int err = computeSumDigammas(&sumDiGammas, nx, ny, N);
+
+  EXPECT(err == 1);
+
+  float cpu_sumDigammas = 0;
+  for (int i = 0; i < N; i++) {
+    cpu_sumDigammas += cpuDigamma(nx[i] + 1) + cpuDigamma(ny[i] + 1);
+  }
+
+  free(nx); free(ny);
+
+  EXPECT(sumDiGammas == approx(cpu_sumDigammas));
+  
+},
+
+CASE("Digamma sum test with multiple GPU blocks")
+{
+  int N = 5000;
+  int *nx = (int *) malloc(N * sizeof(int));
+  int *ny = (int *) malloc(N * sizeof(int));
+  float sumDiGammas;
+
+  for (int i = 0; i < N; i++) {
+    nx[i] = rand() % 300;
+    ny[i] = rand() % 300;
+  }
+
+  int err = computeSumDigammas(&sumDiGammas, nx, ny, N);
+
+  EXPECT(err == 1);
+
+  float cpu_sumDigammas = 0;
+  for (int i = 0; i < N; i++) {
+    cpu_sumDigammas += cpuDigamma(nx[i] + 1) + cpuDigamma(ny[i] + 1);
+  }
+
+  free(nx); free(ny);
+
+  EXPECT(sumDiGammas == approx(cpu_sumDigammas));
+  
+}
+
 };
 
 int main(int argc, char *argv[]){
