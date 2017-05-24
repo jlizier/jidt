@@ -244,7 +244,10 @@ kernelBFRSAllshared(const float* g_uquery, const float* g_vpointset,
     radius = *(vecradius+tid);
     unsigned int indexi = tid-triallength*itrial;
     for (int t=0; t<triallength; t++){
-        int indexu = tid;
+        // Note: the following two definitions could be swapped depending on
+        // the details of surrogate implementation
+        int indexu = tid; // old, necessary for shuffled part of the surrogates (i.e. source)
+        // int indexu = indexi; // new, admissible for unshuffled part of the surrogates (i.e. dest)
         int indexv = (t + itrial*triallength);
         int condition1=indexi-exclude;
         int condition2=indexi+exclude;
