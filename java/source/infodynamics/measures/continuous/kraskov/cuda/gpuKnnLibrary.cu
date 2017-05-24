@@ -298,6 +298,50 @@ int computeSumDigammas(float *sumDiGammas, int *nx, int *ny, unsigned int N) {
 }
 #endif
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+int parallelDigammas(float *digammas, int *nx, int *ny, int signallength) {
+
+  int *d_nx, *d_ny;
+  float *d_digammas;
+
+  // Kernel parameters
+  dim3 threads(1,1,1);
+  dim3 grid(1,1,1);
+  threads.x = 512;
+  grid.x = (signallength-1)/threads.x + 1;
+
+  checkCudaErrors( cudaMalloc((void **) &d_nx, signallength * sizeof(int)) );
+  checkCudaErrors( cudaMalloc((void **) &d_ny, signallength * sizeof(int)) );
+  checkCudaErrors( cudaMalloc((void **) &d_digammas, signallength * sizeof(float)) );
+
+  checkCudaErrors( cudaMemcpy(d_nx, nx, signallength*sizeof(int), cudaMemcpyHostToDevice) );
+  checkCudaErrors( cudaMemcpy(d_ny, ny, signallength*sizeof(int), cudaMemcpyHostToDevice) );
+
+  // printf("blocks = %i, threads = %i\n", n_blocks.x, n_threads.x);
+
+  // Launch kernel
+  gpuDigammas<<<grid.x, threads.x>>>(d_digammas, d_nx, d_ny, signallength);
+
+  checkCudaErrors( cudaDeviceSynchronize() );
+
+  checkCudaErrors( cudaMemcpy(digammas, d_digammas, signallength * sizeof(float), cudaMemcpyDeviceToHost) );
+
+  checkCudaErrors( cudaDeviceSynchronize() );
+
+  checkCudaErrors( cudaFree(d_nx) );
+  checkCudaErrors( cudaFree(d_ny) );
+  checkCudaErrors( cudaFree(d_digammas) );
+
+  return 1;
+}
+#ifdef __cplusplus
+}
+#endif
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
