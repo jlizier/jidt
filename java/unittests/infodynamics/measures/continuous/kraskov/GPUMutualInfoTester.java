@@ -195,9 +195,6 @@ public class GPUMutualInfoTester extends TestCase {
     int[][] newOrderings = new int[][] { MatrixUtils.range(0, data.length-1),
                                          perm};
 
-    System.out.println("JAVA ORDER");
-    MatrixUtils.printArray(System.out, perm);
-
     miCalc.setProperty("USE_GPU", "false");
     miCalc.initialise(1,1);
     miCalc.setObservations(MatrixUtils.selectColumn(data, 0),
