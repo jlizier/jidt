@@ -1017,8 +1017,55 @@ CASE("Digamma sum test with multiple GPU blocks")
 
   EXPECT(sumDiGammas == approx(cpu_sumDigammas));
   
-}
+},
 
+CASE("Test GPU parallel digamma calculation (no sum) in single block")
+{
+  int N = 500;
+  int *nx = (int *) malloc(N * sizeof(int));
+  int *ny = (int *) malloc(N * sizeof(int));
+  float *gpu_digammas = (float *) malloc(N * sizeof(float));
+
+  for (int i = 0; i < N; i++) {
+    nx[i] = rand() % 300;
+    ny[i] = rand() % 300;
+  }
+
+  int err = parallelDigammas(gpu_digammas, nx, ny, N);
+
+  EXPECT(err == 1);
+
+  for (int i = 0; i < N; i++) {
+    double cpu_digamma = cpuDigamma(nx[i] + 1) + cpuDigamma(ny[i] + 1);
+    EXPECT(gpu_digammas[i] == approx(cpu_digamma));
+  }
+
+  free(nx); free(ny); free(gpu_digammas);
+},
+
+CASE("Test GPU parallel digamma calculation (no sum) in multiple blocks")
+{
+  int N = 5000;
+  int *nx = (int *) malloc(N * sizeof(int));
+  int *ny = (int *) malloc(N * sizeof(int));
+  float *gpu_digammas = (float *) malloc(N * sizeof(float));
+
+  for (int i = 0; i < N; i++) {
+    nx[i] = rand() % 300;
+    ny[i] = rand() % 300;
+  }
+
+  int err = parallelDigammas(gpu_digammas, nx, ny, N);
+
+  EXPECT(err == 1);
+
+  for (int i = 0; i < N; i++) {
+    double cpu_digamma = cpuDigamma(nx[i] + 1) + cpuDigamma(ny[i] + 1);
+    EXPECT(gpu_digammas[i] == approx(cpu_digamma));
+  }
+
+  free(nx); free(ny); free(gpu_digammas);
+},
 };
 
 int main(int argc, char *argv[]){
