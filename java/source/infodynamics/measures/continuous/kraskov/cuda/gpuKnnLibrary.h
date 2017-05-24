@@ -26,6 +26,8 @@ int findRadiiAlgorithm2(float *radii, const float *data, const int *indexes,
 int computeSumDigammas(float *sumDiGammas, int *nx, int *ny, unsigned int N);
 
 void device_reset(void);
+
+void gpuWarmUp(void);
 #ifdef __cplusplus
 }
 #endif

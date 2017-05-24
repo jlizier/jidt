@@ -285,3 +285,13 @@ void device_reset(void) {
 }
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+void gpuWarmUp(void) {
+  cudaSetDevice(0);
+}
+#ifdef __cplusplus
+}
+#endif
+
