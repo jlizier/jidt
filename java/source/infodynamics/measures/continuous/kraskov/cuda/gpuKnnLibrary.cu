@@ -323,7 +323,7 @@ int parallelDigammas(float *digammas, int *nx, int *ny, int signallength) {
   grid.x = (signallength-1)/threads.x + 1;
 
   {
-  CPerfTimer pt = startTimer("Digammas_sum");
+  CPerfTimer pt = startTimer("Digammas_upload");
   checkCudaErrors( cudaMalloc((void **) &d_nx, signallength * sizeof(int)) );
   checkCudaErrors( cudaMalloc((void **) &d_ny, signallength * sizeof(int)) );
   checkCudaErrors( cudaMalloc((void **) &d_digammas, signallength * sizeof(float)) );
@@ -345,7 +345,7 @@ int parallelDigammas(float *digammas, int *nx, int *ny, int signallength) {
   }
 
   {
-  CPerfTimer pt = startTimer("Digammas_sum");
+  CPerfTimer pt = startTimer("Digammas_download");
   checkCudaErrors( cudaMemcpy(digammas, d_digammas, signallength * sizeof(float), cudaMemcpyDeviceToHost) );
 
   checkCudaErrors( cudaDeviceSynchronize() );
