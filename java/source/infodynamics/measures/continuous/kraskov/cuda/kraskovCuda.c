@@ -5,6 +5,7 @@
 #define check(ans) { _check((ans), __FILE__, __LINE__); }
 
 #include "gpuMILibrary.h"
+#include "ctimer.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,7 +58,9 @@ JNIEXPORT jdoubleArray JNICALL
   int isAlgorithm1 = j_isAlgorithm1 ? 1 : 0;
   int nb_surrogates = j_nbSurrogates;
   int reorderingsGiven = j_reorderingsGiven ? 1 : 0;
-  
+   
+  CPerfTimer pt = startTimer("Java array copy");
+
   float *source = (float *) malloc(N * dimx * sizeof(float));
   float *dest   = (float *) malloc(N * dimy * sizeof(float));
 
@@ -129,6 +132,7 @@ JNIEXPORT jdoubleArray JNICALL
     }
   }
 
+  stopTimer(pt);
 
 
   // Call C function
