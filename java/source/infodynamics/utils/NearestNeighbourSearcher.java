@@ -49,7 +49,10 @@ public abstract class NearestNeighbourSearcher {
 	public static NearestNeighbourSearcher create(double[][] data)
 			throws Exception {
 		
-		if (data[0].length == 1) {
+		if ((data == null) || (data[0].length == 0)) {
+			// We have null data:
+			return null;
+		} else if (data[0].length == 1) {
 			// We have univariate data:
 			return new UnivariateNearestNeighbourSearcher(MatrixUtils.selectColumn(data, 0));
 		} else {
@@ -273,6 +276,23 @@ public abstract class NearestNeighbourSearcher {
 
 	/**
 	 * As per {@link #countPointsWithinR(int, double, boolean)}
+	 * however the search is to match a specified sample point (not a sample
+	 * point within the search space itself).
+	 * 
+	 * @param sampleVectors sample vectors to find the neighbours within r
+	 *  for
+	 * @param r radius within which to count points
+	 * @param dynCorrExclTime time window within which to exclude
+	 *  points to be counted. Is >= 0. 0 means only exclude sampleIndex.
+	 * @param allowEqualToR if true, then count points at radius r also,
+	 *   otherwise only those strictly within r
+	 * @return the count of points within r.
+	 */
+	public abstract int countPointsWithinR(double[][] sampleVectors, double r,
+			boolean allowEqualToR);
+
+	/**
+	 * As per {@link #countPointsWithinR(int, double, boolean)}
 	 * however returns a collection rather than a count.
 	 * 
 	 * @param sampleIndex sample index in the data to find a nearest neighbour
@@ -331,6 +351,60 @@ public abstract class NearestNeighbourSearcher {
 			int sampleIndex, double r, int dynCorrExclTime,
 			boolean allowEqualToR, boolean[] isWithinR, int[] indicesWithinR);
 	
+	/**
+	 * As per {@link #findPointsWithinR(int, double, boolean, boolean[], int[])}
+	 * however incorporates dynamic correlation exclusion.
+	 * </p> 
+	 * 
+	 * @param sampleIndex sample index in the data to find a nearest neighbour
+	 *  for
+	 * @param r radius within which to count points
+	 * @param dynCorrExclTime time window within which to exclude
+	 *  points to be counted. Is >= 0. 0 means only exclude sampleIndex.
+	 * @param allowEqualToR if true, then count points at radius r also,
+	 *   otherwise only those strictly within r
+	 * @param isWithinR the array MUST be passed in with all points set to
+	 *  false initially, and is returned indicating whether each sample was
+	 *  found to be within r of that at sampleIndex.
+	 * @param distancesWithinRInOrder the array must be passed in and is
+	 *  returned with distances for each point found to be within r. Values
+	 *  at other indices are not defined.
+	 * @param distancesAndIndicesWithinR is returned as 
+	 *  a list of distances (in column index 0) 
+	 *  and array indices (in column index 1)
+	 *  for points marked as true in isWithinR, terminated with a -1 value on the index.
+	 * @return the point count
+	 */
+	public abstract int findPointsWithinR(
+			int sampleIndex, double r, int dynCorrExclTime,
+			boolean allowEqualToR, boolean[] isWithinR,
+			double[] distancesWithinRInOrder,
+			double[][] distancesAndIndicesWithinR);
+	
+	/**
+	 * As per {@link #countPointsWithinR(int, double, boolean)}
+	 * however records the nearest neighbours for a sample data point
+	 *  (which may not be in the search tree), within the isWithinR
+	 *  and indicesWithinR arrays, which must be constructed before
+	 *  calling this method, with length at or exceeding the total
+	 *  number of data points. indicesWithinR is 
+	 * </p> 
+	 * 
+	 * @param r radius within which to count points
+	 * @param sampleVectors sample vectors to find the neighbours within r
+	 *  for
+	 * @param allowEqualToR if true, then count points at radius r also,
+	 *   otherwise only those strictly within r
+	 * @param isWithinR the array MUST be passed in with all points set to
+	 *  false initially, and is returned indicating whether each sample was
+	 *  found to be within r of that at sampleIndex.
+	 * @param indicesWithinR a list of array indices
+	 *  for points marked as true in isWithinR, terminated with a -1 value.
+	 */
+	public abstract void findPointsWithinR(
+			double r, double[][] sampleVectors,
+			boolean allowEqualToR, boolean[] isWithinR, int[] indicesWithinR);
+
 	/**
 	 * As per {@link #countPointsWithinR(int, double, int, boolean)}
 	 * with allowEqualToR == false
@@ -472,5 +546,20 @@ public abstract class NearestNeighbourSearcher {
 	public abstract int countPointsWithinR(int sampleIndex, double r,
 			boolean allowEqualToR, boolean[] additionalCriteria);
 
-
+	/**
+	 * As per {@link #countPointsWithinR(double[][], double, boolean)}
+	 * however each point is subject to also meeting the additional
+	 * criteria of being true in additionalCriteria.
+	 * 
+	 * @param sampleVectors sample vectors to find the neighbours within r
+	 *  for
+	 * @param r radius within which to count points
+	 * @param allowEqualToR if true, then count points at radius r also,
+	 *   otherwise only those strictly within r
+	 * @param additionalCriteria array of booleans. Only count a point if it
+	 *  is within r and is true in additionalCrtieria.
+	 * @return the count of points within r.
+	 */
+	public abstract int countPointsWithinR(double[][] sampleVectors, double r,
+			boolean allowEqualToR, boolean[] additionalCriteria);
 }

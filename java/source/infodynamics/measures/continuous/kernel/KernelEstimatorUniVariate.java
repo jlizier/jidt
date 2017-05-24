@@ -284,11 +284,17 @@ public class KernelEstimatorUniVariate {
 			System.out.println("Count after upper bin " + (bin + 1) + " = " + count);
 		}
 
-		// TODO Should we divide this result by the kernel width (in use)?
+		// Should we divide this result by the kernel width (in use)?
 		//  Schreiber doesn't do this in the TE paper, but it is done in 
 		//  the Kaiser and Schreiber paper. It won't matter to TE, but
 		//  will make a difference to individual entropy estimates.
-		return (double) count / (double) totalTimePointsCompared;
+		// Answer: YES we should. this makes it a proper density (for differential entropies)
+		//  so this has been included below.
+		//  (If you want to retain a (discrete) Shannon entropy, based on counts within a defined width then no)
+		// ACTUALLY you divide by twice the kernel width I think (since this is the total range)
+		//  At least, I've validated that this gives the correct diff entropy for
+		//  the uniform distribution
+		return (double) count / (double) totalTimePointsCompared / (double) (2.0 * kernelWidthInUse);
 	}
 	
 	private int getBinIndex(double value) {

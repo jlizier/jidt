@@ -50,6 +50,21 @@ public class MutualInformationTester extends TestCase {
 		assertEquals(0.0, miRand, 0.000001);
 	}
 
+	public void testAnd() throws Exception {
+		MutualInformationCalculatorDiscrete miCalc = new MutualInformationCalculatorDiscrete(2, 0);
+		
+		int[] X1 = new int[] {0, 0, 1, 1};
+		int[] X2 = new int[] {0, 1, 0, 1};
+		int[] Y  = new int[] {0, 0, 0, 1};
+		
+		// Y is dependent on X1 - MI should be 0.311 bits
+		miCalc.initialise();
+		miCalc.addObservations(X1, Y);
+		double miX1Y = miCalc.computeAverageLocalOfObservations();
+		assertEquals(0.311, miX1Y, 0.001);
+		assertEquals(4, miCalc.getNumObservations());
+	}
+
 	public void testXor() throws Exception {
 		MutualInformationCalculatorDiscrete miCalc = new MutualInformationCalculatorDiscrete(2, 0);
 		

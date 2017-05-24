@@ -44,7 +44,8 @@ import infodynamics.utils.RandomGenerator;
  * </p>
  * <ol>
  * 		<li>Construct the calculator via {@link #TransferEntropyCalculatorDiscrete(int, int)}
- * 			or {@link #TransferEntropyCalculatorDiscrete(int, int, int)};</li>
+ * 			or {@link #TransferEntropyCalculatorDiscrete(int, int, int)}
+ * 			or {@link #TransferEntropyCalculatorDiscrete(int, int, int, int, int, int)};</li>
  *		<li>Initialise the calculator using
  *			{@link #initialise()};</li>
  * 		<li>Provide the observations/samples for the calculator
@@ -70,8 +71,6 @@ import infodynamics.utils.RandomGenerator;
  * 		Return to step 2 to re-use the calculator on a new data set.
  * 		</li>
  * 	</ol>
- * 
- * TODO Add arbitrary source-dest delay
  * 
  * <p><b>References:</b><br/>
  * <ul>
@@ -107,10 +106,27 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 	protected boolean periodicBoundaryConditions = true;
 
 	/**
+	 * Embedding delay for the destination variable,
+	 *  i.e. time lag between each sample in the past
+	 */
+	protected int destEmbeddingDelay = 1;
+
+	/**
 	 * Embedding length of the source variable.
 	 * This is "l" in Schreiber's notation.
 	 */
 	protected int sourceHistoryEmbedLength = 1;
+	
+	/**
+	 * Embedding delay for the source variable,
+	 *  i.e. time lag between each sample in the past
+	 */
+	protected int sourceEmbeddingDelay = 1;
+
+	/**
+	 * Source-destination delay to consider the information transfer across
+	 */
+	protected int delay = 1;
 	
 	/**
 	 * A cached value of base^sourceHistoryEmbedLength
@@ -158,7 +174,8 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 	}
 	
 	/**
-	 * Create a new TE calculator for the given base and destination history embedding length.
+	 * Create a new TE calculator for the given base and destination history embedding length
+	 *  (leave the other embedding parameters as default)
 	 * 
 	 * @param base number of symbols for each variable.
 	 *        E.g. binary variables are in base-2.
@@ -167,23 +184,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 	 */
 	public TransferEntropyCalculatorDiscrete(int base, int destHistoryEmbedLength) {
 
-		super(base, destHistoryEmbedLength);
-		base_power_l = MathsUtils.power(base, sourceHistoryEmbedLength);
-		
-		// Create constants for tracking sourceValues
-		maxShiftedSourceValue = new int[base];
-		for (int v = 0; v < base; v++) {
-			maxShiftedSourceValue[v] = v;
-		}
-
-		// Create storage for extra counts of observations
-		sourceNextPastCount = new int[base_power_l][base][base_power_k];
-		sourcePastCount = new int[base_power_l][base_power_k];
-		
-		// Which time step do we start taking observations from?
-		// Normally this is k (to allow k previous time steps)
-		//  but if k==0 (becoming a lagged MI), it's 1.
-		startObservationTime = Math.max(k, 1);
+		this(base, destHistoryEmbedLength, 1, 1, 1, 1);
 	}
 
 	/**
@@ -198,8 +199,37 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 	 */
 	public TransferEntropyCalculatorDiscrete(int base, int destHistoryEmbedLength, int sourceHistoryEmbeddingLength) {
 
+		this(base, destHistoryEmbedLength, 1, sourceHistoryEmbeddingLength, 1, 1);
+	}
+
+	/**
+	 * Create a new TE calculator for the given base, destination and source history embedding lengths
+	 *  and delays.
+	 * 
+	 * @param base number of quantisation levels for each variable.
+	 *        E.g. binary variables are in base-2.
+	 * @param destHistoryEmbedLength embedded history length of the destination to condition on -
+	 *        this is k in Schreiber's notation.
+	 * @param destEmbeddingDelay embedding delay of the destination for conditioning on -
+	 *        this is the delay between each of the k samples from the past history
+	 * @param sourceHistoryEmbeddingLength embedded history length of the source to include -
+	 *        this is l in Schreiber's notation.
+	 * @param sourceEmbeddingDelay embedding delay of the source -
+	 *        this is the delay between each of the l samples from the past history
+	 * @param delay source-destination delay to consider the information transfer across
+	 * 		  (should be >= 0, default is 1)
+	 */
+	public TransferEntropyCalculatorDiscrete(int base, int destHistoryEmbedLength, int destEmbeddingDelay,
+			int sourceHistoryEmbeddingLength, int sourceEmbeddingDelay, int delay) {
+
 		super(base, destHistoryEmbedLength);
+		this.destEmbeddingDelay = destEmbeddingDelay;
+		if (sourceHistoryEmbeddingLength <= 0) {
+			throw new RuntimeException("Cannot have source embedding length of zero or less");
+		}
 		this.sourceHistoryEmbedLength = sourceHistoryEmbeddingLength;
+		this.sourceEmbeddingDelay = sourceEmbeddingDelay;
+		this.delay = delay;
 		base_power_l = MathsUtils.power(base, sourceHistoryEmbedLength);
 		
 		// Check that we can convert the history value into an integer ok: 
@@ -218,10 +248,14 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 		sourcePastCount = new int[base_power_l][base_power_k];
 		
 		// Which time step do we start taking observations from?
-		// Normally this is k (to allow k previous time steps)
-		//  but if k==0 (becoming a lagged MI), it's 1.
-		// We also allow for source embeddings here too
-		startObservationTime = Math.max(Math.max(k, sourceHistoryEmbedLength), 1);
+		// These two integers represent the earliest next time step, in the cases where the destination
+		// embedding itself determines where we can start taking observations, or
+		// the case where the source embedding plus delay is longer and so determines
+		// where we can start taking observations.
+		int startTimeBasedOnDestPast = (k-1)*destEmbeddingDelay + 1;
+		int startTimeBasedOnSourcePast = (sourceHistoryEmbedLength-1)*sourceEmbeddingDelay + delay;
+		startObservationTime = Math.max(startTimeBasedOnDestPast, startTimeBasedOnSourcePast);
+
 	}
 
 	@Override
@@ -235,125 +269,9 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 	
 	@Override
 	public void addObservations(int[] source, int[] dest) {
-		int rows = dest.length;
-		// increment the count of observations:
-		observations += (rows - startObservationTime); 
-		
-		// Initialise and store the current previous value
-		int pastVal = 0;
-		for (int p = 0; p < k; p++) {
-			pastVal *= base;
-			pastVal += dest[startObservationTime - k + p];
-		}
-		int sourceVal = 0;
-		for (int p = 0; p < sourceHistoryEmbedLength; p++) {
-			sourceVal *= base;
-			sourceVal += source[startObservationTime - sourceHistoryEmbedLength + p];
-		}
-		
-		// 1. Count the tuples observed
-		int destVal;
-		for (int r = startObservationTime; r < rows; r++) {
-			// Add to the count for this particular transition:
-			// (cell's assigned as above)
-			destVal = dest[r];
-			sourceNextPastCount[sourceVal][destVal][pastVal]++;
-			sourcePastCount[sourceVal][pastVal]++;
-			nextPastCount[destVal][pastVal]++;
-			pastCount[pastVal]++;
-			nextCount[destVal]++;
-			// Update the previous values:
-			if (k > 0) {
-				pastVal -= maxShiftedValue[dest[r-k]];
-				pastVal *= base;
-				pastVal += dest[r];
-			}
-			sourceVal -= maxShiftedSourceValue[source[r-sourceHistoryEmbedLength]];
-			sourceVal *= base;
-			sourceVal += source[r];
-		}
+		addObservations(source, dest, 0, dest.length-1);
 	}
-
-	/**
- 	 * Add observations for a single source-destination pair 
- 	 *  to our estimates of the pdfs.
- 	 *  
-	 * @param source source time-series
-	 * @param dest destination time-series. 
-	 *  Must be same length as source
-	 * @param valid time-series of whether the signals
-	 *  at the given time should be considered valid 
-	 *  and added to our PDFs
-	 */
-	public void addObservations(int[] source, int[] dest, boolean[] valid) {
-		int rows = dest.length;
-		
-		// Initialise and store the current previous value
-		int pastVal = 0;
-		// We can take an observation if timeSinceLastDestInvalid > k
-		//  and timeSinceLastSourceInvalid > sourceHistoryEmbedLength.
-		// In preparation for introducing a source-dest delay,
-		//  we're using two different time variables here.
-		int timeSinceLastDestInvalid = k;
-		int timeSinceLastSourceInvalid = sourceHistoryEmbedLength;
-		for (int p = 0; p < k; p++) {
-			pastVal *= base;
-			pastVal += dest[startObservationTime - k + p];
-			if (!valid[startObservationTime - k + p]) {
-				// Time from startObservationTime backwards to this step
-				timeSinceLastDestInvalid =  k - p - 1;
-			}
-		}
-		int sourceVal = 0;
-		for (int p = 0; p < sourceHistoryEmbedLength; p++) {
-			sourceVal *= base;
-			sourceVal += source[startObservationTime - sourceHistoryEmbedLength + p];
-			if (!valid[startObservationTime - sourceHistoryEmbedLength + p]) {
-				// Time from startObservationTime backwards to this step
-				timeSinceLastSourceInvalid =  sourceHistoryEmbedLength - p - 1;
-			}
-		}
-		
-		// 1. Count the tuples observed
-		int destVal;
-		for (int r = startObservationTime; r < rows; r++) {
-			timeSinceLastDestInvalid++;
-			timeSinceLastSourceInvalid++;
-			// Pre-condition now:
-			//  timeSinceLastDestInvalid holds the time from r back to
-			//   the last valid destination point (not including current destination)
-			//  timeSinceLastSourceInvalid holds the time from r back to
-			//   the last valid source point (not including new source value
-			
-			if (!valid[r]) {
-				timeSinceLastDestInvalid = 0;
-			} else if ((timeSinceLastDestInvalid > k) &&
-					    (timeSinceLastSourceInvalid > sourceHistoryEmbedLength)) {
-				// Add to the count for this particular transition:
-				// (cell's assigned as above)
-				destVal = dest[r];
-				sourceNextPastCount[sourceVal][destVal][pastVal]++;
-				sourcePastCount[sourceVal][pastVal]++;
-				nextPastCount[destVal][pastVal]++;
-				pastCount[pastVal]++;
-				nextCount[destVal]++;
-				observations++;
-			}
-			// Update the previous values:
-			if (k > 0) {
-				pastVal -= maxShiftedValue[dest[r-k]];
-				pastVal *= base;
-				pastVal += dest[r];
-			}
-			sourceVal -= maxShiftedSourceValue[source[r-sourceHistoryEmbedLength]];
-			sourceVal *= base;
-			sourceVal += source[r];
-			if (!valid[r]) {
-				timeSinceLastSourceInvalid = 0;
-			}
-		}
-	}
-
+	
 	/**
  	 * Add observations for a single source-destination pair
  	 *  to our estimates of the pdfs.
@@ -369,48 +287,225 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 	 * 
 	 */
 	public void addObservations(int[] source, int[] dest, int startTime, int endTime) {
+		if ((endTime - startTime) - startObservationTime + 1 <= 0) {
+			// No observations to add
+			return;
+		}
+		if ((endTime >= dest.length) || (endTime >= source.length)) {
+			throw new ArrayIndexOutOfBoundsException(
+					String.format("endTime (%d) must be <= length of input arrays (dest: %d, source: %d)",
+							endTime, dest.length, source.length));
+		}
 		// increment the count of observations:
 		observations += (endTime - startTime) - startObservationTime + 1; 
 		
-		// Initialise and store the current previous value
-		int pastVal = 0;
-		for (int p = 0; p < k; p++) {
-			pastVal *= base;
-			pastVal += dest[startTime + startObservationTime - k + p];
+		// Initialise and store the current previous values;
+		//  one for each phase of the embedding delay.
+		// First for the destination:
+		int[] pastVal = new int[destEmbeddingDelay];
+		for (int d = 0; d < destEmbeddingDelay; d++) {
+			// Compute the current previous values for
+			//  phase d of the embedding delay, but leave
+			//  out the most recent value (we'll add those in
+			//  in the main loop)
+			pastVal[d] = 0;
+			for (int p = 0; p < k-1; p++) {
+				pastVal[d] += dest[startTime + startObservationTime + d - 1
+				                   - (k-1)*destEmbeddingDelay
+				                   + p*destEmbeddingDelay];
+				pastVal[d] *= base;
+			}
 		}
-		int sourceVal = 0;
-		for (int p = 0; p < sourceHistoryEmbedLength; p++) {
-			sourceVal *= base;
-			sourceVal += source[startTime + startObservationTime - sourceHistoryEmbedLength + p];
+		// Next for the source:
+		int[] sourcePastVal = new int[sourceEmbeddingDelay];
+		for (int d = 0; d < sourceEmbeddingDelay; d++) {
+			// Compute the current previous values for
+			//  phase d of the embedding delay, but leave
+			//  out the most recent value (we'll add those in
+			//  in the main loop)
+			sourcePastVal[d] = 0;
+			for (int p = 0; p < sourceHistoryEmbedLength - 1; p++) {
+				sourcePastVal[d] += source[startTime + startObservationTime + d - delay
+				                    - (sourceHistoryEmbedLength-1)*sourceEmbeddingDelay
+				                    + p*sourceEmbeddingDelay];
+				sourcePastVal[d] *= base;
+			}
 		}
 		
 		// 1. Count the tuples observed
-		int destVal;
+		int destVal, destEmbeddingPhase = 0, sourceEmbeddingPhase = 0;
 		for (int r = startTime + startObservationTime; r <= endTime; r++) {
+			// First update the embedding values for the current
+			//  phases of the embeddings:
+			if (k > 0) {
+				pastVal[destEmbeddingPhase] += dest[r-1];
+			}
+			sourcePastVal[sourceEmbeddingPhase] += source[r-delay];
 			// Add to the count for this particular transition:
 			// (cell's assigned as above)
 			destVal = dest[r];
-			sourceNextPastCount[sourceVal][destVal][pastVal]++;
-			sourcePastCount[sourceVal][pastVal]++;
-			nextPastCount[destVal][pastVal]++;
-			pastCount[pastVal]++;
+			int thisPastVal = pastVal[destEmbeddingPhase];
+			int thisSourceVal = sourcePastVal[sourceEmbeddingPhase];
+			sourceNextPastCount[thisSourceVal][destVal][thisPastVal]++;
+			sourcePastCount[thisSourceVal][thisPastVal]++;
+			nextPastCount[destVal][thisPastVal]++;
+			pastCount[thisPastVal]++;
 			nextCount[destVal]++;
-			// Update the previous value:
+			// Now, update the combined embedding values and phases,
+			//  for this phase we back out the oldest value which we'll no longer need:
 			if (k > 0) {
-				pastVal -= maxShiftedValue[dest[r-k]];
-				pastVal *= base;
-				pastVal += dest[r];
+				pastVal[destEmbeddingPhase] -= maxShiftedValue[dest[r-1-(k-1)*destEmbeddingDelay]];
+				pastVal[destEmbeddingPhase] *= base; // and shift the others up
 			}
-			sourceVal -= maxShiftedSourceValue[source[r-sourceHistoryEmbedLength]];
-			sourceVal *= base;
-			sourceVal += source[r];
+			sourcePastVal[sourceEmbeddingPhase] -=
+					maxShiftedSourceValue[
+					    source[r-delay-(sourceHistoryEmbedLength-1)*sourceEmbeddingDelay]];
+			sourcePastVal[sourceEmbeddingPhase] *= base; // and shift the others up
+			// then update the phase
+			destEmbeddingPhase = (destEmbeddingPhase + 1) % destEmbeddingDelay; 
+			sourceEmbeddingPhase = (sourceEmbeddingPhase + 1) % sourceEmbeddingDelay; 
+		}
+	}
+
+	/**
+ 	 * Add observations for a single source-destination pair 
+ 	 *  to our estimates of the pdfs.
+ 	 *  
+	 * @param source source time-series
+	 * @param dest destination time-series. 
+	 *  Must be same length as source
+	 * @param valid time-series of whether the signals
+	 *  at the given time should be considered valid 
+	 *  and added to our PDFs. We don't include any embedding vectors which
+	 *  stretch across any invalid points, even if these invalid points
+	 *  are not specifically sampled for the embedding vector.
+	 */
+	public void addObservations(int[] source, int[] dest, boolean[] valid) {
+		
+		int rows = dest.length;
+		if (dest.length - startObservationTime <= 0) {
+			// No observations to add
+			return;
+		}
+		
+		// Initialise and store the current previous values;
+		//  one for each phase of the embedding delay.
+		// First for the destination:
+		int[] pastVal = new int[destEmbeddingDelay];
+		for (int d = 0; d < destEmbeddingDelay; d++) {
+			// Compute the current previous values for
+			//  phase d of the embedding delay, but leave
+			//  out the most recent value (we'll add those in
+			//  in the main loop)
+			pastVal[d] = 0;
+			for (int p = 0; p < k-1; p++) {
+				pastVal[d] += dest[startObservationTime + d - 1
+				                   - (k-1)*destEmbeddingDelay
+				                   + p*destEmbeddingDelay];
+				pastVal[d] *= base;
+			}
+		}
+		// We can take an observation if timeSinceLastDestInvalid >= minDestLengthRequired
+		int minDestLengthRequired = (k>0) ? (k-1)*destEmbeddingDelay + 1 : 0;
+		// And initialise the time since last valid dest observation:
+		int timeSinceLastDestInvalid = minDestLengthRequired;
+		for (int t = startObservationTime - 1; t >= 0; t--) {
+			if (!valid[t]) {
+				timeSinceLastDestInvalid = startObservationTime - t - 1;
+				break;
+			}
+		}
+		
+		// Next for the source:
+		int[] sourcePastVal = new int[sourceEmbeddingDelay];
+		for (int d = 0; d < sourceEmbeddingDelay; d++) {
+			// Compute the current previous values for
+			//  phase d of the embedding delay, but leave
+			//  out the most recent value (we'll add those in
+			//  in the main loop)
+			sourcePastVal[d] = 0;
+			for (int p = 0; p < sourceHistoryEmbedLength - 1; p++) {
+				sourcePastVal[d] += source[startObservationTime + d - delay
+				                    - (sourceHistoryEmbedLength-1)*sourceEmbeddingDelay
+				                    + p*sourceEmbeddingDelay];
+				sourcePastVal[d] *= base;
+			}
+		}
+		// We can take an observation if timeSinceLastSourceInvalid >= minSourceLengthRequired
+		int minSourceLengthRequired = (sourceHistoryEmbedLength-1)*sourceEmbeddingDelay + 1;
+		// And initialise the time since last valid source observation:
+		int timeSinceLastSourceInvalid = minSourceLengthRequired;
+		for (int t = startObservationTime - delay; t >= 0; t--) {
+			if (!valid[t]) {
+				timeSinceLastSourceInvalid = startObservationTime - t - 1;
+				break;
+			}
+		}
+
+		// 1. Count the tuples observed
+		int destVal, destEmbeddingPhase = 0, sourceEmbeddingPhase = 0;
+		for (int r = startObservationTime; r < rows; r++) {
+			timeSinceLastDestInvalid++;
+			timeSinceLastSourceInvalid++;
+			// First update the embedding values for the current
+			//  phases of the embeddings:
+			// Pre-condition now:
+			//  timeSinceLastDestInvalid holds the time from r back to
+			//   the last invalid destination point (not including current destination)
+			//  timeSinceLastSourceInvalid holds the time from r back to
+			//   the last invalid source point (not including new source value)
+
+			// Update embedded values
+			if (k > 0) {
+				pastVal[destEmbeddingPhase] += dest[r-1];
+			}
+			sourcePastVal[sourceEmbeddingPhase] += source[r-delay];
+			
+			// Now check validity of new entrants here:
+			if (!valid[r]) {
+				timeSinceLastDestInvalid = 0;
+			}
+			if (!valid[r-delay]) {
+				timeSinceLastSourceInvalid = 0;
+			}
+			if ((timeSinceLastDestInvalid > minDestLengthRequired) &&
+				    (timeSinceLastSourceInvalid >= minSourceLengthRequired)) {
+				// We have enough of both source and dest valid to continue
+				// Note the >= on source only (because dest must have next value as 
+				//  valid as well.
+				
+				// Add to the count for this particular transition:
+				// (cell's assigned as above)
+				destVal = dest[r];
+				int thisPastVal = pastVal[destEmbeddingPhase];
+				int thisSourceVal = sourcePastVal[sourceEmbeddingPhase];
+				sourceNextPastCount[thisSourceVal][destVal][thisPastVal]++;
+				sourcePastCount[thisSourceVal][thisPastVal]++;
+				nextPastCount[destVal][thisPastVal]++;
+				pastCount[thisPastVal]++;
+				nextCount[destVal]++;
+				observations++; // Need to increment number of observations explicitly here
+			}
+			// Now, update the combined embedding values and phases,
+			//  for this phase we back out the oldest value which we'll no longer need:
+			if (k > 0) {
+				pastVal[destEmbeddingPhase] -= maxShiftedValue[dest[r-1-(k-1)*destEmbeddingDelay]];
+				pastVal[destEmbeddingPhase] *= base; // and shift the others up
+			}
+			sourcePastVal[sourceEmbeddingPhase] -=
+					maxShiftedSourceValue[
+					    source[r-delay-(sourceHistoryEmbedLength-1)*sourceEmbeddingDelay]];
+			sourcePastVal[sourceEmbeddingPhase] *= base; // and shift the others up
+			// then update the phase
+			destEmbeddingPhase = (destEmbeddingPhase + 1) % destEmbeddingDelay; 
+			sourceEmbeddingPhase = (sourceEmbeddingPhase + 1) % sourceEmbeddingDelay; 
 		}
 	}
 
 	/**
  	 * Add observations in to our estimates of the PDFs,
  	 * from a multivariate time-series.
- 	 * This call suitable only for homogeneous agents, as all
+ 	 * This call suitable only for homogeneous variables, as all
  	 *  variable pairs separated by j column will contribute to the PDFs.
 	 *
 	 * @param states multivariate time series
@@ -421,76 +516,114 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 	 *  across all column pairs separated by j) 
 	 */
 	public void addObservations(int states[][], int j) {
+
 		int timeSteps = states.length;
-		int agents = states[0].length;
+		if (timeSteps - startObservationTime <= 0) {
+			// No observations to add
+			return;
+		}
+		int variables = states[0].length;
 		// increment the count of observations:
 		if (periodicBoundaryConditions) {
-			observations += (timeSteps - startObservationTime)*agents; 			
+			observations += (timeSteps - startObservationTime)*variables; 			
 		} else {
-			observations += (timeSteps - startObservationTime)*(agents - Math.abs(j));
+			observations += (timeSteps - startObservationTime)*(variables - Math.abs(j));
 		}
 		
-		// Initialise and store the current previous and source value for each column
-		int[] pastVal = new int[agents];
-		for (int c = 0; c < agents; c++) {
-			pastVal[c] = 0;
-			for (int p = 0; p < k; p++) {
-				pastVal[c] *= base;
-				pastVal[c] += states[startObservationTime - k + p][c];
+		// Initialise and store the current previous values for each column;
+		//  one for each phase of the embedding delay.
+		// First for the destination:
+		int[][] pastVal = new int[variables][destEmbeddingDelay];
+		for (int c = 0; c < variables; c++) {
+			for (int d = 0; d < destEmbeddingDelay; d++) {
+				// Compute the current previous values for
+				//  phase d of the embedding delay, but leave
+				//  out the most recent value (we'll add those in
+				//  in the main loop)
+				pastVal[c][d] = 0;
+				for (int p = 0; p < k-1; p++) {
+					pastVal[c][d] += states[startObservationTime + d - 1
+					                   - (k-1)*destEmbeddingDelay
+					                   + p*destEmbeddingDelay][c];
+					pastVal[c][d] *= base;
+				}
 			}
 		}
-		int[] sourceVal = new int[agents];
-		for (int c = 0; c < agents; c++) {
-			sourceVal[c] = 0;
-			int sourceAgent = c-j;
-			if ((sourceAgent < 0) || (sourceAgent >= agents)) {
-				// Source agent is out of bounds unless we are using periodic boundary conditions
+		// Next for the source:
+		int[][] sourcePastVal = new int[variables][sourceEmbeddingDelay];
+		for (int c = 0; c < variables; c++) {
+			int sourceVariable = c-j;
+			if ((sourceVariable < 0) || (sourceVariable >= variables)) {
+				// Source variable is out of bounds unless we are using periodic boundary conditions
 				if (periodicBoundaryConditions) {
-					sourceAgent = (sourceAgent+agents) % agents;
+					sourceVariable = (sourceVariable+variables) % variables;
 				} else {
 					// Don't add this to our observations
 					continue;
 				}
 			}
-			for (int p = 0; p < sourceHistoryEmbedLength; p++) {
-				sourceVal[c] *= base;
-				sourceVal[c] += states[startObservationTime - sourceHistoryEmbedLength + p][sourceAgent];
+			for (int d = 0; d < sourceEmbeddingDelay; d++) {
+				// Compute the current previous values for
+				//  phase d of the embedding delay, but leave
+				//  out the most recent value (we'll add those in
+				//  in the main loop)
+				sourcePastVal[c][d] = 0;
+				for (int p = 0; p < sourceHistoryEmbedLength - 1; p++) {
+					sourcePastVal[c][d] += states[startObservationTime + d - delay
+					                    - (sourceHistoryEmbedLength-1)*sourceEmbeddingDelay
+					                    + p*sourceEmbeddingDelay][sourceVariable];
+					sourcePastVal[c][d] *= base;
+				}
 			}
 		}
 		
 		// 1. Count the tuples observed
-		int destVal;
+		int destVal, destEmbeddingPhase = 0, sourceEmbeddingPhase = 0;
 		for (int r = startObservationTime; r < timeSteps; r++) {
-			for (int c = 0; c < agents; c++) {
+			for (int c = 0; c < variables; c++) {
 				// Add to the count for this particular transition:
 				// (cell's assigned as above)
-				int sourceAgent = c-j;
-				if ((sourceAgent < 0) || (sourceAgent >= agents)) {
-					// Source agent is out of bounds unless we are using periodic boundary conditions
+				int sourceVariable = c-j;
+				if ((sourceVariable < 0) || (sourceVariable >= variables)) {
+					// Source variable is out of bounds unless we are using periodic boundary conditions
 					if (periodicBoundaryConditions) {
-						sourceAgent = (sourceAgent+agents) % agents;
+						sourceVariable = (sourceVariable+variables) % variables;
 					} else {
 						// Don't add this to our observations
 						continue;
 					}
 				}
-				destVal = states[r][c];
-				sourceNextPastCount[sourceVal[c]][destVal][pastVal[c]]++;
-				sourcePastCount[sourceVal[c]][pastVal[c]]++;
-				nextPastCount[destVal][pastVal[c]]++;
-				pastCount[pastVal[c]]++;
-				nextCount[destVal]++;
-				// Update the previous value:
+				// First update the embedding values for the current
+				//  phases of the embeddings:
 				if (k > 0) {
-					pastVal[c] -= maxShiftedValue[states[r-k][c]];
-					pastVal[c] *= base;
-					pastVal[c] += states[r][c];
+					pastVal[c][destEmbeddingPhase] += states[r-1][c];
 				}
-				sourceVal[c] -= maxShiftedSourceValue[states[r-sourceHistoryEmbedLength][sourceAgent]];
-				sourceVal[c] *= base;
-				sourceVal[c] += states[r][sourceAgent];
+				sourcePastVal[c][sourceEmbeddingPhase] += states[r-delay][sourceVariable];
+				// Add to the count for this particular transition:
+				// (cell's assigned as above)
+				destVal = states[r][c];
+				int thisPastVal = pastVal[c][destEmbeddingPhase];
+				int thisSourceVal = sourcePastVal[c][sourceEmbeddingPhase];
+				sourceNextPastCount[thisSourceVal][destVal][thisPastVal]++;
+				sourcePastCount[thisSourceVal][thisPastVal]++;
+				nextPastCount[destVal][thisPastVal]++;
+				pastCount[thisPastVal]++;
+				nextCount[destVal]++;
+				// Now, update the combined embedding values and phases,
+				//  for this phase we back out the oldest value which we'll no longer need:
+				if (k > 0) {
+					pastVal[c][destEmbeddingPhase] -= maxShiftedValue[states[r-1-(k-1)*destEmbeddingDelay][c]];
+					pastVal[c][destEmbeddingPhase] *= base; // and shift the others up
+				}
+				sourcePastVal[c][sourceEmbeddingPhase] -=
+						maxShiftedSourceValue[
+						    states[r-delay-(sourceHistoryEmbedLength-1)*sourceEmbeddingDelay][sourceVariable]];
+				sourcePastVal[c][sourceEmbeddingPhase] *= base; // and shift the others up
 			}
-		}		
+			// then update the phase
+			destEmbeddingPhase = (destEmbeddingPhase + 1) % destEmbeddingDelay; 
+			sourceEmbeddingPhase = (sourceEmbeddingPhase + 1) % sourceEmbeddingDelay; 
+		}
 	}
 
 	/**
@@ -509,8 +642,10 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 	 * 	(i.e. source is column i-j, dest is column i) 
 	 */
 	public void addObservations(int states[][][], int h, int j) {
+
 		int timeSteps = states.length;
-		if (timeSteps == 0) {
+		if (timeSteps - startObservationTime <= 0) {
+			// No observations to add
 			return;
 		}
 		int agentRows = states[0].length;
@@ -524,22 +659,32 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 		} else {
 			observations += (timeSteps - startObservationTime) * (agentRows - Math.abs(h)) * (agentColumns - Math.abs(j));
 		}
-		
-		// Initialise and store the current previous and source value for each agent
-		int[][] pastVal = new int[agentRows][agentColumns];
+
+		// Initialise and store the current previous values for each variable;
+		//  one for each phase of the embedding delay.
+		// First for the destination:
+		int[][][] pastVal = new int[agentRows][agentColumns][destEmbeddingDelay];
 		for (int r = 0; r < agentRows; r++) {
 			for (int c = 0; c < agentColumns; c++) {
-				pastVal[r][c] = 0;
-				for (int p = 0; p < k; p++) {
-					pastVal[r][c] *= base;
-					pastVal[r][c] += states[startObservationTime - k + p][r][c];
+				for (int d = 0; d < destEmbeddingDelay; d++) {
+					// Compute the current previous values for
+					//  phase d of the embedding delay, but leave
+					//  out the most recent value (we'll add those in
+					//  in the main loop)
+					pastVal[r][c][d] = 0;
+					for (int p = 0; p < k-1; p++) {
+						pastVal[r][c][d] += states[startObservationTime + d - 1
+						                   - (k-1)*destEmbeddingDelay
+						                   + p*destEmbeddingDelay][r][c];
+						pastVal[r][c][d] *= base;
+					}
 				}
 			}
 		}
-		int[][] sourceVal = new int[agentRows][agentColumns];
+		// Next for the source:
+		int[][][] sourcePastVal = new int[agentRows][agentColumns][sourceEmbeddingDelay];
 		for (int r = 0; r < agentRows; r++) {
 			for (int c = 0; c < agentColumns; c++) {
-				sourceVal[r][c] = 0;
 				int sourceAgentRow = r-h;
 				if ((sourceAgentRow < 0) || (sourceAgentRow >= agentRows)) {
 					// Source agent is out of bounds unless we are using periodic boundary conditions
@@ -560,15 +705,25 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 						continue;
 					}
 				}
-				for (int p = 0; p < sourceHistoryEmbedLength; p++) {
-					sourceVal[r][c] *= base;
-					sourceVal[r][c] += states[startObservationTime - sourceHistoryEmbedLength + p][sourceAgentRow][sourceAgentColumn];
+				// Now initialise the embedding
+				for (int d = 0; d < sourceEmbeddingDelay; d++) {
+					// Compute the current previous values for
+					//  phase d of the embedding delay, but leave
+					//  out the most recent value (we'll add those in
+					//  in the main loop)
+					sourcePastVal[r][c][d] = 0;
+					for (int p = 0; p < sourceHistoryEmbedLength - 1; p++) {
+						sourcePastVal[r][c][d] += states[startObservationTime + d - delay
+						                    - (sourceHistoryEmbedLength-1)*sourceEmbeddingDelay
+						                    + p*sourceEmbeddingDelay][sourceAgentRow][sourceAgentColumn];
+						sourcePastVal[r][c][d] *= base;
+					}
 				}
 			}
 		}
-
+		
 		// 1. Count the tuples observed
-		int destVal;
+		int destVal, destEmbeddingPhase = 0, sourceEmbeddingPhase = 0;
 		for (int t = startObservationTime; t < timeSteps; t++) {
 			for (int r = 0; r < agentRows; r++) {
 				for (int c = 0; c < agentColumns; c++) {
@@ -594,24 +749,38 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 							continue;
 						}
 					}
-					destVal = states[t][r][c];
-					sourceNextPastCount[sourceVal[r][c]][destVal][pastVal[r][c]]++;
-					sourcePastCount[sourceVal[r][c]][pastVal[r][c]]++;
-					nextPastCount[destVal][pastVal[r][c]]++;
-					pastCount[pastVal[r][c]]++;
-					nextCount[destVal]++;
-					// Update the previous value:
+					// First update the embedding values for the current
+					//  phases of the embeddings:
 					if (k > 0) {
-						pastVal[r][c] -= maxShiftedValue[states[t-k][r][c]];
-						pastVal[r][c] *= base;
-						pastVal[r][c] += states[t][r][c];
+						pastVal[r][c][destEmbeddingPhase] += states[t-1][r][c];
 					}
-					sourceVal[r][c] -= maxShiftedSourceValue[states[t-sourceHistoryEmbedLength][sourceAgentRow][sourceAgentColumn]];
-					sourceVal[r][c] *= base;
-					sourceVal[r][c] += states[t][sourceAgentRow][sourceAgentColumn];
+					sourcePastVal[r][c][sourceEmbeddingPhase] += states[t-delay][sourceAgentRow][sourceAgentColumn];
+					// Add to the count for this particular transition:
+					// (cell's assigned as above)
+					destVal = states[t][r][c];
+					int thisPastVal = pastVal[r][c][destEmbeddingPhase];
+					int thisSourceVal = sourcePastVal[r][c][sourceEmbeddingPhase];
+					sourceNextPastCount[thisSourceVal][destVal][thisPastVal]++;
+					sourcePastCount[thisSourceVal][thisPastVal]++;
+					nextPastCount[destVal][thisPastVal]++;
+					pastCount[thisPastVal]++;
+					nextCount[destVal]++;
+					// Now, update the combined embedding values and phases,
+					//  for this phase we back out the oldest value which we'll no longer need:
+					if (k > 0) {
+						pastVal[r][c][destEmbeddingPhase] -= maxShiftedValue[states[t-1-(k-1)*destEmbeddingDelay][r][c]];
+						pastVal[r][c][destEmbeddingPhase] *= base; // and shift the others up
+					}
+					sourcePastVal[r][c][sourceEmbeddingPhase] -=
+							maxShiftedSourceValue[
+							    states[t-delay-(sourceHistoryEmbedLength-1)*sourceEmbeddingDelay][sourceAgentRow][sourceAgentColumn]];
+					sourcePastVal[r][c][sourceEmbeddingPhase] *= base; // and shift the others up
 				}
 			}
-		}		
+			// then update the phase
+			destEmbeddingPhase = (destEmbeddingPhase + 1) % destEmbeddingDelay; 
+			sourceEmbeddingPhase = (sourceEmbeddingPhase + 1) % sourceEmbeddingDelay; 
+		}
 	}
 
 	/**
@@ -626,42 +795,80 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 	 * @param destIndex destination variable index in states
 	 */
 	public void addObservations(int states[][], int sourceIndex, int destIndex) {
-		int rows = states.length;
-		// increment the count of observations:
-		observations += (rows - startObservationTime); 
-		
-		// Initialise and store the current previous value for each column
-		int pastVal = 0;
-		for (int p = 0; p < k; p++) {
-			pastVal *= base;
-			pastVal += states[startObservationTime - k + p][destIndex];
-		}
-		int sourceVal = 0;
-		for (int p = 0; p < sourceHistoryEmbedLength; p++) {
-			sourceVal *= base;
-			sourceVal += states[startObservationTime - sourceHistoryEmbedLength + p][sourceIndex];
-		}
 
+		int timeSteps = states.length;
+		if (timeSteps - startObservationTime <= 0) {
+			// No observations to add
+			return;
+		}
+		// increment the count of observations:
+		observations += timeSteps - startObservationTime; 
+		
+		// Initialise and store the current previous values;
+		//  one for each phase of the embedding delay.
+		// First for the destination:
+		int[] pastVal = new int[destEmbeddingDelay];
+		for (int d = 0; d < destEmbeddingDelay; d++) {
+			// Compute the current previous values for
+			//  phase d of the embedding delay, but leave
+			//  out the most recent value (we'll add those in
+			//  in the main loop)
+			pastVal[d] = 0;
+			for (int p = 0; p < k-1; p++) {
+				pastVal[d] += states[startObservationTime + d - 1
+				                   - (k-1)*destEmbeddingDelay
+				                   + p*destEmbeddingDelay][destIndex];
+				pastVal[d] *= base;
+			}
+		}
+		// Next for the source:
+		int[] sourcePastVal = new int[sourceEmbeddingDelay];
+		for (int d = 0; d < sourceEmbeddingDelay; d++) {
+			// Compute the current previous values for
+			//  phase d of the embedding delay, but leave
+			//  out the most recent value (we'll add those in
+			//  in the main loop)
+			sourcePastVal[d] = 0;
+			for (int p = 0; p < sourceHistoryEmbedLength - 1; p++) {
+				sourcePastVal[d] += states[startObservationTime + d - delay
+				                    - (sourceHistoryEmbedLength-1)*sourceEmbeddingDelay
+				                    + p*sourceEmbeddingDelay][sourceIndex];
+				sourcePastVal[d] *= base;
+			}
+		}
+		
 		// 1. Count the tuples observed
-		int destVal;
-		for (int r = startObservationTime; r < rows; r++) {
+		int destVal, destEmbeddingPhase = 0, sourceEmbeddingPhase = 0;
+		for (int r = startObservationTime; r < timeSteps; r++) {
+			// First update the embedding values for the current
+			//  phases of the embeddings:
+			if (k > 0) {
+				pastVal[destEmbeddingPhase] += states[r-1][destIndex];
+			}
+			sourcePastVal[sourceEmbeddingPhase] += states[r-delay][sourceIndex];
 			// Add to the count for this particular transition:
 			// (cell's assigned as above)
 			destVal = states[r][destIndex];
-			sourceNextPastCount[sourceVal][destVal][pastVal]++;
-			sourcePastCount[sourceVal][pastVal]++;
-			nextPastCount[destVal][pastVal]++;
-			pastCount[pastVal]++;
+			int thisPastVal = pastVal[destEmbeddingPhase];
+			int thisSourceVal = sourcePastVal[sourceEmbeddingPhase];
+			sourceNextPastCount[thisSourceVal][destVal][thisPastVal]++;
+			sourcePastCount[thisSourceVal][thisPastVal]++;
+			nextPastCount[destVal][thisPastVal]++;
+			pastCount[thisPastVal]++;
 			nextCount[destVal]++;
-			// Update the previous value:
+			// Now, update the combined embedding values and phases,
+			//  for this phase we back out the oldest value which we'll no longer need:
 			if (k > 0) {
-				pastVal -= maxShiftedValue[states[r-k][destIndex]];
-				pastVal *= base;
-				pastVal += states[r][destIndex];
+				pastVal[destEmbeddingPhase] -= maxShiftedValue[states[r-1-(k-1)*destEmbeddingDelay][destIndex]];
+				pastVal[destEmbeddingPhase] *= base; // and shift the others up
 			}
-			sourceVal -= maxShiftedSourceValue[states[r-sourceHistoryEmbedLength][sourceIndex]];
-			sourceVal *= base;
-			sourceVal += states[r][sourceIndex];
+			sourcePastVal[sourceEmbeddingPhase] -=
+					maxShiftedSourceValue[
+					    states[r-delay-(sourceHistoryEmbedLength-1)*sourceEmbeddingDelay][sourceIndex]];
+			sourcePastVal[sourceEmbeddingPhase] *= base; // and shift the others up
+			// then update the phase
+			destEmbeddingPhase = (destEmbeddingPhase + 1) % destEmbeddingDelay; 
+			sourceEmbeddingPhase = (sourceEmbeddingPhase + 1) % sourceEmbeddingDelay; 
 		}
 	}
 
@@ -681,42 +888,80 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 	 */
 	public void addObservations(int states[][][], int sourceRowIndex, int sourceColumnIndex,
 												  int destRowIndex, int destColumnIndex) {
+
 		int timeSteps = states.length;
-		// increment the count of observations:
-		observations += (timeSteps - startObservationTime); 
-		
-		// Initialise and store the current previous value for each column
-		int pastVal = 0;
-		for (int p = 0; p < k; p++) {
-			pastVal *= base;
-			pastVal += states[startObservationTime - k + p][destRowIndex][destColumnIndex];
+		if (timeSteps - startObservationTime <= 0) {
+			// No observations to add
+			return;
 		}
-		int sourceVal = 0;
-		for (int p = 0; p < sourceHistoryEmbedLength; p++) {
-			sourceVal *= base;
-			sourceVal += states[startObservationTime - sourceHistoryEmbedLength + p][sourceRowIndex][sourceColumnIndex];
+		// increment the count of observations:
+		observations += timeSteps - startObservationTime; 
+		
+		// Initialise and store the current previous values;
+		//  one for each phase of the embedding delay.
+		// First for the destination:
+		int[] pastVal = new int[destEmbeddingDelay];
+		for (int d = 0; d < destEmbeddingDelay; d++) {
+			// Compute the current previous values for
+			//  phase d of the embedding delay, but leave
+			//  out the most recent value (we'll add those in
+			//  in the main loop)
+			pastVal[d] = 0;
+			for (int p = 0; p < k-1; p++) {
+				pastVal[d] += states[startObservationTime + d - 1
+				                   - (k-1)*destEmbeddingDelay
+				                   + p*destEmbeddingDelay][destRowIndex][destColumnIndex];
+				pastVal[d] *= base;
+			}
+		}
+		// Next for the source:
+		int[] sourcePastVal = new int[sourceEmbeddingDelay];
+		for (int d = 0; d < sourceEmbeddingDelay; d++) {
+			// Compute the current previous values for
+			//  phase d of the embedding delay, but leave
+			//  out the most recent value (we'll add those in
+			//  in the main loop)
+			sourcePastVal[d] = 0;
+			for (int p = 0; p < sourceHistoryEmbedLength - 1; p++) {
+				sourcePastVal[d] += states[startObservationTime + d - delay
+				                    - (sourceHistoryEmbedLength-1)*sourceEmbeddingDelay
+				                    + p*sourceEmbeddingDelay][sourceRowIndex][sourceColumnIndex];
+				sourcePastVal[d] *= base;
+			}
 		}
 		
 		// 1. Count the tuples observed
-		int destVal;
+		int destVal, destEmbeddingPhase = 0, sourceEmbeddingPhase = 0;
 		for (int r = startObservationTime; r < timeSteps; r++) {
+			// First update the embedding values for the current
+			//  phases of the embeddings:
+			if (k > 0) {
+				pastVal[destEmbeddingPhase] += states[r-1][destRowIndex][destColumnIndex];
+			}
+			sourcePastVal[sourceEmbeddingPhase] += states[r-delay][sourceRowIndex][sourceColumnIndex];
 			// Add to the count for this particular transition:
 			// (cell's assigned as above)
 			destVal = states[r][destRowIndex][destColumnIndex];
-			sourceNextPastCount[sourceVal][destVal][pastVal]++;
-			sourcePastCount[sourceVal][pastVal]++;
-			nextPastCount[destVal][pastVal]++;
-			pastCount[pastVal]++;
+			int thisPastVal = pastVal[destEmbeddingPhase];
+			int thisSourceVal = sourcePastVal[sourceEmbeddingPhase];
+			sourceNextPastCount[thisSourceVal][destVal][thisPastVal]++;
+			sourcePastCount[thisSourceVal][thisPastVal]++;
+			nextPastCount[destVal][thisPastVal]++;
+			pastCount[thisPastVal]++;
 			nextCount[destVal]++;
-			// Update the previous value:
+			// Now, update the combined embedding values and phases,
+			//  for this phase we back out the oldest value which we'll no longer need:
 			if (k > 0) {
-				pastVal -= maxShiftedValue[states[r-k][destRowIndex][destColumnIndex]];
-				pastVal *= base;
-				pastVal += states[r][destRowIndex][destColumnIndex];
+				pastVal[destEmbeddingPhase] -= maxShiftedValue[states[r-1-(k-1)*destEmbeddingDelay][destRowIndex][destColumnIndex]];
+				pastVal[destEmbeddingPhase] *= base; // and shift the others up
 			}
-			sourceVal -= maxShiftedSourceValue[states[r-sourceHistoryEmbedLength][sourceRowIndex][sourceColumnIndex]];
-			sourceVal *= base;
-			sourceVal += states[r][sourceRowIndex][sourceColumnIndex];
+			sourcePastVal[sourceEmbeddingPhase] -=
+					maxShiftedSourceValue[
+					    states[r-delay-(sourceHistoryEmbedLength-1)*sourceEmbeddingDelay][sourceRowIndex][sourceColumnIndex]];
+			sourcePastVal[sourceEmbeddingPhase] *= base; // and shift the others up
+			// then update the phase
+			destEmbeddingPhase = (destEmbeddingPhase + 1) % destEmbeddingDelay; 
+			sourceEmbeddingPhase = (sourceEmbeddingPhase + 1) % sourceEmbeddingDelay; 
 		}
 	}
 
@@ -999,11 +1244,11 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 		// (Not necessary to check for distinct random perturbations)
 		int[][] newOrderings = rg.generateRandomPerturbations(observations, numPermutationsToCheck);
 
-		// TODO The use of base_power_l as the base for all variables is particularly wasteful
-		//  of resources here, but there's not much other choice. A better solution
-		//  will come when we switch to an underlying conditional MI calculator, with separate
-		//  bases for each variable, and just use its computeSignificance() method.
-		TransferEntropyCalculatorDiscrete ate2 = new TransferEntropyCalculatorDiscrete(base_power_l, k, 1);
+		// If we want a calculator just like this one, we should provide all of 
+		//  the same parameters:
+		TransferEntropyCalculatorDiscrete ate2 =
+				new TransferEntropyCalculatorDiscrete(base, k, destEmbeddingDelay,
+						sourceHistoryEmbedLength, sourceEmbeddingDelay, delay);
 		ate2.initialise();
 		ate2.observations = observations;
 		ate2.pastCount = pastCount;
@@ -1028,7 +1273,6 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 			if (newTe >= actualTE) {
 				countWhereTeIsMoreSignificantThanOriginal++;
 			}
-
 		}
 		
 		// And return the significance
@@ -1043,6 +1287,8 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 		if (!estimateComputed) {
 			computeAverageLocalOfObservations();
 		}
+		// We set the "actual value" as 2*N*TE, since this marries up properly
+		//  with the requisite chi^2 distribution
 		return new ChiSquareMeasurementDistribution(2.0*((double)observations)*average,
 				(sourceHistoryEmbedLength*base - 1)*(base - 1)*(k*base));
 	}
@@ -1075,8 +1321,8 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 	 *  Must be same length as source
 	 * @return time-series of local TE values
 	 */
-	public double[] computeLocalFromPreviousObservations(int sourceStates[], int destStates[]){
-		int timeSteps = destStates.length;
+	public double[] computeLocalFromPreviousObservations(int source[], int dest[]){
+		int timeSteps = dest.length;
 
 		// Allocate for all rows even though we'll leave the first ones as zeros
 		double[] localTE = new double[timeSteps];
@@ -1084,41 +1330,81 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 		max = 0;
 		min = 0;
 
-		// Initialise and store the current previous value for each column
-		int pastVal = 0; 
-		for (int p = 0; p < k; p++) {
-			pastVal *= base;
-			pastVal += destStates[startObservationTime - k + p];
+		if (timeSteps - startObservationTime <= 0) {
+			// No observations to compute locals for
+			return localTE;
 		}
-		int sourceVal = 0;
-		for (int p = 0; p < sourceHistoryEmbedLength; p++) {
-			sourceVal *= base;
-			sourceVal += sourceStates[startObservationTime - sourceHistoryEmbedLength + p];
+		
+		// Initialise and store the current previous values;
+		//  one for each phase of the embedding delay.
+		// First for the destination:
+		int[] pastVal = new int[destEmbeddingDelay];
+		for (int d = 0; d < destEmbeddingDelay; d++) {
+			// Compute the current previous values for
+			//  phase d of the embedding delay, but leave
+			//  out the most recent value (we'll add those in
+			//  in the main loop)
+			pastVal[d] = 0;
+			for (int p = 0; p < k-1; p++) {
+				pastVal[d] += dest[startObservationTime + d - 1
+				                   - (k-1)*destEmbeddingDelay
+				                   + p*destEmbeddingDelay];
+				pastVal[d] *= base;
+			}
 		}
-		int destVal;
+		// Next for the source:
+		int[] sourcePastVal = new int[sourceEmbeddingDelay];
+		for (int d = 0; d < sourceEmbeddingDelay; d++) {
+			// Compute the current previous values for
+			//  phase d of the embedding delay, but leave
+			//  out the most recent value (we'll add those in
+			//  in the main loop)
+			sourcePastVal[d] = 0;
+			for (int p = 0; p < sourceHistoryEmbedLength - 1; p++) {
+				sourcePastVal[d] += source[startObservationTime + d - delay
+				                    - (sourceHistoryEmbedLength-1)*sourceEmbeddingDelay
+				                    + p*sourceEmbeddingDelay];
+				sourcePastVal[d] *= base;
+			}
+		}
+		
+		// now compute the local values
+		int destVal, destEmbeddingPhase = 0, sourceEmbeddingPhase = 0;
 		double logTerm;
 		for (int t = startObservationTime; t < timeSteps; t++) {
-			destVal = destStates[t];
+			// First update the embedding values for the current
+			//  phases of the embeddings:
+			if (k > 0) {
+				pastVal[destEmbeddingPhase] += dest[t-1];
+			}
+			sourcePastVal[sourceEmbeddingPhase] += source[t-delay];
+			destVal = dest[t];
+			int thisPastVal = pastVal[destEmbeddingPhase];
+			int thisSourceVal = sourcePastVal[sourceEmbeddingPhase];
 			// Now compute the local value
-			logTerm = ((double) sourceNextPastCount[sourceVal][destVal][pastVal] / (double) sourcePastCount[sourceVal][pastVal]) /
-		 		((double) nextPastCount[destVal][pastVal] / (double) pastCount[pastVal]);
+			logTerm = ((double) sourceNextPastCount[thisSourceVal][destVal][thisPastVal] /
+							(double) sourcePastCount[thisSourceVal][thisPastVal]) /
+			 		((double) nextPastCount[destVal][thisPastVal] / (double) pastCount[thisPastVal]);
 			localTE[t] = Math.log(logTerm) / log_2;
-			average += localTE[t];
 			if (localTE[t] > max) {
 				max = localTE[t];
 			} else if (localTE[t] < min) {
 				min = localTE[t];
 			}
-			// Update the previous value:
+			// Now, update the combined embedding values and phases,
+			//  for this phase we back out the oldest value which we'll no longer need:
 			if (k > 0) {
-				pastVal -= maxShiftedValue[destStates[t-k]];
-				pastVal *= base;
-				pastVal += destStates[t];
+				pastVal[destEmbeddingPhase] -= maxShiftedValue[dest[t-1-(k-1)*destEmbeddingDelay]];
+				pastVal[destEmbeddingPhase] *= base; // and shift the others up
 			}
-			sourceVal -= maxShiftedSourceValue[sourceStates[t-sourceHistoryEmbedLength]];
-			sourceVal *= base;
-			sourceVal += sourceStates[t];
-		}		
+			sourcePastVal[sourceEmbeddingPhase] -=
+					maxShiftedSourceValue[
+					    source[t-delay-(sourceHistoryEmbedLength-1)*sourceEmbeddingDelay]];
+			sourcePastVal[sourceEmbeddingPhase] *= base; // and shift the others up
+			// then update the phase
+			destEmbeddingPhase = (destEmbeddingPhase + 1) % destEmbeddingDelay; 
+			sourceEmbeddingPhase = (sourceEmbeddingPhase + 1) % sourceEmbeddingDelay; 
+		}
 
 		average = average/(double) (timeSteps - startObservationTime);
 		
@@ -1144,59 +1430,96 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 	 */
 	public double[][] computeLocalFromPreviousObservations(int states[][], int j){
 		int timeSteps = states.length;
-		int agents = states[0].length;
-
+		if ((timeSteps == 0) || (states[0] == null)) {
+			// No variables supplied
+			return new double[timeSteps][];
+		}
+		int variables = states[0].length;
 		// Allocate for all rows even though we'll leave the first ones as zeros
-		double[][] localTE = new double[timeSteps][agents];
+		double[][] localTE = new double[timeSteps][variables];
 		average = 0;
 		max = 0;
 		min = 0;
+		if (timeSteps - startObservationTime <= 0) {
+			// No observations to add
+			return localTE;
+		}
 
-		// Initialise and store the current previous value for each column
-		int[] pastVal = new int[agents]; 
-		for (int c = 0; c < agents; c++) {
-			pastVal[c] = 0;
-			for (int p = 0; p < k; p++) {
-				pastVal[c] *= base;
-				pastVal[c] += states[startObservationTime - k + p][c];
+		// Initialise and store the current previous values for each column;
+		//  one for each phase of the embedding delay.
+		// First for the destination:
+		int[][] pastVal = new int[variables][destEmbeddingDelay];
+		for (int c = 0; c < variables; c++) {
+			for (int d = 0; d < destEmbeddingDelay; d++) {
+				// Compute the current previous values for
+				//  phase d of the embedding delay, but leave
+				//  out the most recent value (we'll add those in
+				//  in the main loop)
+				pastVal[c][d] = 0;
+				for (int p = 0; p < k-1; p++) {
+					pastVal[c][d] += states[startObservationTime + d - 1
+					                   - (k-1)*destEmbeddingDelay
+					                   + p*destEmbeddingDelay][c];
+					pastVal[c][d] *= base;
+				}
 			}
 		}
-		int[] sourceVal = new int[agents];
-		for (int c = 0; c < agents; c++) {
-			sourceVal[c] = 0;
-			int sourceAgentIndex = c-j;
-			if ((sourceAgentIndex < 0) || (sourceAgentIndex >= agents)) {
-				// Source agent is out of bounds unless we are using periodic boundary conditions
+		// Next for the source:
+		int[][] sourcePastVal = new int[variables][sourceEmbeddingDelay];
+		for (int c = 0; c < variables; c++) {
+			int sourceVariable = c-j;
+			if ((sourceVariable < 0) || (sourceVariable >= variables)) {
+				// Source variable is out of bounds unless we are using periodic boundary conditions
 				if (periodicBoundaryConditions) {
-					sourceAgentIndex = (sourceAgentIndex+agents) % agents;
+					sourceVariable = (sourceVariable+variables) % variables;
 				} else {
 					// Don't add this to our observations
 					continue;
 				}
 			}
-			for (int p = 0; p < sourceHistoryEmbedLength; p++) {
-				sourceVal[c] *= base;
-				sourceVal[c] += states[startObservationTime - sourceHistoryEmbedLength + p][sourceAgentIndex];
+			for (int d = 0; d < sourceEmbeddingDelay; d++) {
+				// Compute the current previous values for
+				//  phase d of the embedding delay, but leave
+				//  out the most recent value (we'll add those in
+				//  in the main loop)
+				sourcePastVal[c][d] = 0;
+				for (int p = 0; p < sourceHistoryEmbedLength - 1; p++) {
+					sourcePastVal[c][d] += states[startObservationTime + d - delay
+					                    - (sourceHistoryEmbedLength-1)*sourceEmbeddingDelay
+					                    + p*sourceEmbeddingDelay][sourceVariable];
+					sourcePastVal[c][d] *= base;
+				}
 			}
 		}
-		int destVal;
+		
+		// now compute the local values
+		int destVal, destEmbeddingPhase = 0, sourceEmbeddingPhase = 0;
 		double logTerm;
 		for (int t = startObservationTime; t < timeSteps; t++) {
-			for (int c = 0; c < agents; c++) {
-				int sourceAgentIndex = c-j;
-				if ((sourceAgentIndex < 0) || (sourceAgentIndex >= agents)) {
-					// Source agent is out of bounds unless we are using periodic boundary conditions
+			for (int c = 0; c < variables; c++) {
+				int sourceVariable = c-j;
+				if ((sourceVariable < 0) || (sourceVariable >= variables)) {
+					// Source variable is out of bounds unless we are using periodic boundary conditions
 					if (periodicBoundaryConditions) {
-						sourceAgentIndex = (sourceAgentIndex+agents) % agents;
+						sourceVariable = (sourceVariable+variables) % variables;
 					} else {
 						// Don't compute a local value for this one
 						continue;
 					}
 				}
+				// First update the embedding values for the current
+				//  phases of the embeddings:
+				if (k > 0) {
+					pastVal[c][destEmbeddingPhase] += states[t-1][c];
+				}
+				sourcePastVal[c][sourceEmbeddingPhase] += states[t-delay][sourceVariable];
 				destVal = states[t][c];
+				int thisPastVal = pastVal[c][destEmbeddingPhase];
+				int thisSourceVal = sourcePastVal[c][sourceEmbeddingPhase];
 				// Now compute the local value
-				logTerm = ((double) sourceNextPastCount[sourceVal[c]][destVal][pastVal[c]] / (double) sourcePastCount[sourceVal[c]][pastVal[c]]) /
-			 		((double) nextPastCount[destVal][pastVal[c]] / (double) pastCount[pastVal[c]]);
+				logTerm = ((double) sourceNextPastCount[thisSourceVal][destVal][thisPastVal] /
+							(double) sourcePastCount[thisSourceVal][thisPastVal]) /
+			 		((double) nextPastCount[destVal][thisPastVal] / (double) pastCount[thisPastVal]);
 				localTE[t][c] = Math.log(logTerm) / log_2;
 				average += localTE[t][c];
 				if (localTE[t][c] > max) {
@@ -1204,22 +1527,26 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 				} else if (localTE[t][c] < min) {
 					min = localTE[t][c];
 				}
-				// Update the previous value:
+				// Now, update the combined embedding values and phases,
+				//  for this phase we back out the oldest value which we'll no longer need:
 				if (k > 0) {
-					pastVal[c] -= maxShiftedValue[states[t-k][c]];
-					pastVal[c] *= base;
-					pastVal[c] += states[t][c];
+					pastVal[c][destEmbeddingPhase] -= maxShiftedValue[states[t-1-(k-1)*destEmbeddingDelay][c]];
+					pastVal[c][destEmbeddingPhase] *= base; // and shift the others up
 				}
-				sourceVal[c] -= maxShiftedSourceValue[states[t-sourceHistoryEmbedLength][sourceAgentIndex]];
-				sourceVal[c] *= base;
-				sourceVal[c] += states[t][sourceAgentIndex];
+				sourcePastVal[c][sourceEmbeddingPhase] -=
+						maxShiftedSourceValue[
+						    states[t-delay-(sourceHistoryEmbedLength-1)*sourceEmbeddingDelay][sourceVariable]];
+				sourcePastVal[c][sourceEmbeddingPhase] *= base; // and shift the others up
 			}
-		}		
-
+			// then update the phase
+			destEmbeddingPhase = (destEmbeddingPhase + 1) % destEmbeddingDelay; 
+			sourceEmbeddingPhase = (sourceEmbeddingPhase + 1) % sourceEmbeddingDelay; 
+		}
+		
 		if (periodicBoundaryConditions) {
-			average = average/(double) ((timeSteps - startObservationTime) * agents);
+			average = average/(double) ((timeSteps - startObservationTime) * variables);
 		} else {
-			average = average/(double) ((timeSteps - startObservationTime) * (agents - Math.abs(j)));
+			average = average/(double) ((timeSteps - startObservationTime) * (variables - Math.abs(j)));
 		}
 		
 		return localTE;
@@ -1245,31 +1572,55 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 	 *  row number, third is destination variable column number)
 	 */
 	public double[][][] computeLocalFromPreviousObservations(int states[][][], int h, int j){
+		
 		int timeSteps = states.length;
+		if ((timeSteps == 0) || (states[0] == null)) {
+			// No variables supplied
+			return new double[timeSteps][][];
+		}
 		int agentRows = states[0].length;
+		if (agentRows == 0) {
+			return new double[timeSteps][agentRows][];
+		}
 		int agentColumns = states[0][0].length;
-
+		if (agentRows == 0) {
+			return new double[timeSteps][agentRows][agentColumns];
+		}
+		if (timeSteps - startObservationTime <= 0) {
+			// No observations to add
+			return new double[timeSteps][][];
+		}
 		// Allocate for all rows even though we'll leave the first ones as zeros
 		double[][][] localTE = new double[timeSteps][agentRows][agentColumns];
 		average = 0;
 		max = 0;
-		min = 0;
+		min = 0;		
 
-		// Initialise and store the current previous value for each column
-		int[][] pastVal = new int[agentRows][agentColumns]; 
-		for (int r = 0; r < agentRows; r++){
+		// Initialise and store the current previous values for each variable;
+		//  one for each phase of the embedding delay.
+		// First for the destination:
+		int[][][] pastVal = new int[agentRows][agentColumns][destEmbeddingDelay];
+		for (int r = 0; r < agentRows; r++) {
 			for (int c = 0; c < agentColumns; c++) {
-				pastVal[r][c] = 0;
-				for (int p = 0; p < k; p++) {
-					pastVal[r][c] *= base;
-					pastVal[r][c] += states[startObservationTime - k + p][r][c];
+				for (int d = 0; d < destEmbeddingDelay; d++) {
+					// Compute the current previous values for
+					//  phase d of the embedding delay, but leave
+					//  out the most recent value (we'll add those in
+					//  in the main loop)
+					pastVal[r][c][d] = 0;
+					for (int p = 0; p < k-1; p++) {
+						pastVal[r][c][d] += states[startObservationTime + d - 1
+						                   - (k-1)*destEmbeddingDelay
+						                   + p*destEmbeddingDelay][r][c];
+						pastVal[r][c][d] *= base;
+					}
 				}
 			}
 		}
-		int[][] sourceVal = new int[agentRows][agentColumns];
+		// Next for the source:
+		int[][][] sourcePastVal = new int[agentRows][agentColumns][sourceEmbeddingDelay];
 		for (int r = 0; r < agentRows; r++) {
 			for (int c = 0; c < agentColumns; c++) {
-				sourceVal[r][c] = 0;
 				int sourceAgentRow = r-h;
 				if ((sourceAgentRow < 0) || (sourceAgentRow >= agentRows)) {
 					// Source agent is out of bounds unless we are using periodic boundary conditions
@@ -1290,14 +1641,25 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 						continue;
 					}
 				}
-				for (int p = 0; p < sourceHistoryEmbedLength; p++) {
-					sourceVal[r][c] *= base;
-					sourceVal[r][c] += states[startObservationTime - sourceHistoryEmbedLength + p][sourceAgentRow][sourceAgentColumn];
+				// Now initialise the embedding
+				for (int d = 0; d < sourceEmbeddingDelay; d++) {
+					// Compute the current previous values for
+					//  phase d of the embedding delay, but leave
+					//  out the most recent value (we'll add those in
+					//  in the main loop)
+					sourcePastVal[r][c][d] = 0;
+					for (int p = 0; p < sourceHistoryEmbedLength - 1; p++) {
+						sourcePastVal[r][c][d] += states[startObservationTime + d - delay
+						                    - (sourceHistoryEmbedLength-1)*sourceEmbeddingDelay
+						                    + p*sourceEmbeddingDelay][sourceAgentRow][sourceAgentColumn];
+						sourcePastVal[r][c][d] *= base;
+					}
 				}
 			}
 		}
-
-		int destVal;
+		
+		// Now compute the local values
+		int destVal, destEmbeddingPhase = 0, sourceEmbeddingPhase = 0;
 		double logTerm;
 		for (int t = startObservationTime; t < timeSteps; t++) {
 			for (int r = 0; r < agentRows; r++) {
@@ -1308,7 +1670,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 						if (periodicBoundaryConditions) {
 							sourceAgentRow = (sourceAgentRow+agentRows) % agentRows;
 						} else {
-							// Don't compute a local value for this one
+							// Don't compute a local value here
 							continue;
 						}
 					}
@@ -1318,14 +1680,25 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 						if (periodicBoundaryConditions) {
 							sourceAgentColumn = (sourceAgentColumn+agentColumns) % agentColumns;
 						} else {
-							// Don't compute a local value for this one
+							// Don't compute a local value here
 							continue;
 						}
 					}
+					// First update the embedding values for the current
+					//  phases of the embeddings:
+					if (k > 0) {
+						pastVal[r][c][destEmbeddingPhase] += states[t-1][r][c];
+					}
+					sourcePastVal[r][c][sourceEmbeddingPhase] += states[t-delay][sourceAgentRow][sourceAgentColumn];
+					// Add to the count for this particular transition:
+					// (cell's assigned as above)
 					destVal = states[t][r][c];
+					int thisPastVal = pastVal[r][c][destEmbeddingPhase];
+					int thisSourceVal = sourcePastVal[r][c][sourceEmbeddingPhase];
 					// Now compute the local value
-					logTerm = ((double) sourceNextPastCount[sourceVal[r][c]][destVal][pastVal[r][c]] / (double) sourcePastCount[sourceVal[r][c]][pastVal[r][c]]) /
-				 		((double) nextPastCount[destVal][pastVal[r][c]] / (double) pastCount[pastVal[r][c]]);
+					logTerm = ((double) sourceNextPastCount[thisSourceVal][destVal][thisPastVal] /
+							    (double) sourcePastCount[thisSourceVal][thisPastVal]) /
+				 		((double) nextPastCount[destVal][thisPastVal] / (double) pastCount[thisPastVal]);
 					localTE[t][r][c] = Math.log(logTerm) / log_2;
 					average += localTE[t][r][c];
 					if (localTE[t][r][c] > max) {
@@ -1333,19 +1706,23 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 					} else if (localTE[t][r][c] < min) {
 						min = localTE[t][r][c];
 					}
-					// Update the previous value:
+					// Now, update the combined embedding values and phases,
+					//  for this phase we back out the oldest value which we'll no longer need:
 					if (k > 0) {
-						pastVal[r][c] -= maxShiftedValue[states[t-k][r][c]];
-						pastVal[r][c] *= base;
-						pastVal[r][c] += states[t][r][c];
+						pastVal[r][c][destEmbeddingPhase] -= maxShiftedValue[states[t-1-(k-1)*destEmbeddingDelay][r][c]];
+						pastVal[r][c][destEmbeddingPhase] *= base; // and shift the others up
 					}
-					sourceVal[r][c] -= maxShiftedSourceValue[states[t-sourceHistoryEmbedLength][sourceAgentRow][sourceAgentColumn]];
-					sourceVal[r][c] *= base;
-					sourceVal[r][c] += states[t][sourceAgentRow][sourceAgentColumn];
+					sourcePastVal[r][c][sourceEmbeddingPhase] -=
+							maxShiftedSourceValue[
+							    states[t-delay-(sourceHistoryEmbedLength-1)*sourceEmbeddingDelay][sourceAgentRow][sourceAgentColumn]];
+					sourcePastVal[r][c][sourceEmbeddingPhase] *= base; // and shift the others up
 				}
 			}
-		}		
-
+			// then update the phase
+			destEmbeddingPhase = (destEmbeddingPhase + 1) % destEmbeddingDelay; 
+			sourceEmbeddingPhase = (sourceEmbeddingPhase + 1) % sourceEmbeddingDelay; 
+		}
+		
 		if (periodicBoundaryConditions) {
 			average = average/(double) ((timeSteps - startObservationTime) * agentRows * agentColumns);
 		} else {
@@ -1370,35 +1747,70 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 	 * @param destIndex destination variable index in states
 	 * @return time-series of local TE values between the series
 	 */
-	public double[] computeLocalFromPreviousObservations(int states[][], int sourceCol, int destCol){
-		int rows = states.length;
-		// int columns = states[0].length;
+	public double[] computeLocalFromPreviousObservations(int states[][], int sourceIndex, int destIndex){
 
+		int timeSteps = states.length;
 		// Allocate for all rows even though we'll leave the first ones as zeros
-		double[] localTE = new double[rows];
+		double[] localTE = new double[timeSteps];
 		average = 0;
 		max = 0;
 		min = 0;
 
-		// Initialise and store the current previous value for each column
-		int pastVal = 0; 
-		pastVal = 0;
-		for (int p = 0; p < k; p++) {
-			pastVal *= base;
-			pastVal += states[startObservationTime - k + p][destCol];
+		if (timeSteps - startObservationTime <= 0) {
+			// No observations to add
+			return localTE;
 		}
-		int sourceVal = 0;
-		for (int p = 0; p < sourceHistoryEmbedLength; p++) {
-			sourceVal *= base;
-			sourceVal += states[startObservationTime - sourceHistoryEmbedLength + p][sourceCol];
+		
+		// Initialise and store the current previous values;
+		//  one for each phase of the embedding delay.
+		// First for the destination:
+		int[] pastVal = new int[destEmbeddingDelay];
+		for (int d = 0; d < destEmbeddingDelay; d++) {
+			// Compute the current previous values for
+			//  phase d of the embedding delay, but leave
+			//  out the most recent value (we'll add those in
+			//  in the main loop)
+			pastVal[d] = 0;
+			for (int p = 0; p < k-1; p++) {
+				pastVal[d] += states[startObservationTime + d - 1
+				                   - (k-1)*destEmbeddingDelay
+				                   + p*destEmbeddingDelay][destIndex];
+				pastVal[d] *= base;
+			}
 		}
-		int destVal;
+		// Next for the source:
+		int[] sourcePastVal = new int[sourceEmbeddingDelay];
+		for (int d = 0; d < sourceEmbeddingDelay; d++) {
+			// Compute the current previous values for
+			//  phase d of the embedding delay, but leave
+			//  out the most recent value (we'll add those in
+			//  in the main loop)
+			sourcePastVal[d] = 0;
+			for (int p = 0; p < sourceHistoryEmbedLength - 1; p++) {
+				sourcePastVal[d] += states[startObservationTime + d - delay
+				                    - (sourceHistoryEmbedLength-1)*sourceEmbeddingDelay
+				                    + p*sourceEmbeddingDelay][sourceIndex];
+				sourcePastVal[d] *= base;
+			}
+		}
+		
+		// Now compute the local values
+		int destVal, destEmbeddingPhase = 0, sourceEmbeddingPhase = 0;
 		double logTerm;
-		for (int r = startObservationTime; r < rows; r++) {
-			destVal = states[r][destCol];
+		for (int r = startObservationTime; r < timeSteps; r++) {
+			// First update the embedding values for the current
+			//  phases of the embeddings:
+			if (k > 0) {
+				pastVal[destEmbeddingPhase] += states[r-1][destIndex];
+			}
+			sourcePastVal[sourceEmbeddingPhase] += states[r-delay][sourceIndex];
+			destVal = states[r][destIndex];
+			int thisPastVal = pastVal[destEmbeddingPhase];
+			int thisSourceVal = sourcePastVal[sourceEmbeddingPhase];
 			// Now compute the local value
-			logTerm = ((double) sourceNextPastCount[sourceVal][destVal][pastVal] / (double) sourcePastCount[sourceVal][pastVal]) /
-		 		((double) nextPastCount[destVal][pastVal] / (double) pastCount[pastVal]);
+			logTerm = ((double) sourceNextPastCount[thisSourceVal][destVal][thisPastVal] /
+						(double) sourcePastCount[thisSourceVal][thisPastVal]) /
+		 		((double) nextPastCount[destVal][thisPastVal] / (double) pastCount[thisPastVal]);
 			localTE[r] = Math.log(logTerm) / log_2;
 			average += localTE[r];
 			if (localTE[r] > max) {
@@ -1406,18 +1818,21 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 			} else if (localTE[r] < min) {
 				min = localTE[r];
 			}
-			// Update the previous value:
+			// Now, update the combined embedding values and phases,
+			//  for this phase we back out the oldest value which we'll no longer need:
 			if (k > 0) {
-				pastVal -= maxShiftedValue[states[r-k][destCol]];
-				pastVal *= base;
-				pastVal += states[r][destCol];
+				pastVal[destEmbeddingPhase] -= maxShiftedValue[states[r-1-(k-1)*destEmbeddingDelay][destIndex]];
+				pastVal[destEmbeddingPhase] *= base; // and shift the others up
 			}
-			sourceVal -= maxShiftedSourceValue[states[r-sourceHistoryEmbedLength][sourceCol]];
-			sourceVal *= base;
-			sourceVal += states[r][sourceCol];
+			sourcePastVal[sourceEmbeddingPhase] -=
+					maxShiftedSourceValue[
+					    states[r-delay-(sourceHistoryEmbedLength-1)*sourceEmbeddingDelay][sourceIndex]];
+			sourcePastVal[sourceEmbeddingPhase] *= base; // and shift the others up
+			// then update the phase
+			destEmbeddingPhase = (destEmbeddingPhase + 1) % destEmbeddingDelay; 
+			sourceEmbeddingPhase = (sourceEmbeddingPhase + 1) % sourceEmbeddingDelay; 
 		}
-
-		average = average/(double) (rows - startObservationTime);
+		average = average/(double) (timeSteps - startObservationTime);
 		
 		return localTE;
 	}
@@ -1442,33 +1857,66 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 	public double[] computeLocalFromPreviousObservations(int states[][][],
 			int sourceRowIndex, int sourceColumnIndex, int destRowIndex, int destColumnIndex){
 		int timeSteps = states.length;
-		// int columns = states[0].length;
-
 		// Allocate for all rows even though we'll leave the first ones as zeros
 		double[] localTE = new double[timeSteps];
 		average = 0;
 		max = 0;
 		min = 0;
-
-		// Initialise and store the current previous value for each column
-		int pastVal = 0; 
-		pastVal = 0;
-		for (int p = 0; p < k; p++) {
-			pastVal *= base;
-			pastVal += states[startObservationTime - k + p][destRowIndex][destColumnIndex];
+		if (timeSteps - startObservationTime <= 0) {
+			// No observations to add
+			return localTE;
 		}
-		int sourceVal = 0;
-		for (int p = 0; p < sourceHistoryEmbedLength; p++) {
-			sourceVal *= base;
-			sourceVal += states[startObservationTime - sourceHistoryEmbedLength + p][sourceRowIndex][sourceColumnIndex];
+		
+		// Initialise and store the current previous values;
+		//  one for each phase of the embedding delay.
+		// First for the destination:
+		int[] pastVal = new int[destEmbeddingDelay];
+		for (int d = 0; d < destEmbeddingDelay; d++) {
+			// Compute the current previous values for
+			//  phase d of the embedding delay, but leave
+			//  out the most recent value (we'll add those in
+			//  in the main loop)
+			pastVal[d] = 0;
+			for (int p = 0; p < k-1; p++) {
+				pastVal[d] += states[startObservationTime + d - 1
+				                   - (k-1)*destEmbeddingDelay
+				                   + p*destEmbeddingDelay][destRowIndex][destColumnIndex];
+				pastVal[d] *= base;
+			}
 		}
-		int destVal;
+		// Next for the source:
+		int[] sourcePastVal = new int[sourceEmbeddingDelay];
+		for (int d = 0; d < sourceEmbeddingDelay; d++) {
+			// Compute the current previous values for
+			//  phase d of the embedding delay, but leave
+			//  out the most recent value (we'll add those in
+			//  in the main loop)
+			sourcePastVal[d] = 0;
+			for (int p = 0; p < sourceHistoryEmbedLength - 1; p++) {
+				sourcePastVal[d] += states[startObservationTime + d - delay
+				                    - (sourceHistoryEmbedLength-1)*sourceEmbeddingDelay
+				                    + p*sourceEmbeddingDelay][sourceRowIndex][sourceColumnIndex];
+				sourcePastVal[d] *= base;
+			}
+		}
+		
+		// Now compute the local values
+		int destVal, destEmbeddingPhase = 0, sourceEmbeddingPhase = 0;
 		double logTerm;
 		for (int r = startObservationTime; r < timeSteps; r++) {
+			// First update the embedding values for the current
+			//  phases of the embeddings:
+			if (k > 0) {
+				pastVal[destEmbeddingPhase] += states[r-1][destRowIndex][destColumnIndex];
+			}
+			sourcePastVal[sourceEmbeddingPhase] += states[r-delay][sourceRowIndex][sourceColumnIndex];
 			destVal = states[r][destRowIndex][destColumnIndex];
+			int thisPastVal = pastVal[destEmbeddingPhase];
+			int thisSourceVal = sourcePastVal[sourceEmbeddingPhase];
 			// Now compute the local value
-			logTerm = ((double) sourceNextPastCount[sourceVal][destVal][pastVal] / (double) sourcePastCount[sourceVal][pastVal]) /
-		 		((double) nextPastCount[destVal][pastVal] / (double) pastCount[pastVal]);
+			logTerm = ((double) sourceNextPastCount[thisSourceVal][destVal][thisPastVal] /
+						(double) sourcePastCount[thisSourceVal][thisPastVal]) /
+		 		((double) nextPastCount[destVal][thisPastVal] / (double) pastCount[thisPastVal]);
 			localTE[r] = Math.log(logTerm) / log_2;
 			average += localTE[r];
 			if (localTE[r] > max) {
@@ -1476,15 +1924,19 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 			} else if (localTE[r] < min) {
 				min = localTE[r];
 			}
-			// Update the previous value:
+			// Now, update the combined embedding values and phases,
+			//  for this phase we back out the oldest value which we'll no longer need:
 			if (k > 0) {
-				pastVal -= maxShiftedValue[states[r-k][destRowIndex][destColumnIndex]];
-				pastVal *= base;
-				pastVal += states[r][destRowIndex][destColumnIndex];
+				pastVal[destEmbeddingPhase] -= maxShiftedValue[states[r-1-(k-1)*destEmbeddingDelay][destRowIndex][destColumnIndex]];
+				pastVal[destEmbeddingPhase] *= base; // and shift the others up
 			}
-			sourceVal -= maxShiftedSourceValue[states[r-sourceHistoryEmbedLength][sourceRowIndex][sourceColumnIndex]];
-			sourceVal *= base;
-			sourceVal += states[r][sourceRowIndex][sourceColumnIndex];
+			sourcePastVal[sourceEmbeddingPhase] -=
+					maxShiftedSourceValue[
+					    states[r-delay-(sourceHistoryEmbedLength-1)*sourceEmbeddingDelay][sourceRowIndex][sourceColumnIndex]];
+			sourcePastVal[sourceEmbeddingPhase] *= base; // and shift the others up
+			// then update the phase
+			destEmbeddingPhase = (destEmbeddingPhase + 1) % destEmbeddingDelay; 
+			sourceEmbeddingPhase = (sourceEmbeddingPhase + 1) % sourceEmbeddingDelay; 
 		}
 
 		average = average/(double) (timeSteps - startObservationTime);

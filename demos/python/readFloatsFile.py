@@ -19,15 +19,16 @@
 def readFloatsFile(filename):
 	"Read a 2D array of floats from a given file"
 	with open(filename) as f:
- 	    # Space separate numbers, one time step per line, each column is a variable
- 	    array = []
-	    for line in f: # read all lines
-	    	if (line.startswith("%") or line.startswith("#")):
-	    		# Assume this is a comment line
-	    		continue
-	    	if (len(line.split()) == 0):
-	    		# Line is empty
-	    		continue
-		array.append([float(x) for x in line.split()])
-	    return array
-    
+		# Space separate numbers, one time step per line, each column is a variable
+		array = []
+		for line in f:
+			# read all lines
+			if (line.startswith("%") or line.startswith("#")):
+				# Assume this is a comment line
+				continue
+			if (len(line.split()) == 0):
+				# Line is empty
+				continue
+			array.append([float(x) for x in line.split()])
+		return array
+	

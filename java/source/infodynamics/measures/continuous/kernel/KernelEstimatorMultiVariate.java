@@ -52,6 +52,7 @@ public class KernelEstimatorMultiVariate implements Cloneable {
 
 	protected double[] suppliedKernelWidths = null;
 	protected double[] kernelWidthsInUse = null;
+	protected double kernelVolumeInUse = 0;
 	protected int dimensions = 1;
 	private int[] bins = null;
 	private boolean usingIntegerIndexBins = true;
@@ -196,6 +197,7 @@ public class KernelEstimatorMultiVariate implements Cloneable {
 		//  many bins:
 		usingIntegerIndexBins = !forceCompareToAll;
 		useBins = true;
+		kernelVolumeInUse = 0;
 		// Work out the max and min for each bin
 		for (int d = 0; d < dimensions; d++) {
 			mins[d] = MatrixUtils.min(data, d);
@@ -209,6 +211,11 @@ public class KernelEstimatorMultiVariate implements Cloneable {
 				kernelWidthsInUse[d] = suppliedKernelWidths[d] * std;
 			} else {
 				kernelWidthsInUse[d] = suppliedKernelWidths[d];
+			}
+			if (d == 0) {
+				kernelVolumeInUse = 2.0 * kernelWidthsInUse[d];
+			} else {
+				kernelVolumeInUse *= 2.0 * kernelWidthsInUse[d];
 			}
 			bins[d] = (int) Math.ceil((max - mins[d]) / kernelWidthsInUse[d]);
 			if (bins[d] == 0) {
@@ -711,7 +718,7 @@ public class KernelEstimatorMultiVariate implements Cloneable {
 	}
 
 	/**
-	 * Give kernel estimated probability for this observation.
+	 * Give kernel estimated probability density for this observation.
 	 *  Do this using bins, so we only need to compare to neighbouring bins 
 	 *   and of course add in the observations in this bin.
 	 *  Achieves this by trawling through neighbouring bins in a recursive fashion.
@@ -725,8 +732,8 @@ public class KernelEstimatorMultiVariate implements Cloneable {
 			boolean dynCorrExclusion) {
 		
 		KernelCount kernelCount = getCountFromBins(observation, timeStep, dynCorrExclusion);
-		
-		return (double) kernelCount.count / (double) kernelCount.totalObservationsForCount;
+		// Dividing by kernelVolume also to get a density
+		return (double) kernelCount.count / (double) kernelCount.totalObservationsForCount / kernelVolumeInUse;
 	}
 	
 	/**
@@ -792,7 +799,7 @@ public class KernelEstimatorMultiVariate implements Cloneable {
 	}
 
 	/**
-	 * Give kernel estimated probability for this observation, by comparing to all
+	 * Give kernel estimated probability density for this observation, by comparing to all
 	 *  given observations.
 	 * 
 	 * @param observation
@@ -804,7 +811,8 @@ public class KernelEstimatorMultiVariate implements Cloneable {
 			boolean dynCorrExclusion) {
 		
 		KernelCount kernelCount = getCountComparingToAll(observation, timeStep, dynCorrExclusion);
-		return (double) kernelCount.count / (double) kernelCount.totalObservationsForCount;
+		// Dividing by kernelVolume also to get a density
+		return (double) kernelCount.count / (double) kernelCount.totalObservationsForCount / kernelVolumeInUse;
 	}
 	
 	private int getBinIndex(double value, int dimension) {

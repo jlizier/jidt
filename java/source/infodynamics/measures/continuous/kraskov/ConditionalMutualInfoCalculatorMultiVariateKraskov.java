@@ -46,7 +46,8 @@ import infodynamics.utils.UnivariateNearestNeighbourSearcher;
  *  actually implement the two KSG algorithms.</p>
  * 
  * <p>Crucially, the calculation is performed by examining
- * neighbours in the full joint space (as specified by Frenzel and Pompe)
+ * neighbours in the full joint space (as specified by Frenzel and Pompe,
+ * and later by Vejmelka and Paluš, and Vlachos and Kugiumtzis)
  * rather than two MI calculators.</p>
  *  
  * <p>Usage is as per the paradigm outlined for {@link ConditionalMutualInfoCalculatorMultiVariate},
@@ -69,6 +70,12 @@ import infodynamics.utils.UnivariateNearestNeighbourSearcher;
  * 	<li>Frenzel and Pompe, <a href="http://dx.doi.org/10.1103/physrevlett.99.204101">
  * 	"Partial Mutual Information for Coupling Analysis of Multivariate Time Series"</a>,
  * 	Physical Review Letters, <b>99</b>, p. 204101+ (2007).</li>
+ *  <li>Vejmelka and Paluš, <a href="http://dx.doi.org/10.1103/physreve.77.026214">
+ *  "Inferring the directionality of coupling with conditional mutual information"</a>,
+ *  Physical Review E, <b>77</b>, 026214, (2008)</li>
+ *  <li>I. Vlachos and D. Kugiumtzis, <a href="http://dx.doi.org/10.1103/physreve.82.016207">
+ *  "Nonuniform state-space reconstruction and coupling detection"</a>,
+ *  Physical Review E, <b>82</b>, 016207, (2010)</li>
  * 	<li>Kraskov, A., Stoegbauer, H., Grassberger, P., 
  *   <a href="http://dx.doi.org/10.1103/PhysRevE.69.066138">"Estimating mutual information"</a>,
  *   Physical Review E 69, (2004) 066138.</li>
@@ -331,6 +338,7 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 					var2Observations[r][c] +=
 							random.nextGaussian()*noiseLevel;
 				}
+				// This next loop will only execute if dimensionsCond > 0
 				for (int c = 0; c < dimensionsCond; c++) {
 					condObservations[r][c] +=
 							random.nextGaussian()*noiseLevel;
@@ -351,7 +359,7 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	public double computeAverageLocalOfObservations() throws Exception {
 		// Compute the conditional MI
 		double startTime = Calendar.getInstance().getTimeInMillis();
-		lastAverage = computeFromObservations(false)[0];
+		lastAverage = computeFromObservations(false, null)[0];
 		condMiComputed = true;
 		if (debug) {
 			Calendar rightNow2 = Calendar.getInstance();
@@ -395,7 +403,7 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 			var2Observations = MatrixUtils.extractSelectedTimePointsReusingArrays(originalData, reordering);
 		}
 		// Compute the conditional MI
-		double newCondMI = computeFromObservations(false)[0];
+		double newCondMI = computeFromObservations(false, null)[0];
 		// restore original data
 		kdTreeJoint = originalKdTreeJoint;
 		if (variableToReorder == 1) {
@@ -412,7 +420,7 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 
 	@Override
 	public double[] computeLocalOfPreviousObservations() throws Exception {
-		double[] localValues = computeFromObservations(true);
+		double[] localValues = computeFromObservations(true, null);
 		lastAverage = MatrixUtils.mean(localValues);
 		condMiComputed = true;
 		return localValues;
@@ -424,10 +432,25 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	@Override
 	public double[] computeLocalUsingPreviousObservations(double[][] states1,
 			double[][] states2, double[][] condStates) throws Exception {
-		// If implemented, will need to incorporate any normalisation here
-		//  (normalising the incoming data the same way the previously
-		//   supplied observations were normalised).
-		throw new Exception("Local method not implemented yet");
+		// Do normalisation of the incoming data if required:
+		double[][] states1ToUse, states2ToUse, condStatesToUse;
+		if (normalise) {
+			states1ToUse = MatrixUtils.normaliseIntoNewArray(states1, var1Means, var1Stds);
+			states2ToUse = MatrixUtils.normaliseIntoNewArray(states2, var2Means, var2Stds);
+			if (dimensionsCond != 0) {
+				condStatesToUse = MatrixUtils.normaliseIntoNewArray(condStates, condMeans, condStds);
+			} else {
+				condStatesToUse = null;
+			}
+		} else {
+			states1ToUse = states1;
+			states2ToUse = states2;
+			condStatesToUse = condStates;
+		}
+		// And call the algorithm:
+		double[] localValues = computeFromObservations(true,
+				new double[][][]{states1ToUse, states2ToUse, condStatesToUse});
+		return localValues;
 	}
 	
 	/**
@@ -444,10 +467,12 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	 * 
 	 * @param returnLocals whether to return an array or local values, or else
 	 *  sums of these values
+	 * @param newObservations set to null for computing for the observation set for the PDF, or pass in a new set
+	 *  of observations to compute the average/locals for (using the existing observations to construct the PDF)
 	 * @return either the average conditional MI, or array of local conditional MI value, in nats not bits
 	 * @throws Exception
 	 */
-	protected double[] computeFromObservations(boolean returnLocals) throws Exception {
+	protected double[] computeFromObservations(boolean returnLocals, double[][][] newObservations) throws Exception {
 		int N = var1Observations.length; // number of observations
 		
 		double[] returnValues = null;
@@ -488,28 +513,36 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 				uniNNSearcherVar2 = new UnivariateNearestNeighbourSearcher(var2Observations);
 			}
 		}
-		if (nnSearcherConditional == null) {
+		if ((nnSearcherConditional == null) && (dimensionsCond > 0)) {
 			nnSearcherConditional = NearestNeighbourSearcher.create(condObservations);
 			nnSearcherConditional.setNormType(normType);
 		}
 
+		// How many time points are we averaging over?
+		int numTimePointsToComputeFor = (newObservations == null) ?
+				N : newObservations[0].length;
+		
 		if (numThreads == 1) {
 			// Single-threaded implementation:
-			returnValues = partialComputeFromObservations(0, N, returnLocals);
-			
+			if (newObservations == null) {
+				returnValues = partialComputeFromObservations(0, numTimePointsToComputeFor, returnLocals);
+			} else {
+				returnValues = partialComputeFromNewObservations(0, numTimePointsToComputeFor,
+						newObservations[0], newObservations[1], newObservations[2], returnLocals);
+			}
 		} else {
 			// We're going multithreaded:
 			if (returnLocals) {
 				// We're computing local conditional MI
-				returnValues = new double[N];
+				returnValues = new double[numTimePointsToComputeFor];
 			} else {
 				// We're computing average conditional MI
 				returnValues = new double[CondMiKraskovThreadRunner.RETURN_ARRAY_LENGTH];
 			}
 			
 			// Distribute the observations to the threads for the parallel processing
-			int lTimesteps = N / numThreads; // each thread gets the same amount of data
-			int res = N % numThreads; // the first thread gets the residual data
+			int lTimesteps = numTimePointsToComputeFor / numThreads; // each thread gets the same amount of data
+			int res = numTimePointsToComputeFor % numThreads; // the first thread gets the residual data
 			if (debug) {
 				System.out.printf("Computing Kraskov conditional MI with %d threads (%d timesteps each, plus %d residual)\n",
 						numThreads, lTimesteps, res);
@@ -523,7 +556,7 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 					System.out.println(t + ".Thread: from " + startTime +
 							" to " + (startTime + numTimesteps)); // Trace Message
 				}
-				runners[t] = new CondMiKraskovThreadRunner(this, startTime, numTimesteps, returnLocals);
+				runners[t] = new CondMiKraskovThreadRunner(this, startTime, numTimesteps, newObservations, returnLocals);
 				tCalculators[t] = new Thread(runners[t]);
 				tCalculators[t].start();
 			}
@@ -552,10 +585,10 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 			return returnValues;
 		} else {
 			// Average out the components for the final equation(s) and for debugging:
-			double averageDiGammas = returnValues[CondMiKraskovThreadRunner.INDEX_SUM_DIGAMMAS] / (double) N;
-			double avNxz = returnValues[CondMiKraskovThreadRunner.INDEX_SUM_NXZ] / (double) N;
-			double avNyz = returnValues[CondMiKraskovThreadRunner.INDEX_SUM_NYZ] / (double) N;
-			double avNz = returnValues[CondMiKraskovThreadRunner.INDEX_SUM_NZ] / (double) N;
+			double averageDiGammas = returnValues[CondMiKraskovThreadRunner.INDEX_SUM_DIGAMMAS] / (double) numTimePointsToComputeFor;
+			double avNxz = returnValues[CondMiKraskovThreadRunner.INDEX_SUM_NXZ] / (double) numTimePointsToComputeFor;
+			double avNyz = returnValues[CondMiKraskovThreadRunner.INDEX_SUM_NYZ] / (double) numTimePointsToComputeFor;
+			double avNz = returnValues[CondMiKraskovThreadRunner.INDEX_SUM_NZ] / (double) numTimePointsToComputeFor;
 			if (debug) {
 				System.out.printf("<n_xz>=%.3f, <n_yz>=%.3f, <n_z>=%.3f\n",
 						avNxz, avNyz, avNz);
@@ -573,17 +606,27 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 				// Algorithm 2:
 				// We also retrieve the sums of inverses for debugging purposes:
 				double averageInverseCountInJointXZ =
-						returnValues[CondMiKraskovThreadRunner.INDEX_SUM_INV_NXZ] / (double) N;
+						returnValues[CondMiKraskovThreadRunner.INDEX_SUM_INV_NXZ] / (double) numTimePointsToComputeFor;
 				double averageInverseCountInJointYZ =
-						returnValues[CondMiKraskovThreadRunner.INDEX_SUM_INV_NYZ] / (double) N;
-				double averageMeasure = MathsUtils.digamma(k) - (2.0 / (double)k) + averageDiGammas +
+						returnValues[CondMiKraskovThreadRunner.INDEX_SUM_INV_NYZ] / (double) numTimePointsToComputeFor;
+				double inverseKTerm;
+				if (dimensionsCond > 0) {
+					// We will add in the 2/K term as usual
+					inverseKTerm = 2.0 / (double) k;
+				} else {
+					// We will only add in 1/K term since without a conditional there is
+					//  technically one less variable in the full joint space
+					inverseKTerm = 1.0 / (double) k;
+				}
+				double averageMeasure = MathsUtils.digamma(k) - inverseKTerm + averageDiGammas +
 						averageInverseCountInJointXZ + averageInverseCountInJointYZ;
 				if (debug) {
-					System.out.printf("Av = digamma(k)=%.3f + <digammas>=%.3f +<inverses>=%.3f - 2/k=%.3f  = %.3f" +
+					System.out.printf("Av = digamma(k)=%.3f + <digammas>=%.3f +<inverses>=%.3f - $d/k=%.3f  = %.3f" +
 							" (<1/n_yz>=%.3f, <1/n_xz>=%.3f)\n",
 							MathsUtils.digamma(k), averageDiGammas,
 							averageInverseCountInJointXZ + averageInverseCountInJointYZ,
-							(2.0 / (double)k), averageMeasure,
+							dimensionsCond > 0 ? 2 : 1,
+							inverseKTerm, averageMeasure,
 							averageInverseCountInJointYZ, averageInverseCountInJointXZ);
 				}
 				double[] result = new double[1];
@@ -620,6 +663,40 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 			int startTimePoint, int numTimePoints, boolean returnLocals) throws Exception;
 
 	/**
+	 * Protected method to be used internally for threaded implementations.
+	 * This method implements the guts of each Kraskov algorithm, computing the number of 
+	 *  nearest neighbours in each dimension for a sub-set of the data points.
+	 *  It is intended to be called by one thread to work on that specific
+	 *  sub-set of the data.
+	 * In particular, this method differs from {@link #partialComputeFromObservations(int, int, boolean)}
+	 *  because it operates on a new set of observations (using the old set of observations for
+	 *  constructing the search spaces and PDFs)
+	 * 
+	 * <p>The method returns:<ol>
+	 *  <li>for average conditional MIs (returnLocals == false), the relevant sums of digamma(n_{xz}), digamma(n_{yz})
+	 *     and digamma(n_z)
+	 *     for a partial set of the observations</li>
+	 *  <li>for local conditional MIs (returnLocals == true), the array of local conditional MI values</li>
+	 *  </ol>
+	 * 
+	 * @param startTimePoint start time for the partial set we examine
+	 * @param numTimePoints number of time points (including startTimePoint to examine)
+	 * @param newVar1Observations new time series of observations for variable 1
+	 * @param newVar2Observations new time series of observations for variable 1
+	 * @param newCondObservations new time series of observations for variable 1
+	 * @param returnLocals whether to return an array or local values, or else
+	 *  sums of these values
+	 * @return an array of the relevant sum of digamma(n_xz+1) and digamma(n_yz+1) and digamma(n_z), then
+	 *  sum of n_xz, n_yz, n_z and for algorithm 2 only, sum of 1/n_xz and 1/n_yz
+	 *  (these latter five are only for debugging purposes).
+	 * @throws Exception
+	 */
+	protected abstract double[] partialComputeFromNewObservations(
+			int startTimePoint, int numTimePoints,
+			double[][] newVar1Observations, double[][] newVar2Observations, double[][] newCondObservations, 
+			boolean returnLocals) throws Exception;
+
+	/**
 	 * Private class to handle multi-threading of the Kraskov algorithms.
 	 * Each instance calls partialComputeFromObservations()
 	 * to compute nearest neighbours for a part of the data.
@@ -633,6 +710,7 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 		protected ConditionalMutualInfoCalculatorMultiVariateKraskov condMiCalc;
 		protected int myStartTimePoint;
 		protected int numberOfTimePoints;
+		protected double[][][] newObservations;
 		protected boolean computeLocals;
 		
 		protected double[] returnValues = null;
@@ -649,11 +727,13 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 		public CondMiKraskovThreadRunner(
 				ConditionalMutualInfoCalculatorMultiVariateKraskov condMiCalc,
 				int myStartTimePoint, int numberOfTimePoints,
+				double[][][] newObservations,
 				boolean computeLocals) {
 			this.condMiCalc = condMiCalc;
 			this.myStartTimePoint = myStartTimePoint;
 			this.numberOfTimePoints = numberOfTimePoints;
 			this.computeLocals = computeLocals;
+			this.newObservations = newObservations;
 		}
 		
 		/**
@@ -676,7 +756,16 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 		 */
 		public void run() {
 			try {
-				returnValues = condMiCalc.partialComputeFromObservations(myStartTimePoint, numberOfTimePoints, computeLocals);
+				if (newObservations == null) {
+					// Computing on existing observations
+					returnValues = condMiCalc.partialComputeFromObservations(myStartTimePoint, numberOfTimePoints, computeLocals);
+				} else {
+					// Computing on new observations
+					returnValues = condMiCalc.partialComputeFromNewObservations(
+							myStartTimePoint, numberOfTimePoints,
+							newObservations[0], newObservations[1],
+							newObservations[2], computeLocals);
+				}
 			} catch (Exception e) {
 				// Store the exception for later retrieval
 				problem = e;
