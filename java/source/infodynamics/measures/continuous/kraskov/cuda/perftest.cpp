@@ -32,8 +32,6 @@ int main(int argc, char *argv[]){
   }
 
   CPerfTimer pt1 = startTimer("Time generating data");
-  // float source[5] = {0.1, 0.2, 0.3, 0.4, 0.5};
-  // float dest[5] = {0.11, 0.22, 0.31, 0.42, 0.51};
 
   float *source = (float *) malloc(N*dimx*sizeof(float));
   float *dest = (float *) malloc(N*dimy*sizeof(float));
@@ -60,10 +58,6 @@ int main(int argc, char *argv[]){
 
   free(source);
   free(dest);
-
-  for (int i = 0; i < resultSize; i++) {
-    std::cout << result[i] << "\n";
-  }
 
   return 0;
 }
