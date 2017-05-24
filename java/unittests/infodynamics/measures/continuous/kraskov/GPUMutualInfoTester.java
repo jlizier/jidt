@@ -20,7 +20,7 @@ public class GPUMutualInfoTester extends TestCase {
 
     MutualInfoCalculatorMultiVariateKraskov miCalc = 
       new MutualInfoCalculatorMultiVariateKraskov1();
-    miCalc.setDebug(true);
+    // miCalc.setDebug(true);
 
     boolean gpuLoaded = true;
     try {
@@ -167,7 +167,7 @@ public class GPUMutualInfoTester extends TestCase {
 
     MutualInfoCalculatorMultiVariateKraskov miCalc = 
       new MutualInfoCalculatorMultiVariateKraskov1();
-    miCalc.setDebug(true);
+    // miCalc.setDebug(true);
 
     boolean gpuLoaded = true;
     try {
@@ -248,7 +248,7 @@ public class GPUMutualInfoTester extends TestCase {
     RandomGenerator rng = new RandomGenerator();
     double[][] data = rng.generateBivariateNormalData(10000, 0, 1, 0, 1, 0.8);
 
-    miCalc.setDebug(true);
+    // miCalc.setDebug(true);
     miCalc.setProperty("USE_GPU", "true");
     miCalc.initialise(1, 1);
     miCalc.setObservations(MatrixUtils.selectColumn(data, 0),
