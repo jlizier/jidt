@@ -1,6 +1,8 @@
 #ifndef _TEMPLATE_KERNEL_H_
 #define _TEMPLATE_KERNEL_H_
 
+#include <stdio.h>
+
 //#include <cpugpuKnn_common.h>
 #ifndef INFINITY
 #define INFINITY 0x7F800000
@@ -331,11 +333,15 @@ __global__ void reduce1(int *g_nx, int *g_ny, float *g_odata, unsigned int N) {
   unsigned int i = blockIdx.x*blockDim.x + threadIdx.x;
 
   if (i < N) {
-    double dgX = g_nx[i];
-    double dgY = g_ny[i];
+
+    double dgX = (double) g_nx[i];
+    double dgY = (double) g_ny[i];
+
     digammaXp1(&dgX);
     digammaXp1(&dgY);
-    sdata2[tid] = dgX + dgY;
+
+    sdata2[tid] = (float) (dgX + dgY);
+
   } else {
     sdata2[tid] = 0;
   }
@@ -349,7 +355,9 @@ __global__ void reduce1(int *g_nx, int *g_ny, float *g_odata, unsigned int N) {
     __syncthreads();
   }
   // write result for this block to global mem
-  if (tid == 0) g_odata[blockIdx.x] = sdata2[0];
+  if (tid == 0) {
+    g_odata[blockIdx.x] = sdata2[0];
+  }
 }
 
 
