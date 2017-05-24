@@ -207,10 +207,15 @@ jidt_error_t MIKraskovByPointsetChunks(int signalLength, float *source, int dimx
     float sumNx = 0;
     float sumNy = 0;
     float sumDiGammas = 0;
+
+    if (!computeSumDigammas(&sumDiGammas, nx, ny, trialLength)) {
+      device_reset();
+      return JIDT_ERROR;
+    }
+
     for (int i = 0; i < trialLength; i++) {
       sumNx       += nx[i];
       sumNy       += ny[i];
-      sumDiGammas += cpuDigamma(nx[i] + 1) + cpuDigamma(ny[i] + 1);
     }
 
     result[0] = sumDiGammas;
