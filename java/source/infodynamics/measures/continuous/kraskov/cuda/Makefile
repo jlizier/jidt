@@ -59,7 +59,7 @@ libKraskov.so: libgpuKnnLibrary.a $(c_objects)
 test:	unittest perftest
 
 unittest:	libKraskov.so unittest.cpp
-	${GCC} ${CCFLAGS} -std=c++11 unittests.cpp -L. -lKraskov -o $@ 
+	${GCC} ${CCFLAGS} -std=c++11 unittest.cpp -L. -lKraskov -o $@ 
 
 perftest: libKraskov.so perftest.cpp 
 	${GCC} ${CCFLAGS} -DTIMER -std=c++11 perftest.cpp -L. -lKraskov -o $@ 

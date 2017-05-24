@@ -11,7 +11,36 @@ using lest::approx;
 
 const lest::test specification[] = {
 
-CASE("Basic kNN test")
+CASE("Basic kNN test in 1D")
+{
+  int thelier = 0;
+  int useMaxNorm = 1;
+  int N = 4;
+  int dims = 1;
+  int k = 1;
+  int nchunks = 1;
+  int indexes[4];
+  float distances[4];
+  float pointset[4] = {-1, -1.2, 1, 1.1};
+
+  int err = cudaFindKnn(indexes, distances, pointset, pointset, k, thelier,
+              nchunks, dims, N, useMaxNorm);
+
+  EXPECT(err == 1);
+
+  EXPECT(indexes[0] == 1);
+  EXPECT(indexes[1] == 0);
+  EXPECT(indexes[2] == 3);
+  EXPECT(indexes[3] == 2);
+
+  EXPECT(distances[0] == approx(0.2));
+  EXPECT(distances[1] == approx(0.2));
+  EXPECT(distances[2] == approx(0.1));
+  EXPECT(distances[3] == approx(0.1));
+
+},
+
+CASE("Basic kNN test in 2D")
 {
   int thelier = 0;
   int useMaxNorm = 1;
@@ -131,42 +160,184 @@ CASE("Smoke kNN test with big random dataset")
 
 },
 
-CASE("Test kNN with multiple trials in the same call")
+CASE("Test kNN with two trials in the same call")
 {
   int thelier = 0;
   int useMaxNorm = 1;
-  int N = 8;
-  int dims = 2;
+  int N = 4;
+  int dims = 1;
   int k = 1;
   int nchunks = 2;
+  int signalLength = N*nchunks;
   int indexes[8];
   float distances[8];
-  float pointset[16] = {-1, 0.5, 1.1, 2, -1.1, -2, -1.6, -1,
-                        -1, 0.5, 1.1, 2,   -1, -2, -1.6, -1};
+  float pointset[8] = {5,   6, -5,  -7,
+                      50, -50, 60, -70};
 
   int err = cudaFindKnn(indexes, distances, pointset, pointset, k, thelier,
-              nchunks, dims, N, useMaxNorm);
+              nchunks, dims, signalLength, useMaxNorm);
 
   EXPECT(err == 1);
 
-  EXPECT(indexes[0] == 1);
-  EXPECT(indexes[1] == 2);
-  EXPECT(indexes[2] == 1);
-  EXPECT(indexes[3] == 2);
-  EXPECT(indexes[4] == 3);
-  EXPECT(indexes[5] == 2);
-  EXPECT(indexes[6] == 1);
-  EXPECT(indexes[7] == 0);
+  EXPECT(indexes[0]  == 1);
+  EXPECT(indexes[1]  == 0);
+  EXPECT(indexes[2]  == 3);
+  EXPECT(indexes[3]  == 2);
+  EXPECT(indexes[4]  == 2);
+  EXPECT(indexes[5]  == 3);
+  EXPECT(indexes[6]  == 0);
+  EXPECT(indexes[7]  == 1);
 
-  EXPECT(distances[0] == approx(1.5));
-  EXPECT(distances[1] == approx(0.6));
-  EXPECT(distances[2] == approx(0.6));
-  EXPECT(distances[3] == approx(0.9));
-  EXPECT(distances[4] == approx(0.1));
-  EXPECT(distances[5] == approx(0.4));
-  EXPECT(distances[6] == approx(0.4));
-  EXPECT(distances[7] == approx(0.1));
+  EXPECT(distances[0] == approx(1));
+  EXPECT(distances[1] == approx(1));
+  EXPECT(distances[2] == approx(2));
+  EXPECT(distances[3] == approx(2));
+  EXPECT(distances[4] == approx(10));
+  EXPECT(distances[5] == approx(20));
+  EXPECT(distances[6] == approx(10));
+  EXPECT(distances[7] == approx(20));
 
+},
+
+CASE("Test kNN with three trials in the same call")
+{
+  int thelier = 0;
+  int useMaxNorm = 1;
+  int N = 4;
+  int dims = 1;
+  int k = 1;
+  int nchunks = 3;
+  int signalLength = N*nchunks;
+  int indexes[12];
+  float distances[12];
+  float pointset[12] = {  5,    6,  -5,   -7,
+                         50,  -50,  60,  -70,
+                        500, -500, 600, -700};
+
+  int err = cudaFindKnn(indexes, distances, pointset, pointset, k, thelier,
+              nchunks, dims, signalLength, useMaxNorm);
+
+  EXPECT(err == 1);
+
+  EXPECT(indexes[0]   == 1);
+  EXPECT(indexes[1]   == 0);
+  EXPECT(indexes[2]   == 3);
+  EXPECT(indexes[3]   == 2);
+  EXPECT(indexes[4]   == 2);
+  EXPECT(indexes[5]   == 3);
+  EXPECT(indexes[6]   == 0);
+  EXPECT(indexes[7]   == 1);
+  EXPECT(indexes[8]   == 2);
+  EXPECT(indexes[9]   == 3);
+  EXPECT(indexes[10]  == 0);
+  EXPECT(indexes[11]  == 1);
+
+  EXPECT(distances[0]  == approx(1));
+  EXPECT(distances[1]  == approx(1));
+  EXPECT(distances[2]  == approx(2));
+  EXPECT(distances[3]  == approx(2));
+  EXPECT(distances[4]  == approx(10));
+  EXPECT(distances[5]  == approx(20));
+  EXPECT(distances[6]  == approx(10));
+  EXPECT(distances[7]  == approx(20));
+  EXPECT(distances[8]  == approx(100));
+  EXPECT(distances[9]  == approx(200));
+  EXPECT(distances[10] == approx(100));
+  EXPECT(distances[11] == approx(200));
+
+},
+
+CASE("Test kNN with two trials of 2D data in the same call")
+{
+  int thelier = 0;
+  int useMaxNorm = 1;
+  int N = 4;
+  int dims = 2;
+  int k = 1;
+  int nchunks = 2;
+  int signalLength = N*nchunks;
+  int indexes[8];
+  float distances[8];
+
+  // Points:       X    Y                   y
+  //               1    1                   |  o o
+  //             1.1    1                   |
+  //              -1   -1               ----+----x
+  //            -1.2   -1                   |
+  //                                  o  o  |
+
+  float pointset[16] = {1, 1.1, -1, -1.2, 1, 1.1, -1, -1.2,
+                        1,   1, -1,   -1, 1,   1, -1,   -1};
+
+  int err = cudaFindKnn(indexes, distances, pointset, pointset, k, thelier,
+              nchunks, dims, signalLength, useMaxNorm);
+
+  EXPECT(err == 1);
+
+  EXPECT(indexes[0]   == 1);
+  EXPECT(indexes[1]   == 0);
+  EXPECT(indexes[2]   == 3);
+  EXPECT(indexes[3]   == 2);
+  EXPECT(indexes[4]   == 1);
+  EXPECT(indexes[5]   == 0);
+  EXPECT(indexes[6]   == 3);
+  EXPECT(indexes[7]   == 2);
+
+  EXPECT(distances[0]  == approx(0.1));
+  EXPECT(distances[1]  == approx(0.1));
+  EXPECT(distances[2]  == approx(0.2));
+  EXPECT(distances[3]  == approx(0.2));
+  EXPECT(distances[4]  == approx(0.1));
+  EXPECT(distances[5]  == approx(0.1));
+  EXPECT(distances[6]  == approx(0.2));
+  EXPECT(distances[7]  == approx(0.2));
+},
+
+CASE("Test kNN with two trials of data with odd dimension")
+{
+  int thelier = 0;
+  int useMaxNorm = 1;
+  int N = 4;
+  int dims = 3;
+  int k = 1;
+  int nchunks = 2;
+  int signalLength = N*nchunks;
+  int indexes[8];
+  float distances[8];
+
+  // Points:       X    Y      Z             y
+  //               1    1   1.02            |  o o
+  //             1.1    1   1.03            |
+  //              -1   -1  -1.04        ----+----x
+  //            -1.2   -1  -1.05            |
+  //                                  o  o  |
+
+  float pointset[24] = {1,  1.1,   -1, -1.2,    1,  1.1,   -1, -1.2,
+                        1,    1,   -1,   -1,    1,    1,   -1,   -1,
+                     1.02, 1.03, 1.04, 1.05, 1.02, 1.03, 1.04, 1.05};
+
+  int err = cudaFindKnn(indexes, distances, pointset, pointset, k, thelier,
+              nchunks, dims, signalLength, useMaxNorm);
+
+  EXPECT(err == 1);
+
+  EXPECT(indexes[0]   == 1);
+  EXPECT(indexes[1]   == 0);
+  EXPECT(indexes[2]   == 3);
+  EXPECT(indexes[3]   == 2);
+  EXPECT(indexes[4]   == 1);
+  EXPECT(indexes[5]   == 0);
+  EXPECT(indexes[6]   == 3);
+  EXPECT(indexes[7]   == 2);
+
+  EXPECT(distances[0]  == approx(0.1));
+  EXPECT(distances[1]  == approx(0.1));
+  EXPECT(distances[2]  == approx(0.2));
+  EXPECT(distances[3]  == approx(0.2));
+  EXPECT(distances[4]  == approx(0.1));
+  EXPECT(distances[5]  == approx(0.1));
+  EXPECT(distances[6]  == approx(0.2));
+  EXPECT(distances[7]  == approx(0.2));
 },
 
 CASE("Smoke test for kNN with custom GPU")
@@ -276,6 +447,35 @@ CASE("Test RS with multiple trials in the same call")
 
 },
 
+CASE("Test RS with multiple trials and different radii")
+{
+  int thelier = 0;
+  int nchunks = 2;
+  int dim = 1;
+  int N = 10;
+  int useMaxNorm = 1;
+  int npoints[10];
+  float pointset[] = {   0, 2,  2.1, 3.2, 3.5,    0, 2,  2.1, 3.2, 3.5};
+  float radii[]    = {2.05, 6, 0.01,   1,   1, 2.05, 6, 0.01,   1,   1};
+
+  int err = cudaFindRSAll(npoints, pointset, pointset, radii, thelier, nchunks,
+              dim, N, useMaxNorm);
+
+  EXPECT(err == 1);
+
+  EXPECT(npoints[0] == 1);
+  EXPECT(npoints[1] == 4);
+  EXPECT(npoints[2] == 0);
+  EXPECT(npoints[3] == 1);
+  EXPECT(npoints[4] == 1);
+  EXPECT(npoints[5] == 1);
+  EXPECT(npoints[6] == 4);
+  EXPECT(npoints[7] == 0);
+  EXPECT(npoints[8] == 1);
+  EXPECT(npoints[9] == 1);
+
+},
+
 CASE("Smoke test for RS with custom GPU")
 {
   int thelier = 0;
@@ -322,7 +522,7 @@ CASE("Smoke test of full MI function")
 
 },
 
-CASE("Test correct pointset arrangement")
+CASE("Test correct pointset arrangement without reorderings")
 {
   int N = 10;
   int dimx = 1;
@@ -441,6 +641,59 @@ CASE("Test that same sample in repeated chunks gives same result")
 
 },
 
+CASE("Test that same sample of 2D data in repeated chunks gives same result")
+{
+  int N = 5;
+  int dimx = 2;
+  int dimy = 2;
+
+  // Source points:  X      Y
+  //               0.4    0.2
+  //                 1     98
+  //                -4     12
+  //                 1    1.2
+  //                 1    1.3
+  //
+  // Dest points:    X      Y
+  //                -3    8.5
+  //                 1    4.2
+  //                 3    100
+  //                -2     12
+  //                2.1     0
+
+  // Sample source and dest data
+  float source[10] = {0.4, 1, -4,  1,   1, 0.2,  98,  12, 1.2, 1.3};
+  float dest[10]   = { -3, 1,  3, -2, 2.1, 8.5, 4.2, 100,  12,   0};
+
+  // Pointset with source and dest repeated twice
+  float double_pointset[40] = {0.4,   1,  -4,   1,   1, 0.4,   1,  -4,   1,   1,
+                               0.2,  98,  12, 1.2, 1.3, 0.2,  98,  12, 1.2, 1.3,
+                                -3,   1,   3,  -2, 2.1,  -3,   1,   3,  -2, 2.1,
+                               8.5, 4.2, 100,  12,   0, 8.5, 4.2, 100,  12,   0};
+
+  int k = 2;
+  int thelier = 0;
+  int returnLocals = 0;
+  int useMaxNorm = 1;
+  int isAlgorithm1 = 1;
+  float result1[3];
+  float result2[2];
+  jidt_error_t err;
+
+  err = MIKraskov_C(N, source, dimx, dest, dimy, k, thelier,
+      0, returnLocals, useMaxNorm, isAlgorithm1, result1);
+
+  err = MIKraskovByPointsetChunks(N*2, source, dimx, dest, dimy, k, thelier,
+      2, returnLocals, useMaxNorm, isAlgorithm1, result2, double_pointset);
+
+  float MI1 = cpuDigamma(k) + cpuDigamma(N) - result1[0]/((double) N);
+
+  EXPECT(err == JIDT_SUCCESS);
+  EXPECT(result2[0] == approx(MI1));
+  EXPECT(result2[0] == approx(result2[1]));
+
+},
+
 CASE("Test that sample and identity reordering have same MI")
 {
   int N = 5;
@@ -488,17 +741,17 @@ CASE("Test identity reordering with more than one dimension")
   //                -3    8.5
   //                 1    4.2
   //                 3    100
-  //                -2     12
+  //                -2     13
   //                2.1     0
 
   float source[15] = {0.4, 1, -4,  1,   1, 0.2,  98,  12, 1.2, 1.3, 0, 13, 7, -1, 0};
-  float dest[10]   = { -3, 1,  3, -2, 2.1, 8.5, 4.2, 100,  12,   0};
-  int k = 2;
+  float dest[10]   = { -3, 1,  3, -2, 2.1, 8.5, 4.2, 100,  13,   0};
+  int k = 1;
   int thelier = 0;
   int returnLocals = 0;
   int useMaxNorm = 1;
   int isAlgorithm1 = 1;
-  float result[2];
+  float result1[3], result2[2];
   int reorderingsGiven = 1;
   int order[5] = {0, 1, 2, 3, 4};
   int *order_p = order;
@@ -507,12 +760,17 @@ CASE("Test identity reordering with more than one dimension")
 
   printf("====================================\n");
   err = MIKraskovWithReorderings(N, source, dimx, dest, dimy, k, thelier,
-      1, returnLocals, useMaxNorm, isAlgorithm1, result, reorderingsGiven, reorderings);
+      0, returnLocals, useMaxNorm, isAlgorithm1, result1, reorderingsGiven, reorderings);
 
   EXPECT(err == JIDT_SUCCESS);
 
-  printf("Test results: %f\t%f\n", result[0], result[1]);
-  EXPECT(result[0] == approx(result[1]));
+  err = MIKraskovWithReorderings(N, source, dimx, dest, dimy, k, thelier,
+      1, returnLocals, useMaxNorm, isAlgorithm1, result2, reorderingsGiven, reorderings);
+
+  EXPECT(err == JIDT_SUCCESS);
+
+  printf("Test results: %f\t%f\n", result2[0], result2[1]);
+  EXPECT(result2[0] == approx(result2[1]));
 
 },
 
@@ -520,7 +778,7 @@ CASE("Test identity reordering with larger dataset")
 {
   int thelier = 0;
   int useMaxNorm = 1;
-  int N = 1000;
+  int N = 10;
   int dimx = 3;
   int dimy = 2;
   int k = 4;
@@ -552,6 +810,139 @@ CASE("Test identity reordering with larger dataset")
   printf("Test results: %f\t%f\n", result[0], result[1]);
   EXPECT(result[0] == approx(result[1]));
 
+},
+
+CASE("Test non-identity reordering in 2D")
+{
+  int thelier = 0;
+  int useMaxNorm = 1;
+  int N = 5;
+  int dimx = 2;
+  int dimy = 2;
+  int k = 2;
+  int isAlgorithm1 = 1;
+  int returnLocals = 0;
+
+  // Source points:  X      Y    Z
+  //               0.4    0.2    0
+  //                 1     98   13
+  //                -4     12    7
+  //                 1    1.2   -1
+  //                 1    1.3    0
+  //
+  // Dest points:    X      Y
+  //                -3    8.5
+  //                 1    4.2
+  //                 3    100
+  //                -2     13
+  //                2.1     0
+
+  float source[15] = {0.4, 1, -4,  1,   1, 0.2,  98,  12, 1.2, 1.3, 0, 13, 7, -1, 0};
+  float dest[10]   = { -3, 1,  3, -2, 2.1, 8.5, 4.2, 100,  13,   0};
+
+
+  int reorderingsGiven = 1;
+  int order[5] = {4, 2, 3, 0, 1};
+  int *order_p = order;
+  int **reorderings = &order_p;
+
+  float result[2];
+
+  jidt_error_t err;
+  printf("====================================\n");
+  err = MIKraskovWithReorderings(N, source, dimx, dest, dimy, k, thelier,
+      1, returnLocals, useMaxNorm, isAlgorithm1, result, reorderingsGiven, reorderings);
+
+  EXPECT(err == JIDT_SUCCESS);
+
+  printf("Test results: %f\t%f\n", result[0], result[1]);
+  EXPECT(result[0] != approx(result[1]));
+
+},
+
+CASE("Test random surrogates in 2D")
+{
+  int thelier = 0;
+  int useMaxNorm = 1;
+  int N = 20;
+  int dimx = 2;
+  int dimy = 2;
+  int k = 2;
+  int isAlgorithm1 = 1;
+  int returnLocals = 0;
+
+
+  float *source = (float *) malloc(N * dimx * sizeof(float));
+  for (int i = 0; i < N*dimx; i++) { source[i] = rand()/((float) RAND_MAX); };
+
+  float *dest   = (float *) malloc(N * dimy * sizeof(float));
+  for (int i = 0; i < N*dimy; i++) { dest[i] = rand()/((float) RAND_MAX); };
+
+  float result[2];
+
+  jidt_error_t err;
+  printf("====================================\n");
+  err = MIKraskov_C(N, source, dimx, dest, dimy, k, thelier,
+      2, returnLocals, useMaxNorm, isAlgorithm1, result);
+
+  free(source); free(dest);
+
+  EXPECT(err == JIDT_SUCCESS);
+
+  printf("Test results: %f\t%f\n", result[0], result[1]);
+  EXPECT(result[0] != result[1]);
+  EXPECT(result[0] != result[2]);
+  EXPECT(result[1] != result[2]);
+
+},
+
+CASE("Test that the first result of calculation with surrogates is the same as without")
+{
+  int thelier = 0;
+  int useMaxNorm = 1;
+  int N = 10;
+  int dimx = 1;
+  int dimy = 1;
+  int k = 2;
+  int isAlgorithm1 = 1;
+  int returnLocals = 0;
+
+  // Source points:  X      Y    Z
+  //               0.4    0.2    0
+  //                 1     98   13
+  //                -4     12    7
+  //                 1    1.2   -1
+  //                 1    1.3    0
+  //
+  // Dest points:    X      Y
+  //                -3    8.5
+  //                 1    4.2
+  //                 3    100
+  //                -2     13
+  //                2.1     0
+
+  float source[15] = {0.4, 1, -4,  1,   1, 0.2,  98,  12, 1.2, 1.3, 0, 13, 7, -1, 0};
+  float dest[10]   = { -3, 1,  3, -2, 2.1, 8.5, 4.2, 100,  13,   0};
+
+  float result1[3];
+  float result2[2];
+
+  jidt_error_t err;
+  printf("====================================\n");
+  err = MIKraskov_C(N, source, dimx, dest, dimy, k, thelier,
+      0, returnLocals, useMaxNorm, isAlgorithm1, result1);
+  EXPECT(err == JIDT_SUCCESS);
+
+  float MI1 = cpuDigamma(k) + cpuDigamma(N) - result1[0]/((double) N);
+
+  printf("====================================\n");
+  err = MIKraskov_C(N, source, dimx, dest, dimy, k, thelier,
+      1, returnLocals, useMaxNorm, isAlgorithm1, result2);
+  EXPECT(err == JIDT_SUCCESS);
+
+  printf("No surrogates: %f, with 1 surrogate: %f, %f\n", MI1, result2[0], result2[1]);
+  EXPECT(MI1 == approx(result2[0]));
+  EXPECT(result2[0] != result2[1]);
 },
 
 };
