@@ -109,6 +109,21 @@ public class GPUPerformanceTester extends TestCase {
    */
   public void testRandomLowDimension() throws Exception {
 
+    MutualInfoCalculatorMultiVariateKraskov miCalc = 
+      new MutualInfoCalculatorMultiVariateKraskov1();
+
+    boolean gpuLoaded = true;
+    try {
+      miCalc.ensureCudaLibraryLoaded();
+    } catch (Throwable e) {
+      gpuLoaded = false;
+    }
+
+    // This will effectively ignore the test if GPU library not loaded properly
+    if (!gpuLoaded) {
+      return;
+    }
+
     int timeSteps = 10000;
 		RandomGenerator rg = new RandomGenerator();
 		double[] source = rg.generateNormalData(timeSteps, 0, 1);
