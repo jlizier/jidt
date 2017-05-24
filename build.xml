@@ -207,7 +207,7 @@
 
 		<!-- Compile and run the C-only GPU unit tests -->
     <exec executable="make" dir="${src}/infodynamics/measures/continuous/kraskov/cuda/" resultproperty="return.code">
-      <arg value="test"/>
+      <arg value="unittest"/>
     </exec>
     <fail>
       <condition>
