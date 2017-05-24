@@ -1,6 +1,6 @@
 Java Information Dynamics Toolkit
 Copyright (C) 2012-2014 Joseph T. Lizier
-Copyright (C) 2014 Joseph T. Lizier and Ipek Özdemir
+Copyright (C) 2014-2016 Joseph T. Lizier and Ipek Özdemir
 
 Version @VERSION@
 

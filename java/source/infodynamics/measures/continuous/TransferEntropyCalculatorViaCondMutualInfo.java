@@ -126,6 +126,13 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 	protected Vector<boolean[]> vectorOfValidityOfDestination;
 
 	/**
+	 * Array of the number of observations added by each separate call to
+	 * {@link #addObservations(double[], double[])}, in order of which those calls
+	 * were made. This is returned by {@link #getSeparateNumObservations()}
+	 */
+	protected int[] separateNumObservations;
+	
+	/**
 	 * Construct a transfer entropy calculator using an instance of
 	 * condMiCalculatorClassName as the underlying conditional mutual information calculator.
 	 * 
@@ -228,6 +235,7 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 		vectorOfDestinationTimeSeries = null;
 		vectorOfValidityOfSource = null;
 		vectorOfValidityOfDestination = null;
+		separateNumObservations = new int[] {};
 	}
 
 	/**
@@ -342,9 +350,10 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 	 * 
 	 * @param source time series of source observations
 	 * @param destination time series of destination observations
+	 * @return the number of observations added
 	 * @throws Exception
 	 */
-	protected void addObservationsAfterParamsDetermined(double[] source, double[] destination) throws Exception {
+	protected int addObservationsAfterParamsDetermined(double[] source, double[] destination) throws Exception {
 		if (source.length != destination.length) {
 			throw new Exception(String.format("Source and destination lengths (%d and %d) must match!",
 					source.length, destination.length));
@@ -353,7 +362,7 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 			// There are no observations to add here, the time series is too short
 			// Don't throw an exception, do nothing since more observations
 			//  can be added later.
-			return;
+			return 0;
 		}
 		double[][] currentDestPastVectors = 
 				MatrixUtils.makeDelayEmbeddingVector(destination, k, k_tau,
@@ -368,6 +377,7 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 						startTimeForFirstDestEmbedding + 1 - delay,
 						source.length - startTimeForFirstDestEmbedding - 1);
 		condMiCalc.addObservations(currentSourcePastVectors, currentDestNextVectors, currentDestPastVectors);
+		return destination.length - startTimeForFirstDestEmbedding - 1;
 	}
 
 	/**
@@ -384,21 +394,24 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 	 * 	the source at that index is valid.
 	 * @param destValid array (with indices the same as destination) indicating whether
 	 * 	the destination at that index is valid.
+	 * @return total number of observations added 
 	 * @throws Exception
 	 */
-	protected void addObservationsAfterParamsDetermined(double[] source, double[] destination,
+	protected int addObservationsAfterParamsDetermined(double[] source, double[] destination,
 			boolean[] sourceValid, boolean[] destValid) throws Exception {
 		
 		// Compute the start and end time pairs using our embedding parameters:
 		Vector<int[]> startAndEndTimePairs = computeStartAndEndTimePairs(sourceValid, destValid);
 		
+		int totalObservationsAdded = 0;
 		for (int[] timePair : startAndEndTimePairs) {
 			int startTime = timePair[0];
 			int endTime = timePair[1];
-			addObservationsAfterParamsDetermined(
+			totalObservationsAdded += addObservationsAfterParamsDetermined(
 					MatrixUtils.select(source, startTime, endTime - startTime + 1),
 					MatrixUtils.select(destination, startTime, endTime - startTime + 1));
 		}
+		return totalObservationsAdded;
 	}
 
 	@Override
@@ -441,17 +454,21 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 		Iterator<double[]> destIterator = vectorOfDestinationTimeSeries.iterator();
 		Iterator<boolean[]> sourceValidityIterator = vectorOfValidityOfSource.iterator();
 		Iterator<boolean[]> destValidityIterator = vectorOfValidityOfDestination.iterator();
+		separateNumObservations = new int[vectorOfDestinationTimeSeries.size()];
+		int setNum = 0;
 		for (double[] source : vectorOfSourceTimeSeries) {
 			double[] destination = destIterator.next();
 			boolean[] sourceValidity = sourceValidityIterator.next();
 			boolean[] destValidity = destValidityIterator.next();
+			int observationsAddedThisTime = 0;
 			if (sourceValidity == null) {
 				// Add the whole time-series
-				addObservationsAfterParamsDetermined(source, destination);
+				observationsAddedThisTime = addObservationsAfterParamsDetermined(source, destination);
 			} else {
-				addObservationsAfterParamsDetermined(source, destination,
+				observationsAddedThisTime = addObservationsAfterParamsDetermined(source, destination,
 						sourceValidity, destValidity);
 			}
+			separateNumObservations[setNum++] = observationsAddedThisTime;
 		}
 		vectorOfSourceTimeSeries = null; // No longer required
 		vectorOfDestinationTimeSeries = null; // No longer required
@@ -640,6 +657,19 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 	@Override
 	public int getNumObservations() throws Exception {
 		return condMiCalc.getNumObservations();
+	}
+	
+	/**
+	 * Retrieve an array of the number of observations that 
+	 * were added by each call to {@link #addObservations(double[], double[])} etc.,
+	 * in order of them being called.
+	 * The actual number of observations for each call is computed <b>after</b>
+	 * any auto-embedding is performed.
+	 * 
+	 * @return
+	 */
+	public int[] getSeparateNumObservations() {
+		return separateNumObservations;
 	}
 	
 	@Override

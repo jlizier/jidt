@@ -18,6 +18,7 @@
 
 package infodynamics.utils;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.PriorityQueue;
 import java.util.Vector;
@@ -43,6 +44,7 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 	 * Number of samples in the data
 	 */
 	protected int numObservations = 0;
+
 	/**
 	 * An array of indices to the data in originalDataSet,
 	 *  sorted in order (min to max).
@@ -54,6 +56,11 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 	 *  in originalDataSet lies in the sorted array
 	 */
 	protected int[] indicesInSortedArray = null;
+	
+	/**
+	 * An array of the original values sorted into ascending order.
+	 */
+	protected double[] sortedValues = null;
 	
 	public UnivariateNearestNeighbourSearcher(double[][] data) throws Exception {
 		// Ideally we would not call the constructor until after the following check,
@@ -87,6 +94,13 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 		for (int t = 0; t < numObservations; t++) {
 			sortedArrayIndices[t] = (int) dataWithIndices[t][1];
 			indicesInSortedArray[(int) dataWithIndices[t][1]] = t;
+		}
+		// Finally, create the sorted array of the values:
+		//  (these are only used by a few methods, but better to create the array now
+		//  rather than hit concurrency issues trying to create it when required
+		sortedValues = new double[numObservations];
+		for (int i = 0; i < numObservations; i++) {
+			sortedValues[i] = originalDataSet[sortedArrayIndices[i]];
 		}
 	}
 
@@ -360,6 +374,47 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 	}
 	
 	/**
+	 * Count the number of points within norms r_upper and r_lower for a given
+	 *  sample index in the data set. The node itself is 
+	 *  excluded from the search.
+	 * Nearest neighbour function to compare to radii is the specified norm.
+	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
+	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
+	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
+	 */
+	public int countPointsWithinRs(int sampleIndex, double r_upper,
+			double r_lower, boolean allowEqualToR) {
+		int count = 0;
+		// Find where this node sits in the sorted array:
+		int indexInSortedArray = indicesInSortedArray[sampleIndex];
+		// Check the points with smaller data values first:
+		for (int i = indexInSortedArray - 1; i >= 0; i--) {
+			double theNorm = norm(originalDataSet[sampleIndex],
+					originalDataSet[sortedArrayIndices[i]], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r_lower)) ||
+				(!allowEqualToR && (theNorm < r_lower))) {
+				count++;
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		// Next check the points with larger data values:
+		for (int i = indexInSortedArray + 1; i < numObservations; i++) {
+			double theNorm = norm(originalDataSet[sampleIndex],
+					originalDataSet[sortedArrayIndices[i]], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r_upper)) ||
+				(!allowEqualToR && (theNorm < r_upper))) {
+				count++;
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		return count;
+	}
+
+	/**
 	 * Count the number of points within norm r for a given
 	 *  sample index in the data set. Nodes within dynCorrExclTime
 	 *  of sampleIndex are excluded from the search.
@@ -397,6 +452,124 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 			}
 			double theNorm = norm(originalDataSet[sampleIndex],
 					originalDataSet[sortedArrayIndices[i]], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r)) ||
+				(!allowEqualToR && (theNorm < r))) {
+				count++;
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		return count;
+	}
+	
+	/**
+	 * Count the number of points within norm r for a given
+	 *  sample index in the data set, or larger than r. The node itself is 
+	 *  excluded from the search.
+	 * Nearest neighbour function to compare to r is the specified norm.
+	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
+	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
+	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
+	 */
+	public int countPointsWithinROrLarger(int sampleIndex, double r, boolean allowEqualToR) {
+		int count = 0;
+		// Find where this node sits in the sorted array:
+		int indexInSortedArray = indicesInSortedArray[sampleIndex];
+		// Check the points with smaller data values first:
+		for (int i = indexInSortedArray - 1; i >= 0; i--) {
+			double theNorm = norm(originalDataSet[sampleIndex],
+					originalDataSet[sortedArrayIndices[i]], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r)) ||
+				(!allowEqualToR && (theNorm < r))) {
+				count++;
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		count += numObservations - indexInSortedArray - 1;
+		return count;
+	}
+	
+	/**
+	 * Count the number of points less than the sample at the given index,
+	 *  and outside norm r. allowEqualToR means to be considered same as the sample.
+	 *  The node itself is 
+	 *  excluded from the search.
+	 * Nearest neighbour function to compare to r is the specified norm.
+	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
+	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
+	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
+	 */
+	public int countPointsSmallerAndOutsideR(int sampleIndex, double r, boolean allowEqualToR) {
+		// Find where this node sits in the sorted array:
+		int indexInSortedArray = indicesInSortedArray[sampleIndex];
+		// Check the points with smaller data values first:
+		int i;
+		for (i = indexInSortedArray - 1; i >= 0; i--) {
+			double theNorm = norm(originalDataSet[sampleIndex],
+					originalDataSet[sortedArrayIndices[i]], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r)) ||
+				(!allowEqualToR && (theNorm < r))) {
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		return i + 1;
+	}
+	
+	@Override
+	public int countPointsWithinR(double[][] sampleVectors, double r, boolean allowEqualToR) {
+		if (sampleVectors.length > 1) {
+			throw new RuntimeException("sampleVectors[][] argument must have length 1 on each dimension when calling a UnivariateNearstNeighbourSearcher");
+		}
+		if (sampleVectors[0].length > 1) {
+			throw new RuntimeException("sampleVectors[][] argument must have length 1 on each dimension when calling a UnivariateNearstNeighbourSearcher");
+		}
+		
+		return countPointsWithinR(sampleVectors[0][0], r, allowEqualToR);
+	}
+	
+	/**
+	 * As per {@link #countPointsWithinR(double, double, boolean)} however
+	 *  for a specific sample value (not one within the data set itself).
+	 * 
+	 * @param sampleValue the specific value to search for
+	 */
+	public int countPointsWithinR(double sampleValue, double r, boolean allowEqualToR) {
+	
+		int count = 0;
+		
+		// Find where this value would sit in the sorted array.
+		int potentialArrayIndex = Arrays.binarySearch(sortedValues, sampleValue);
+		if (potentialArrayIndex < 0) {
+			// The sampleValue was not found because it wasn't in the original set of values:
+			//  invert the return value of binarySearch to find where the sampleValue would be inserted into the array:
+			potentialArrayIndex = -potentialArrayIndex - 1;
+			// This means at potentialArrayIndex and higher are values >= sampleValue, while
+			//  at potentialArrayIndex-1 and lower are values <= sampleValue.
+			// potentialArrayIndex will be array.length if all values are smaller than it.
+		} // else potentialArrayIndex is pointing to one instance of this value in the sorted array
+		
+		// Check the points with smaller data values first
+		for (int i = potentialArrayIndex - 1; i >= 0; i--) {
+			double theNorm = norm(sampleValue,
+					sortedValues[i], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r)) ||
+				(!allowEqualToR && (theNorm < r))) {
+				count++;
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		// Next check the points with larger data values: (and including potentialArrayIndex, since we're
+		//  not excluding it since it's not nominally part of the underlying data set)
+		for (int i = potentialArrayIndex; i < numObservations; i++) {
+			double theNorm = norm(sampleValue,
+					sortedValues[i], normTypeToUse);
 			if ((allowEqualToR  && (theNorm <= r)) ||
 				(!allowEqualToR && (theNorm < r))) {
 				count++;
@@ -566,6 +739,214 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 	}
 	
 	@Override
+	public int findPointsWithinR(int sampleIndex, double r,
+			int dynCorrExclTime, boolean allowEqualToR, boolean[] isWithinR,
+			double[] distancesWithinRInOrder,
+			double[][] distancesAndIndicesWithinR) {
+		int indexInIndicesWithinR = 0;
+		// Find where this node sits in the sorted array:
+		int indexInSortedArray = indicesInSortedArray[sampleIndex];
+		// Check the points with smaller data values first:
+		for (int i = indexInSortedArray - 1; i >= 0; i--) {
+			if (Math.abs(sampleIndex - sortedArrayIndices[i]) <= dynCorrExclTime) {
+				// Can't count this point, but keep checking:
+				continue;
+			}
+			double theNorm = norm(originalDataSet[sampleIndex],
+					originalDataSet[sortedArrayIndices[i]], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r)) ||
+				(!allowEqualToR && (theNorm < r))) {
+				isWithinR[sortedArrayIndices[i]] = true;
+				distancesWithinRInOrder[sortedArrayIndices[i]] = theNorm;
+				distancesAndIndicesWithinR[indexInIndicesWithinR][0] = theNorm;
+				distancesAndIndicesWithinR[indexInIndicesWithinR++][1] = sortedArrayIndices[i];
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		// Next check the points with larger data values:
+		for (int i = indexInSortedArray + 1; i < numObservations; i++) {
+			if (Math.abs(sampleIndex - sortedArrayIndices[i]) <= dynCorrExclTime) {
+				// Can't count this point, but keep checking:
+				continue;
+			}
+			double theNorm = norm(originalDataSet[sampleIndex],
+					originalDataSet[sortedArrayIndices[i]], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r)) ||
+				(!allowEqualToR && (theNorm < r))) {
+				isWithinR[sortedArrayIndices[i]] = true;
+				distancesWithinRInOrder[sortedArrayIndices[i]] = theNorm;
+				distancesAndIndicesWithinR[indexInIndicesWithinR][0] = theNorm;
+				distancesAndIndicesWithinR[indexInIndicesWithinR++][1] = sortedArrayIndices[i];
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		// Write the terminating integer into the indicesWithinR array:
+		distancesAndIndicesWithinR[indexInIndicesWithinR++][1] = -1;
+		return indexInIndicesWithinR - 1;
+	}
+	
+	/**
+	 * As per {@link #findPointsWithinR(int, double, int, boolean, boolean[], double[], double[][])}
+	 * only we have additional criteria, and we report max values taking that additional
+	 * criteria into account. 
+	 * 
+	 * @param sampleIndex sample index in the data to find a nearest neighbour
+	 *  for
+	 * @param r radius within which to count points
+	 * @param dynCorrExclTime time window within which to exclude
+	 *  points to be counted. Is >= 0. 0 means only exclude sampleIndex.
+	 * @param allowEqualToR if true, then count points at radius r also,
+	 *   otherwise only those strictly within r
+	 * @param additionalCriteria an array indicating whether each sample for
+	 *  should be tested for this search point
+	 * @param reportDistancesAsMaxWith an array of distances for
+	 *  points flagged in additionalCriteria: distancesAndIndicesWithinR should
+	 *  return the max of this value or the distances within r computed here.
+	 *  Values at indices where distances are not within r are not defined.
+	 * @param distancesAndIndicesWithinR a list of distances (in column index 0) 
+	 *  and array indices (in column index 1)
+	 *  for points found to be within r, terminated with a -1 value on the index.
+	 * @return the next available index in distancesAndIndicesWithinR after the method is complete
+	 */
+	public int findPointsWithinRAndTakeRadiusMax(int sampleIndex, double r,
+			int dynCorrExclTime, boolean allowEqualToR, 
+			boolean[] additionalCriteria,
+			double[] reportDistancesAsMaxWith,
+			double[][] distancesAndIndicesWithinR) {
+		int indexInIndicesWithinR = 0;
+		// Find where this node sits in the sorted array:
+		int indexInSortedArray = indicesInSortedArray[sampleIndex];
+		// Check the points with smaller data values first:
+		for (int i = indexInSortedArray - 1; i >= 0; i--) {
+			if (!additionalCriteria[sortedArrayIndices[i]] || 
+					(Math.abs(sampleIndex - sortedArrayIndices[i]) <= dynCorrExclTime)) {
+				// Can't count this point, but keep checking:
+				continue;
+			}
+			double theNorm = norm(originalDataSet[sampleIndex],
+					originalDataSet[sortedArrayIndices[i]], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r)) ||
+				(!allowEqualToR && (theNorm < r))) {
+				if (theNorm < reportDistancesAsMaxWith[sortedArrayIndices[i]]) {
+					theNorm = reportDistancesAsMaxWith[sortedArrayIndices[i]];
+				}
+				distancesAndIndicesWithinR[indexInIndicesWithinR][0] = theNorm;
+				distancesAndIndicesWithinR[indexInIndicesWithinR++][1] = sortedArrayIndices[i];
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		// Next check the points with larger data values:
+		for (int i = indexInSortedArray + 1; i < numObservations; i++) {
+			if (!additionalCriteria[sortedArrayIndices[i]] || 
+					(Math.abs(sampleIndex - sortedArrayIndices[i]) <= dynCorrExclTime)) {
+				// Can't count this point, but keep checking:
+				continue;
+			}
+			double theNorm = norm(originalDataSet[sampleIndex],
+					originalDataSet[sortedArrayIndices[i]], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r)) ||
+				(!allowEqualToR && (theNorm < r))) {
+				if (theNorm < reportDistancesAsMaxWith[sortedArrayIndices[i]]) {
+					theNorm = reportDistancesAsMaxWith[sortedArrayIndices[i]];
+				}
+				distancesAndIndicesWithinR[indexInIndicesWithinR][0] = theNorm;
+				distancesAndIndicesWithinR[indexInIndicesWithinR++][1] = sortedArrayIndices[i];
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		// Write the terminating integer into the indicesWithinR array:
+		distancesAndIndicesWithinR[indexInIndicesWithinR++][1] = -1;
+		return indexInIndicesWithinR - 1;
+	}
+	
+	/**
+	 * As per {@link #findPointsWithinR(int, double, int, boolean, boolean[], int[])}
+	 *  only for a specific data point.
+	 * 
+	 * Note that the method signature takes a 2D sample vector, however since this is class
+	 *  only searches univariate spaces, then there must only be one value in #sampleVector
+	 *  (i.e. length one on both array indices). 
+	 *  
+	 * 
+	 * @see super{@link #findPointsWithinR(double, double[][], boolean, boolean[], int[])}
+	 */
+	@Override
+	public void findPointsWithinR(double r, double[][] sampleVectors,
+			boolean allowEqualToR, boolean[] isWithinR, int[] indicesWithinR) {
+		
+		if (sampleVectors.length > 1) {
+			throw new RuntimeException("sampleVectors[][] argument must have length 1 on each dimension when calling a UnivariateNearstNeighbourSearcher");
+		}
+		if (sampleVectors[0].length > 1) {
+			throw new RuntimeException("sampleVectors[][] argument must have length 1 on each dimension when calling a UnivariateNearstNeighbourSearcher");
+		}
+		
+		findPointsWithinR(r, sampleVectors[0][0], allowEqualToR, isWithinR, indicesWithinR);
+	}
+	
+	/**
+	 * As per {@link #findPointsWithinR(int, double, int, boolean, boolean[], int[])}
+	 *  only for a specific data point.
+	 * 
+	 * @see super{@link #findPointsWithinR(double, double[][], boolean, boolean[], int[])}
+	 * 
+	 * @param sampleValue the specific point being searched (not a data point in the search structure)
+	 */
+	public void findPointsWithinR(double r, double sampleValue,
+			boolean allowEqualToR, boolean[] isWithinR, int[] indicesWithinR) {
+		int indexInIndicesWithinR = 0;
+		
+		// Find where this value would sit in the sorted array.
+		int potentialArrayIndex = Arrays.binarySearch(sortedValues, sampleValue);
+		if (potentialArrayIndex < 0) {
+			// The sampleValue was not found because it wasn't in the original set of values:
+			//  invert the return value of binarySearch to find where the sampleValue would be inserted into the array:
+			potentialArrayIndex = -potentialArrayIndex - 1; 
+			// This means at potentialArrayIndex and higher are values >= sampleValue, while
+			//  at potentialArrayIndex-1 and lower are values <= sampleValue.
+			// potentialArrayIndex will be array.length if all values are smaller than it.
+		} // else potentialArrayIndex is pointing to one instance of this value in the sorted array
+		
+		// Check the points with smaller data values first:
+		for (int i = potentialArrayIndex - 1; i >= 0; i--) {
+			double theNorm = norm(sampleValue,
+					sortedValues[i], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r)) ||
+				(!allowEqualToR && (theNorm < r))) {
+				isWithinR[sortedArrayIndices[i]] = true;
+				indicesWithinR[indexInIndicesWithinR++] = sortedArrayIndices[i];
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		// Next check the points with larger data values: (and including potentialArrayIndex, since we're
+		//  not excluding it since it's not nominally part of the underlying data set)
+		for (int i = potentialArrayIndex; i < numObservations; i++) {
+			double theNorm = norm(sampleValue,
+					sortedValues[i], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r)) ||
+				(!allowEqualToR && (theNorm < r))) {
+				isWithinR[sortedArrayIndices[i]] = true;
+				indicesWithinR[indexInIndicesWithinR++] = sortedArrayIndices[i];
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		// Write the terminating integer into the indicesWithinR array:
+		indicesWithinR[indexInIndicesWithinR++] = -1;
+	}
+	
+	@Override
 	public int countPointsWithinR(int sampleIndex, double r, boolean allowEqualToR,
 			boolean[] additionalCriteria) {
 		
@@ -617,5 +998,104 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 			break;
 		}
 		return count;
+	}
+	
+	/**
+	 * As per {@link #countPointsWithinR(int, double, boolean, boolean[])}
+	 *  only for a specific data point.
+	 * 
+	 * Note that the method signature takes a 2D sample vector, however since this is class
+	 *  only searches univariate spaces, then there must only be one value in #sampleVector
+	 *  (i.e. length one on both array indices). 
+	 *  
+	 * 
+	 * @see super{@link #findPointsWithinR(double, double[][], boolean, boolean[], int[])}
+	 */
+	@Override
+	public int countPointsWithinR(double[][] sampleVectors, double r, boolean allowEqualToR,
+			boolean[] additionalCriteria) {
+		
+		if (sampleVectors.length > 1) {
+			throw new RuntimeException("sampleVectors[][] argument must have length 1 on each dimension when calling a UnivariateNearstNeighbourSearcher");
+		}
+		if (sampleVectors[0].length > 1) {
+			throw new RuntimeException("sampleVectors[][] argument must have length 1 on each dimension when calling a UnivariateNearstNeighbourSearcher");
+		}
+		
+		return countPointsWithinR(sampleVectors[0][0], r, allowEqualToR, additionalCriteria);
+	}
+	
+	/**
+	 * As per {@link #countPointsWithinR(int, double, boolean, boolean[])}
+	 *  only for a specific data point.
+	 * 
+	 * @param sampleValue the specific point being searched (not a data point in the search structure)
+	 */
+	public int countPointsWithinR(double sampleValue, double r, boolean allowEqualToR,
+			boolean[] additionalCriteria) {
+
+		int count = 0;
+		
+		// Find where this value would sit in the sorted array.
+		int potentialArrayIndex = Arrays.binarySearch(sortedValues, sampleValue);
+		if (potentialArrayIndex < 0) {
+			// The sampleValue was not found because it wasn't in the original set of values:
+			//  invert the return value of binarySearch to find where the sampleValue would be inserted into the array:
+			potentialArrayIndex = -potentialArrayIndex - 1;
+			// This means at potentialArrayIndex and higher are values >= sampleValue, while
+			//  at potentialArrayIndex-1 and lower are values <= sampleValue.
+			// potentialArrayIndex will be array.length if all values are smaller than it.
+		} // else potentialArrayIndex is pointing to one instance of this value in the sorted array
+		
+		// Check the points with smaller data values first:
+		for (int i = potentialArrayIndex - 1; i >= 0; i--) {
+			if (!additionalCriteria[sortedArrayIndices[i]]) {
+				// This point failed the additional criteria,
+				//  so skip checking it.
+				// We check this first, even though it's the norm 
+				//  that really determines whether we need to continue
+				//  checking or not. In some circumstances this may be
+				//  slower, but for our main application - KSG conditional MI -
+				//  this should be faster.
+				continue;
+			}
+			double theNorm = norm(sampleValue,
+					sortedValues[i], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r)) ||
+				(!allowEqualToR && (theNorm < r))) {
+				count++;
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		// Next check the points with larger data values: (and including potentialArrayIndex, since we're
+		//  not excluding it since it's not nominally part of the underlying data set)
+		for (int i = potentialArrayIndex; i < numObservations; i++) {
+			if (!additionalCriteria[sortedArrayIndices[i]]) {
+				// This point failed the additional criteria,
+				//  so skip checking it.
+				// We check this first, even though it's the norm 
+				//  that really determines whether we need to continue
+				//  checking or not. In some circumstances this may be
+				//  slower, but for our main application - KSG conditional MI -
+				//  this should be faster.
+				continue;
+			}
+			double theNorm = norm(sampleValue,
+					sortedValues[i], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r)) ||
+				(!allowEqualToR && (theNorm < r))) {
+				count++;
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		return count;
+	}
+
+	public int getNumObservations() {
+		return numObservations;
 	}
 }

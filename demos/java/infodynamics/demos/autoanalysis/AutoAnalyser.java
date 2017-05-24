@@ -20,7 +20,10 @@ package infodynamics.demos.autoanalysis;
 
 import infodynamics.measures.continuous.ChannelCalculatorCommon;
 import infodynamics.measures.discrete.ChannelCalculatorDiscrete;
+import infodynamics.utils.AnalyticMeasurementDistribution;
+import infodynamics.utils.AnalyticNullDistributionComputer;
 import infodynamics.utils.ArrayFileReader;
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.MatrixUtils;
 
 import javax.swing.BorderFactory;
@@ -30,6 +33,7 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JComboBox;
+import javax.swing.JCheckBox;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JFileChooser;
@@ -39,6 +43,8 @@ import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ToolTipManager;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.AbstractTableModel;
@@ -48,6 +54,7 @@ import javax.swing.table.TableColumn;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.GridBagConstraints;
@@ -73,7 +80,7 @@ import java.util.Vector;
  *
  */
 public abstract class AutoAnalyser extends JFrame
-	implements ActionListener, DocumentListener, MouseListener {
+	implements ActionListener, DocumentListener, MouseListener, ChangeListener {
 
 	/**
 	 * Need serialVersionUID to be serializable
@@ -142,6 +149,14 @@ public abstract class AutoAnalyser extends JFrame
 	protected JTextField sourceColTextField;
 	// Destination column field
 	protected JTextField destColTextField;
+	// CheckBox for "all pairs?"
+	protected JCheckBox allPairsCheckBox;
+	// CheckBox for statistical significance
+	protected JCheckBox statSigCheckBox;
+	// CheckBox for statistical significance analytically
+	protected JCheckBox statSigAnalyticCheckBox;
+	// Number of permutations to use for statistical significance
+	protected int numPermutationsToCheck = 100;
 	// Table for the properties
 	protected JTable propertiesTable;
 	// Table model (local class) for the table
@@ -154,6 +169,8 @@ public abstract class AutoAnalyser extends JFrame
 	protected Vector<String> propertyDescriptions;
 	// Values of the properties
 	protected HashMap<String,String> propertyValues;
+	// CheckBox for "Compute result?"
+	protected JCheckBox computeResultCheckBox;
 	// Results text
 	protected JLabel resultsLabel;
 	// Text area for the generated Java code
@@ -164,6 +181,9 @@ public abstract class AutoAnalyser extends JFrame
 	protected JTextArea matlabCodeTextArea;
 	
 	protected String codeDefaultText = "    ... Awaiting new parameter selection (press compute) ...";
+	
+	protected String buttonTextCodeAndCompute = "Generate code and Compute";
+	protected String buttonTextCodeOnly = "Generate code";
 	
 	protected String appletTitle;
 	
@@ -232,7 +252,7 @@ public abstract class AutoAnalyser extends JFrame
 		Image watermarkImage = (new ImageIcon("JIDT-logo-watermark.png")).getImage();
 		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setSize(1100,530);
+		setSize(1100,640);
 		setTitle(appletTitle);
 		// Centre in the middle of the screen
 		setLocationRelativeTo(null);
@@ -274,11 +294,26 @@ public abstract class AutoAnalyser extends JFrame
 		// To column:
 		JLabel destLabel = new JLabel("Destination column:");
 		destLabel.setToolTipText("First column is 0.");
+		destLabel.setBorder(BorderFactory.createEmptyBorder(0,0,10,0));
 		destColTextField = new JTextField(5);
 		destColTextField.setEnabled(true);
 		destColTextField.setText("1");
 		destColTextField.getDocument().addDocumentListener(this);
 
+		// Checkbox for all pairs
+		allPairsCheckBox = new JCheckBox("All pairs?");
+		allPairsCheckBox.setToolTipText("Compute for all pairs of columns?");
+		allPairsCheckBox.addChangeListener(this);
+		
+		// CheckBox for statistical signficance
+		statSigCheckBox = new JCheckBox("Add stat. signif.?");
+		statSigCheckBox.setToolTipText("Compute the null surrogate distribution under the null hypothesis that source and target are not related?");
+		statSigCheckBox.addChangeListener(this);
+		statSigAnalyticCheckBox = new JCheckBox("analytically?");
+		statSigAnalyticCheckBox.setToolTipText("Compute the null surrogate distribution analytically?");
+		statSigAnalyticCheckBox.addChangeListener(this);
+		statSigAnalyticCheckBox.setEnabled(false);
+		
 		JLabel dummyLabel1 = new JLabel(" ");
 		dummyLabel1.setSize(10, 10);
 		JLabel dummyLabel2 = new JLabel(" ");
@@ -307,9 +342,14 @@ public abstract class AutoAnalyser extends JFrame
 			new Dimension(d.width,rowHeight*17+6));
 		System.out.println("Row height was " + rowHeight);
 		
-		
+		// Checkbox for compute result
+		computeResultCheckBox = new JCheckBox("Compute result?");
+		computeResultCheckBox.setToolTipText("Compute result or only generate code?");
+		computeResultCheckBox.setSelected(true);
+		computeResultCheckBox.addChangeListener(this);
+
 		// Button to compute
-		computeButton = new JButton("Compute");
+		computeButton = new JButton(buttonTextCodeAndCompute);
 		computeButton.addActionListener(this);
 		
 		// Results label
@@ -336,7 +376,7 @@ public abstract class AutoAnalyser extends JFrame
         javaAreaScrollPane.setHorizontalScrollBarPolicy(
         		JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         int codeTextAreaWidth = 560;
-        int codeTextAreaHeight = 460;
+        int codeTextAreaHeight = 480;
         Dimension codeTextAreaDimension = 
         		new Dimension(codeTextAreaWidth, codeTextAreaHeight);
         javaAreaScrollPane.setPreferredSize(codeTextAreaDimension);
@@ -425,6 +465,14 @@ public abstract class AutoAnalyser extends JFrame
         
         paramsPanel.add(dataFileDescriptorLabel, c);
 
+        // Add the all pairs label and checkbox
+        c.gridwidth = GridBagConstraints.REMAINDER;     //end row
+        c.gridx = 1;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.weightx = 1.0;
+        paramsPanel.add(allPairsCheckBox, c);
+        c.gridx = -1; // reset to no indication
+        
         // Add the source selector
         c.gridwidth = GridBagConstraints.RELATIVE; //next-to-last
         c.fill = GridBagConstraints.NONE;      //reset to default
@@ -444,20 +492,46 @@ public abstract class AutoAnalyser extends JFrame
         c.weightx = 1.0;
         paramsPanel.add(destColTextField, c);
 
+        // Add the CheckBoxes for statistical significance checks:
+        c.gridwidth = GridBagConstraints.RELATIVE; //next-to-last
+        c.fill = GridBagConstraints.NONE;      //reset to default
+        c.weightx = 0.0;                       //reset to default
+        paramsPanel.add(statSigCheckBox, c);
+        c.gridwidth = GridBagConstraints.REMAINDER;     //end row
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.weightx = 1.0;
+        paramsPanel.add(statSigAnalyticCheckBox, c);
+
         // Add dummy label for spacing
         paramsPanel.add(dummyLabel1, c);
         // Add the properties table
         paramsPanel.add(propsTableScrollPane, c);
         // Add dummy label for spacing
         paramsPanel.add(dummyLabel2, c);
+        // Add the "compute result" checkbox:
+        c.gridwidth = GridBagConstraints.RELATIVE; //next-to-last
+        c.fill = GridBagConstraints.NONE;      //reset to default
+        c.weightx = 0.0;                       //reset to default
+        paramsPanel.add(computeResultCheckBox);
         // Add the compute button
+        c.gridwidth = GridBagConstraints.REMAINDER;     //end row
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.weightx = 1.0;
         paramsPanel.add(computeButton, c);
+        
+        // Status panel
+		JPanel statusPanel = new JPanel();
+		statusPanel.setBorder(BorderFactory.createCompoundBorder(
+                                BorderFactory.createTitledBorder("Status"),
+                                BorderFactory.createEmptyBorder(5,5,5,5)));
+        statusPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
         // Add the results text
-        paramsPanel.add(resultsLabel, c);
-        	
-		// Add both panels into the frame with Border layout
+		statusPanel.add(resultsLabel);
+        
+		// Add all panels into the frame with Border layout
 		add(paramsPanel, BorderLayout.WEST);
-		add(codePanel);
+		add(codePanel, BorderLayout.EAST);
+		add(statusPanel, BorderLayout.SOUTH);
 		
 		setVisible(true);
 		
@@ -492,6 +566,20 @@ public abstract class AutoAnalyser extends JFrame
 			putCalcPropertiesInTable();
 			propertiesTableModel.fireTableDataChanged(); // Alerts to refresh the table contents
 			System.out.println("Added properties for new calculator");
+			if (statSigCheckBox.isSelected()) {
+				// We might allow the analytic box to be checked if the selected
+				//  calculator allows this:
+				if (calcImplementsAnalyticStatSig()) {
+					statSigAnalyticCheckBox.setEnabled(true);
+				} else {
+					statSigAnalyticCheckBox.setSelected(false);
+					statSigAnalyticCheckBox.setEnabled(false);
+				}
+			} else {
+				statSigAnalyticCheckBox.setSelected(false);
+				statSigAnalyticCheckBox.setEnabled(false);
+			}
+
 		}
 		// Else nothing extra to do
 	}
@@ -550,7 +638,8 @@ public abstract class AutoAnalyser extends JFrame
 					dataRows, dataColumns);
 		} catch (Exception ex) {
 			ex.printStackTrace(System.err);
-			JOptionPane.showMessageDialog(this, ex.getMessage());
+			JOptionPane.showMessageDialog(this, ex.getMessage() +
+					(isInts ? ".\nFor Discrete calculator make sure you load a file with integer data!" : ""));
 			dataFileDescriptorLabel.setText("Invalid data file, please load another");
 			if (isInts) {
 				dataDiscrete = null;
@@ -574,26 +663,44 @@ public abstract class AutoAnalyser extends JFrame
 			loadData(true);
 			if (dataDiscrete == null) {
 				// An error message will have been shown by loadData() 
+				resultsLabel.setText(" ");
 				return;
 			}
 		} else if (data == null) {
 			// We need a file of continuous data but no file has been selected
 			JOptionPane.showMessageDialog(this, "No valid data source selected");
+			resultsLabel.setText(" ");
 			return;
 		}
-		int sourceColumn = Integer.parseInt(sourceColTextField.getText());
-		int destColumn = Integer.parseInt(destColTextField.getText());
-		if ((sourceColumn < 0) || (sourceColumn >= dataColumns)) {
-			JOptionPane.showMessageDialog(this,
-					String.format("Source column must be between 0 and %d for this data set",
-							dataColumns-1));
-			return;
-		}
-		if ((destColumn < 0) || (destColumn >= dataColumns)) {
-			JOptionPane.showMessageDialog(this,
-					String.format("Destination column must be between 0 and %d for this data set",
-							dataColumns-1));
-			return;
+		
+		int singleSourceColumn = -1, singleDestColumn = -1;
+		Vector<int[]> sourceDestPairs = new Vector<int[]>();
+		if (allPairsCheckBox.isSelected()) {
+			// We're doing all pairs
+			for (int s = 0; s < dataColumns; s++) {
+				for (int d = 0; d < dataColumns; d++) {
+					sourceDestPairs.add(new int[] {s, d});
+				}
+			}
+		} else {
+			// we're doing a single source-destination pair
+			singleSourceColumn = Integer.parseInt(sourceColTextField.getText());
+			singleDestColumn = Integer.parseInt(destColTextField.getText());
+			sourceDestPairs.add(new int[] {singleSourceColumn, singleDestColumn});
+			if ((singleSourceColumn < 0) || (singleSourceColumn >= dataColumns)) {
+				JOptionPane.showMessageDialog(this,
+						String.format("Source column must be between 0 and %d for this data set",
+								dataColumns-1));
+				resultsLabel.setText(" ");				
+				return;
+			}
+			if ((singleDestColumn < 0) || (singleDestColumn >= dataColumns)) {
+				JOptionPane.showMessageDialog(this,
+						String.format("Destination column must be between 0 and %d for this data set",
+								dataColumns-1));
+				resultsLabel.setText(" ");
+				return;
+			}
 		}
 
 		// Generate headers:
@@ -601,6 +708,9 @@ public abstract class AutoAnalyser extends JFrame
 		StringBuffer javaCode = new StringBuffer();
 		javaCode.append("package infodynamics.demos.autoanalysis;\n\n");
 		javaCode.append("import infodynamics.utils.ArrayFileReader;\n");
+		if (statSigCheckBox.isSelected()) {
+			javaCode.append("import infodynamics.utils.EmpiricalMeasurementDistribution;\n");
+		}
 		javaCode.append("import infodynamics.utils.MatrixUtils;\n\n");
 		if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
 			// Cover all children:
@@ -688,12 +798,16 @@ public abstract class AutoAnalyser extends JFrame
 			javaCode.append("    ArrayFileReader afr = new ArrayFileReader(dataFile);\n");
 			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
 				javaCode.append("    int[][] data = afr.getInt2DMatrix();\n");
-				javaCode.append("    int[] source = MatrixUtils.selectColumn(data, " + sourceColumn + ");\n");
-				javaCode.append("    int[] dest = MatrixUtils.selectColumn(data, " + destColumn + ");\n\n");
+				if (! allPairsCheckBox.isSelected()) {
+					javaCode.append("    int[] source = MatrixUtils.selectColumn(data, " + singleSourceColumn + ");\n");
+					javaCode.append("    int[] dest = MatrixUtils.selectColumn(data, " + singleDestColumn + ");\n\n");
+				}
 			} else {
 				javaCode.append("    double[][] data = afr.getDouble2DMatrix();\n");
-				javaCode.append("    double[] source = MatrixUtils.selectColumn(data, " + sourceColumn + ");\n");
-				javaCode.append("    double[] dest = MatrixUtils.selectColumn(data, " + destColumn + ");\n\n");
+				if (! allPairsCheckBox.isSelected()) {
+					javaCode.append("    double[] source = MatrixUtils.selectColumn(data, " + singleSourceColumn + ");\n");
+					javaCode.append("    double[] dest = MatrixUtils.selectColumn(data, " + singleDestColumn + ");\n\n");
+				}
 			}
 			// 2. Python
 			pythonCode.append("# " + loadDataComment);
@@ -704,18 +818,22 @@ public abstract class AutoAnalyser extends JFrame
 			}
 			pythonCode.append("# As numpy array:\n");
 			pythonCode.append("data = numpy.array(dataRaw)\n");
-			pythonCode.append("source = data[:," + sourceColumn + "]\n");
-			pythonCode.append("dest = data[:," + destColumn + "]\n\n");
+			if (! allPairsCheckBox.isSelected()) {
+				pythonCode.append("source = JArray(JInt, 1)(data[:," + singleSourceColumn + "].tolist())\n");
+				pythonCode.append("dest = JArray(JInt, 1)(data[:," + singleDestColumn + "].tolist())\n\n");
+			}
 			// 3. Matlab
 			matlabCode.append("% " + loadDataComment);
 			matlabCode.append("data = load('" + dataFile.getAbsolutePath() + "');\n");
-			matlabCode.append("% Column indices start from 1 in Matlab:\n");
-			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
-				matlabCode.append("source = octaveToJavaIntArray(data(:," + (sourceColumn+1) + "));\n");
-				matlabCode.append("dest = octaveToJavaIntArray(data(:," + (destColumn+1) + "));\n\n");
-			} else {
-				matlabCode.append("source = octaveToJavaDoubleArray(data(:," + (sourceColumn+1) + "));\n");
-				matlabCode.append("dest = octaveToJavaDoubleArray(data(:," + (destColumn+1) + "));\n\n");
+			if (! allPairsCheckBox.isSelected()) {
+				matlabCode.append("% Column indices start from 1 in Matlab:\n");
+				if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+					matlabCode.append("source = octaveToJavaIntArray(data(:," + (singleSourceColumn+1) + "));\n");
+					matlabCode.append("dest = octaveToJavaIntArray(data(:," + (singleDestColumn+1) + "));\n\n");
+				} else {
+					matlabCode.append("source = octaveToJavaDoubleArray(data(:," + (singleSourceColumn+1) + "));\n");
+					matlabCode.append("dest = octaveToJavaDoubleArray(data(:," + (singleDestColumn+1) + "));\n\n");
+				}
 			}
 
 			// Construct the calculator and set relevant properties:
@@ -736,9 +854,12 @@ public abstract class AutoAnalyser extends JFrame
 				int minInData = MatrixUtils.min(dataDiscrete);
 				int maxInData = MatrixUtils.max(dataDiscrete);
 				if ((minInData < 0) || (maxInData >= base)) {
-					throw new Exception("Values in data file (in range " + minInData +
+					JOptionPane.showMessageDialog(this,
+							"Values in data file (in range " + minInData +
 							":" + maxInData + ") lie outside the expected range 0:" +
 							(base-1) + " for base " + base);
+					resultsLabel.setText(" ");
+					return;
 				}
 				
 				// 1. Java
@@ -774,6 +895,7 @@ public abstract class AutoAnalyser extends JFrame
 				pythonCode.append("# " + setPropertiesComment);
 				matlabCode.append("% " + setPropertiesComment);
 				int i = 0;
+				boolean anyPropValueChanged = false;
 				for (String propName : propertyNames) {
 					String propValue = null;
 					String propFieldName = propertyFieldNames.get(i++);
@@ -789,6 +911,7 @@ public abstract class AutoAnalyser extends JFrame
 					//  this calculator. This is more for generating the minimal code.
 					if (!propValue.equalsIgnoreCase(calcContinuous.getProperty(propName))) {
 						// We need to set this property:
+						anyPropValueChanged = true;
 						calcContinuous.setProperty(propName, propValue);
 						// 1. Java Code -- use full field name here
 						javaCode.append("    calc.setProperty(" + propFieldName +
@@ -802,80 +925,180 @@ public abstract class AutoAnalyser extends JFrame
 								propValue + "');\n");
 					}
 				}
+				if (!anyPropValueChanged) {
+					String noPropValueChangedComment = "No properties were set to non-default values\n";
+					javaCode.append("    // " + noPropValueChangedComment);
+					pythonCode.append("# " + noPropValueChangedComment);
+					matlabCode.append("% " + noPropValueChangedComment);
+				}
+			}
+			
+			String javaPrefix = "    ";
+			String pythonPrefix = "";
+			String matlabPrefix = "";
+			if (sourceDestPairs.size() > 1) {
+				// We're doing all pairs
+				
+				// Set up loops in the code:
+				// 1. Java code
+				javaCode.append("    \n");
+				javaCode.append("    // Compute for all pairs:\n");
+				javaCode.append("    for (int s = 0; s < " + dataColumns +
+							"; s++) {\n");
+				javaCode.append("        for (int d = 0; d < " + dataColumns +
+						"; d++) {\n");
+				javaPrefix = "            ";
+				javaCode.append(javaPrefix + "// For each source-dest pair:\n");
+				javaCode.append(javaPrefix + "if (s == d) {\n");
+				javaCode.append(javaPrefix + "    continue;\n");
+				javaCode.append(javaPrefix + "}\n");
+				// 2. Python code
+				pythonCode.append("\n");
+				pythonCode.append("# Compute for all pairs:\n");
+				pythonCode.append("for s in range(" + dataColumns + "):\n");
+				pythonCode.append("\tfor d in range(" + dataColumns + "):\n");
+				pythonPrefix = "\t\t";
+				pythonCode.append(pythonPrefix+ "# For each source-dest pair:\n");
+				pythonCode.append(pythonPrefix + "if (s == d):\n");
+				pythonCode.append(pythonPrefix + "\tcontinue\n");
+				// 3. Matlab code
+				matlabCode.append("\n");
+				matlabCode.append("% Compute for all pairs:\n");
+				matlabCode.append("for s = 1:" + dataColumns + "\n");
+				matlabCode.append("\tfor d = 1:" + dataColumns + "\n");
+				matlabPrefix = "\t\t";
+				matlabCode.append(matlabPrefix + "% For each source-dest pair:\n");
+				matlabCode.append(matlabPrefix + "if (s == d)\n");
+				matlabCode.append(matlabPrefix + "\tcontinue;\n");
+				matlabCode.append(matlabPrefix + "end\n");
+
+				// Read in the data for these columns for all pairs
+				matlabCode.append(matlabPrefix + "% Column indices start from 1 in Matlab:\n");
+				if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+					javaCode.append(javaPrefix + "int[] source = MatrixUtils.selectColumn(data, s);\n");
+					javaCode.append(javaPrefix + "int[] dest = MatrixUtils.selectColumn(data, d);\n\n");
+					matlabCode.append(matlabPrefix + "source = octaveToJavaIntArray(data(:, s));\n");
+					matlabCode.append(matlabPrefix + "dest = octaveToJavaIntArray(data(:, d));\n\n");
+					pythonCode.append(pythonPrefix + "source = JArray(JInt, 1)(data[:, s].tolist())\n");
+					pythonCode.append(pythonPrefix + "dest = JArray(JInt, 1)(data[:, d].tolist())\n\n");
+				} else {
+					javaCode.append(javaPrefix + "double[] source = MatrixUtils.selectColumn(data, s);\n");
+					javaCode.append(javaPrefix + "double[] dest = MatrixUtils.selectColumn(data, d);\n\n");
+					matlabCode.append(matlabPrefix + "source = octaveToJavaDoubleArray(data(:, s));\n");
+					matlabCode.append(matlabPrefix + "dest = octaveToJavaDoubleArray(data(:, d));\n\n");
+					pythonCode.append(pythonPrefix + "source = data[:, s]\n");
+					pythonCode.append(pythonPrefix + "dest = data[:, d]\n\n");
+				}
+			} else {
+				// For a single pair, we don't need to set up loops, and
+				// we've already read in the data to source and dest variables above
 			}
 			
 			// Initialise
-			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
-				calcDiscrete.initialise();
-			} else {
-				calcContinuous.initialise();
-			}
 			String initialiseComment = "3. Initialise the calculator for (re-)use:\n";
-			javaCode.append("    // " + initialiseComment);
-			javaCode.append("    calc.initialise();\n");
-			pythonCode.append("# " + initialiseComment);
-			pythonCode.append("calc.initialise()\n");
-			matlabCode.append("% " + initialiseComment);
-			matlabCode.append("calc.initialise();\n");
-			
+			javaCode.append(javaPrefix + "// " + initialiseComment);
+			javaCode.append(javaPrefix + "calc.initialise();\n");
+			pythonCode.append(pythonPrefix + "# " + initialiseComment);
+			pythonCode.append(pythonPrefix + "calc.initialise()\n");
+			matlabCode.append(matlabPrefix + "% " + initialiseComment);
+			matlabCode.append(matlabPrefix + "calc.initialise();\n");
+				
 			// Set observations
 			String supplyDataComment = "4. Supply the sample data:\n";
 			String setObservationsMethod;
 			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
 				setObservationsMethod = "addObservations";
-				calcDiscrete.addObservations(
-						MatrixUtils.selectColumn(dataDiscrete, sourceColumn),
-						MatrixUtils.selectColumn(dataDiscrete, destColumn));
 			} else {
 				setObservationsMethod = "setObservations";
-				// TODO We should be able to directly call setObservations(double[], double[])
-				//  here but we can't right now because ChannelCalculator does not
-				//  define this method. It would be complicated to fix this
-				//  because it involves Conditional MI calculator it seems.
-				// Revisit this later -- for now fix by deferring to child classes
-				// calcContinuous.setObservations(
-				//		MatrixUtils.selectColumn(data, sourceColumn),
-				//		MatrixUtils.selectColumn(data, destColumn));
-				setObservations(calcContinuous,
-						MatrixUtils.selectColumn(data, sourceColumn),
-						MatrixUtils.selectColumn(data, destColumn));
 			}
 			// 1. Java
-			javaCode.append("    // " + supplyDataComment);
-			javaCode.append("    calc." + setObservationsMethod + "(source, dest);\n");
+			javaCode.append(javaPrefix + "// " + supplyDataComment);
+			javaCode.append(javaPrefix + "calc." + setObservationsMethod + "(source, dest);\n");
 			// 2. Python
-			pythonCode.append("# " + supplyDataComment);
-			pythonCode.append("calc." + setObservationsMethod + "(source, dest)\n");
+			pythonCode.append(pythonPrefix + "# " + supplyDataComment);
+			pythonCode.append(pythonPrefix + "calc." + setObservationsMethod + "(source, dest)\n");
 			// 3. Matlab
-			matlabCode.append("% " + supplyDataComment);
-			matlabCode.append("calc." + setObservationsMethod + "(source, dest);\n");
+			matlabCode.append(matlabPrefix + "% " + supplyDataComment);
+			matlabCode.append(matlabPrefix + "calc." + setObservationsMethod + "(source, dest);\n");
 			
 			// Compute the result
-			double result;
-			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
-				result = calcDiscrete.computeAverageLocalOfObservations();
-			} else {
-				result = calcContinuous.computeAverageLocalOfObservations();
-			}
 			String computeComment = "5. Compute the estimate:\n";
-			javaCode.append("    // " + computeComment);
-			javaCode.append("    double result = calc.computeAverageLocalOfObservations();\n");
-			pythonCode.append("# " + computeComment);
-			pythonCode.append("result = calc.computeAverageLocalOfObservations()\n");
-			matlabCode.append("% " + computeComment);
-			matlabCode.append("result = calc.computeAverageLocalOfObservations();\n");
-			String resultsPrefixString = String.format(measureAcronym + "_%s(col_%d -> col_%d) = ",
-					selectedCalcType, sourceColumn, destColumn);
-			resultsLabel.setText(String.format(resultsPrefixString + "%.4f %s", result, units));
+			javaCode.append(javaPrefix + "// " + computeComment);
+			javaCode.append(javaPrefix + "double result = calc.computeAverageLocalOfObservations();\n");
+			pythonCode.append(pythonPrefix + "# " + computeComment);
+			pythonCode.append(pythonPrefix + "result = calc.computeAverageLocalOfObservations()\n");
+			matlabCode.append(matlabPrefix + "% " + computeComment);
+			matlabCode.append(matlabPrefix + "result = calc.computeAverageLocalOfObservations();\n");
+			
+			String resultsPrefixString, extraFormatTerms;
+			if (sourceDestPairs.size() > 1) {
+				resultsPrefixString = String.format(measureAcronym + "_%s(col_%%d -> col_%%d) = ",
+						selectedCalcType);
+				extraFormatTerms = "s, d, ";
+			} else {
+				resultsPrefixString = String.format(measureAcronym + "_%s(col_%d -> col_%d) = ",
+					selectedCalcType, singleSourceColumn, singleDestColumn);
+				extraFormatTerms = "";
+			}
+			
+			String resultsSuffixString = "";
+			String statSigFormatTerms = "";
+			if (statSigCheckBox.isSelected()) {
+				// Compute statistical significance
+				String statSigComment = "6. Compute the (statistical significance via) null distribution (e.g. 100 permutations):\n";
+				javaCode.append(javaPrefix + "// " + statSigComment);
+				javaCode.append(javaPrefix + "EmpiricalMeasurementDistribution measDist = calc.computeSignificance(100);\n");
+				pythonCode.append(pythonPrefix + "# " + statSigComment);
+				pythonCode.append(pythonPrefix + "measDist = calc.computeSignificance(100)\n");
+				matlabCode.append(matlabPrefix + "% " + statSigComment);
+				matlabCode.append(matlabPrefix + "measDist = calc.computeSignificance(100);\n");
+				if (statSigAnalyticCheckBox.isSelected()) {
+					resultsSuffixString = " (analytic p(surrogate > measured)=%.5f)";
+					statSigFormatTerms = ", measDist.pValue";
+				} else {
+					resultsSuffixString = " (null: %.4f +/- %.4f std dev.; p(surrogate > measured)=%.5f from %d surrogates)";
+					statSigFormatTerms = String.format(", measDist.getMeanOfDistribution(), measDist.getStdOfDistribution(), measDist.pValue, %d",
+							numPermutationsToCheck);
+				}
+			}
+			
 			// And generate code to write the results and finalise:
 			// 1. Java
-			javaCode.append("    System.out.printf(\"" + resultsPrefixString + "%.4f " + units + "\\n\", result);\n");
+			javaCode.append("\n" + javaPrefix + "System.out.printf(\"" + resultsPrefixString +
+					"%.4f " + units + resultsSuffixString + "\\n\",\n    " + javaPrefix +
+					extraFormatTerms + "result" + statSigFormatTerms + ");\n");
+			// 2. Python
+			pythonCode.append("\n" + pythonPrefix + "print(\"" + resultsPrefixString +
+					"%.4f " + units + resultsSuffixString + "\" %\n\t" + pythonPrefix + "(" +
+					extraFormatTerms + "result" + statSigFormatTerms + "))\n");
+			// 3. Matlab
+			matlabCode.append("\n" + matlabPrefix + "fprintf('" + resultsPrefixString +
+					"%.4f " + units + resultsSuffixString + "\\n', ...\n\t" + matlabPrefix +
+					extraFormatTerms + "result" + statSigFormatTerms + ");\n");
+			
+			if (sourceDestPairs.size() > 1) {
+				// We're doing all pairs
+				
+				// Finalise the loops in the code:
+				// 1. Java code
+				javaCode.append("        }\n");
+				javaCode.append("    }\n");
+				// 2. Python code
+				// Nothing to do
+				// 3. Matlab code
+				matlabCode.append("\tend\n");
+				matlabCode.append("end\n");
+				
+				// And tell the user to see results in the console:
+				resultsLabel.setText("See console for all pairs calculation results");
+				if (!selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+					System.out.println("Property values not read back into GUI for all pairs calculation");
+				}
+			}
+			
+			// Finalise the Java code:
 			javaCode.append("  }\n");
 			javaCode.append("}\n\n");
-			// 2. Python
-			pythonCode.append("print(\"" + resultsPrefixString + "%.4f " + units + "\\n\" % result)\n");
-			// 3. Matlab
-			matlabCode.append("fprintf('" + resultsPrefixString + "%.4f " + units + "\\n', result);\n");
 			
 			// Now set the code in the panel for the user
 			javaCodeTextArea.setText(javaCode.toString());
@@ -899,22 +1122,123 @@ public abstract class AutoAnalyser extends JFrame
 			codeFileWriter.write(matlabCode.toString());
 			codeFileWriter.close();
 			
-			if (!selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
-				// Read the current property values back out (in case of 
-				//  automated parameter assignment)
-				for (String propName : propertyNames) {
-					String propValue = null;
-					try {
-						propValue = calcContinuous.getProperty(propName);
-						propertyValues.put(propName, propValue);
-					} catch (Exception ex) {
-						ex.printStackTrace(System.err);
-						JOptionPane.showMessageDialog(this,
-								ex.getMessage());
-						resultsLabel.setText("Cannot find a value for property " + propName);
+			if (computeResultCheckBox.isSelected()) {
+				// Now make our own calculations here:
+				// TODO make the calculation in a separate thread, and have a 
+				//  button to cancel the calculation whilst it's running
+				for (int[] pair : sourceDestPairs) {
+					int sourceColumn = pair[0];
+					int destColumn = pair[1];
+					
+					if (sourceColumn == destColumn) {
+						continue;
 					}
+					
+					// Initialise
+					if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+						calcDiscrete.initialise();
+					} else {
+						calcContinuous.initialise();
+					}
+					
+					// Set observations
+					if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+						calcDiscrete.addObservations(
+								MatrixUtils.selectColumn(dataDiscrete, sourceColumn),
+								MatrixUtils.selectColumn(dataDiscrete, destColumn));
+					} else {
+						// TODO We should be able to directly call setObservations(double[], double[])
+						//  here but we can't right now because ChannelCalculator does not
+						//  define this method. It would be complicated to fix this
+						//  because it involves Conditional MI calculator it seems.
+						// Revisit this later -- for now fix by deferring to child classes
+						// calcContinuous.setObservations(
+						//		MatrixUtils.selectColumn(data, sourceColumn),
+						//		MatrixUtils.selectColumn(data, destColumn));
+						setObservations(calcContinuous,
+								MatrixUtils.selectColumn(data, sourceColumn),
+								MatrixUtils.selectColumn(data, destColumn));
+					}
+					
+					// Compute the result:
+					double result;
+					if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+						result = calcDiscrete.computeAverageLocalOfObservations();
+					} else {
+						result = calcContinuous.computeAverageLocalOfObservations();
+					}
+					
+					String resultsSuffixStringFormatted = "";
+					if (statSigCheckBox.isSelected()) {
+						// Check statistical significance:
+						if (statSigAnalyticCheckBox.isSelected()) {
+							// analytic check of statistical significance:
+							AnalyticNullDistributionComputer analyticCalc;
+							if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+								analyticCalc =
+										(AnalyticNullDistributionComputer) calcDiscrete;
+							} else {
+								analyticCalc =
+										(AnalyticNullDistributionComputer) calcContinuous;
+							}
+							AnalyticMeasurementDistribution measDist =
+									analyticCalc.computeSignificance();
+							resultsSuffixStringFormatted = String.format(
+									resultsSuffixString,
+									measDist.pValue);
+						} else {
+							// permutation test of statistical significance:
+							EmpiricalMeasurementDistribution measDist;
+							if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+								measDist = calcDiscrete.computeSignificance(numPermutationsToCheck);
+							} else {
+								measDist = calcContinuous.computeSignificance(numPermutationsToCheck);
+							}
+							resultsSuffixStringFormatted = String.format(
+									resultsSuffixString,
+									measDist.getMeanOfDistribution(),
+									measDist.getStdOfDistribution(),
+									measDist.pValue,
+									numPermutationsToCheck);
+						}
+					}
+					
+					String resultsText;
+					if (sourceDestPairs.size() > 1) {
+						// We're doing all pairs
+						resultsText = String.format(
+								resultsPrefixString + "%.4f %s" + resultsSuffixStringFormatted,
+								sourceColumn, destColumn, result, units);
+					} else {
+						resultsText = String.format(
+								resultsPrefixString + "%.4f %s" + resultsSuffixStringFormatted,
+								result, units);					
+						resultsLabel.setText(resultsText);
+					}
+					// Write the results to the console:
+					System.out.println(resultsText);
 				}
-				propertiesTableModel.fireTableDataChanged(); // Alerts to refresh the table contents
+	
+				if ((sourceDestPairs.size() == 1) && 
+						!selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+					// Read the current property values back out (in case of 
+					//  automated parameter assignment)
+					for (String propName : propertyNames) {
+						String propValue = null;
+						try {
+							propValue = calcContinuous.getProperty(propName);
+							propertyValues.put(propName, propValue);
+						} catch (Exception ex) {
+							ex.printStackTrace(System.err);
+							JOptionPane.showMessageDialog(this,
+									ex.getMessage());
+							resultsLabel.setText("Cannot find a value for property " + propName);
+						}
+					}
+					propertiesTableModel.fireTableDataChanged(); // Alerts to refresh the table contents
+				}
+			} else {
+				resultsLabel.setText("Code generated (no computation performed)");
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace(System.err);
@@ -1262,5 +1586,69 @@ public abstract class AutoAnalyser extends JFrame
 	@Override
 	public void mouseReleased(MouseEvent me) {
 		// Do nothing
+	}
+
+	@Override
+	public void stateChanged(ChangeEvent e) {
+		// I'm not sure how to check which checkbox changed,
+		//  so we'll just act on potential changes from both.
+		// This won't cause a problem here
+
+		if (e.getSource() == allPairsCheckBox) {
+			// "All pairs" checkbox -- update in case changed:
+			if (allPairsCheckBox.isSelected()) {
+				sourceColTextField.setEnabled(false);
+				destColTextField.setEnabled(false);
+			} else {
+				sourceColTextField.setEnabled(true);
+				destColTextField.setEnabled(true);
+			}
+		} else if (e.getSource() == computeResultCheckBox) {
+			// Compute checkbox -- update in case changed:
+			if (computeResultCheckBox.isSelected()) {
+				computeButton.setText(buttonTextCodeAndCompute);
+			} else {
+				computeButton.setText(buttonTextCodeOnly);
+			}
+		} else if (e.getSource() == statSigCheckBox) {
+			System.out.println("StatSigCheckBox state changed to " + statSigCheckBox.isSelected());
+			// statSigCheckBox -- update statSigAnalyticCheckBox in case changed:
+			if (statSigCheckBox.isSelected()) {
+				// We might allow the analytic box to be checked if the selected
+				//  calculator allows this:
+				if (calcImplementsAnalyticStatSig()) {
+					statSigAnalyticCheckBox.setEnabled(true);
+				} else {
+					statSigAnalyticCheckBox.setSelected(false);
+					statSigAnalyticCheckBox.setEnabled(false);
+				}
+			} else {
+				statSigAnalyticCheckBox.setSelected(false);
+				statSigAnalyticCheckBox.setEnabled(false);
+			}
+		}
+	}
+	
+	/**
+	 * Checks whether the current calculator class implements the 
+	 * AnalyticNullDistributionComputer interface
+	 * 
+	 * @return
+	 */
+	protected boolean calcImplementsAnalyticStatSig() {
+		Class<?> currentClass = calcClass;
+		while (currentClass != null) {
+			// This getInterfaces call doesn't seem to return the interfaces
+			//  implemented by the superclass, so we need to go up the tree
+			//  to check all of those. That seems odd, surely there is a simpler way?
+			Class<?>[] interfacesOfThisClass = currentClass.getInterfaces();
+			for (Class<?> theInterface : interfacesOfThisClass) {
+				if (theInterface == AnalyticNullDistributionComputer.class) {
+					return true;
+				}
+			}
+			currentClass = currentClass.getSuperclass();
+		}
+		return false;
 	}
 }

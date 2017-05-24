@@ -272,4 +272,10 @@ public class ActiveInfoStorageCalculatorKernelDirect
 			double[] newObservations) throws Exception {
 		throw new Exception("Not yet implemented");
 	}
+
+	public void addObservations(double[] observations, boolean[] valid)
+			throws Exception {
+		// Probably won't need to implement this, as we're only using this class for testing
+		throw new Exception("Not implemented yet");
+	}
 }

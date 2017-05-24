@@ -75,7 +75,7 @@ jointVariable2 = A[:,jointVariable2Columns]
 # (in fact, all java object creation in python is dynamic - it has to be,
 #  since the languages are interpreted. This makes our life slightly easier at this
 #  point than it is in demos/java/example6 where we have to handle this manually)
-indexOfLastDot = string.rfind(implementingClass, ".")
+indexOfLastDot = implementingClass.rfind(".")
 implementingPackage = implementingClass[:indexOfLastDot]
 implementingBaseName = implementingClass[indexOfLastDot+1:]
 miCalcClass = eval('JPackage(\'%s\').%s' % (implementingPackage, implementingBaseName))

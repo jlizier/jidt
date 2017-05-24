@@ -104,10 +104,15 @@ import infodynamics.utils.RandomGenerator;
  *
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
+ *
+ * @author Pedro AM Mediano (<a href="pmediano at imperial.ac.uk">email</a>,
+ * <a href="http://www.doc.ic.ac.uk/~pam213">www</a>)
+ *
  */
 public class ConditionalTransferEntropyCalculatorDiscrete extends InfoMeasureCalculatorDiscrete {
 
 	protected int k = 0; // history length k.
+  protected int base_others = 0; // base of the conditional variables
 	protected int base_power_k = 0;
 	protected int base_power_num_others = 0;
 	protected int numOtherInfoContributors = 0;
@@ -150,6 +155,56 @@ public class ConditionalTransferEntropyCalculatorDiscrete extends InfoMeasureCal
 		}
 		*/
 	}
+
+  /**
+   * Construct a new instance. This constructor allows the source and
+   * destination variables to have a different base from the other contributors
+   * (i.e. the conditionals).
+   *
+	 * @param base number of symbols for each variable.
+	 *        E.g. binary variables are in base-2.
+	 * @param history embedded history length of the destination to condition on -
+	 *        this is k in Schreiber's notation.
+	 * @param numOtherInfoContributors number of information contributors
+	 *        (other than the past of the destination
+	 *        or the source) to condition on.
+   * @param base_others base of the variables in the conditional, if different
+   *        from the base of the source and target variables.
+	 */
+  public ConditionalTransferEntropyCalculatorDiscrete
+      (int base, int history, int numOtherInfoContributors, int base_others) {
+
+    super(base);
+
+    k = history;
+    this.base_others = base_others;
+		this.numOtherInfoContributors = numOtherInfoContributors;
+		base_power_k = MathsUtils.power(base, k);
+		base_power_num_others = MathsUtils.power(base_others, numOtherInfoContributors);
+
+		startObservationTime = Math.max(k, 1);
+
+		// check that we can convert the base tuple into an integer ok
+		if (k > Math.log(Integer.MAX_VALUE) / log_base) {
+			throw new RuntimeException("Base and history combination too large");
+		}
+		if (numOtherInfoContributors < 1) {
+			throw new RuntimeException("Number of other info contributors < 1 for CompleteTECalculator");
+		}
+
+		// Create storage for counts of observations
+		sourceDestPastOthersCount = new int[base][base][base_power_k][base_power_num_others];
+		sourcePastOthersCount = new int[base][base_power_k][base_power_num_others];
+		destPastOthersCount = new int [base][base_power_k][base_power_num_others];
+		pastOthersCount = new int[base_power_k][base_power_num_others];
+		
+		// Create constants for tracking prevValues
+		maxShiftedValue = new int[base];
+		for (int v = 0; v < base; v++) {
+			maxShiftedValue[v] = v * MathsUtils.power(base, k-1);
+		}
+
+  }
 	
 	/**
 	 * Construct a new instance
@@ -168,6 +223,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete extends InfoMeasureCal
 		super(base);
 		
 		k = history;
+    base_others = base; // If unspecified, the base of the conditional variables is the same as src and tgt
 		this.numOtherInfoContributors = numOtherInfoContributors;
 		base_power_k = MathsUtils.power(base, k);
 		base_power_num_others = MathsUtils.power(base, numOtherInfoContributors);
@@ -262,7 +318,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete extends InfoMeasureCal
 			othersVal = 0;
 			for (int o = 0; o < numOtherInfoContributors; o++) {
 				// Include this other contributor
-				othersVal *= base;
+        othersVal *= base_others;
 				othersVal += conditionals[r-1][o];
 			}
 			sourceDestPastOthersCount[sourceVal][destVal][pastVal][othersVal]++;
@@ -301,6 +357,10 @@ public class ConditionalTransferEntropyCalculatorDiscrete extends InfoMeasureCal
 	 */
 	public void addObservations(int[] source, int[] dest, int[] conditionals)
 		throws Exception {
+
+    // PEDRO: should we perhaps check here that numOtherInfoContributors == 1?
+    // Probably the user shouldn't be left the hassle of computeCombinedValues, given
+    // that there's also a method addObservations(int[], int[], int[][])
 
 		int rows = dest.length;
 		
@@ -416,7 +476,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete extends InfoMeasureCal
 				othersVal = 0;
 				for (int o = 0; o < cleanedOthersOffsets.length; o++) {
 					// Include this other contributor
-					othersVal *= base;
+          othersVal *= base_others;
 					othersVal += states[r-1][(c-cleanedOthersOffsets[o]+columns) % columns];
 				}
 				sourceDestPastOthersCount[sourceVal][destVal][pastVal[c]][othersVal]++;
@@ -438,7 +498,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete extends InfoMeasureCal
  	 *  multivariate time series.
  	 *  to our estimates of the pdfs.
  	 * This call should be made as opposed to addObservations(int states[][])
- 	 *  for computing active info for heterogeneous agents.
+ 	 *  for computing conditional TE for heterogeneous agents.
 	 *
 	 * @param states multivariate time series, indexed first by time
 	 *  then by variable number.
@@ -497,7 +557,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete extends InfoMeasureCal
 			othersVal = 0;
 			for (int o = 0; o < cleanedOthersAbsolute.length; o++) {
 				// Include this other contributor
-				othersVal *= base;
+        othersVal *= base_others;
 				othersVal += states[r-1][cleanedOthersAbsolute[o]];
 			}
 			sourceDestPastOthersCount[sourceVal][destVal][pastVal][othersVal]++;
@@ -754,7 +814,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete extends InfoMeasureCal
 				othersVal = 0;
 				for (int o = 0; o < cleanedOthersOffsets.length; o++) {
 					// Include this other contributor
-					othersVal *= base;
+          othersVal *= base_others;
 					othersVal += states[r-1][(c-cleanedOthersOffsets[o]+columns) % columns];
 				}
 
@@ -783,7 +843,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete extends InfoMeasureCal
 	}
 	
 	/**
-	 * Computes local active information storage for the given
+	 * Computes local conditional transfer entropy for the given
 	 *  states, using pdfs built up from observations previously
 	 *  sent in via the addObservations method.
 	 * This method is suitable for heterogeneous agents
@@ -853,7 +913,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete extends InfoMeasureCal
 			othersVal = 0;
 			for (int o = 0; o < cleanedOthersAbsolute.length; o++) {
 				// Include this other contributor
-				othersVal *= base;
+        othersVal *= base_others;
 				othersVal += states[r-1][cleanedOthersAbsolute[o]];
 			}
 			// Now compute the local value
@@ -871,6 +931,134 @@ public class ConditionalTransferEntropyCalculatorDiscrete extends InfoMeasureCal
 				pastVal -= maxShiftedValue[states[r-k][destCol]];
 				pastVal *= base;
 				pastVal += states[r][destCol];
+			}
+		}
+
+		average = average/(double) (rows - startObservationTime);
+		
+		return localTE;
+	}
+
+	/**
+	 * Computes local conditional transfer entropy for the given
+	 *  samples, using pdfs built up from observations previously
+	 *  sent in via the addObservations method.
+	 *
+ 	 * <p>This method takes in a univariate conditionals time series - it is assumed
+ 	 * that either numOtherInfoContributors == 1 or the user has combined the 
+ 	 * multivariate tuples into a single value for each observation, e.g. by calling
+ 	 * {@link MatrixUtils#computeCombinedValues(int[][], int)}. This cannot be
+ 	 * checked here however, so use at your own risk!
+ 	 * </p>
+	 *
+	 * @param source source time series samples
+	 * @param dest dest time series samples
+	 * @param conditional time series for conditionals
+	 *   (indexed only by time step)
+	 * @return time-series of local conditional TE values
+	 */
+	private double[] computeLocalFromPreviousObservations
+		(int source[], int dest[], int[] conditional){
+
+		int rows = source.length;
+
+		// Allocate for all rows even though we'll leave the first ones as zeros
+		double[] localTE = new double[rows];
+		average = 0;
+		max = 0;
+		min = 0;
+
+		// Initialise and store the current previous value for each column
+		int pastVal = 0; 
+		pastVal = 0;
+		for (int p = 0; p < k; p++) {
+			pastVal *= base;
+			pastVal += dest[p];
+		}
+		int destVal, sourceVal, conditionalVal;
+		double logTerm;
+		for (int r = startObservationTime; r < rows; r++) {
+			destVal = dest[r];
+			sourceVal = source[r-1];
+			conditionalVal = conditional[r-1];
+			// Now compute the local value
+			logTerm = ((double) sourceDestPastOthersCount[sourceVal][destVal][pastVal][conditionalVal] / (double) sourcePastOthersCount[sourceVal][pastVal][conditionalVal]) /
+		 		((double) destPastOthersCount[destVal][pastVal][conditionalVal] / (double) pastOthersCount[pastVal][conditionalVal]);
+			localTE[r] = Math.log(logTerm) / log_2;
+			average += localTE[r];
+			if (localTE[r] > max) {
+				max = localTE[r];
+			} else if (localTE[r] < min) {
+				min = localTE[r];
+			}
+			// Update the previous value:
+			if (k > 0) {
+				pastVal -= maxShiftedValue[dest[r-k]];
+				pastVal *= base;
+				pastVal += dest[r];
+			}
+		}
+
+		average = average/(double) (rows - startObservationTime);
+		
+		return localTE;
+	}
+
+	/**
+	 * Computes local conditional transfer entropy for the given
+	 *  samples, using pdfs built up from observations previously
+	 *  sent in via the addObservations method.
+	 *
+	 * @param source source time series samples
+	 * @param dest dest time series samples
+	 * @param conditionals multivariate time series for conditionals
+	 *   (indexed first by time step then by variable number)
+	 * @return time-series of local conditional TE values
+	 */
+	private double[] computeLocalFromPreviousObservations
+		(int source[], int dest[], int[][] conditionals){
+
+		int rows = source.length;
+
+		// Allocate for all rows even though we'll leave the first ones as zeros
+		double[] localTE = new double[rows];
+		average = 0;
+		max = 0;
+		min = 0;
+
+		// Initialise and store the current previous value for each column
+		int pastVal = 0; 
+		pastVal = 0;
+		for (int p = 0; p < k; p++) {
+			pastVal *= base;
+			pastVal += dest[p];
+		}
+		int destVal, sourceVal, conditionalsVal;
+		double logTerm;
+		for (int r = startObservationTime; r < rows; r++) {
+			destVal = dest[r];
+			sourceVal = source[r-1];
+			conditionalsVal = 0;
+			for (int o = 0; o < conditionals[r-1].length; o++) {
+				// Include this other contributor
+				conditionalsVal *= base;
+				conditionalsVal += conditionals[r-1][o];
+			}
+			// Now compute the local value
+			logTerm = ((double) sourceDestPastOthersCount[sourceVal][destVal][pastVal][conditionalsVal] / (double) sourcePastOthersCount[sourceVal][pastVal][conditionalsVal]) /
+		 		((double) destPastOthersCount[destVal][pastVal][conditionalsVal] / (double) pastOthersCount[pastVal][conditionalsVal]);
+			localTE[r] = Math.log(logTerm) / log_2;
+			average += localTE[r];
+			if (localTE[r] > max) {
+				max = localTE[r];
+			} else if (localTE[r] < min) {
+				min = localTE[r];
+			}
+			// Update the previous value:
+			if (k > 0) {
+				pastVal -= maxShiftedValue[dest[r-k]];
+				pastVal *= base;
+				pastVal += dest[r];
 			}
 		}
 

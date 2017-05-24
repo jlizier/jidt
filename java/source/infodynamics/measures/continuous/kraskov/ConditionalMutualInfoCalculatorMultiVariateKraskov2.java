@@ -79,7 +79,15 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 		}
 		
 		// Constants:
-		double twoOnK = 2.0 / (double) k;
+		double inverseKTerm;
+		if (dimensionsCond > 0) {
+			// We will add in the 2/K term as usual
+			inverseKTerm = 2.0 / (double) k;
+		} else {
+			// We will only add in 1/K term since without a conditional there is
+			//  technically one less variable in the full joint space
+			inverseKTerm = 1.0 / (double) k;
+		}
 		
 		// Count the average number of points within eps_xz, eps_yz and eps_z
 		double sumDiGammas = 0;
@@ -136,36 +144,68 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 			//  the knowledge of which points made this cut to speed up the searching
 			//  in the conditional-marginal spaces:
 			// 1. Identify the n_z points within the conditional boundaries:
-			nnSearcherConditional.findPointsWithinR(t, eps_z, dynCorrExclTime,
+			if (dimensionsCond > 0) {
+				nnSearcherConditional.findPointsWithinR(t, eps_z, dynCorrExclTime,
 					true, isWithinRForConditionals, indicesWithinRForConditionals);
+			}
 			// 2. Then compute n_xz and n_yz harnessing our knowledge of
 			//  which points qualified for the conditional already:
 			// Don't need to supply dynCorrExclTime in the following, because only 
 			//  points outside of it have been included in isWithinRForConditionals
 			int n_xz;
-			if (dimensionsVar1 > 1) {
-				// Check only the x variable against eps_x, use existing results for z
-				n_xz = kdTreeVar1Conditional.countPointsWithinRs(t, 
-						new double[] {eps_x, eps_z},
-						true, 1, isWithinRForConditionals);
-			} else { // Generally faster to search only the marginal space if it is univariate 
-				n_xz = uniNNSearcherVar1.countPointsWithinR(t, eps_x,
-						true, isWithinRForConditionals);
+			if (dimensionsCond == 0) {
+				// We're really only counting whether the x space qualifies
+				if (dimensionsVar1 > 1) {
+					n_xz = kdTreeVar1Conditional.countPointsWithinOrOnR(
+							t, eps_x, dynCorrExclTime); // No need to pass eps_z in
+				} else { // Generally faster to search only the marginal space if it is univariate 
+					n_xz = uniNNSearcherVar1.countPointsWithinOrOnR(t, eps_x,
+							dynCorrExclTime);
+				}
+			} else {
+				if (dimensionsVar1 > 1) {
+					// Check only the x variable against eps_x, use existing results for z
+					n_xz = kdTreeVar1Conditional.countPointsWithinRs(t, 
+							new double[] {eps_x, eps_z},
+							true, 1, isWithinRForConditionals);
+				} else { // Generally faster to search only the marginal space if it is univariate 
+					n_xz = uniNNSearcherVar1.countPointsWithinR(t, eps_x,
+							true, isWithinRForConditionals);
+				}
 			}
 			int n_yz;
-			if (dimensionsVar2 > 1) {
-				// Check only the y variable against eps_y, use existing results for z
-				n_yz = kdTreeVar2Conditional.countPointsWithinRs(t,
-						new double[] {eps_y, eps_z},
-						true, 1, isWithinRForConditionals);
-			} else { // Generally faster to search only the marginal space if it is univariate
-				n_yz = uniNNSearcherVar2.countPointsWithinR(t, eps_y,
-						true, isWithinRForConditionals);
+			if (dimensionsCond == 0) {
+				if (dimensionsVar2 > 1) {
+					// Check only the y variable against eps_y, use existing results for z
+					n_yz = kdTreeVar2Conditional.countPointsWithinOrOnR(
+							t, eps_y, dynCorrExclTime); // No need to pass eps_z in 
+				} else { // Generally faster to search only the marginal space if it is univariate
+					n_yz = uniNNSearcherVar2.countPointsWithinOrOnR(t, eps_y,
+							dynCorrExclTime);
+				}
+			} else {
+				// We're really only counting whether the y space qualifies
+				if (dimensionsVar2 > 1) {
+					// Check only the y variable against eps_y, use existing results for z
+					n_yz = kdTreeVar2Conditional.countPointsWithinRs(t,
+							new double[] {eps_y, eps_z},
+							true, 1, isWithinRForConditionals);
+				} else { // Generally faster to search only the marginal space if it is univariate
+					n_yz = uniNNSearcherVar2.countPointsWithinR(t, eps_y,
+							true, isWithinRForConditionals);
+				}
 			}
 			// 3. Finally, reset our boolean array for its next use while we count n_z:
 			int n_z;
-			for (n_z = 0; indicesWithinRForConditionals[n_z] != -1; n_z++) {
-				isWithinRForConditionals[indicesWithinRForConditionals[n_z]] = false;
+			if (dimensionsCond == 0) {
+				n_z = totalObservations; // Dropping - 1 to remove the point itself, and
+				// Note: This doesn't respect the dynamic correlation exclusion, but this
+				//  does align with a mutual information calculation here (to give the digamma(N) term).
+				// No need to reset the boolean array
+			} else {
+				for (n_z = 0; indicesWithinRForConditionals[n_z] != -1; n_z++) {
+					isWithinRForConditionals[indicesWithinRForConditionals[n_z]] = false;
+				}
 			}
 			// end option C
 
@@ -177,15 +217,25 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 			double digammaNxz = MathsUtils.digamma(n_xz);
 			double digammaNyz = MathsUtils.digamma(n_yz);
 			double digammaNz = MathsUtils.digamma(n_z);
-			double invN_xz = 1.0/(double) n_xz;
-			double invN_yz = 1.0/(double) n_yz;
+			double invN_xz, invN_yz;
+			if (dimensionsCond > 0) {
+				// We will add in the inverse neighbour counts as usual
+				invN_xz = 1.0/(double) n_xz;
+				invN_yz = 1.0/(double) n_yz;
+			} else {
+				// We do not add in the inverse neighbour counts, because they
+				//  are technically coming from a single variable neighbour search,
+				//  and so there is a 0/n_xz and 0/n_yz contribution 
+				invN_xz = 0.0;
+				invN_yz = 0.0;
+			}
 			sumInverseCountInJointXZ += invN_xz;
 			sumInverseCountInJointYZ += invN_yz;
 			double contributionDigammas = digammaNz - digammaNxz - digammaNyz;
 			sumDiGammas += contributionDigammas;
 
 			if (returnLocals) {
-				localCondMi[t-startTimePoint] = digammaK - twoOnK + contributionDigammas + invN_xz + invN_yz;
+				localCondMi[t-startTimePoint] = digammaK - inverseKTerm + contributionDigammas + invN_xz + invN_yz;
 				if (debug) {
 					// Only tracking this for debugging purposes: 
 					System.out.printf("t=%d, n_xz=%d, n_yz=%d, n_z=%d, 1/n_yz=%.3f, 1/n_xz=%.3f, local=%.4f\n",
@@ -215,5 +265,14 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov2
 			returnValues[5] = sumInverseCountInJointYZ;
 			return returnValues;
 		}		
+	}
+
+	@Override
+	protected double[] partialComputeFromNewObservations(int startTimePoint,
+			int numTimePoints, double[][] newVar1Observations,
+			double[][] newVar2Observations, double[][] newCondObservations,
+			boolean returnLocals) throws Exception {
+		// TODO implement me
+		throw new RuntimeException("Not implemented yet");
 	}
 }

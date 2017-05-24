@@ -137,6 +137,18 @@ public class MatrixUtils {
 		return total;
 	}
 
+	public static double sum(double[][][] input) {
+		double total = 0;
+		for (int i = 0; i < input.length; i++) {
+			for (int j = 0; j < input[i].length; j++) {
+				for (int k = 0; k < input[i][j].length; k++) {
+					total += input[i][j][k];
+				}
+			}
+		}
+		return total;
+	}
+
 	public static int sum(int[] input) {
 		int total = 0;
 		for (int i = 0; i < input.length; i++) {
@@ -150,6 +162,18 @@ public class MatrixUtils {
 		for (int i = 0; i < input.length; i++) {
 			for (int j = 0; j < input[i].length; j++) {
 				total += input[i][j];
+			}
+		}
+		return total;
+	}
+
+	public static int sum(int[][][] input) {
+		int total = 0;
+		for (int i = 0; i < input.length; i++) {
+			for (int j = 0; j < input[i].length; j++) {
+				for (int k = 0; k < input[i][j].length; k++) {
+					total += input[i][j][k];
+				}
 			}
 		}
 		return total;
@@ -980,6 +1004,23 @@ public class MatrixUtils {
 	}
 
 	/**
+	 * Copies the given source array into the required column number of the destination
+	 * @param destination
+	 * @param index1
+	 * @param index2
+	 * @param source
+	 */
+	public static void copyIntoColumn3D(int[][][] destination, int index1, int index2, int[] source) throws Exception {
+		if (source.length != destination.length) {
+			throw new Exception("Destination column is not of the same length as the source (" +
+					destination.length + " vs " + source.length + ")");
+		}
+		for (int r = 0; r < destination.length; r++) {
+			destination[r][index1][index2] = source[r];
+		}
+	}
+
+	/**
 	 * Return a new matrix with the columns of matrix1 joined on the back of matrix2
 	 * 
 	 * @param matrix1
@@ -1258,6 +1299,14 @@ public class MatrixUtils {
 		return returnData;
 	}
 
+	public static boolean[] selectColumn(boolean matrix[][], int columnNo) {
+		boolean[] column = new boolean[matrix.length];
+		for (int r = 0; r < matrix.length; r++) {
+			column[r] = matrix[r][columnNo];
+		}
+		return column;
+	}
+	
 	public static int[] selectColumn(int matrix[][], int columnNo) {
 		int[] column = new int[matrix.length];
 		for (int r = 0; r < matrix.length; r++) {
@@ -1299,6 +1348,25 @@ public class MatrixUtils {
 			column[r] = matrix[startRow + r][columnNo];
 		}
 		return column;
+	}
+
+	/**
+	 * Extract the required columns from the matrix
+	 * 
+	 * @param matrix
+	 * @param fromCol
+	 * @param cols
+	 * @return
+	 */
+	public static double[][] selectColumns(double matrix[][], 
+			int fromCol, int cols) {
+		double[][] data = new double[matrix.length][cols];
+		for (int r = 0; r < matrix.length; r++) {
+			for (int cIndex = 0; cIndex < cols; cIndex++) {
+				data[r][cIndex] = matrix[r][cIndex + fromCol];
+			}
+		}
+		return data;
 	}
 
 	/**
@@ -1389,6 +1457,27 @@ public class MatrixUtils {
 		for (int rIndex = 0; rIndex < rows.length; rIndex++) {
 			for (int cIndex = 0; cIndex < columns.length; cIndex++) {
 				data[rIndex][cIndex] = matrix[rows[rIndex]][columns[cIndex]];
+			}
+		}
+		return data;
+	}
+
+	/**
+	 * Extract the required rows and columns from the matrix
+	 * 
+	 * @param matrix 2D data array
+	 * @param fromRow index of the first row to return
+	 * @param rows number of rows (including the first) to return
+	 * @param fromCol index of the first column to return
+	 * @param cols number of columns (including the first) to return
+	 * @return a 2D data array of the selected rows and columns
+	 */
+	public static double[][] selectRowsAndColumns(double matrix[][],
+			int fromRow, int rows, int fromCol, int cols) {
+		double[][] data = new double[rows][cols];
+		for (int rIndex = 0; rIndex < rows; rIndex++) {
+			for (int cIndex = 0; cIndex < cols; cIndex++) {
+				data[rIndex][cIndex] = matrix[rIndex + fromRow][cIndex + fromCol];				
 			}
 		}
 		return data;
@@ -1662,6 +1751,24 @@ public class MatrixUtils {
 	 * @param k embedding length
 	 * @return An array of k-length embedding vectors
 	 */
+	public static int[][] makeDelayEmbeddingVector(int[] data, int k) {
+		try {
+			return makeDelayEmbeddingVector(data, k, k - 1, data.length - k + 1);
+		} catch (Exception e) {
+			// The above call should not throw an Exception, handle here 
+			//  in a RuntimeException so this method doesn't throw one
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * Constructs all embedding vectors of size k for the data.
+	 * There will be (data.length - k + 1) of these vectors returned.
+	 * 
+	 * @param data time series data
+	 * @param k embedding length
+	 * @return An array of k-length embedding vectors
+	 */
 	public static double[][] makeDelayEmbeddingVector(double[] data, int k) {
 		try {
 			return makeDelayEmbeddingVector(data, k, k - 1, data.length - k + 1);
@@ -1670,6 +1777,39 @@ public class MatrixUtils {
 			//  in a RuntimeException so this method doesn't throw one
 			throw new RuntimeException(e);
 		}
+	}
+
+	/**
+	 * Constructs numEmbeddingVectors embedding vectors of size k for the data,
+	 * with the first embedding vector having it's last time point at t=startKthPoint
+	 * 
+	 * @param data time series data
+	 * @param k embedding length
+	 * @param startKthPoint last time point of the first embedding vector
+	 *   (i.e. use k-1 if you want to go from the start)
+	 * @param numEmbeddingVectors the number of embedding vectors to return
+	 *   (i.e. use data.length-k+1 if you go from the start and want all
+	 *   of them extracted)
+	 * @return a 2D array of k-length embedding vectors.
+	 */
+	public static int[][] makeDelayEmbeddingVector(int[] data, int k,
+			int startKthPoint, int numEmbeddingVectors) throws Exception {
+		if (startKthPoint < k - 1) {
+			throw new Exception("Start point t=" + startKthPoint + " is too early for a " +
+					k + " length embedding vector");
+		}
+		if (numEmbeddingVectors + startKthPoint > data.length) {
+			throw new Exception("Too many embedding vectors " + numEmbeddingVectors +
+					" requested for the given startPoint " + startKthPoint +
+					" and time series length " + data.length);
+		}
+		int[][] embeddingVectors = new int[numEmbeddingVectors][k];
+		for (int t = startKthPoint; t < numEmbeddingVectors + startKthPoint; t++) {
+			for (int i = 0; i < k; i++) {
+				embeddingVectors[t - startKthPoint][i] = data[t - i];
+			}
+		}
+		return embeddingVectors;
 	}
 
 	/**
@@ -1700,6 +1840,42 @@ public class MatrixUtils {
 		for (int t = startKthPoint; t < numEmbeddingVectors + startKthPoint; t++) {
 			for (int i = 0; i < k; i++) {
 				embeddingVectors[t - startKthPoint][i] = data[t - i];
+			}
+		}
+		return embeddingVectors;
+	}
+
+	/**
+	 * Constructs numEmbeddingVectors embedding vectors of size k for the data,
+	 *  with embedding delay tau between each time sample for the vectors,
+	 *  with the first embedding vector having it's last time point at t=startKthPoint
+	 * 
+	 * @param data time series data
+	 * @param k embedding length
+	 * @param tau embedding delay between each point in the original time series
+	 * 		selected into each embedding vector
+	 * @param startKthPoint last time point of the first embedding vector
+	 *   (i.e. use (k-1)*tau if you want to go from the start)
+	 * @param numEmbeddingVectors the number of embedding vectors to return
+	 *   (i.e. use data.length-(k-1)*tau if you go from the start and want all
+	 *   of them extracted)
+	 * @return  a 2D array of k-length embedding vectors.
+	 */
+	public static int[][] makeDelayEmbeddingVector(int[] data, int k, int tau,
+			int startKthPoint, int numEmbeddingVectors) throws Exception {
+		if (startKthPoint < (k - 1)*tau) {
+			throw new Exception("Start point t=" + startKthPoint + " is too early for a " +
+					k + " length embedding vector with delay " + tau);
+		}
+		if (numEmbeddingVectors + startKthPoint > data.length) {
+			throw new Exception("Too many embedding vectors " + numEmbeddingVectors +
+					" requested for the given startPoint " + startKthPoint +
+					" and time series length " + data.length);
+		}
+		int[][] embeddingVectors = new int[numEmbeddingVectors][k];
+		for (int t = startKthPoint; t < numEmbeddingVectors + startKthPoint; t++) {
+			for (int i = 0; i < k; i++) {
+				embeddingVectors[t - startKthPoint][i] = data[t - i*tau];
 			}
 		}
 		return embeddingVectors;
@@ -2162,6 +2338,25 @@ public class MatrixUtils {
 			}
 		}
 	}
+
+	/**
+	 * Normalises the elements along each column of the matrix
+	 * 
+	 * @param matrix 2D matrix of doubles
+	 * @param means means to normalise to for each column of data
+	 * @param stds std deviations to normalise to for each column of data
+	 */
+	public static void normalise(double[][] matrix, double[] means, double[] stds) {
+		for (int r = 0; r < matrix.length; r++) {
+			for (int c = 0; c < matrix[r].length; c++) {
+				matrix[r][c] = matrix[r][c] - means[c];
+				if (!Double.isInfinite(1.0 /  stds[c])) {
+					matrix[r][c] /= stds[c];
+				} // else we just subtract off the mean
+			}
+		}
+	}
+
 
 	/**
 	 * Normalises the elements along each column of the matrix
@@ -3706,9 +3901,16 @@ public class MatrixUtils {
 		for (int r = 0; r < array.length; r++) {
 				out.print(array[r] + " ");
 		}
-		out.println();
+		// out.println();
 	}
 
+	public static void printArray(PrintStream out, double[] array, int numDp) {
+		for (int r = 0; r < array.length; r++) {
+				out.printf(String.format("%%.%df ", numDp), array[r]);
+		}
+		// out.println();
+	}
+	
 	public static String arrayToString(double[] array) {
 		StringBuffer sb = new StringBuffer();
 		for (int r = 0; r < array.length; r++) {

@@ -196,222 +196,238 @@ public class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
     condMiCalc.initialise(l*sourceDimensions, destDimensions, k*destDimensions);
   }
 
-  /**
-   * <p>Sets a single set of <b>univariate</b> observations to compute the PDFs from.
-   * Can only be called on this multivariate calculator if the dimensions
-   * of both source and destination are 1, otherwise throws an exception</p>
-   * 
-   * {@inheritDoc}
-   * 
-   * @param source univariate observations for the source variable
-   * @param destination univariate observations for the destination variable
-   * @throws Exception if initialised dimensions were not 1
-   */
-  @Override
-  public void setObservations(double[] source, double[] destination) throws Exception {
-    
-    if ((sourceDimensions != 1) || (destDimensions != 1)) {
-      throw new Exception("Cannot call the univariate setObservations if you " +
-          "have initialised with dimension > 1 for either source or destination");
-    }
-    
-    super.setObservations(source, destination);
-  }
-
-  /* (non-Javadoc)
-   * @see infodynamics.measures.continuous.ChannelCalculatorMultiVariate#setObservations(double[][], double[][])
-   */
-  @Override
-  public void setObservations(double[][] source, double[][] destination)
-      throws Exception {
-    if (source.length != destination.length) {
-      throw new Exception(String.format("Source and destination lengths (%d and %d) must match!",
-          source.length, destination.length));
-    }
-    if (source.length < startTimeForFirstDestEmbedding + 2) {
-      // There are no observations to add here, the time series is too short
-      throw new Exception("Not enough observations to set here given k, k_tau, l, l_tau and delay parameters");
-    }
-    double[][] currentDestPastVectors = 
-        MatrixUtils.makeDelayEmbeddingVector(destination, k, k_tau,
-            startTimeForFirstDestEmbedding,
-            destination.length - startTimeForFirstDestEmbedding - 1);
-    double[][] currentDestNextVectors =
-        MatrixUtils.makeDelayEmbeddingVector(destination, 1,
-            startTimeForFirstDestEmbedding + 1,
-            destination.length - startTimeForFirstDestEmbedding - 1);
-    double[][] currentSourcePastVectors = 
-        MatrixUtils.makeDelayEmbeddingVector(source, l, l_tau,
-            startTimeForFirstDestEmbedding + 1 - delay,
-            source.length - startTimeForFirstDestEmbedding - 1);
-    condMiCalc.setObservations(currentSourcePastVectors, currentDestNextVectors, currentDestPastVectors);
-  }
-
-  @Override
-  public void startAddObservations() {
-    if ((sourceDimensions == 1) && (destDimensions == 1)) {
-      super.startAddObservations();
-    } else {
-      condMiCalc.startAddObservations();
-    }
-
-  }
-
-  @Override
-  public void finaliseAddObservations() throws Exception {
-    if ((sourceDimensions == 1) && (destDimensions == 1)) {
-      super.finaliseAddObservations();
-    } else {
-      condMiCalc.finaliseAddObservations();
-    }
-
-  }
-
-  /**
-   * <p>Adds a new set of <b>univariate</b> observations to compute the PDFs from.
-   * Can only be called on this multivariate calculator if the dimensions
-   * of both source and destination are 1, otherwise throws an exception</p>
-   * 
-   * {@inheritDoc}
-   * 
-   * @param source univariate observations for the source variable
-   * @param destination univariate observations for the destination variable
-   * @throws Exception if initialised dimensions were not 1
-   * @see {@link ChannelCalculator#addObservations(double[], double[])}
-   */
-  @Override
-  public void addObservations(double[] source, double[] destination) throws Exception {
-
-    if ((sourceDimensions != 1) || (destDimensions != 1)) {
-      throw new Exception("Cannot call the univariate addObservations if you " +
-          "have initialised with dimension > 1 for either source or destination");
-    }
-    super.addObservations(source, destination);
-  }
-  
-  /* (non-Javadoc)
-   * @see infodynamics.measures.continuous.ChannelCalculatorMultiVariate#addObservations(double[][], double[][])
-   */
-  @Override
-  public void addObservations(double[][] source, double[][] destination)
-      throws Exception {
-    if (source.length != destination.length) {
-      throw new Exception(String.format("Source and destination lengths (%d and %d) must match!",
-          source.length, destination.length));
-    }
-    if (source.length < startTimeForFirstDestEmbedding + 2) {
-      // There are no observations to add here, the time series is too short
-      // Don't throw an exception, do nothing since more observations
-      //  can be added later.
-      return;
-    }
-    double[][] currentDestPastVectors = 
-        MatrixUtils.makeDelayEmbeddingVector(destination, k, k_tau,
-            startTimeForFirstDestEmbedding,
-            destination.length - startTimeForFirstDestEmbedding - 1);
-    double[][] currentDestNextVectors =
-        MatrixUtils.makeDelayEmbeddingVector(destination, 1,
-            startTimeForFirstDestEmbedding + 1,
-            destination.length - startTimeForFirstDestEmbedding - 1);
-    double[][] currentSourcePastVectors = 
-        MatrixUtils.makeDelayEmbeddingVector(source, l, l_tau,
-            startTimeForFirstDestEmbedding + 1 - delay,
-            source.length - startTimeForFirstDestEmbedding - 1);
-    condMiCalc.addObservations(currentSourcePastVectors, currentDestNextVectors, currentDestPastVectors);
-  }
-
-  /**
-   * <p>Adds a new sub-series of <b>univariate</b> observations to compute the PDFs from.
-   * Can only be called on this multivariate calculator if the dimensions
-   * of both source and destination are 1, otherwise throws an exception</p>
-   * 
-   * {@inheritDoc}
-   * 
-   * @param source univariate observations for the source variable
-   * @param destination univariate observations for the destination variable
-   * @throws Exception if initialised dimensions were not 1
-   * @see {@link ChannelCalculator#addObservations(double[], double[], int, int)}
-   */
-  @Override
-  public void addObservations(double[] source, double[] destination,
-      int startTime, int numTimeSteps) throws Exception {
-    if ((sourceDimensions != 1) || (destDimensions != 1)) {
-      throw new Exception("Cannot call the univariate addObservations if you " +
-          "have initialised with dimension > 1 for either source or destination");
-    }
-    super.addObservations(source, destination, startTime, numTimeSteps);
-  }
-  
-  /* (non-Javadoc)
-   * @see infodynamics.measures.continuous.ChannelCalculatorMultiVariate#addObservations(double[][], double[][], int, int)
-   */
-  @Override
-  public void addObservations(double[][] source, double[][] destination,
-      int startTime, int numTimeSteps) throws Exception {
-    if (source.length != destination.length) {
-      throw new Exception(String.format("Source and destination lengths (%d and %d) must match!",
-          source.length, destination.length));
-    }
-    if (source.length < startTime + numTimeSteps) {
-      // There are not enough observations given the arguments here
-      throw new Exception("Not enough observations to set here given startTime and numTimeSteps parameters");
-    }
-    addObservations(MatrixUtils.selectRows(source, startTime, numTimeSteps),
-              MatrixUtils.selectRows(destination, startTime, numTimeSteps));
-  }
-
-  /**
-   * <p>Adds a new sub-series of <b>univariate</b> observations to compute the PDFs from.
-   * Can only be called on this multivariate calculator if the dimensions
-   * of both source and destination are 1, otherwise throws an exception</p>
-   * 
-   * {@inheritDoc}
-   * 
-   * @param source univariate observations for the source variable
-   * @param destination univariate observations for the destination variable
-   * @throws Exception if initialised dimensions were not 1
-   * @see {@link ChannelCalculator#setObservations(double[], double[], boolean[], boolean[])}
-   */
-  public void setObservations(double[] source, double[] destination,
-      boolean[] sourceValid, boolean[] destValid) throws Exception {
-    
-    if ((sourceDimensions != 1) || (destDimensions != 1)) {
-      throw new Exception("Cannot call the univariate setObservations if you " +
-          "have initialised with dimension > 1 for either source or destination");
-    }
-    super.setObservations(source, destination, sourceValid, destValid);
-  }
-  
-  /* (non-Javadoc)
-   * @see infodynamics.measures.continuous.ChannelCalculatorMultiVariate#setObservations(double[][], double[][], boolean[], boolean[])
-   */
-  @Override
-  public void setObservations(double[][] source, double[][] destination,
-      boolean[] sourceValid, boolean[] destValid) throws Exception {
-    
-    Vector<int[]> startAndEndTimePairs = computeStartAndEndTimePairs(sourceValid, destValid);
-    
-    // We've found the set of start and end times for this pair
-    startAddObservations();
-    for (int[] timePair : startAndEndTimePairs) {
-      int startTime = timePair[0];
-      int endTime = timePair[1];
-      addObservations(source, destination, startTime, endTime - startTime + 1);
-    }
-    finaliseAddObservations();
-  }
-
-  /* (non-Javadoc)
-   * @see infodynamics.measures.continuous.ChannelCalculatorMultiVariate#setObservations(double[][], double[][], boolean[][], boolean[][])
-   */
-  @Override
-  public void setObservations(double[][] source, double[][] destination,
-      boolean[][] sourceValid, boolean[][] destValid) throws Exception {
-    boolean[] jointSourceValid = MatrixUtils.andRows(sourceValid);
-    boolean[] jointDestValid = MatrixUtils.andRows(destValid);
-    setObservations(source, destination, jointSourceValid, jointDestValid);
-  }
-
+ 	/* (non-Javadoc)
+ 	 * @see infodynamics.measures.continuous.ChannelCalculatorMultiVariate#setObservations(double[][], double[][])
+ 	 */
+ 	@Override
+ 	public void setObservations(double[][] source, double[][] destination)
+ 			throws Exception {
+ 		if (source.length != destination.length) {
+ 			throw new Exception(String.format("Source and destination lengths (%d and %d) must match!",
+ 					source.length, destination.length));
+ 		}
+ 		if ((sourceDimensions == 1) && (destDimensions == 1)) {
+ 			// We'll be using the superclass for the computation
+ 			super.setObservations(MatrixUtils.selectColumn(source, 0),
+ 					MatrixUtils.selectColumn(destination, 0));
+ 			return;
+ 		}
+ 		if (source.length < startTimeForFirstDestEmbedding + 2) {
+ 			// There are no observations to add here, the time series is too short
+ 			throw new Exception("Not enough observations to set here given k, k_tau, l, l_tau and delay parameters");
+ 		}
+ 		double[][] currentDestPastVectors = 
+ 				MatrixUtils.makeDelayEmbeddingVector(destination, k, k_tau,
+ 						startTimeForFirstDestEmbedding,
+ 						destination.length - startTimeForFirstDestEmbedding - 1);
+ 		double[][] currentDestNextVectors =
+ 				MatrixUtils.makeDelayEmbeddingVector(destination, 1,
+ 						startTimeForFirstDestEmbedding + 1,
+ 						destination.length - startTimeForFirstDestEmbedding - 1);
+ 		double[][] currentSourcePastVectors = 
+ 				MatrixUtils.makeDelayEmbeddingVector(source, l, l_tau,
+ 						startTimeForFirstDestEmbedding + 1 - delay,
+ 						source.length - startTimeForFirstDestEmbedding - 1);
+ 		condMiCalc.setObservations(currentSourcePastVectors, currentDestNextVectors, currentDestPastVectors);
+ 	}
+ 
+ 	@Override
+ 	public void startAddObservations() {
+ 		if ((sourceDimensions == 1) && (destDimensions == 1)) {
+ 			// We'll be using the superclass for the computation
+ 			super.startAddObservations();
+ 			return;
+ 		}
+ 		// Otherwise initialise ourselves:
+ 		condMiCalc.startAddObservations();
+ 	}
+ 
+ 	/**
+ 	 * <p>Adds a new set of <b>univariate</b> observations to compute the PDFs from.
+ 	 * Can only be called on this multivariate calculator if the dimensions
+ 	 * of both source and destination are 1, otherwise throws an exception</p>
+ 	 * 
+ 	 * {@inheritDoc}
+ 	 * 
+ 	 * @param source univariate observations for the source variable
+ 	 * @param destination univariate observations for the destination variable
+ 	 * @throws Exception if initialised dimensions were not 1
+ 	 * @see {@link ChannelCalculator#addObservations(double[], double[])}
+ 	 */
+ 	@Override
+ 	public void addObservations(double[] source, double[] destination) throws Exception {
+ 
+ 		if ((sourceDimensions != 1) || (destDimensions != 1)) {
+ 			throw new Exception("Cannot call the univariate addObservations if you " +
+ 					"have initialised with dimension > 1 for either source or destination");
+ 		}
+ 		super.addObservations(source, destination);
+ 	}
+ 	
+ 	/* (non-Javadoc)
+ 	 * @see infodynamics.measures.continuous.ChannelCalculatorMultiVariate#addObservations(double[][], double[][])
+ 	 */
+ 	@Override
+ 	public void addObservations(double[][] source, double[][] destination)
+ 			throws Exception {
+ 		if (source.length != destination.length) {
+ 			throw new Exception(String.format("Source and destination lengths (%d and %d) must match!",
+ 					source.length, destination.length));
+ 		}
+ 		if ((sourceDimensions == 1) && (destDimensions == 1)) {
+ 			// We'll be using the superclass for the computation
+ 			super.addObservations(MatrixUtils.selectColumn(source, 0),
+ 					MatrixUtils.selectColumn(destination, 0));
+ 			return;
+ 		}
+ 		if (source.length < startTimeForFirstDestEmbedding + 2) {
+ 			// There are no observations to add here, the time series is too short
+ 			// Don't throw an exception, do nothing since more observations
+ 			//  can be added later.
+ 			return;
+ 		}
+ 		double[][] currentDestPastVectors = 
+ 				MatrixUtils.makeDelayEmbeddingVector(destination, k, k_tau,
+ 						startTimeForFirstDestEmbedding,
+ 						destination.length - startTimeForFirstDestEmbedding - 1);
+ 		double[][] currentDestNextVectors =
+ 				MatrixUtils.makeDelayEmbeddingVector(destination, 1,
+ 						startTimeForFirstDestEmbedding + 1,
+ 						destination.length - startTimeForFirstDestEmbedding - 1);
+ 		double[][] currentSourcePastVectors = 
+ 				MatrixUtils.makeDelayEmbeddingVector(source, l, l_tau,
+ 						startTimeForFirstDestEmbedding + 1 - delay,
+ 						source.length - startTimeForFirstDestEmbedding - 1);
+ 		condMiCalc.addObservations(currentSourcePastVectors, currentDestNextVectors, currentDestPastVectors);
+ 	}
+ 
+ 	/**
+ 	 * <p>Adds a new sub-series of <b>univariate</b> observations to compute the PDFs from.
+ 	 * Can only be called on this multivariate calculator if the dimensions
+ 	 * of both source and destination are 1, otherwise throws an exception</p>
+ 	 * 
+ 	 * {@inheritDoc}
+ 	 * 
+ 	 * @param source univariate observations for the source variable
+ 	 * @param destination univariate observations for the destination variable
+ 	 * @throws Exception if initialised dimensions were not 1
+ 	 * @see {@link ChannelCalculator#addObservations(double[], double[], int, int)}
+ 	 */
+ 	@Override
+ 	public void addObservations(double[] source, double[] destination,
+ 			int startTime, int numTimeSteps) throws Exception {
+ 		if ((sourceDimensions != 1) || (destDimensions != 1)) {
+ 			throw new Exception("Cannot call the univariate addObservations if you " +
+ 					"have initialised with dimension > 1 for either source or destination");
+ 		}
+ 		super.addObservations(source, destination, startTime, numTimeSteps);
+ 	}
+ 	
+ 	/* (non-Javadoc)
+ 	 * @see infodynamics.measures.continuous.ChannelCalculatorMultiVariate#addObservations(double[][], double[][], int, int)
+ 	 */
+ 	@Override
+ 	public void addObservations(double[][] source, double[][] destination,
+ 			int startTime, int numTimeSteps) throws Exception {
+ 		if (source.length != destination.length) {
+ 			throw new Exception(String.format("Source and destination lengths (%d and %d) must match!",
+ 					source.length, destination.length));
+ 		}
+ 		if ((sourceDimensions == 1) && (destDimensions == 1)) {
+ 			// We'll be using the superclass for the computation
+ 			super.addObservations(MatrixUtils.selectColumn(source, 0),
+ 					MatrixUtils.selectColumn(destination, 0),
+ 					startTime, numTimeSteps);
+ 			return;
+ 		}
+ 		if (source.length < startTime + numTimeSteps) {
+ 			// There are not enough observations given the arguments here
+ 			throw new Exception("Not enough observations to set here given startTime and numTimeSteps parameters");
+ 		}
+ 		addObservations(MatrixUtils.selectRows(source, startTime, numTimeSteps),
+ 					    MatrixUtils.selectRows(destination, startTime, numTimeSteps));
+ 	}
+ 
+ 	/**
+ 	 * <p>Adds a new sub-series of <b>univariate</b> observations to compute the PDFs from.
+ 	 * Can only be called on this multivariate calculator if the dimensions
+ 	 * of both source and destination are 1, otherwise throws an exception</p>
+ 	 * 
+ 	 * {@inheritDoc}
+ 	 * 
+ 	 * @param source univariate observations for the source variable
+ 	 * @param destination univariate observations for the destination variable
+ 	 * @throws Exception if initialised dimensions were not 1
+ 	 * @see {@link ChannelCalculator#setObservations(double[], double[], boolean[], boolean[])}
+ 	 */
+ 	public void setObservations(double[] source, double[] destination,
+ 			boolean[] sourceValid, boolean[] destValid) throws Exception {
+ 		
+ 		if ((sourceDimensions != 1) || (destDimensions != 1)) {
+ 			throw new Exception("Cannot call the univariate setObservations if you " +
+ 					"have initialised with dimension > 1 for either source or destination");
+ 		}
+ 		super.setObservations(source, destination, sourceValid, destValid);
+ 	}
+ 	
+ 	/* (non-Javadoc)
+ 	 * @see infodynamics.measures.continuous.ChannelCalculatorMultiVariate#setObservations(double[][], double[][], boolean[], boolean[])
+ 	 */
+ 	@Override
+ 	public void setObservations(double[][] source, double[][] destination,
+ 			boolean[] sourceValid, boolean[] destValid) throws Exception {
+ 		
+ 		if ((sourceDimensions == 1) && (destDimensions == 1)) {
+ 			// We'll be using the superclass for the computation
+ 			super.setObservations(MatrixUtils.selectColumn(source, 0),
+ 					MatrixUtils.selectColumn(destination, 0),
+ 					sourceValid, destValid);
+ 			return;
+ 		}
+ 
+ 		Vector<int[]> startAndEndTimePairs = computeStartAndEndTimePairs(sourceValid, destValid);
+ 		
+ 		// We've found the set of start and end times for this pair
+ 		startAddObservations();
+ 		for (int[] timePair : startAndEndTimePairs) {
+ 			int startTime = timePair[0];
+ 			int endTime = timePair[1];
+ 			addObservations(source, destination, startTime, endTime - startTime + 1);
+ 		}
+ 		finaliseAddObservations();
+ 	}
+ 
+ 	/* (non-Javadoc)
+ 	 * @see infodynamics.measures.continuous.ChannelCalculatorMultiVariate#setObservations(double[][], double[][], boolean[][], boolean[][])
+ 	 */
+ 	@Override
+ 	public void setObservations(double[][] source, double[][] destination,
+ 			boolean[][] sourceValid, boolean[][] destValid) throws Exception {
+ 		
+ 		if ((sourceDimensions == 1) && (destDimensions == 1)) {
+ 			// We'll be using the superclass for the computation
+ 			super.setObservations(MatrixUtils.selectColumn(source, 0),
+ 					MatrixUtils.selectColumn(destination, 0),
+ 					MatrixUtils.selectColumn(sourceValid, 0),
+ 					MatrixUtils.selectColumn(destValid, 0));
+ 			return;
+ 		}
+ 		boolean[] jointSourceValid = MatrixUtils.andRows(sourceValid);
+ 		boolean[] jointDestValid = MatrixUtils.andRows(destValid);
+ 		setObservations(source, destination, jointSourceValid, jointDestValid);
+ 	}
+ 
+ 	@Override
+ 	public void finaliseAddObservations() throws Exception {
+ 		if ((sourceDimensions == 1) && (destDimensions == 1)) {
+ 			// We'll be using the superclass for the computation
+ 			super.finaliseAddObservations();
+ 			return;
+ 		}
+ 		// Otherwise finalise ourselves:
+ 		condMiCalc.finaliseAddObservations();
+ 	}
+ 
   /**
    * <p>Computes the local values of the transfer entropy
    *  for each valid observation in the supplied univariate observations

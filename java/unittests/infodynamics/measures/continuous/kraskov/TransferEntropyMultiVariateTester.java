@@ -20,6 +20,7 @@ package infodynamics.measures.continuous.kraskov;
 
 import infodynamics.utils.ArrayFileReader;
 import infodynamics.utils.MatrixUtils;
+import infodynamics.utils.RandomGenerator;
 
 public class TransferEntropyMultiVariateTester
 	extends infodynamics.measures.continuous.TransferEntropyMultiVariateAbstractTester {
@@ -440,5 +441,41 @@ public class TransferEntropyMultiVariateTester
 						0, 501),
 				kNNs, expectedValue);
 		NUM_THREADS_TO_USE = NUM_THREADS_TO_USE_DEFAULT;
+	}
+	
+	public void testMulitvariateAddObservations() throws Exception {
+		// Just make sure the code runs first (we had an execution error earlier)
+		TransferEntropyCalculatorMultiVariateKraskov teCalc = 
+				new TransferEntropyCalculatorMultiVariateKraskov();
+		teCalc.setProperty("k", "4");
+		teCalc.initialise(1,3,3);
+		teCalc.startAddObservations();
+		RandomGenerator rg = new RandomGenerator();
+		for (int i = 0; i < 5; i++) {
+			double[][] source = rg.generateNormalData(100, 3, 0, 1);
+			double[][] target = rg.generateNormalData(100, 3, 0, 1);
+			teCalc.addObservations(source, target);
+		}
+		teCalc.finaliseAddObservations();
+		teCalc.computeAverageLocalOfObservations();
+		
+		// Now make sure the ensemble method returns the same value as for
+		//  a single time series
+		teCalc.initialise(1,3,3);
+		double[][] source = rg.generateNormalData(100, 3, 0, 1);
+		double[][] target = rg.generateNormalData(100, 3, 0, 1);
+		teCalc.setObservations(source, target);
+		int numObervationsSingle = teCalc.getNumObservations();
+		double resultSingle = teCalc.computeAverageLocalOfObservations();
+		teCalc.initialise(1,3,3);
+		teCalc.startAddObservations();
+		teCalc.addObservations(source, target, 0, 50); // Give first 50 time steps
+		teCalc.addObservations(source, target, 49, 51); // Give next 50 with 
+			// one previous as the embedded history
+		teCalc.finaliseAddObservations();
+		int numObervationsEnsemble = teCalc.getNumObservations();
+		double resultEnsemble = teCalc.computeAverageLocalOfObservations();
+		assertEquals(numObervationsSingle, numObervationsEnsemble);
+		assertEquals(resultSingle, resultEnsemble, 0.00001);
 	}
 }
