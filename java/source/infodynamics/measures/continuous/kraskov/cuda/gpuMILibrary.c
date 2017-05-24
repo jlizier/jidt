@@ -157,7 +157,7 @@ jidt_error_t MIKraskovByPointsetChunks(int signalLength, float *source, int dimx
   }
 
   nx = (int *) malloc(signalLength * sizeof(int));
-  if (!cudaFindRSAll(nx, source, source, radii, thelier, nchunks, dimx, signalLength, useMaxNorm)) {
+  if (!cudaFindRSAll(nx, pointset, pointset, radii, thelier, nchunks, dimx, signalLength, useMaxNorm)) {
     device_reset();
     return JIDT_ERROR;
   }
@@ -167,7 +167,7 @@ jidt_error_t MIKraskovByPointsetChunks(int signalLength, float *source, int dimx
   }
 
   ny = (int *) malloc(signalLength * sizeof(int));
-  if (!cudaFindRSAll(ny, dest, dest, radii, thelier, nchunks, dimy, signalLength, useMaxNorm)) {
+  if (!cudaFindRSAll(ny, pointset + signalLength*dimx, pointset+signalLength*dimx, radii, thelier, nchunks, dimy, signalLength, useMaxNorm)) {
     device_reset();
     return JIDT_ERROR;
   }
