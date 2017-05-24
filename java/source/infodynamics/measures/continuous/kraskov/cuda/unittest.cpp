@@ -992,7 +992,7 @@ CASE("Digamma sum test with more data (but still one GPU block)")
   
 },
 
-CASE("Digamma sum test with multiple GPU blocks")
+CASE("Digamma sum test in single chunk with multiple GPU blocks")
 {
   int N = 5000;
   int *nx = (int *) malloc(N * sizeof(int));
@@ -1066,6 +1066,58 @@ CASE("Test GPU parallel digamma calculation (no sum) in multiple blocks")
 
   free(nx); free(ny); free(gpu_digammas);
 },
+
+CASE("Digamma sum with multiple chunks and one block")
+{
+  int nx[6] = {4, 6, 8, 10, 12, 14};
+  int ny[6] = {3, 5, 7,  9, 11, 13};
+  int trialLength = 3;
+  int nchunks = 2;
+
+  float *gpu_sumDiGammas = (float *) malloc(trialLength * nchunks * sizeof(float));
+  int err = computeSumDigammasChunks(gpu_sumDiGammas, nx, ny, trialLength, nchunks);
+  EXPECT(err == 1);
+
+  for (int i = 0; i < nchunks; i++) {
+    float cpu_sumDigammas = 0;
+    for (int j = 0; j < trialLength; j++) {
+      cpu_sumDigammas += cpuDigamma(nx[trialLength*i + j] + 1)
+                          + cpuDigamma(ny[trialLength*i + j] + 1);
+    }
+    EXPECT(gpu_sumDiGammas[i] == approx(cpu_sumDigammas));
+  }
+
+  free(gpu_sumDiGammas);
+},
+
+CASE("Digamma sum with multiple chunks and multiple blocks per chunk")
+{
+  int trialLength = 2000;
+  int nchunks = 3;
+  int signalLength = trialLength * nchunks;
+  int *nx = (int *) malloc(signalLength * sizeof(int));
+  int *ny = (int *) malloc(signalLength * sizeof(int));
+
+  for (int i = 0; i < signalLength; i++) {
+    nx[i] = rand() % 300;
+    ny[i] = rand() % 300;
+  }
+
+  float *gpu_sumDiGammas = (float *) malloc(nchunks * sizeof(float));
+  int err = computeSumDigammasChunks(gpu_sumDiGammas, nx, ny, trialLength, nchunks);
+  EXPECT(err == 1);
+
+  for (int i = 0; i < nchunks; i++) {
+    float cpu_sumDigammas = 0;
+    for (int j = 0; j < trialLength; j++) {
+      cpu_sumDigammas += cpuDigamma(nx[trialLength*i + j] + 1)
+                         + cpuDigamma(ny[trialLength*i + j] + 1);
+    }
+    EXPECT(gpu_sumDiGammas[i] == approx(cpu_sumDigammas));
+  }
+  free(nx); free(ny); free(gpu_sumDiGammas);
+},
+
 };
 
 int main(int argc, char *argv[]){
