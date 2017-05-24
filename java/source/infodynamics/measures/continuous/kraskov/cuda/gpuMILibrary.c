@@ -4,6 +4,7 @@
 #include "gpuMILibrary.h"
 #include "gpuKnnLibrary.h"
 #include "digamma.h"
+#include "ctimer.h"
 
 
 /**
@@ -35,6 +36,8 @@ jidt_error_t MIKraskov_C(int N, float *source, int dimx, float *dest, int dimy,
 jidt_error_t MIKraskovWithReorderings(int N, float *source, int dimx, float *dest, int dimy,
     int k, int thelier, int nb_surrogates, int returnLocals, int useMaxNorm,
     int isAlgorithm1, float *result, int reorderingsGiven, int **reorderings) {
+
+  CPerfTimer pt = startTimer("Rearranging pointset");
 
   // Allocate more space if surrogates are requested
   int nchunks = nb_surrogates + 1;
@@ -85,6 +88,7 @@ jidt_error_t MIKraskovWithReorderings(int N, float *source, int dimx, float *des
       }
     }
   }
+  stopTimer(pt);
 
   jidt_error_t err =  MIKraskovByPointsetChunks(N*nchunks, source, dimx,
                                                 dest, dimy, k, thelier,
@@ -110,9 +114,16 @@ jidt_error_t MIKraskovByPointsetChunks(int signalLength, float *source, int dimx
   // 1. Re-arrange data and generate shufflings
   // ======================
 
+  {
+  CPerfTimer pt = startTimer("GPU warmup");
+  gpuWarmUp();
+  stopTimer(pt);
+  }
 
   // 2. Find nearest neighbours
   // ======================
+  {
+  CPerfTimer pt = startTimer("kNN full calculation");
   indexes = (int *) malloc(signalLength * k * sizeof(int));
   distances = (float *) malloc(signalLength * k * sizeof(float));
   if (!cudaFindKnn(indexes, distances, pointset, pointset, k,
@@ -120,6 +131,9 @@ jidt_error_t MIKraskovByPointsetChunks(int signalLength, float *source, int dimx
     device_reset();
     return JIDT_ERROR;
   }
+  stopTimer(pt);
+  }
+
 
 
   // 3. Find distance R from each point to its k-th neighbour in joint space
@@ -136,6 +150,8 @@ jidt_error_t MIKraskovByPointsetChunks(int signalLength, float *source, int dimx
 
   // If we're using algorithm 2 then we need the radius in the marginal space,
   // not the joint (as calculated above)
+  {
+  CPerfTimer pt = startTimer("RS full calculation");
   if (!isAlgorithm1) {
     findRadiiAlgorithm2(radii, source, indexes, k, dimx, signalLength);
   }
@@ -156,6 +172,8 @@ jidt_error_t MIKraskovByPointsetChunks(int signalLength, float *source, int dimx
     return JIDT_ERROR;
   }
 
+  stopTimer(pt);
+  }
 
   // 6. Set locals, surrogates or digammas for return
   // ======================
@@ -163,6 +181,8 @@ jidt_error_t MIKraskovByPointsetChunks(int signalLength, float *source, int dimx
   // Check this for digamma parallelisation
   // https://devtalk.nvidia.com/default/topic/516516/kernel-launch-failure-in-matlab/?offset=2
 
+  {
+  CPerfTimer pt = startTimer("Digammas");
   if (nchunks > 1) {
     float digammaK = cpuDigamma(k);
     float digammaN = cpuDigamma(trialLength);
@@ -195,6 +215,8 @@ jidt_error_t MIKraskovByPointsetChunks(int signalLength, float *source, int dimx
     result[1] = sumNx;
     result[2] = sumNy;
 
+  }
+  stopTimer(pt);
   }
 
   err = JIDT_SUCCESS;
