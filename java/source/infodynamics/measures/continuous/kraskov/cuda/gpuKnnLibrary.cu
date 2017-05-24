@@ -1,6 +1,7 @@
 #include "gpuKnnBF_kernel.cu"
 #include <stdio.h>
 #include "helperfunctions.cu"
+#include "ctimer.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,6 +17,7 @@ int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_pointset,
   unsigned int mem_bfcl_outputsignaldistances= kth * signallength * sizeof(float);
   unsigned int mem_bfcl_outputsignalindexes = kth * signallength * sizeof(int);
 
+  CPerfTimer pt1 = startTimer("kNN allocate and upload");
   checkCudaErrors( cudaMalloc( (void**) &(d_bf_query), meminputsignalquerypointset));
   checkCudaErrors( cudaMalloc( (void**) &(d_bf_pointset), meminputsignalquerypointset));
   //GPU output
@@ -36,6 +38,8 @@ int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_pointset,
     fprintf(stderr,"%s",cudaGetErrorString(error));
     return 0;
   }
+  stopTimer(pt1);
+  CPerfTimer pt2 = startTimer("kNN kernel");
   // Kernel parameters
   dim3 threads(1,1,1);
   dim3 grid(1,1,1);
@@ -60,6 +64,8 @@ int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_pointset,
       thelier, normFunction);
 
   checkCudaErrors( cudaDeviceSynchronize() );
+  stopTimer(pt2);
+  CPerfTimer pt3 = startTimer("kNN download and free");
 
   //Download result
   checkCudaErrors( cudaMemcpy( h_bf_distances, d_bf_distances, mem_bfcl_outputsignaldistances, cudaMemcpyDeviceToHost) );
@@ -76,6 +82,7 @@ int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_pointset,
   checkCudaErrors(cudaFree(d_bf_distances));
   checkCudaErrors(cudaFree(d_bf_indexes));
   cudaFree(normFunction);
+  stopTimer(pt3);
   // cudaDeviceReset();
   if(error!=cudaSuccess){
     fprintf(stderr,"%s",cudaGetErrorString(error));
@@ -117,8 +124,9 @@ int cudaFindRSAll(int* h_bf_npointsrange, float* h_pointset, float* h_query,
 
   unsigned int meminputsignalquerypointset= pointdim * signallength * sizeof(float);
   unsigned int mem_bfcl_outputsignalnpointsrange= signallength * sizeof(int);
-      unsigned int mem_bfcl_inputvecradius = signallength * sizeof(float);
+  unsigned int mem_bfcl_inputvecradius = signallength * sizeof(float);
 
+  CPerfTimer pt1 = startTimer("RS allocate and upload");
   checkCudaErrors( cudaMalloc( (void**) &(d_bf_query), meminputsignalquerypointset));
   checkCudaErrors( cudaMalloc( (void**) &(d_bf_pointset), meminputsignalquerypointset));
   checkCudaErrors( cudaMalloc( (void**) &(d_bf_npointsrange), mem_bfcl_outputsignalnpointsrange ));
@@ -139,7 +147,8 @@ int cudaFindRSAll(int* h_bf_npointsrange, float* h_pointset, float* h_query,
     fprintf(stderr,"%s",cudaGetErrorString(error));
     return 0;
   }
-
+  stopTimer(pt1);
+  CPerfTimer pt2 = startTimer("RS kernel");
 
   // Kernel parameters
   dim3 threads(1,1,1);
@@ -164,6 +173,8 @@ int cudaFindRSAll(int* h_bf_npointsrange, float* h_pointset, float* h_query,
           triallength, signallength, thelier, d_bf_vecradius, normFunction);
 
   checkCudaErrors(cudaDeviceSynchronize());
+  stopTimer(pt2);
+  CPerfTimer pt3 = startTimer("RS download and free");
 
   checkCudaErrors( cudaMemcpy( h_bf_npointsrange, d_bf_npointsrange,mem_bfcl_outputsignalnpointsrange, cudaMemcpyDeviceToHost) );
 
@@ -184,6 +195,7 @@ int cudaFindRSAll(int* h_bf_npointsrange, float* h_pointset, float* h_query,
     fprintf(stderr,"%s",cudaGetErrorString(error));
     return 0;
   }
+  stopTimer(pt3);
   
   return 1;
 }
