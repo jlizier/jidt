@@ -341,6 +341,29 @@ int parallelDigammas(float *digammas, int *nx, int *ny, int signallength) {
 }
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+int computeSumDigammasChunks(float *sumDiGammas, int *nx, int *ny,
+    int triallength, int nchunks) {
+
+  int signallength = triallength * nchunks;
+  float digammas[signallength];
+  int err = parallelDigammas(digammas, nx, ny, signallength);
+
+  for (int c = 0; c < nchunks; c++) {
+    float sum = 0;
+    for (int i = 0; i < triallength; i++) {
+      sum += digammas[triallength*c + i];
+    }
+    sumDiGammas[c] = sum;
+  }
+
+  return 1;
+}
+#ifdef __cplusplus
+}
+#endif
 
 #ifdef __cplusplus
 extern "C" {
