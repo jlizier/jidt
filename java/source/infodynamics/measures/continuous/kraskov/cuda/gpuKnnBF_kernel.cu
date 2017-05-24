@@ -361,6 +361,23 @@ __global__ void reduce1(int *g_nx, int *g_ny, float *g_odata, unsigned int N) {
 }
 
 
+__global__ void gpuDigammas(float *g_digammas, int *g_nx, int *g_ny, int signallength) {
+  const unsigned int i = threadIdx.x + blockDim.x*blockIdx.x;
+
+  if(i < signallength){
+    // Fetch n and put it in thread memory
+    double dgX = (double) g_nx[i];
+    double dgY = (double) g_ny[i];
+
+    // In-place digamma calculation
+    digammaXp1(&dgX);
+    digammaXp1(&dgY);
+
+    // Copy back to global memory
+    g_digammas[i] = (float) (dgX + dgY);
+  }
+  return;
+}
 
 
 
