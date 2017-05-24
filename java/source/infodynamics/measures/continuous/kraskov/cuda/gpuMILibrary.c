@@ -188,12 +188,11 @@ jidt_error_t MIKraskovByPointsetChunks(int signalLength, float *source, int dimx
   if (nchunks > 1) {
     float digammaK = cpuDigamma(k);
     float digammaN = cpuDigamma(trialLength);
+    float sumDiGammas[signalLength];
+    computeSumDigammasChunks(sumDiGammas, nx, ny, trialLength, nchunks);
+
     for (int ii = 0; ii < nchunks; ii++) {
-      float sumDiGammas = 0;
-      for (int i = 0; i < trialLength; i++) {
-        sumDiGammas += cpuDigamma(nx[trialLength*ii + i] + 1) + cpuDigamma(ny[trialLength*ii + i] + 1);
-      }
-      result[ii] = digammaK + digammaN - sumDiGammas/((float) trialLength);
+      result[ii] = digammaK + digammaN - sumDiGammas[ii]/((float) trialLength);
     }
 
   } else if (returnLocals) {
