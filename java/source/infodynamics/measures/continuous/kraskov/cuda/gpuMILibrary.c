@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "gpuMILibrary.h"
 #include "gpuKnnLibrary.h"
@@ -44,20 +45,23 @@ jidt_error_t MIKraskovWithReorderings(int N, float *source, int dimx, float *des
   int dims = dimx + dimy;
   float *pointset = (float *) malloc(N * dims * nchunks * sizeof(float));
 
-  // If no surrogates requested, copy source and dest as usual
-  for (int i = 0; i < N; i++) {
-    for (int j = 0; j < dimx; j++) {
-      register int idx = N*j + i;
-      pointset[idx] = source[idx];
-    }
-
-    for (int j = 0; j < dimy; j++) {
-      register int idx = N*j + i;
-      pointset[nchunks*N*dimx + idx] = dest[idx];
-    }
+  if (nb_surrogates == 0) {
+    memcpy(                 pointset, source, N*dimx*sizeof(float));
+    memcpy(pointset + nchunks*N*dimx,   dest, N*dimy*sizeof(float));
   }
 
   if (nb_surrogates > 0) {
+
+     for (int i = 0; i < N; i++) {
+       for (int j = 0; j < dimx; j++) {
+         pointset[j*N*nchunks+i] = source[N*j+i];
+       }
+
+       for (int j = 0; j < dimy; j++) {
+         pointset[nchunks*N*dimx + j*N*nchunks + i] = dest[N*j+i];
+       }
+     }
+
     // If surrogates requested, copy permutations as well
     int *order;
     int perm[N];
@@ -77,13 +81,11 @@ jidt_error_t MIKraskovWithReorderings(int N, float *source, int dimx, float *des
 
       for (int i = 0; i < N; i++) {
         for (int j = 0; j < dimx; j++) {
-          register int idx = N*j + i;
-          pointset[(s+1)*N*dimx + idx] = source[N*j + order[i]];
+          pointset[(s+1)*N + N*j*nchunks + i] = source[N*j + order[i]];
         }
 
         for (int j = 0; j < dimy; j++) {
-          register int idx = N*j + i;
-          pointset[nchunks*N*dimx + (s+1)*N*dimy + idx] = dest[N*j + order[i]];
+          pointset[nchunks*N*dimx + (s+1)*N + N*j*nchunks + i] = dest[N*j + i];
         }
       }
     }
