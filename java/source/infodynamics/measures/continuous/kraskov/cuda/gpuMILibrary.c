@@ -117,7 +117,7 @@ jidt_error_t MIKraskovByPointsetChunks(int signalLength, float *source, int dimx
   // ======================
 
   {
-  CPerfTimer pt = startTimer("GPU warmup");
+  CPerfTimer pt = startTimer("GPU_warmup");
   gpuWarmUp();
   stopTimer(pt);
   }
@@ -125,7 +125,7 @@ jidt_error_t MIKraskovByPointsetChunks(int signalLength, float *source, int dimx
   // 2. Find nearest neighbours
   // ======================
   {
-  CPerfTimer pt = startTimer("kNN full calculation");
+  CPerfTimer pt = startTimer("kNN_full");
   indexes = (int *) malloc(signalLength * k * sizeof(int));
   distances = (float *) malloc(signalLength * k * sizeof(float));
   if (!cudaFindKnn(indexes, distances, pointset, pointset, k,
@@ -153,7 +153,7 @@ jidt_error_t MIKraskovByPointsetChunks(int signalLength, float *source, int dimx
   // If we're using algorithm 2 then we need the radius in the marginal space,
   // not the joint (as calculated above)
   {
-  CPerfTimer pt = startTimer("RS full calculation");
+  CPerfTimer pt = startTimer("RS_full");
   if (!isAlgorithm1) {
     findRadiiAlgorithm2(radii, source, indexes, k, dimx, signalLength);
   }
@@ -184,7 +184,7 @@ jidt_error_t MIKraskovByPointsetChunks(int signalLength, float *source, int dimx
   // https://devtalk.nvidia.com/default/topic/516516/kernel-launch-failure-in-matlab/?offset=2
 
   {
-  CPerfTimer pt = startTimer("Digammas");
+  CPerfTimer pt = startTimer("Digammas_full");
   if (nchunks > 1) {
     float digammaK = cpuDigamma(k);
     float digammaN = cpuDigamma(trialLength);

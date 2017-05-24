@@ -17,7 +17,7 @@ int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_pointset,
   unsigned int mem_bfcl_outputsignaldistances= kth * signallength * sizeof(float);
   unsigned int mem_bfcl_outputsignalindexes = kth * signallength * sizeof(int);
 
-  CPerfTimer pt1 = startTimer("kNN allocate and upload");
+  CPerfTimer pt1 = startTimer("kNN_upload");
   checkCudaErrors( cudaMalloc( (void**) &(d_bf_query), meminputsignalquerypointset));
   checkCudaErrors( cudaMalloc( (void**) &(d_bf_pointset), meminputsignalquerypointset));
   //GPU output
@@ -39,7 +39,7 @@ int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_pointset,
     return 0;
   }
   stopTimer(pt1);
-  CPerfTimer pt2 = startTimer("kNN kernel");
+  CPerfTimer pt2 = startTimer("kNN_kernel");
   // Kernel parameters
   dim3 threads(1,1,1);
   dim3 grid(1,1,1);
@@ -65,7 +65,7 @@ int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_pointset,
 
   checkCudaErrors( cudaDeviceSynchronize() );
   stopTimer(pt2);
-  CPerfTimer pt3 = startTimer("kNN download and free");
+  CPerfTimer pt3 = startTimer("kNN_download");
 
   //Download result
   checkCudaErrors( cudaMemcpy( h_bf_distances, d_bf_distances, mem_bfcl_outputsignaldistances, cudaMemcpyDeviceToHost) );
@@ -126,7 +126,7 @@ int cudaFindRSAll(int* h_bf_npointsrange, float* h_pointset, float* h_query,
   unsigned int mem_bfcl_outputsignalnpointsrange= signallength * sizeof(int);
   unsigned int mem_bfcl_inputvecradius = signallength * sizeof(float);
 
-  CPerfTimer pt1 = startTimer("RS allocate and upload");
+  CPerfTimer pt1 = startTimer("RS_upload");
   checkCudaErrors( cudaMalloc( (void**) &(d_bf_query), meminputsignalquerypointset));
   checkCudaErrors( cudaMalloc( (void**) &(d_bf_pointset), meminputsignalquerypointset));
   checkCudaErrors( cudaMalloc( (void**) &(d_bf_npointsrange), mem_bfcl_outputsignalnpointsrange ));
@@ -148,7 +148,7 @@ int cudaFindRSAll(int* h_bf_npointsrange, float* h_pointset, float* h_query,
     return 0;
   }
   stopTimer(pt1);
-  CPerfTimer pt2 = startTimer("RS kernel");
+  CPerfTimer pt2 = startTimer("RS_kernel");
 
   // Kernel parameters
   dim3 threads(1,1,1);
@@ -174,7 +174,7 @@ int cudaFindRSAll(int* h_bf_npointsrange, float* h_pointset, float* h_query,
 
   checkCudaErrors(cudaDeviceSynchronize());
   stopTimer(pt2);
-  CPerfTimer pt3 = startTimer("RS download and free");
+  CPerfTimer pt3 = startTimer("RS_download");
 
   checkCudaErrors( cudaMemcpy( h_bf_npointsrange, d_bf_npointsrange,mem_bfcl_outputsignalnpointsrange, cudaMemcpyDeviceToHost) );
 
@@ -259,6 +259,8 @@ int computeSumDigammas(float *sumDiGammas, int *nx, int *ny, unsigned int N) {
   n_threads.x = threads_per_block;
   int memkernel = sizeof(int)*n_threads.x;
 
+  {
+  CPerfTimer pt = startTimer("Digammas_upload");
   partialSumDiGammas = (float *) malloc(n_blocks.x * sizeof(float));
 
   checkCudaErrors( cudaMalloc((void **) &d_nx, N * sizeof(int)) );
@@ -267,13 +269,19 @@ int computeSumDigammas(float *sumDiGammas, int *nx, int *ny, unsigned int N) {
 
   checkCudaErrors( cudaMemcpy(d_nx, nx, N*sizeof(int), cudaMemcpyHostToDevice) );
   checkCudaErrors( cudaMemcpy(d_ny, ny, N*sizeof(int), cudaMemcpyHostToDevice) );
+  stopTimer(pt);
+  }
 
-  // printf("blocks = %i, threads = %i\n", n_blocks.x, n_threads.x);
-
+  {
+  CPerfTimer pt = startTimer("Digammas_kernel");
   // reduce6<<<n_blocks, n_threads>>>(d_nx, d_ny, d_sumDiGammas, N);
   reduce1<<<n_blocks, n_threads, memkernel>>>(d_nx, d_ny, d_sumDiGammas, N);
 
   checkCudaErrors( cudaDeviceSynchronize() );
+  stopTimer(pt);
+  }
+
+  CPerfTimer pt = startTimer("Digammas_download");
 
   checkCudaErrors( cudaMemcpy(partialSumDiGammas, d_sumDiGammas, n_blocks.x * sizeof(float), cudaMemcpyDeviceToHost) );
 
@@ -290,6 +298,7 @@ int computeSumDigammas(float *sumDiGammas, int *nx, int *ny, unsigned int N) {
   cudaFree(d_nx);
   cudaFree(d_ny);
   cudaFree(d_sumDiGammas);
+  stopTimer(pt);
 
   return 1;
 
@@ -313,20 +322,30 @@ int parallelDigammas(float *digammas, int *nx, int *ny, int signallength) {
   threads.x = 512;
   grid.x = (signallength-1)/threads.x + 1;
 
+  {
+  CPerfTimer pt = startTimer("Digammas_sum");
   checkCudaErrors( cudaMalloc((void **) &d_nx, signallength * sizeof(int)) );
   checkCudaErrors( cudaMalloc((void **) &d_ny, signallength * sizeof(int)) );
   checkCudaErrors( cudaMalloc((void **) &d_digammas, signallength * sizeof(float)) );
 
   checkCudaErrors( cudaMemcpy(d_nx, nx, signallength*sizeof(int), cudaMemcpyHostToDevice) );
   checkCudaErrors( cudaMemcpy(d_ny, ny, signallength*sizeof(int), cudaMemcpyHostToDevice) );
+  stopTimer(pt);
+  }
 
   // printf("blocks = %i, threads = %i\n", n_blocks.x, n_threads.x);
 
+  {
+  CPerfTimer pt = startTimer("Digammas_kernel");
   // Launch kernel
   gpuDigammas<<<grid.x, threads.x>>>(d_digammas, d_nx, d_ny, signallength);
 
   checkCudaErrors( cudaDeviceSynchronize() );
+  stopTimer(pt);
+  }
 
+  {
+  CPerfTimer pt = startTimer("Digammas_sum");
   checkCudaErrors( cudaMemcpy(digammas, d_digammas, signallength * sizeof(float), cudaMemcpyDeviceToHost) );
 
   checkCudaErrors( cudaDeviceSynchronize() );
@@ -334,6 +353,8 @@ int parallelDigammas(float *digammas, int *nx, int *ny, int signallength) {
   checkCudaErrors( cudaFree(d_nx) );
   checkCudaErrors( cudaFree(d_ny) );
   checkCudaErrors( cudaFree(d_digammas) );
+  stopTimer(pt);
+  }
 
   return 1;
 }
@@ -351,6 +372,7 @@ int computeSumDigammasChunks(float *sumDiGammas, int *nx, int *ny,
   float digammas[signallength];
   int err = parallelDigammas(digammas, nx, ny, signallength);
 
+  CPerfTimer pt = startTimer("Digammas_sum");
   for (int c = 0; c < nchunks; c++) {
     float sum = 0;
     for (int i = 0; i < triallength; i++) {
@@ -358,6 +380,7 @@ int computeSumDigammasChunks(float *sumDiGammas, int *nx, int *ny,
     }
     sumDiGammas[c] = sum;
   }
+  stopTimer(pt);
 
   return 1;
 }
