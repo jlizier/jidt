@@ -91,13 +91,8 @@ int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_pointset,
   
   return 1;
 }
-#ifdef __cplusplus
-}
-#endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
 int cudaFindKnnSetGPU(int* h_bf_indexes, float* h_bf_distances,
     float* h_pointset, float* h_query, int kth, int thelier, int nchunks,
     int pointdim, int signallength, unsigned int useMaxNorm, int deviceid) {
@@ -105,16 +100,10 @@ int cudaFindKnnSetGPU(int* h_bf_indexes, float* h_bf_distances,
   return cudaFindKnn(h_bf_indexes, h_bf_distances, h_pointset, h_query,
       kth, thelier, nchunks, pointdim, signallength, useMaxNorm);
 }
-#ifdef __cplusplus
-}
-#endif
 
 /*
  * Range search being radius a vector of length number points in queryset/pointset
  */
-#ifdef __cplusplus
-extern "C" {
-#endif
 int cudaFindRSAll(int* h_bf_npointsrange, float* h_pointset, float* h_query,
     float* h_vecradius, int thelier, int nchunks, int pointdim,
     int signallength, unsigned int useMaxNorm) {
@@ -199,13 +188,7 @@ int cudaFindRSAll(int* h_bf_npointsrange, float* h_pointset, float* h_query,
   
   return 1;
 }
-#ifdef __cplusplus
-}
-#endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 int cudaFindRSAllSetGPU(int* h_bf_npointsrange, float* h_pointset,
     float* h_query, float* h_vecradius, int thelier, int nchunks,
     int pointdim, int signallength, unsigned int useMaxNorm, int deviceid) {
@@ -213,14 +196,8 @@ int cudaFindRSAllSetGPU(int* h_bf_npointsrange, float* h_pointset,
   return cudaFindRSAll(h_bf_npointsrange, h_pointset, h_query, h_vecradius,
       thelier, nchunks, pointdim, signallength, useMaxNorm);
 }
-#ifdef __cplusplus
-}
-#endif
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 int findRadiiAlgorithm2(float *radii, const float *data, const int *indexes,
     unsigned int k, unsigned int dim, unsigned int N) {
 
@@ -239,15 +216,9 @@ int findRadiiAlgorithm2(float *radii, const float *data, const int *indexes,
   return 1;
 
 }
-#ifdef __cplusplus
-}
-#endif
 
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 int computeSumDigammas(float *sumDiGammas, int *nx, int *ny, unsigned int N) {
 
   int *d_nx, *d_ny;
@@ -303,14 +274,8 @@ int computeSumDigammas(float *sumDiGammas, int *nx, int *ny, unsigned int N) {
   return 1;
 
 }
-#ifdef __cplusplus
-}
-#endif
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 int parallelDigammas(float *digammas, int *nx, int *ny, int signallength) {
 
   int *d_nx, *d_ny;
@@ -358,13 +323,7 @@ int parallelDigammas(float *digammas, int *nx, int *ny, int signallength) {
 
   return 1;
 }
-#ifdef __cplusplus
-}
-#endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 int computeSumDigammasChunks(float *sumDiGammas, int *nx, int *ny,
     int triallength, int nchunks) {
 
@@ -384,23 +343,11 @@ int computeSumDigammasChunks(float *sumDiGammas, int *nx, int *ny,
 
   return 1;
 }
-#ifdef __cplusplus
-}
-#endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 void device_reset(void) {
   cudaDeviceReset();
 }
-#ifdef __cplusplus
-}
-#endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 void gpuWarmUp(void) {
   cudaSetDevice(0);
 }
