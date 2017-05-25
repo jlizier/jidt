@@ -500,6 +500,56 @@ CASE("Smoke test for RS with custom GPU")
 
 },
 
+CASE("Smoke test of random permutation function")
+{
+  int N = 30;
+  int perm[30];
+  for (int i = 0; i < N; i++) {
+    perm[i] = i;
+  }
+  randperm(perm, N);
+
+},
+
+CASE("Statistical test for unbiasedness of random permutation function")
+{
+  // Initialise permutation
+  int N = 3;
+  int perm[3];
+  for (int i = 0; i < N; i++) {
+    perm[i] = i;
+  }
+
+  // Sample a bunch of times and store results in a histogram
+  int nb_samples = 150000;
+  double hist[6] = {0};
+  for (int i = 0; i < nb_samples; i++) {
+    randperm(perm, N);
+    if        ((perm[0] == 0) && (perm[1] == 1) && (perm[2] == 2)){
+      hist[0]++;
+    } else if ((perm[0] == 0) && (perm[1] == 2) && (perm[2] == 1)){
+      hist[1]++;
+    } else if ((perm[0] == 1) && (perm[1] == 0) && (perm[2] == 2)){
+      hist[2]++;
+    } else if ((perm[0] == 1) && (perm[1] == 2) && (perm[2] == 0)){
+      hist[3]++;
+    } else if ((perm[0] == 2) && (perm[1] == 0) && (perm[2] == 1)){
+      hist[4]++;
+    } else if ((perm[0] == 2) && (perm[1] == 1) && (perm[2] == 0)){
+      hist[5]++;
+    } else {
+      std::cout << "This permutation is certainly wrong\n";
+      EXPECT(0);
+    }
+  }
+
+  // Check that all perturbations happen more or less equally often
+  for (int i = 0; i < 6; i++) {
+    EXPECT(hist[i]/((double) nb_samples) == approx(1.0/6.0).epsilon(0.02));
+  }
+
+},
+
 CASE("Smoke test of full MI function")
 {
   int N = 10;
