@@ -20,6 +20,8 @@ jidt_error_t MIKraskovByPointsetChunks(int N, float *source, int dimx,
     float *dest, int dimy, int k, int thelier, int nb_surrogates,
     int returnLocals, int useMaxNorm, int isAlgorithm1, float *result,
     float *pointset);
+
+void randperm(int perm[], int n);
 #ifdef __cplusplus
 }
 #endif
