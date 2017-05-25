@@ -51,7 +51,7 @@ int main(int argc, char *argv[]){
   float result[resultSize];
   stopTimer(pt1);
 
-  pt1 = startTimer("Time for full calculation");
+  pt1 = startTimer("MI_full");
   (void) MIKraskov_C(N, source, dimx, dest, dimy, k, thelier,
       nb_surrogates, returnLocals, useMaxNorm, isAlgorithm1, result);
   stopTimer(pt1);
