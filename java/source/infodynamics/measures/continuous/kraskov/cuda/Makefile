@@ -33,8 +33,8 @@ all:  libKraskov.so
 
 ## Compile device code
 #---------------------
-gpuKnnLibrary.o: gpuKnnLibrary.cu helperfunctions.cu gpuKnnBF_kernel.cu
-	${NVCC} ${NVCCFLAGS} ${INCLUDES} -Xcompiler -fPIC -c gpuKnnLibrary.cu
+gpuKnnLibrary.o: gpuKnnLibrary.c helperfunctions.cu gpuKnnBF_kernel.cu
+	${NVCC} ${NVCCFLAGS} ${INCLUDES} -x cu -Xcompiler -fPIC -c gpuKnnLibrary.c
 
 libgpuKnnLibrary.a: gpuKnnLibrary.o
 	${AR} -r libgpuKnnLibrary.a gpuKnnLibrary.o
