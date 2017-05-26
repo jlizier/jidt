@@ -9,8 +9,8 @@
 # Common binaries and flags. TODO: the architecture flag may not be necessary
 NVCC       ?= nvcc
 GCC        ?= g++
-CCFLAGS    ?= -O3
-NVCCFLAGS  ?= -O3 -arch=sm_30 -D_FORCE_INLINES
+CCFLAGS    ?= -O3 -Wall -Wextra -Wno-unused-parameter
+NVCCFLAGS  ?= -O3 -arch=sm_30 -D_FORCE_INLINES -Xcompiler -Wall
 # NVCCFLAGS  ?= -O3
 
 ifdef DEBUG
