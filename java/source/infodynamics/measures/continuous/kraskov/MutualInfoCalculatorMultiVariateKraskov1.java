@@ -23,7 +23,9 @@ import java.util.PriorityQueue;
 
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.utils.MathsUtils;
+import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.NeighbourNodeData;
+import infodynamics.utils.EuclideanUtils;
 
 /**
  * <p>Computes the differential mutual information of two given multivariate sets of
@@ -80,7 +82,7 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 			// First element in the PQ is the kth NN,
 			//  and epsilon = kthNnData.distance
 			NeighbourNodeData kthNnData = nnPQ.poll();
-			
+
 			// Count the number of points whose x distance is less
 			//  than eps, and whose y distance is less than
 			//  epsilon = kthNnData.distance
@@ -88,7 +90,7 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 							t, kthNnData.distance, dynCorrExclTime);
 			int n_y = nnSearcherDest.countPointsStrictlyWithinR(
 							t, kthNnData.distance, dynCorrExclTime);
-			
+
 			sumNx += n_x;
 			sumNy += n_y;
 			// And take the digammas:
@@ -103,7 +105,7 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 				localMi[t-startTimePoint] = digammaK - digammaNxPlusOne - digammaNyPlusOne + digammaN;
 			}
 		}
-		
+
 		if (debug) {
 			Calendar rightNow2 = Calendar.getInstance();
 			long endTime = rightNow2.getTimeInMillis();
@@ -119,4 +121,5 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 			return new double[] {sumDiGammas, sumNx, sumNy};
 		}
 	}	
+
 }

@@ -461,4 +461,6 @@ public class MutualInfoMultiVariateTester
 				kNNs, expectedFromMILCA_2);
 
 	}
+
 }
+
