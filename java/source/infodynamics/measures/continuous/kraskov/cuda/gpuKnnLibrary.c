@@ -259,7 +259,7 @@ int computeSumDigammas(float *sumDiGammas, int *nx, int *ny, unsigned int N) {
   checkCudaErrors( cudaDeviceSynchronize() );
 
   float tmp = 0;
-  for (int i = 0; i < n_blocks.x; i++) {
+  for (unsigned int i = 0; i < n_blocks.x; i++) {
     // printf("From block %d we got %f\n", i, partialSumDiGammas[i]);
     tmp += partialSumDiGammas[i];
   }

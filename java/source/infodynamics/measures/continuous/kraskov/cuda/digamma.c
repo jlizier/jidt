@@ -33,7 +33,7 @@
  */
 long double cpuDigamma(long double x)
 {
-  int n;
+  unsigned int n;
   /* force into the interval 1..3 */
   if( x < 0.0L )
     return cpuDigamma(1.0L-x)+M_PIl/tanl(M_PIl*(1.0L-x)) ;  /* reflection formula */
