@@ -27,8 +27,7 @@ maxMetricPoints(const float* g_uquery, const float* g_vpoint, int pointdim, int 
   for(int d=0; d<pointdim; d++){
     r_u1 = *(g_uquery+d*signallength);
     r_v1 = *(g_vpoint+d*signallength);
-    r_d1 = r_v1 - r_u1;
-    r_d1 = r_d1 < 0? -r_d1: r_d1;  //abs
+    r_d1 = fabsf(r_v1 - r_u1);
     r_dim= r_dim < r_d1? r_d1: r_dim;
   }
   return r_dim;
