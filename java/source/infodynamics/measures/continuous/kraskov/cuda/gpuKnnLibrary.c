@@ -6,6 +6,37 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+int d_cudaFindKnn(int* d_bf_indexes, float* d_bf_distances, float* d_bf_pointset,
+    float* d_bf_query, int kth, int thelier, int nchunks, int pointdim,
+    int signallength, normFunction_t *normFunction) {
+
+  // Kernel parameters
+  dim3 threads(1,1,1);
+  dim3 grid(1,1,1);
+  threads.x = 512;
+  grid.x = (signallength-1)/threads.x + 1;
+  int memkernel = kth*sizeof(float)*threads.x+\
+          kth*sizeof(int)*threads.x;
+  int triallength = signallength / nchunks;
+
+  // Launch kernel
+  kernelKNNshared<<<grid.x, threads.x, memkernel>>>(d_bf_query, d_bf_pointset,
+      d_bf_indexes, d_bf_distances, pointdim, triallength, signallength, kth,
+      thelier, normFunction);
+
+  checkCudaErrors( cudaDeviceSynchronize() );
+
+  cudaError_t error = cudaGetLastError();
+  if(error!=cudaSuccess){
+    fprintf(stderr,"%s",cudaGetErrorString(error));
+    return 0;
+  }
+
+  return 1;
+}
+
+
 int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_pointset,
     float* h_query, int kth, int thelier, int nchunks, int pointdim,
     int signallength, unsigned int useMaxNorm) {
@@ -40,14 +71,6 @@ int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_pointset,
   }
   stopTimer(pt1);
   CPerfTimer pt2 = startTimer("kNN_kernel");
-  // Kernel parameters
-  dim3 threads(1,1,1);
-  dim3 grid(1,1,1);
-  threads.x = 512;
-  grid.x = (signallength-1)/threads.x + 1;
-  int memkernel = kth*sizeof(float)*threads.x+\
-          kth*sizeof(int)*threads.x;
-  int triallength = signallength / nchunks;
 
   // Pointer to the function used to calculate norms
   normFunction_t *normFunction;
@@ -58,10 +81,10 @@ int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_pointset,
     cudaMemcpyFromSymbol(normFunction, pSquareNorm, sizeof(normFunction_t));
   }
 
-  // Launch kernel
-  kernelKNNshared<<<grid.x, threads.x, memkernel>>>(d_bf_query, d_bf_pointset,
-      d_bf_indexes, d_bf_distances, pointdim, triallength, signallength, kth,
-      thelier, normFunction);
+  d_cudaFindKnn(d_bf_indexes, d_bf_distances, d_bf_pointset,
+                d_bf_query, kth, thelier, nchunks, pointdim,
+                signallength, normFunction);
+
 
   checkCudaErrors( cudaDeviceSynchronize() );
   stopTimer(pt2);
