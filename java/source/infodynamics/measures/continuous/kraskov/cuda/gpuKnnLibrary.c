@@ -37,6 +37,35 @@ int d_cudaFindKnn(int* d_bf_indexes, float* d_bf_distances, float* d_bf_pointset
 }
 
 
+int d_cudaFindRSAll(int* d_bf_npointsrange, float* d_bf_pointset, float* d_bf_query,
+    float* d_bf_vecradius, int thelier, int nchunks, int pointdim,
+    int signallength, normFunction_t *normFunction) {
+
+  // Kernel parameters
+  dim3 threads(1,1,1);
+  dim3 grid(1,1,1);
+  threads.x = 512;
+  grid.x = (signallength-1)/threads.x + 1;
+  int memkernel = sizeof(int)*threads.x;
+  int triallength = signallength / nchunks;
+
+  // Launch kernel
+  kernelBFRSAllshared<<< grid.x, threads.x, memkernel>>>(
+          d_bf_query, d_bf_pointset, d_bf_npointsrange, pointdim,
+          triallength, signallength, thelier, d_bf_vecradius, normFunction);
+
+  checkCudaErrors(cudaDeviceSynchronize());
+
+  cudaError_t error = cudaGetLastError();
+  if(error!=cudaSuccess){
+    fprintf(stderr,"%s",cudaGetErrorString(error));
+    return 0;
+  }
+
+  return 1;
+}
+
+
 int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_pointset,
     float* h_query, int kth, int thelier, int nchunks, int pointdim,
     int signallength, unsigned int useMaxNorm) {
@@ -152,7 +181,7 @@ int cudaFindRSAll(int* h_bf_npointsrange, float* h_pointset, float* h_query,
   //Upload input data
   checkCudaErrors( cudaMemcpy(d_bf_query, h_query, meminputsignalquerypointset, cudaMemcpyHostToDevice ));
   checkCudaErrors( cudaMemcpy(d_bf_pointset, h_pointset, meminputsignalquerypointset, cudaMemcpyHostToDevice ));
-    checkCudaErrors( cudaMemcpy(d_bf_vecradius, h_vecradius, mem_bfcl_inputvecradius, cudaMemcpyHostToDevice ));
+  checkCudaErrors( cudaMemcpy(d_bf_vecradius, h_vecradius, mem_bfcl_inputvecradius, cudaMemcpyHostToDevice ));
 
     error = cudaGetLastError();
   if(error!=cudaSuccess){
@@ -161,14 +190,6 @@ int cudaFindRSAll(int* h_bf_npointsrange, float* h_pointset, float* h_query,
   }
   stopTimer(pt1);
   CPerfTimer pt2 = startTimer("RS_kernel");
-
-  // Kernel parameters
-  dim3 threads(1,1,1);
-  dim3 grid(1,1,1);
-  threads.x = 512;
-  grid.x = (signallength-1)/threads.x + 1;
-  int memkernel = sizeof(int)*threads.x;
-  int triallength = signallength / nchunks;
 
   // Pointer to the function used to calculate norms
   normFunction_t *normFunction;
@@ -179,12 +200,9 @@ int cudaFindRSAll(int* h_bf_npointsrange, float* h_pointset, float* h_query,
     cudaMemcpyFromSymbol(normFunction, pSquareNorm, sizeof(normFunction_t));
   }
 
-  // Launch kernel
-  kernelBFRSAllshared<<< grid.x, threads.x, memkernel>>>(
-          d_bf_query, d_bf_pointset, d_bf_npointsrange, pointdim,
-          triallength, signallength, thelier, d_bf_vecradius, normFunction);
+  d_cudaFindRSAll(d_bf_npointsrange, d_bf_pointset, d_bf_query,
+    d_bf_vecradius, thelier, nchunks, pointdim, signallength, normFunction);
 
-  checkCudaErrors(cudaDeviceSynchronize());
   stopTimer(pt2);
   CPerfTimer pt3 = startTimer("RS_download");
 
