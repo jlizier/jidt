@@ -180,9 +180,6 @@ jidt_error_t MIKraskovByPointsetChunks(int signalLength, float *source, int dimx
   // 6. Set locals, surrogates or digammas for return
   // ======================
 
-  // Check this for digamma parallelisation
-  // https://devtalk.nvidia.com/default/topic/516516/kernel-launch-failure-in-matlab/?offset=2
-
   {
   CPerfTimer pt = startTimer("Digammas_full");
   if (nchunks > 1) {
