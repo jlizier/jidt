@@ -341,8 +341,6 @@ int parallelDigammas(float *digammas, int *nx, int *ny, int signallength) {
   stopTimer(pt);
   }
 
-  // printf("blocks = %i, threads = %i\n", n_blocks.x, n_threads.x);
-
   {
   CPerfTimer pt = startTimer("Digammas_kernel");
   // Launch kernel
@@ -396,11 +394,13 @@ int cudaSumDigammas(float *sumDigammas, int *nx, int *ny,
   // Copy neighbour counts to device and allocate memory for all digammas
   int *d_nx, *d_ny;
   float *d_digammas;
+  float *d_sumDigammas;
   int signalLength = trialLength * nchunks;
 
   checkCudaErrors( cudaMalloc((void **) &d_nx, signalLength * sizeof(int)) );
   checkCudaErrors( cudaMalloc((void **) &d_ny, signalLength * sizeof(int)) );
   checkCudaErrors( cudaMalloc((void **) &d_digammas, signalLength * sizeof(float)) );
+  checkCudaErrors( cudaMalloc((void **) &d_sumDigammas, nchunks * sizeof(int)) );
 
   checkCudaErrors( cudaMemcpy(d_nx, nx, signalLength*sizeof(int), cudaMemcpyHostToDevice) );
   checkCudaErrors( cudaMemcpy(d_ny, ny, signalLength*sizeof(int), cudaMemcpyHostToDevice) );
@@ -415,9 +415,6 @@ int cudaSumDigammas(float *sumDigammas, int *nx, int *ny,
   // results in GPU
   gpuDigammas<<<grid.x, threads.x>>>(d_digammas, d_nx, d_ny, signalLength);
   checkCudaErrors( cudaDeviceSynchronize() );
-
-  float *d_sumDigammas;
-  checkCudaErrors( cudaMalloc((void **) &d_sumDigammas, nchunks * sizeof(int)) );
 
   int offset_size = nchunks + 1;
   int offsets[offset_size];
