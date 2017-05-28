@@ -25,7 +25,7 @@ endif
 
 
 # Common includes and paths for CUDA. This assumes the CUDA toolkit is in PATH
-INCLUDES      := -I. -I/usr/lib/jvm/java-8-openjdk-amd64/include -I/usr/lib/jvm/java-8-openjdk-amd64/include/linux
+INCLUDES      := -I. -I./cub -I/usr/lib/jvm/java-8-openjdk-amd64/include -I/usr/lib/jvm/java-8-openjdk-amd64/include/linux
 LDFLAGS       += -L. -lcuda -lcudart
 
 # Main target rule

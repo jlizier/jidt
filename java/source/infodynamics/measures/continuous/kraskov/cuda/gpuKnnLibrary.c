@@ -3,6 +3,8 @@
 #include "helperfunctions.cu"
 #include "ctimer.h"
 
+#include "cub/cub.cuh"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -381,6 +383,70 @@ int computeSumDigammasChunks(float *sumDiGammas, int *nx, int *ny,
     sumDiGammas[c] = sum;
   }
   stopTimer(pt);
+
+  return 1;
+}
+
+/**
+ * Calculate and sum digammas in chunks fully in GPU.
+ */
+int cudaComputeDigammas(float *sumDigammas, int *nx, int *ny,
+    int trialLength, int nchunks) {
+
+  // Copy neighbour counts to device and allocate memory for all digammas
+  int *d_nx, *d_ny;
+  float *d_digammas;
+  int signalLength = trialLength * nchunks;
+
+  checkCudaErrors( cudaMalloc((void **) &d_nx, signalLength * sizeof(int)) );
+  checkCudaErrors( cudaMalloc((void **) &d_ny, signalLength * sizeof(int)) );
+  checkCudaErrors( cudaMalloc((void **) &d_digammas, signalLength * sizeof(float)) );
+
+  checkCudaErrors( cudaMemcpy(d_nx, nx, signalLength*sizeof(int), cudaMemcpyHostToDevice) );
+  checkCudaErrors( cudaMemcpy(d_ny, ny, signalLength*sizeof(int), cudaMemcpyHostToDevice) );
+
+  // Kernel parameters
+  dim3 threads(1,1,1);
+  dim3 grid(1,1,1);
+  threads.x = 512;
+  grid.x = (signalLength-1)/threads.x + 1;
+
+  // Launch kernel to calculate (digamma(nx+1) + digamma(ny+1)), and leave
+  // results in GPU
+  gpuDigammas<<<grid.x, threads.x>>>(d_digammas, d_nx, d_ny, signalLength);
+  checkCudaErrors( cudaDeviceSynchronize() );
+
+  float *d_sumDigammas;
+  checkCudaErrors( cudaMalloc((void **) &d_sumDigammas, nchunks * sizeof(int)) );
+
+  int offset_size = nchunks + 1;
+  int offsets[offset_size];
+  for (int i = 0; i < (nchunks+1); i++) { offsets[i] = i*trialLength; }
+  int *d_offsets;
+  checkCudaErrors(cudaMalloc((void **) &d_offsets, (nchunks + 1)*sizeof(int)));
+  checkCudaErrors(cudaMemcpy(d_offsets, offsets, (nchunks + 1)*sizeof(int), cudaMemcpyHostToDevice));
+
+  void     *d_temp_storage = NULL;
+  size_t   temp_storage_bytes = 0;
+  cub::DeviceSegmentedReduce::Sum(d_temp_storage, temp_storage_bytes, d_digammas, d_sumDigammas,
+          nchunks, d_offsets, d_offsets + 1);
+  // Allocate temporary storage
+  checkCudaErrors( cudaMalloc(&d_temp_storage, temp_storage_bytes) );
+  checkCudaErrors( cudaDeviceSynchronize() );
+
+  // Run sum-reduction
+  cub::DeviceSegmentedReduce::Sum(d_temp_storage, temp_storage_bytes, d_digammas, d_sumDigammas,
+      nchunks, d_offsets, d_offsets + 1);
+  checkCudaErrors( cudaDeviceSynchronize() );
+
+  checkCudaErrors(cudaMemcpy(sumDigammas, d_sumDigammas, nchunks*sizeof(float), cudaMemcpyDeviceToHost));
+
+  checkCudaErrors( cudaFree(d_temp_storage) );
+  checkCudaErrors( cudaFree(d_offsets) );
+  checkCudaErrors( cudaFree(d_sumDigammas) );
+  checkCudaErrors( cudaFree(d_nx) );
+  checkCudaErrors( cudaFree(d_ny) );
+  checkCudaErrors( cudaFree(d_digammas) );
 
   return 1;
 }

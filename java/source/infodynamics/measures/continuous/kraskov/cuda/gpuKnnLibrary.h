@@ -30,6 +30,9 @@ int computeSumDigammasChunks(float *sumDiGammas, int *nx, int *ny,
 
 int parallelDigammas(float *digammas, int *nx, int *ny, int signallength);
 
+int cudaComputeDigammas(float *sumDigammas, int *nx, int *ny, int trialLength,
+    int nchunks);
+
 void device_reset(void);
 
 void gpuWarmUp(void);
