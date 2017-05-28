@@ -390,7 +390,7 @@ int computeSumDigammasChunks(float *sumDiGammas, int *nx, int *ny,
 /**
  * Calculate and sum digammas in chunks fully in GPU.
  */
-int cudaComputeDigammas(float *sumDigammas, int *nx, int *ny,
+int cudaSumDigammas(float *sumDigammas, int *nx, int *ny,
     int trialLength, int nchunks) {
 
   // Copy neighbour counts to device and allocate memory for all digammas

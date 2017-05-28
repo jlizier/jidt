@@ -186,7 +186,7 @@ jidt_error_t MIKraskovByPointsetChunks(int signalLength, float *source, int dimx
     float digammaK = cpuDigamma(k);
     float digammaN = cpuDigamma(trialLength);
     float sumDigammas[nchunks];
-    cudaComputeDigammas(sumDigammas, nx, ny, trialLength, nchunks);
+    cudaSumDigammas(sumDigammas, nx, ny, trialLength, nchunks);
 
     for (int ii = 0; ii < nchunks; ii++) {
       result[ii] = digammaK + digammaN - sumDigammas[ii]/((float) trialLength);
