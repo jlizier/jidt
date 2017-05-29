@@ -1002,7 +1002,7 @@ CASE("Basic digamma sum test")
   int ny[2] = {2, 5};
   float sumDiGammas;
 
-  int err = computeSumDigammas(&sumDiGammas, nx, ny, N);
+  int err = cudaSumDigammas(&sumDiGammas, nx, ny, N, 1);
 
   EXPECT(err == 1);
 
@@ -1027,7 +1027,7 @@ CASE("Digamma sum test with more data (but still one GPU block)")
     ny[i] = rand() % 300;
   }
 
-  int err = computeSumDigammas(&sumDiGammas, nx, ny, N);
+  int err = cudaSumDigammas(&sumDiGammas, nx, ny, N, 1);
 
   EXPECT(err == 1);
 
@@ -1054,7 +1054,7 @@ CASE("Digamma sum test in single chunk with multiple GPU blocks")
     ny[i] = rand() % 300;
   }
 
-  int err = computeSumDigammas(&sumDiGammas, nx, ny, N);
+  int err = cudaSumDigammas(&sumDiGammas, nx, ny, N, 1);
 
   EXPECT(err == 1);
 
@@ -1124,8 +1124,8 @@ CASE("Digamma sum with multiple chunks and one block")
   int trialLength = 3;
   int nchunks = 2;
 
-  float *gpu_sumDiGammas = (float *) malloc(trialLength * nchunks * sizeof(float));
-  int err = computeSumDigammasChunks(gpu_sumDiGammas, nx, ny, trialLength, nchunks);
+  float *gpu_sumDiGammas = (float *) malloc(nchunks * sizeof(float));
+  int err = cudaSumDigammas(gpu_sumDiGammas, nx, ny, trialLength, nchunks);
   EXPECT(err == 1);
 
   for (int i = 0; i < nchunks; i++) {
@@ -1154,7 +1154,7 @@ CASE("Digamma sum with multiple chunks and multiple blocks per chunk")
   }
 
   float *gpu_sumDiGammas = (float *) malloc(nchunks * sizeof(float));
-  int err = computeSumDigammasChunks(gpu_sumDiGammas, nx, ny, trialLength, nchunks);
+  int err = cudaSumDigammas(gpu_sumDiGammas, nx, ny, trialLength, nchunks);
   EXPECT(err == 1);
 
   for (int i = 0; i < nchunks; i++) {
