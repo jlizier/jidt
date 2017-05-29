@@ -385,31 +385,18 @@ int computeSumDigammasChunks(float *sumDiGammas, int *nx, int *ny,
   return 1;
 }
 
-/**
- * Calculate and sum digammas in chunks fully in GPU.
- */
-int cudaSumDigammas(float *sumDigammas, int *nx, int *ny,
-    int trialLength, int nchunks) {
+int d_cudaSumDigammas(float *sumDigammas, int *d_nx, int *d_ny,
+    float *d_digammas, int trialLength, int nchunks) {
 
-  // Copy neighbour counts to device and allocate memory for all digammas
-  int *d_nx, *d_ny;
-  float *d_digammas;
   float *d_sumDigammas;
   int signalLength = trialLength * nchunks;
-
-  checkCudaErrors( cudaMalloc((void **) &d_nx, signalLength * sizeof(int)) );
-  checkCudaErrors( cudaMalloc((void **) &d_ny, signalLength * sizeof(int)) );
-  checkCudaErrors( cudaMalloc((void **) &d_digammas, signalLength * sizeof(float)) );
-  checkCudaErrors( cudaMalloc((void **) &d_sumDigammas, nchunks * sizeof(int)) );
-
-  checkCudaErrors( cudaMemcpy(d_nx, nx, signalLength*sizeof(int), cudaMemcpyHostToDevice) );
-  checkCudaErrors( cudaMemcpy(d_ny, ny, signalLength*sizeof(int), cudaMemcpyHostToDevice) );
 
   // Kernel parameters
   dim3 threads(1,1,1);
   dim3 grid(1,1,1);
   threads.x = 512;
   grid.x = (signalLength-1)/threads.x + 1;
+  checkCudaErrors( cudaMalloc((void **) &d_sumDigammas, nchunks * sizeof(int)) );
 
   // Launch kernel to calculate (digamma(nx+1) + digamma(ny+1)), and leave
   // results in GPU
@@ -436,11 +423,35 @@ int cudaSumDigammas(float *sumDigammas, int *nx, int *ny,
       nchunks, d_offsets, d_offsets + 1);
   checkCudaErrors( cudaDeviceSynchronize() );
 
-  checkCudaErrors(cudaMemcpy(sumDigammas, d_sumDigammas, nchunks*sizeof(float), cudaMemcpyDeviceToHost));
-
   checkCudaErrors( cudaFree(d_temp_storage) );
   checkCudaErrors( cudaFree(d_offsets) );
+
+  checkCudaErrors(cudaMemcpy(sumDigammas, d_sumDigammas, nchunks*sizeof(float), cudaMemcpyDeviceToHost));
   checkCudaErrors( cudaFree(d_sumDigammas) );
+
+  return 1;
+}
+
+/**
+ * Calculate and sum digammas in chunks fully in GPU.
+ */
+int cudaSumDigammas(float *sumDigammas, int *nx, int *ny,
+    int trialLength, int nchunks) {
+
+  // Copy neighbour counts to device and allocate memory for all digammas
+  int *d_nx, *d_ny;
+  float *d_digammas;
+  int signalLength = trialLength * nchunks;
+
+  checkCudaErrors( cudaMalloc((void **) &d_nx, signalLength * sizeof(int)) );
+  checkCudaErrors( cudaMalloc((void **) &d_ny, signalLength * sizeof(int)) );
+  checkCudaErrors( cudaMalloc((void **) &d_digammas, signalLength * sizeof(float)) );
+
+  checkCudaErrors( cudaMemcpy(d_nx, nx, signalLength*sizeof(int), cudaMemcpyHostToDevice) );
+  checkCudaErrors( cudaMemcpy(d_ny, ny, signalLength*sizeof(int), cudaMemcpyHostToDevice) );
+
+  d_cudaSumDigammas(sumDigammas, d_nx, d_ny, d_digammas, trialLength, nchunks);
+
   checkCudaErrors( cudaFree(d_nx) );
   checkCudaErrors( cudaFree(d_ny) );
   checkCudaErrors( cudaFree(d_digammas) );
