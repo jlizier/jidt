@@ -4,6 +4,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+int allocateDeviceMemory(int signalLength, int kth, int dimx, int dimy,
+    float **source, float **dest, float **distances, int **indexes,
+    float **radii, int **nx, int **ny, float **digammas, float *pointset);
+
+int freeDeviceMemory(float *d_pointset);
+
 int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_pointset,
     float* h_query, int kth, int thelier, int nchunks, int pointdim,
     int signallength, unsigned int useMaxNorm);

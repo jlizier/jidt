@@ -9,6 +9,60 @@
 extern "C" {
 #endif
 
+/**
+ * Allocate all necessary memory for the whole calculation in a single call
+ * to cudaMalloc, and point the pointers to the right place.
+ */
+int allocateDeviceMemory(int signalLength, int kth, int dimx, int dimy,
+    float **source, float **dest, float **distances, int **indexes,
+    float **radii, int **nx, int **ny, float **digammas, float *pointset) {
+
+  float *d_pointset;
+  int dims = dimx + dimy;
+  size_t mempointset = signalLength * dims * sizeof(float);
+  size_t memdistances = signalLength * kth * sizeof(float);
+  size_t memindexes = signalLength * kth * sizeof(int);
+  size_t memcounts = 2 * signalLength * sizeof(int);
+  size_t memdigammas = signalLength * sizeof(float);
+  size_t memtotal = mempointset + memdistances + memindexes + memcounts + memdigammas;
+
+  checkCudaErrors( cudaMalloc((void **) &d_pointset, memtotal) );
+
+  cudaError_t error = cudaGetLastError();
+  if(error!=cudaSuccess){
+    fprintf(stderr,"%s",cudaGetErrorString(error));
+    return 0;
+  }
+
+  checkCudaErrors( cudaMemcpy(d_pointset, pointset, mempointset, cudaMemcpyHostToDevice) );
+
+  *source = d_pointset;
+  *dest = *source + signalLength*dimx;
+  *distances = *dest + signalLength*dimy;
+  *radii = *distances + (kth-1)*signalLength;
+  *indexes = (int *) (*distances + kth*signalLength);
+  *nx = *indexes + signalLength;
+  *ny = *nx + signalLength;
+  *digammas = (float *) (*ny + signalLength);
+
+  return 1;
+}
+
+/**
+ * Free all the memory used in GPU.
+ */
+int freeDeviceMemory(float *d_pointset) {
+  checkCudaErrors( cudaFree(d_pointset) );
+
+  cudaError_t error = cudaGetLastError();
+  if(error!=cudaSuccess){
+    fprintf(stderr,"%s",cudaGetErrorString(error));
+    return 0;
+  }
+
+  return 1;
+}
+
 int d_cudaFindKnn(int* d_bf_indexes, float* d_bf_distances, float* d_bf_pointset,
     float* d_bf_query, int kth, int thelier, int nchunks, int pointdim,
     int signallength, normFunction_t *normFunction) {
