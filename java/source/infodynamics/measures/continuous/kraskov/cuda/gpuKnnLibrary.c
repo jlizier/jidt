@@ -65,20 +65,29 @@ int freeDeviceMemory(float *d_pointset) {
 
 int d_cudaFindKnn(int* d_bf_indexes, float* d_bf_distances, float* d_bf_pointset,
     float* d_bf_query, int kth, int thelier, int nchunks, int pointdim,
-    int signallength, normFunction_t *normFunction) {
+    int signalLength, int useMaxNorm) {
 
   // Kernel parameters
   dim3 threads(1,1,1);
   dim3 grid(1,1,1);
   threads.x = 512;
-  grid.x = (signallength-1)/threads.x + 1;
+  grid.x = (signalLength-1)/threads.x + 1;
   int memkernel = kth*sizeof(float)*threads.x+\
           kth*sizeof(int)*threads.x;
-  int triallength = signallength / nchunks;
+  int triallength = signalLength / nchunks;
+
+  // Pointer to the function used to calculate norms
+  normFunction_t *normFunction;
+  cudaMalloc( (void **) &normFunction, sizeof(normFunction_t) );
+  if (useMaxNorm) {
+    cudaMemcpyFromSymbol(normFunction, pMaxNorm, sizeof(normFunction_t));
+  } else {
+    cudaMemcpyFromSymbol(normFunction, pSquareNorm, sizeof(normFunction_t));
+  }
 
   // Launch kernel
   kernelKNNshared<<<grid.x, threads.x, memkernel>>>(d_bf_query, d_bf_pointset,
-      d_bf_indexes, d_bf_distances, pointdim, triallength, signallength, kth,
+      d_bf_indexes, d_bf_distances, pointdim, triallength, signalLength, kth,
       thelier, normFunction);
 
   checkCudaErrors( cudaDeviceSynchronize() );
@@ -95,20 +104,29 @@ int d_cudaFindKnn(int* d_bf_indexes, float* d_bf_distances, float* d_bf_pointset
 
 int d_cudaFindRSAll(int* d_bf_npointsrange, float* d_bf_pointset, float* d_bf_query,
     float* d_bf_vecradius, int thelier, int nchunks, int pointdim,
-    int signallength, normFunction_t *normFunction) {
+    int signalLength, int useMaxNorm) {
 
   // Kernel parameters
   dim3 threads(1,1,1);
   dim3 grid(1,1,1);
   threads.x = 512;
-  grid.x = (signallength-1)/threads.x + 1;
+  grid.x = (signalLength-1)/threads.x + 1;
   int memkernel = sizeof(int)*threads.x;
-  int triallength = signallength / nchunks;
+  int triallength = signalLength / nchunks;
+
+  // Pointer to the function used to calculate norms
+  normFunction_t *normFunction;
+  cudaMalloc( (void **) &normFunction, sizeof(normFunction_t) );
+  if (useMaxNorm) {
+    cudaMemcpyFromSymbol(normFunction, pMaxNorm, sizeof(normFunction_t));
+  } else {
+    cudaMemcpyFromSymbol(normFunction, pSquareNorm, sizeof(normFunction_t));
+  }
 
   // Launch kernel
   kernelBFRSAllshared<<< grid.x, threads.x, memkernel>>>(
           d_bf_query, d_bf_pointset, d_bf_npointsrange, pointdim,
-          triallength, signallength, thelier, d_bf_vecradius, normFunction);
+          triallength, signalLength, thelier, d_bf_vecradius, normFunction);
 
   checkCudaErrors(cudaDeviceSynchronize());
 
@@ -118,20 +136,22 @@ int d_cudaFindRSAll(int* d_bf_npointsrange, float* d_bf_pointset, float* d_bf_qu
     return 0;
   }
 
+  checkCudaErrors( cudaFree(normFunction) );
+
   return 1;
 }
 
 
 int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_pointset,
     float* h_query, int kth, int thelier, int nchunks, int pointdim,
-    int signallength, unsigned int useMaxNorm) {
+    int signalLength, unsigned int useMaxNorm) {
   float *d_bf_pointset, *d_bf_query;
   int *d_bf_indexes;
   float *d_bf_distances;
 
-  unsigned int meminputsignalquerypointset= pointdim * signallength * sizeof(float);
-  unsigned int mem_bfcl_outputsignaldistances= kth * signallength * sizeof(float);
-  unsigned int mem_bfcl_outputsignalindexes = kth * signallength * sizeof(int);
+  unsigned int meminputsignalquerypointset= pointdim * signalLength * sizeof(float);
+  unsigned int mem_bfcl_outputsignaldistances= kth * signalLength * sizeof(float);
+  unsigned int mem_bfcl_outputsignalindexes = kth * signalLength * sizeof(int);
 
   CPerfTimer pt1 = startTimer("kNN_upload");
   checkCudaErrors( cudaMalloc( (void**) &(d_bf_query), meminputsignalquerypointset));
@@ -157,18 +177,9 @@ int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_pointset,
   stopTimer(pt1);
   CPerfTimer pt2 = startTimer("kNN_kernel");
 
-  // Pointer to the function used to calculate norms
-  normFunction_t *normFunction;
-  cudaMalloc( (void **) &normFunction, sizeof(normFunction_t) );
-  if (useMaxNorm) {
-    cudaMemcpyFromSymbol(normFunction, pMaxNorm, sizeof(normFunction_t));
-  } else {
-    cudaMemcpyFromSymbol(normFunction, pSquareNorm, sizeof(normFunction_t));
-  }
-
   d_cudaFindKnn(d_bf_indexes, d_bf_distances, d_bf_pointset,
                 d_bf_query, kth, thelier, nchunks, pointdim,
-                signallength, normFunction);
+                signalLength, useMaxNorm);
 
 
   checkCudaErrors( cudaDeviceSynchronize() );
@@ -189,7 +200,6 @@ int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_pointset,
   checkCudaErrors(cudaFree(d_bf_pointset));
   checkCudaErrors(cudaFree(d_bf_distances));
   checkCudaErrors(cudaFree(d_bf_indexes));
-  cudaFree(normFunction);
   stopTimer(pt3);
   // cudaDeviceReset();
   if(error!=cudaSuccess){
@@ -203,10 +213,10 @@ int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_pointset,
 
 int cudaFindKnnSetGPU(int* h_bf_indexes, float* h_bf_distances,
     float* h_pointset, float* h_query, int kth, int thelier, int nchunks,
-    int pointdim, int signallength, unsigned int useMaxNorm, int deviceid) {
+    int pointdim, int signalLength, unsigned int useMaxNorm, int deviceid) {
   cudaSetDevice(deviceid);
   return cudaFindKnn(h_bf_indexes, h_bf_distances, h_pointset, h_query,
-      kth, thelier, nchunks, pointdim, signallength, useMaxNorm);
+      kth, thelier, nchunks, pointdim, signalLength, useMaxNorm);
 }
 
 /*
@@ -214,14 +224,14 @@ int cudaFindKnnSetGPU(int* h_bf_indexes, float* h_bf_distances,
  */
 int cudaFindRSAll(int* h_bf_npointsrange, float* h_pointset, float* h_query,
     float* h_vecradius, int thelier, int nchunks, int pointdim,
-    int signallength, unsigned int useMaxNorm) {
+    int signalLength, unsigned int useMaxNorm) {
 
   float *d_bf_pointset, *d_bf_query, *d_bf_vecradius;
   int *d_bf_npointsrange;
 
-  unsigned int meminputsignalquerypointset= pointdim * signallength * sizeof(float);
-  unsigned int mem_bfcl_outputsignalnpointsrange= signallength * sizeof(int);
-  unsigned int mem_bfcl_inputvecradius = signallength * sizeof(float);
+  unsigned int meminputsignalquerypointset= pointdim * signalLength * sizeof(float);
+  unsigned int mem_bfcl_outputsignalnpointsrange= signalLength * sizeof(int);
+  unsigned int mem_bfcl_inputvecradius = signalLength * sizeof(float);
 
   CPerfTimer pt1 = startTimer("RS_upload");
   checkCudaErrors( cudaMalloc( (void**) &(d_bf_query), meminputsignalquerypointset));
@@ -247,17 +257,8 @@ int cudaFindRSAll(int* h_bf_npointsrange, float* h_pointset, float* h_query,
   stopTimer(pt1);
   CPerfTimer pt2 = startTimer("RS_kernel");
 
-  // Pointer to the function used to calculate norms
-  normFunction_t *normFunction;
-  cudaMalloc( (void **) &normFunction, sizeof(normFunction_t) );
-  if (useMaxNorm) {
-    cudaMemcpyFromSymbol(normFunction, pMaxNorm, sizeof(normFunction_t));
-  } else {
-    cudaMemcpyFromSymbol(normFunction, pSquareNorm, sizeof(normFunction_t));
-  }
-
   d_cudaFindRSAll(d_bf_npointsrange, d_bf_pointset, d_bf_query,
-    d_bf_vecradius, thelier, nchunks, pointdim, signallength, normFunction);
+    d_bf_vecradius, thelier, nchunks, pointdim, signalLength, useMaxNorm);
 
   stopTimer(pt2);
   CPerfTimer pt3 = startTimer("RS_download");
@@ -275,7 +276,6 @@ int cudaFindRSAll(int* h_bf_npointsrange, float* h_pointset, float* h_query,
   checkCudaErrors(cudaFree(d_bf_pointset));
   checkCudaErrors(cudaFree(d_bf_npointsrange));
   checkCudaErrors(cudaFree(d_bf_vecradius));
-  checkCudaErrors(cudaFree(normFunction));
   cudaDeviceReset();
   if(error!=cudaSuccess){
     fprintf(stderr,"%s",cudaGetErrorString(error));
@@ -288,10 +288,10 @@ int cudaFindRSAll(int* h_bf_npointsrange, float* h_pointset, float* h_query,
 
 int cudaFindRSAllSetGPU(int* h_bf_npointsrange, float* h_pointset,
     float* h_query, float* h_vecradius, int thelier, int nchunks,
-    int pointdim, int signallength, unsigned int useMaxNorm, int deviceid) {
+    int pointdim, int signalLength, unsigned int useMaxNorm, int deviceid) {
   cudaSetDevice(deviceid);
   return cudaFindRSAll(h_bf_npointsrange, h_pointset, h_query, h_vecradius,
-      thelier, nchunks, pointdim, signallength, useMaxNorm);
+      thelier, nchunks, pointdim, signalLength, useMaxNorm);
 }
 
 
