@@ -13,18 +13,16 @@ extern "C" {
 /*
  * Class:     infodynamics_measures_continuous_kraskov_MutualInfoCalculatorMultiVariateKraskov
  * Method:    MIKraskov
- * Signature: (I[DI[DIIZZZIZ[I)[D
+ * Signature: (I[DI[DIIIZZZIZ[I)[D
  */
 JNIEXPORT jdoubleArray JNICALL
   Java_infodynamics_measures_continuous_kraskov_MutualInfoCalculatorMultiVariateKraskov_MIKraskov(
    JNIEnv *env, jobject thisObj, jint j_N,
    jobjectArray j_sourceArray, jint j_dimx,
    jobjectArray j_destArray,   jint j_dimy,
-   jint j_k, jboolean j_returnLocals, jboolean j_useMaxNorm,
-   jboolean j_isAlgorithm1, jint j_nbSurrogates,
+   jint j_k, jint j_theiler, jboolean j_returnLocals,
+   jboolean j_useMaxNorm, jboolean j_isAlgorithm1, jint j_nbSurrogates,
    jboolean j_reorderingsGiven, jobjectArray j_orderings) {
-
-  int thelier = 0;
 
   // Check that incoming data has correct size
   // =====================
@@ -53,6 +51,7 @@ JNIEXPORT jdoubleArray JNICALL
   int k = j_k;
   int dimx = j_dimx;
   int dimy = j_dimy;
+  int theiler = j_theiler;
   int returnLocals = j_returnLocals ? 1 : 0;
   int useMaxNorm   = j_useMaxNorm   ? 1 : 0;
   int isAlgorithm1 = j_isAlgorithm1 ? 1 : 0;
@@ -149,11 +148,11 @@ JNIEXPORT jdoubleArray JNICALL
   jidt_error_t ret;
   if (!reorderingsGiven) {
     ret = MIKraskov_C(N, source, dimx, dest, dimy,
-                      k, thelier, nb_surrogates, returnLocals, useMaxNorm,
+                      k, theiler, nb_surrogates, returnLocals, useMaxNorm,
                       isAlgorithm1, result);
 
   } else {
-    ret = MIKraskovWithReorderings(N, source, dimx, dest, dimy, k, thelier,
+    ret = MIKraskovWithReorderings(N, source, dimx, dest, dimy, k, theiler,
                                    nb_surrogates, returnLocals, useMaxNorm,
                                    isAlgorithm1, result, reorderingsGiven,
                                    reorderings);

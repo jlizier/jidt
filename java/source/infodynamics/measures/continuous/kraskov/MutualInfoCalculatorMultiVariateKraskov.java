@@ -627,7 +627,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
         System.out.printf("Calling GPU calculation with returnLocals=%b and nb_surrogates=%d\n", returnLocals, nb_surrogates);
       }
       res = MIKraskov(totalObservations, sourceObservations, dimensionsSource,
-          destObservations, dimensionsDest, k, returnLocals, useMaxNorm,
+          destObservations, dimensionsDest, k, dynCorrExclTime, returnLocals, useMaxNorm,
           isAlgorithm1, nb_surrogates, null!=newOrderings, newOrderings);
       if (debug) {
         System.out.println("GPU calculation finished successfully. Returning results");
@@ -664,8 +664,9 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
    */
   private native double[] MIKraskov(
       int N, double[][] source, int dimx, double[][] dest, int dimy,
-      int k, boolean returnLocals, boolean useMaxNorm, boolean isAlgorithm1,
-      int nb_surrogates, boolean orderingsGiven, int[][] newOrderings);
+      int k, int theiler, boolean returnLocals, boolean useMaxNorm,
+      boolean isAlgorithm1, int nb_surrogates, boolean orderingsGiven,
+      int[][] newOrderings);
 
   /**
    * Internal method to ensure that the Kd-tree data structures to represent the
