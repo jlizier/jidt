@@ -33,6 +33,8 @@ endif
 
 ## Find CUDA compute capability for target GPU
 #---------------------------------------------
+# Set this variable if you know your target compute capability(ies). Example:
+# COMPUTE_CAPABILITY = -arch=sm_30
 ifneq ($(MAKECMDGOALS),clean)
 ifeq (${COMPUTE_CAPABILITY},)
   ifeq ($(wildcard findComputeCapability),)
@@ -43,7 +45,7 @@ ifeq (${COMPUTE_CAPABILITY},)
   $(info CUDA compute capability found: ${COMPUTE_CAPABILITY})
 endif
 endif
-NVCCFLAGS += -arch=sm_${COMPUTE_CAPABILITY}
+NVCCFLAGS += ${COMPUTE_CAPABILITY}
 
 
 ## Find path to JNI header files
