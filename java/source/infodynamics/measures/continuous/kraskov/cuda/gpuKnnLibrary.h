@@ -31,9 +31,6 @@ int findRadiiAlgorithm2(float *radii, const float *data, const int *indexes,
 
 int computeSumDigammas(float *sumDiGammas, int *nx, int *ny, unsigned int N);
 
-int computeSumDigammasChunks(float *sumDiGammas, int *nx, int *ny,
-    int trialLength, int nchunks);
-
 int parallelDigammas(float *digammas, int *nx, int *ny, int signallength);
 
 int cudaSumDigammas(float *sumDigammas, int *nx, int *ny, int trialLength,
@@ -46,6 +43,9 @@ int d_cudaFindKnn(int* d_bf_indexes, float* d_bf_distances, float* d_bf_pointset
 int d_cudaFindRSAll(int* d_bf_npointsrange, float* d_bf_pointset, float* d_bf_query,
     float* d_bf_vecradius, int thelier, int nchunks, int pointdim,
     int signallength, int useMaxNorm);
+
+int d_parallelDigammas(float *digammas, float *d_digammas, int *d_nx,
+    int *d_ny, int signalLength);
 
 int d_cudaSumDigammas(float *sumDigammas, int *d_nx, int *d_ny,
     float *d_digammas, int trialLength, int nchunks);
