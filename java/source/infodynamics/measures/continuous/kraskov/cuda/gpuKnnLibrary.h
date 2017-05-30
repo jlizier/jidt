@@ -33,6 +33,17 @@ int parallelDigammas(float *digammas, int *nx, int *ny, int signallength);
 int cudaSumDigammas(float *sumDigammas, int *nx, int *ny, int trialLength,
     int nchunks);
 
+int d_cudaFindKnn(int* d_bf_indexes, float* d_bf_distances, float* d_bf_pointset,
+    float* d_bf_query, int kth, int thelier, int nchunks, int pointdim,
+    int signallength, int useMaxNorm);
+
+int d_cudaFindRSAll(int* d_bf_npointsrange, float* d_bf_pointset, float* d_bf_query,
+    float* d_bf_vecradius, int thelier, int nchunks, int pointdim,
+    int signallength, int useMaxNorm);
+
+int d_cudaSumDigammas(float *sumDigammas, int *d_nx, int *d_ny,
+    float *d_digammas, int trialLength, int nchunks);
+
 void device_reset(void);
 
 void gpuWarmUp(void);
