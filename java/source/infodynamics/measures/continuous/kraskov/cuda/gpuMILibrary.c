@@ -110,11 +110,9 @@ jidt_error_t MIKraskovByPointsetChunks(int signalLength, float *source, int dimx
   int dims = dimx + dimy;
   int err;
   int trialLength = signalLength/((float) nchunks);
-  float *distances = NULL, *radii = NULL;
-  int *indexes = NULL, *nx = NULL, *ny = NULL;
 
-  // 1. Re-arrange data and generate shufflings
-  // ======================
+  float *d_source, *d_dest, *d_distances, *d_radii, *d_digammas;
+  int *d_nx, *d_ny, *d_indexes;
 
   {
   CPerfTimer pt = startTimer("GPU_warmup");
@@ -122,101 +120,58 @@ jidt_error_t MIKraskovByPointsetChunks(int signalLength, float *source, int dimx
   stopTimer(pt);
   }
 
+  // 1. Allocate space in GPU and transfer memory
+  // ======================
+  allocateDeviceMemory(signalLength, k, dimx, dimy, &d_source, &d_dest, &d_distances,
+      &d_indexes, &d_radii, &d_nx, &d_ny, &d_digammas, pointset);
+
   // 2. Find nearest neighbours
   // ======================
   {
   CPerfTimer pt = startTimer("kNN_full");
-  indexes = (int *) malloc(signalLength * k * sizeof(int));
-  distances = (float *) malloc(signalLength * k * sizeof(float));
-  if (!cudaFindKnn(indexes, distances, pointset, pointset, k,
-          thelier, nchunks, dims, signalLength, useMaxNorm)) {
-    device_reset();
-    return JIDT_ERROR;
-  }
+  d_cudaFindKnn(d_indexes, d_distances, d_source, d_source, k,
+      thelier, nchunks, dims, signalLength, useMaxNorm);
   stopTimer(pt);
   }
 
-
-
-  // 3. Find distance R from each point to its k-th neighbour in joint space
-  // ======================
-  
-  radii = (float *) malloc(signalLength * sizeof(float));
-  for (int i = 0; i < signalLength; i++) {
-    radii[i] = distances[signalLength*(k-1) + i];
-  }
-
-
   // 4. Count points strictly within R in the X-space
   // ======================
-
-  // If we're using algorithm 2 then we need the radius in the marginal space,
-  // not the joint (as calculated above)
   {
   CPerfTimer pt = startTimer("RS_full");
-  if (!isAlgorithm1) {
-    findRadiiAlgorithm2(radii, source, indexes, k, dimx, signalLength);
-  }
-
-  nx = (int *) malloc(signalLength * sizeof(int));
-  if (!cudaFindRSAll(nx, pointset, pointset, radii, thelier, nchunks, dimx, signalLength, useMaxNorm)) {
-    device_reset();
-    return JIDT_ERROR;
-  }
-
-  if (!isAlgorithm1) {
-    findRadiiAlgorithm2(radii, dest, indexes, k, dimy, signalLength);
-  }
-
-  ny = (int *) malloc(signalLength * sizeof(int));
-  if (!cudaFindRSAll(ny, pointset + signalLength*dimx, pointset+signalLength*dimx, radii, thelier, nchunks, dimy, signalLength, useMaxNorm)) {
-    device_reset();
-    return JIDT_ERROR;
-  }
-
+  d_cudaFindRSAll(d_nx, d_source, d_source, d_radii, thelier, nchunks, dimx, signalLength, useMaxNorm);
+  d_cudaFindRSAll(d_ny, d_dest, d_dest, d_radii, thelier, nchunks, dimy, signalLength, useMaxNorm);
   stopTimer(pt);
   }
 
   // 6. Set locals, surrogates or digammas for return
   // ======================
-
   {
   CPerfTimer pt = startTimer("Digammas_full");
-  if (nchunks > 1) {
+  if (returnLocals) {
     float digammaK = cpuDigamma(k);
     float digammaN = cpuDigamma(trialLength);
-    float sumDigammas[nchunks];
-    cudaSumDigammas(sumDigammas, nx, ny, trialLength, nchunks);
-
-    for (int ii = 0; ii < nchunks; ii++) {
-      result[ii] = digammaK + digammaN - sumDigammas[ii]/((float) trialLength);
-    }
-
-  } else if (returnLocals) {
-    float digammaK = cpuDigamma(k);
-    float digammaN = cpuDigamma(trialLength);
+    float digammas[trialLength];
+    d_parallelDigammas(digammas, d_digammas, d_nx, d_ny, signalLength);
     for (int i = 0; i < trialLength; i++) {
-      result[i] = digammaK + digammaN - cpuDigamma(nx[i] + 1) - cpuDigamma(ny[i] + 1);
+      result[i] = digammaK + digammaN - digammas[i];
     }
 
   } else {
-    float sumNx = 0;
-    float sumNy = 0;
-    float sumDiGammas = 0;
 
-    if (!computeSumDigammas(&sumDiGammas, nx, ny, trialLength)) {
-      device_reset();
-      return JIDT_ERROR;
+    float digammaK = cpuDigamma(k);
+    float digammaN = cpuDigamma(trialLength);
+    float sumDigammas[nchunks];
+    d_cudaSumDigammas(sumDigammas, d_nx, d_ny, d_digammas, trialLength, nchunks);
+
+    if (nchunks > 1) {
+      for (int ii = 0; ii < nchunks; ii++) {
+        result[ii] = digammaK + digammaN - sumDigammas[ii]/((float) trialLength);
+      }
+    } else {
+      result[0] = sumDigammas[0];
+      result[1] = -1;
+      result[2] = -1;
     }
-
-    for (int i = 0; i < trialLength; i++) {
-      sumNx       += nx[i];
-      sumNy       += ny[i];
-    }
-
-    result[0] = sumDiGammas;
-    result[1] = sumNx;
-    result[2] = sumNy;
 
   }
   stopTimer(pt);
@@ -224,12 +179,7 @@ jidt_error_t MIKraskovByPointsetChunks(int signalLength, float *source, int dimx
 
   err = JIDT_SUCCESS;
 
-  FREE(indexes);
-  FREE(distances);
-  FREE(nx);
-  FREE(ny);
-  FREE(distances);
-  FREE(radii);
+  freeDeviceMemory(d_source);
 
   return err;
 }
