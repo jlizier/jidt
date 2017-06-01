@@ -68,7 +68,7 @@
 	<!-- Jar the toolkit -->
 	<target name="jar" depends="compile" description="Create the jar for distribution">
 		<!-- Put everything in ${bin} into the infodynamics-${version}.jar file -->
-    <jar jarfile="${jarplainname}" basedir="${bin}" excludes="**/cuda/"/>
+    <jar jarfile="${jarplainname}" basedir="${bin}" excludes="cuda/*.o,cuda/*.a,cuda/findComputeCapability"/>
 	</target>
 
 	<!-- Compile and run the JUnit tests -->
