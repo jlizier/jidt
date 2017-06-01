@@ -97,6 +97,7 @@
 					<exclude name="**/*AbstractTester.class"/>
 					<exclude name="**/ActiveInfoStorageCalculatorCorrelationIntegrals.class"/>
 					<exclude name="**/ActiveInfoStorageCalculatorKernelDirect.class"/>
+					<exclude name="**/*GPU*.class"/>
 				</fileset>
 			</batchtest>
 		</junit>
@@ -252,9 +253,8 @@
 			<formatter type="plain"/>
 			<batchtest todir="${reports.tests}"> <!-- Writes full reports with stdout and stderr to ${reports.tests} -->
 				<fileset dir="${unittestsbin}">
-					<include name="**/GPUMutualInfoTester.class"/>
-					<include name="**/GPUPerformanceTester.class"/>
-				</fileset>
+					<include name="**/*GPU*.class"/>
+					<!--include name="**/GPUPerformanceTester.class"/-->
 			</batchtest>
 		</junit>
 
