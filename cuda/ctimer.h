@@ -4,12 +4,21 @@
 #include <sys/time.h>
 #include <string.h>
 
+/**
+ * Lean performance timer structure.
+ */
 typedef struct CPerfTimer {
   struct timeval tv;
   unsigned long us;
   const char *tag;
 } CPerfTimer;
 
+/**
+ * Initialise and return a performance timer with a given tag.
+ *
+ * @param s tag string to be attached to the timer
+ * @return new CPerfTimer
+ */
 static inline CPerfTimer startTimer(const char *s) {
   struct timeval tv;
   gettimeofday(&tv, NULL);
@@ -18,6 +27,12 @@ static inline CPerfTimer startTimer(const char *s) {
   return pf;
 }
 
+/**
+ * Print time since creation of pt, together with pt's tag. Only prints
+ * results if compiled with -DTIMER flag.
+ *
+ * @param pt CPerfTimer (usually initialised by startTimer())
+ */
 static inline void stopTimer(CPerfTimer pt) {
 #ifdef TIMER
   struct timeval tv;
