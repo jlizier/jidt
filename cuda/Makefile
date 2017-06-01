@@ -13,8 +13,8 @@ NVCC       ?= nvcc
 GCC        ?= g++
 CCFLAGS    ?= -O3 -Wall -Wextra -Wno-unused-parameter
 NVCCFLAGS  ?= -O3 -D_FORCE_INLINES -Xcompiler -Wall
-BIN=../bin/cuda
-UNITBIN=../unittests/bin/cuda
+BIN         =../bin/cuda
+UNITBIN     =../unittests/bin/cuda
 
 
 ## Quick check to find 'which' function
@@ -93,8 +93,6 @@ $(BIN)/libgpuKnnLibrary.a: $(BIN)/gpuKnnLibrary.o
 
 ## Compile host code
 #-------------------
-# PROG=program1 program2
-# LIST=$(addprefix $(BIN)/, $(PROG))
 c_objects = $(addprefix $(BIN)/,digamma.o gpuMILibrary.o kraskovCuda.o)
 
 $(BIN)/%.o:	%.c
@@ -115,7 +113,7 @@ $(UNITBIN)/unittest:	unittest.cpp $(BIN)/libKraskov.so
 	${GCC} ${CCFLAGS} -std=c++11 $< -Wl,-rpath,"$(abspath $(BIN))" -L$(BIN) -lKraskov -o $@ 
 
 $(UNITBIN)/perftest: perftest.cpp $(BIN)/libKraskov.so
-	${GCC} ${CCFLAGS} -DTIMER -std=c++11 $< -L$(BIN) -lKraskov -o $@ 
+	${GCC} ${CCFLAGS} -DTIMER -std=c++11 $< -Wl,-rpath,"$(abspath $(BIN))" -L$(BIN) -lKraskov -o $@ 
 
 clean:
 	rm -f $(BIN)/* $(UNITBIN)/*
