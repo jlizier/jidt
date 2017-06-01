@@ -13,6 +13,8 @@ NVCC       ?= nvcc
 GCC        ?= g++
 CCFLAGS    ?= -O3 -Wall -Wextra -Wno-unused-parameter
 NVCCFLAGS  ?= -O3 -D_FORCE_INLINES -Xcompiler -Wall
+BIN=../bin/cuda
+UNITBIN=../unittests/bin/cuda
 
 
 ## Quick check to find 'which' function
@@ -37,11 +39,11 @@ endif
 # COMPUTE_CAPABILITY = -arch=sm_30
 ifneq ($(MAKECMDGOALS),clean)
 ifeq (${COMPUTE_CAPABILITY},)
-  ifeq ($(wildcard findComputeCapability),)
+  ifeq ($(wildcard $(BIN)/findComputeCapability),)
     $(info Compiling diagnostics script)
-    $(shell ${NVCC} -Wno-deprecated-gpu-targets -o findComputeCapability findComputeCapability.cu)
+    $(shell ${NVCC} -Wno-deprecated-gpu-targets -o $(BIN)/findComputeCapability findComputeCapability.cu)
   endif
-  COMPUTE_CAPABILITY ?= $(shell ./findComputeCapability)
+  COMPUTE_CAPABILITY ?= $(shell $(BIN)/findComputeCapability)
   $(info CUDA compute capability found: ${COMPUTE_CAPABILITY})
 endif
 endif
@@ -72,45 +74,49 @@ endif
 
 # Common includes and paths for CUDA. This assumes the CUDA toolkit is in PATH
 INCLUDES      := -I. -I./cub -I${JNI_INCLUDE} -I${JNI_PLATFORM_INCLUDE}
-LDFLAGS       += -L. -lcuda -lcudart
+LDFLAGS       += -L. -L$(BIN) -lcuda -lcudart
+
+.PHONY: all clean test
 
 # Main target rule
-all:  libKraskov.so
+all:  $(BIN)/libKraskov.so
 
 
 ## Compile device code
 #---------------------
-gpuKnnLibrary.o: gpuKnnLibrary.c helperfunctions.cu gpuKnnBF_kernel.cu
-	${NVCC} ${NVCCFLAGS} ${INCLUDES} -x cu -Xcompiler -fPIC -c gpuKnnLibrary.c
+$(BIN)/gpuKnnLibrary.o: gpuKnnLibrary.c helperfunctions.cu gpuKnnBF_kernel.cu
+	${NVCC} ${NVCCFLAGS} ${INCLUDES} -x cu -Xcompiler -fPIC -c gpuKnnLibrary.c -o $@
 
-libgpuKnnLibrary.a: gpuKnnLibrary.o
-	${AR} -r libgpuKnnLibrary.a gpuKnnLibrary.o
+$(BIN)/libgpuKnnLibrary.a: $(BIN)/gpuKnnLibrary.o
+	${AR} -r $@ $<
 
 
 ## Compile host code
 #-------------------
-c_objects = digamma.o gpuMILibrary.o kraskovCuda.o
+# PROG=program1 program2
+# LIST=$(addprefix $(BIN)/, $(PROG))
+c_objects = $(addprefix $(BIN)/,digamma.o gpuMILibrary.o kraskovCuda.o)
 
-%.o:	%.c
+$(BIN)/%.o:	%.c
 	${GCC} ${INCLUDES} ${CCFLAGS} -x c -std=c99 -fPIC -c $< -o $@
 
 
 ## Final shared library linking
 #------------------------------
-libKraskov.so: libgpuKnnLibrary.a $(c_objects)
-	${NVCC} ${NVCCFLAGS} ${INCLUDES} -Xcompiler -fPIC -shared -o libKraskov.so $(c_objects) ${LDFLAGS} -lgpuKnnLibrary
+$(BIN)/libKraskov.so: $(BIN)/libgpuKnnLibrary.a $(c_objects)
+	${NVCC} ${NVCCFLAGS} ${INCLUDES} -Xcompiler -fPIC -shared -o $@ $(c_objects) ${LDFLAGS} -lgpuKnnLibrary
 
 
 ## Test binary targets
 #------------------------------
-test:	unittest perftest
+test:	$(UNITBIN)/unittest $(UNITBIN)/perftest
 
-unittest:	libKraskov.so unittest.cpp
-	${GCC} ${CCFLAGS} -std=c++11 unittest.cpp -L. -lKraskov -o $@ 
+$(UNITBIN)/unittest:	unittest.cpp $(BIN)/libKraskov.so
+	${GCC} ${CCFLAGS} -std=c++11 $< -Wl,-rpath,"$(abspath $(BIN))" -L$(BIN) -lKraskov -o $@ 
 
-perftest: libKraskov.so perftest.cpp 
-	${GCC} ${CCFLAGS} -DTIMER -std=c++11 perftest.cpp -L. -lKraskov -o $@ 
+$(UNITBIN)/perftest: perftest.cpp $(BIN)/libKraskov.so
+	${GCC} ${CCFLAGS} -DTIMER -std=c++11 $< -L$(BIN) -lKraskov -o $@ 
 
 clean:
-	rm -f *.o *.so *.a unittest perftest
+	rm -f $(BIN)/* $(UNITBIN)/*
 

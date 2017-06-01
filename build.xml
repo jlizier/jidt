@@ -12,6 +12,7 @@
 	<property name="distname" value="${mainfilename}-dist-${version}" />
 	<property name="distnamezip" value="${distname}.zip" />
 	<property name="src" location="java/source"/>
+	<property name="cudasrc" location="cuda"/>
 	<property name="bin" location="bin"/>
 	<property name="unittestsouttoplevel" location="unittests"/>
 	<property name="unittestssrc" location="java/unittests"/>
@@ -35,7 +36,9 @@
 	<!-- Make required directories -->
 	<target name="init" description="Create the compiled code directories">
 		<mkdir dir="${bin}"/>
+    <mkdir dir="${bin}/cuda"/>
 		<mkdir dir="${unittestsbin}"/>
+    <mkdir dir="${unittestsbin}/cuda"/>
 		<mkdir dir="${reports.tests}"/>
 	</target>
 
@@ -196,7 +199,7 @@
 
   <!-- Compile GPU code -->
   <target name="gpu" depends="init" description="compile only C/C++ GPU code">
-    <exec executable="make" dir="${src}/infodynamics/measures/continuous/kraskov/cuda/" resultproperty="return.code">
+    <exec executable="make" dir="${cudasrc}" failonerror="true" resultproperty="return.code">
       <env key="DEBUG" value="${DEBUG}"/>
     </exec>
     <fail>
@@ -204,18 +207,11 @@
         <isfailure code="${return.code}"/>
       </condition>
     </fail>
-    <move todir="${bin}/infodynamics/measures/continuous/kraskov/cuda">
-      <filelist dir="${src}/infodynamics/measures/continuous/kraskov/cuda">
-        <file name="gpuKnnLibrary.o"/>
-        <file name="libgpuKnnLibrary.a"/>
-        <file name="libKraskov.so"/>
-      </filelist>
-    </move>
   </target>
 
   <!-- Clean GPU code -->
   <target name="gpuclean" description="clean only C/C++ GPU code">
-    <exec executable="make" dir="${src}/infodynamics/measures/continuous/kraskov/cuda/">
+    <exec executable="make" dir="${cudasrc}" failonerror="true">
       <arg value="clean"/>
     </exec>
   </target>
@@ -224,20 +220,16 @@
   <target name="gputest" depends="gpu, compile" description="compile and run C unit tests for GPU code">
 
 		<!-- Compile and run the C-only GPU unit tests -->
-    <exec executable="make" dir="${src}/infodynamics/measures/continuous/kraskov/cuda/" resultproperty="return.code">
-      <arg value="unittest"/>
+    <exec executable="make" dir="${cudasrc}" failonerror="true" resultproperty="return.code">
+      <arg value="test"/>
     </exec>
     <fail>
       <condition>
         <isfailure code="${return.code}"/>
       </condition>
     </fail>
-    <move todir="${unittestsbin}/infodynamics/measures/continuous/kraskov/cuda"
-      file="${src}/infodynamics/measures/continuous/kraskov/cuda/unittest"/>
-    <copy todir="${unittestsbin}/infodynamics/measures/continuous/kraskov/cuda"
-      file="${bin}/infodynamics/measures/continuous/kraskov/cuda/libKraskov.so"/>
 
-    <exec executable="./unittest" dir="${unittestsbin}/infodynamics/measures/continuous/kraskov/cuda/" resultproperty="return.code"/>
+    <exec executable="./unittest" dir="${unittestsbin}/cuda/" failonerror="true" resultproperty="return.code"/>
     <fail>
       <condition>
         <isfailure code="${return.code}"/>

@@ -717,9 +717,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
         }
         String jarFolder = jarPath.toString().substring(0, jarPath.toString().lastIndexOf(fileSep));
         String relPath = fileSep + "bin" + fileSep +
-                        "infodynamics" + fileSep + "measures" + fileSep +
-                        "continuous" + fileSep + "kraskov" + fileSep + "cuda" +
-                        fileSep + "libKraskov.so";
+                        "cuda" + fileSep + "libKraskov.so";
         fullPath = jarFolder + relPath;
       } else {
         // Otherwise, use the provided path.
