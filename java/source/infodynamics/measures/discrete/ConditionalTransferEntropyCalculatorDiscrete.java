@@ -640,6 +640,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete extends InfoMeasureCal
 		// (Not necessary to check for distinct random perturbations)
 		int[][] newOrderings = rg.generateRandomPerturbations(observations, numPermutationsToCheck);
 
+		// TODO stop using deprecated method
 		ConditionalTransferEntropyCalculatorDiscrete cte = newInstance(base, k, numOtherInfoContributors);
 		cte.initialise();
 		cte.observations = observations;
@@ -897,7 +898,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete extends InfoMeasureCal
 	 *   (indexed only by time step)
 	 * @return time-series of local conditional TE values
 	 */
-	private double[] computeLocalFromPreviousObservations
+	public double[] computeLocalFromPreviousObservations
 		(int source[], int dest[], int[] conditional){
 
 		int rows = source.length;
@@ -955,7 +956,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete extends InfoMeasureCal
 	 *   (indexed first by time step then by variable number)
 	 * @return time-series of local conditional TE values
 	 */
-	private double[] computeLocalFromPreviousObservations
+	public double[] computeLocalFromPreviousObservations
 		(int source[], int dest[], int[][] conditionals){
 
 		int rows = source.length;
