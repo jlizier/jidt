@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project basedir="." default="build" name="Java Information Dynamics Toolkit">
+<project basedir="." default="build" name="Java Information Dynamics Toolkit" xmlns:if="ant:if">
 	<description>
 		Build file for the Java Information Dynamics Toolkit
 	</description>
@@ -20,53 +20,72 @@
 	<property name="reports.tests" location="${unittestsouttoplevel}/reports"/>
 	<property name="javadocsdir" location="javadocs"/>
 	<property name="versionfile" value="version-${version}.txt"/>
+  <!-- To enable GPU code, uncomment from here... -->
+  <property name="enablegpu" value="false"/>
+  <!-- ...to here -->
 	
 	<path id="project.classpath">
 		<pathelement location="bin"/>
 	</path>
-	
+
+  <path id="apache-classpath">
+    <pathelement path="./share/commons-math3-3.5.jar"/>
+  </path>
+
 	<!-- Make required directories -->
 	<target name="init" description="Create the compiled code directories">
 		<mkdir dir="${bin}"/>
 		<mkdir dir="${unittestsbin}"/>
 		<mkdir dir="${reports.tests}"/>
 	</target>
-	
+
 	<!-- Compile the java toolkit -->
 	<target name="compile" depends="init" description="compile the source and unittests">
-		<!-- Compile to Java 6 to provide compatibility for users with older JREs.
+		<!-- Compile to Java 7 to provide compatibility for users with older JREs.
 		     Caveat: The flags here only check the language compatibility, but
-		     may still use newer libraries which may cause issues for users with JDK 6.
-		     Indeed, one gets the warning: "bootstrap class path not set in conjunction with -source 1.6"
+		     may still use newer libraries which may cause issues for users with JDK 7.
+		     Indeed, one gets the warning: "bootstrap class path not set in conjunction with -source 1.7"
 		     To fix this, one would use the bootstrap classpath to point our JDK to an rt.jar
-		     for Java 6. 
-		     At this stage, I'm sure I'm not using new library calls from Java 7, so we can
-		     ignore the warning, and I don't want to bother installing Java 6 just to compile
-		     like this. I'll endeavour not to use JDK 7 libraries so as not to cause
+		     for Java 7. 
+		     At this stage, I'm sure I'm not using new library calls from Java 8, so we can
+		     ignore the warning, and I don't want to bother installing Java 7 just to compile
+		     like this. I'll endeavour not to use JDK 8 libraries so as not to cause
 		     any issues here ... -->
-		<javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false" target="1.6" source="1.6"/>
+		<javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false" target="1.7" source="1.7">
+			<classpath refid="apache-classpath"/>
+    </javac>
+
+    <!-- Compiling Cpp code -->
+    <antcall target="gpu" if:true="${enablegpu}">
+      <param name="DEBUG" value="0"/>
+    </antcall>
+
 	</target>
 
 	<!-- Jar the toolkit -->
 	<target name="jar" depends="compile" description="Create the jar for distribution">
 		<!-- Put everything in ${bin} into the infodynamics-${version}.jar file -->
-		<jar jarfile="${jarplainname}" basedir="${bin}"/>
+    <jar jarfile="${jarplainname}" basedir="${bin}" excludes="**/cuda/"/>
 	</target>
 
 	<!-- Compile and run the JUnit tests -->
 	<target name="junit" depends="compile" description="Run the junit tests and make sure they compile">
+
 		<!-- Compile the junit tests first -->
-		<javac destdir="${unittestsbin}" includeAntRuntime="true">
+		<javac destdir="${unittestsbin}" includeAntRuntime="true" debug="true">
 			<!-- Need includeAntRuntime=true if you want to pick up junit.jar and ant-junit.jar in ANT_HOME/lib;
 			     Otherwise you will need to set the classpath to include these here. -->
 			<src path="${unittestssrc}"/>
 			<classpath refid="project.classpath"/>
+			<classpath refid="apache-classpath"/>
 		</javac>
+
 		<!-- Run the junit tests and make sure they complete ok -->
-		<junit printsummary="yes" showoutput="yes" haltonfailure="yes" haltonerror="yes" includeantruntime="true">
+		<junit printsummary="yes" showoutput="yes" fork="true" forkmode="once" haltonfailure="yes" haltonerror="yes" includeantruntime="true">
 			<classpath>
 				<path refid="project.classpath"/>
 				<pathelement path="${unittestsbin}"/>
+        <pathelement location="${basedir}/clover.jar"/>
 			</classpath>
 			<formatter type="plain"/>
 			<batchtest todir="${reports.tests}"> <!-- Writes full reports with stdout and stderr to ${reports.tests} -->
@@ -78,6 +97,9 @@
 				</fileset>
 			</batchtest>
 		</junit>
+
+    <!-- If applicable, run also GPU tests -->
+    <antcall target="gputest" if:true="${enablegpu}"/>
 	</target>
 
 	<!-- Compile the autoanalyser demo -->
@@ -140,6 +162,7 @@
 		<delete>
 			 <fileset dir="demos/java/infodynamics/demos/autoanalysis" includes="GeneratedCalculator.*"/>
 		</delete>
+    <antcall target="gpuclean"/>
 		<!-- Don't delete the readme and version files - the user may not have the template to recreate them from -->
 	</target>
 	
@@ -155,6 +178,95 @@
 	
 	***********************************
 	-->
+
+  <!-- Compile and jar the toolkit with debug symbols -->
+  <target name="debug" depends="init" description="compile and jar with debug symbols">
+    <echo message="Compiling for debug"/>
+    <javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false" target="1.7" source="1.7" debug="true">
+			<classpath refid="apache-classpath"/>
+    </javac>
+
+    <!-- Compiling Cpp code -->
+    <antcall target="gpu" if:true="${enablegpu}">
+      <param name="DEBUG" value="1"/>
+    </antcall>
+
+    <jar jarfile="${jarplainname}" basedir="${bin}"/>
+  </target>
+
+  <!-- Compile GPU code -->
+  <target name="gpu" depends="init" description="compile only C/C++ GPU code">
+    <exec executable="make" dir="${src}/infodynamics/measures/continuous/kraskov/cuda/" resultproperty="return.code">
+      <env key="DEBUG" value="${DEBUG}"/>
+    </exec>
+    <fail>
+      <condition>
+        <isfailure code="${return.code}"/>
+      </condition>
+    </fail>
+    <move todir="${bin}/infodynamics/measures/continuous/kraskov/cuda">
+      <filelist dir="${src}/infodynamics/measures/continuous/kraskov/cuda">
+        <file name="gpuKnnLibrary.o"/>
+        <file name="libgpuKnnLibrary.a"/>
+        <file name="libKraskov.so"/>
+      </filelist>
+    </move>
+  </target>
+
+  <!-- Clean GPU code -->
+  <target name="gpuclean" description="clean only C/C++ GPU code">
+    <exec executable="make" dir="${src}/infodynamics/measures/continuous/kraskov/cuda/">
+      <arg value="clean"/>
+    </exec>
+  </target>
+
+  <!-- Test GPU code -->
+  <target name="gputest" depends="gpu, compile" description="compile and run C unit tests for GPU code">
+
+		<!-- Compile and run the C-only GPU unit tests -->
+    <exec executable="make" dir="${src}/infodynamics/measures/continuous/kraskov/cuda/" resultproperty="return.code">
+      <arg value="unittest"/>
+    </exec>
+    <fail>
+      <condition>
+        <isfailure code="${return.code}"/>
+      </condition>
+    </fail>
+    <move todir="${unittestsbin}/infodynamics/measures/continuous/kraskov/cuda"
+      file="${src}/infodynamics/measures/continuous/kraskov/cuda/unittest"/>
+    <copy todir="${unittestsbin}/infodynamics/measures/continuous/kraskov/cuda"
+      file="${bin}/infodynamics/measures/continuous/kraskov/cuda/libKraskov.so"/>
+
+    <exec executable="./unittest" dir="${unittestsbin}/infodynamics/measures/continuous/kraskov/cuda/" resultproperty="return.code"/>
+    <fail>
+      <condition>
+        <isfailure code="${return.code}"/>
+      </condition>
+    </fail>
+
+		<!-- Compile and run the Java+C GPU tests -->
+		<javac destdir="${unittestsbin}" includeAntRuntime="true" debug="true">
+      <src path="${unittestssrc}"/>
+			<classpath refid="project.classpath"/>
+			<classpath refid="apache-classpath"/>
+		</javac>
+
+		<junit printsummary="yes" showoutput="yes" fork="true" forkmode="once" haltonfailure="yes" haltonerror="yes" includeantruntime="true">
+			<classpath>
+				<path refid="project.classpath"/>
+				<pathelement path="${unittestsbin}"/>
+        <pathelement location="${basedir}/clover.jar"/>
+			</classpath>
+			<formatter type="plain"/>
+			<batchtest todir="${reports.tests}"> <!-- Writes full reports with stdout and stderr to ${reports.tests} -->
+				<fileset dir="${unittestsbin}">
+					<include name="**/GPUMutualInfoTester.class"/>
+					<include name="**/GPUPerformanceTester.class"/>
+				</fileset>
+			</batchtest>
+		</junit>
+
+  </target>
 
 	<!-- Developer build - creates readme and version files -->
 	<target name="readmefiles" description="developer: create the readme and version files from templates">
