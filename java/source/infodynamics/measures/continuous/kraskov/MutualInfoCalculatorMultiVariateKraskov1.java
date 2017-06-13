@@ -118,5 +118,48 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 		} else {
 			return new double[] {sumDiGammas, sumNx, sumNy};
 		}
+	}
+
+	public int[][] partialNeighbourCountFromObservations(
+			int startTimePoint, int numTimePoints) throws Exception {
+		
+		double startTime = Calendar.getInstance().getTimeInMillis();
+		
+		ensureKdTreesConstructed();
+
+		int[][] neighbourCounts = new int[numTimePoints][2];
+
+		for (int t = startTimePoint; t < startTimePoint + numTimePoints; t++) {
+			// Compute eps for this time step by
+			//  finding the kth closest neighbour for point t:
+			PriorityQueue<NeighbourNodeData> nnPQ =
+					kdTreeJoint.findKNearestNeighbours(k, t, dynCorrExclTime);
+			// First element in the PQ is the kth NN,
+			//  and epsilon = kthNnData.distance
+			NeighbourNodeData kthNnData = nnPQ.poll();
+			
+			// Count the number of points whose x distance is less
+			//  than eps, and whose y distance is less than
+			//  epsilon = kthNnData.distance
+			int n_x = nnSearcherSource.countPointsStrictlyWithinR(
+							t, kthNnData.distance, dynCorrExclTime);
+			int n_y = nnSearcherDest.countPointsStrictlyWithinR(
+							t, kthNnData.distance, dynCorrExclTime);
+			
+			neighbourCounts[t - startTimePoint][0] = n_x;
+			neighbourCounts[t - startTimePoint][1] = n_y;
+
+		}
+		
+		if (debug) {
+			Calendar rightNow2 = Calendar.getInstance();
+			long endTime = rightNow2.getTimeInMillis();
+			System.out.println("Subset " + startTimePoint + ":" +
+					(startTimePoint + numTimePoints) + " Calculation time: " +
+					((endTime - startTime)/1000.0) + " sec" );
+		}
+
+		return neighbourCounts;
+		
 	}	
 }
