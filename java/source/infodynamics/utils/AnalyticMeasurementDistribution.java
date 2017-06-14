@@ -27,16 +27,89 @@ package infodynamics.utils;
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public class AnalyticMeasurementDistribution extends MeasurementDistribution {
+public abstract class AnalyticMeasurementDistribution extends MeasurementDistribution {
 
 	/**
 	 * Construct the instance
 	 * 
 	 * @param actualValue observed value of the information-theoretic measure
 	 * @param pValue p-value that surrogate measurements are greater than
-	 *  the observed value.
+	 *  the observed value. (1 - CDF of null at the observed value)
 	 */
 	protected AnalyticMeasurementDistribution(double actualValue, double pValue) {
 		super(actualValue, pValue);
 	}
+	
+	/**
+	 * Compute the <b>analytic</b> p-value 
+	 * for the given estimate (i.e. the input argument, not the 
+	 * estimate produced by any particular observations supplied)
+	 * under a null hypothesis that the source values of our
+	 * samples had no relation to the destination value (possibly
+	 * in the context of a conditional value).
+	 * 
+	 * <p>See Section II.E "Statistical significance testing" of 
+	 * the JIDT paper below for a description of how this is done for MI,
+	 * conditional MI and TE as per the references below.
+	 * </p>
+	 * 
+	 * <p><b>References:</b><br/>
+	 *  <ul>
+	 *   <li>J.T. Lizier, "JIDT: An information-theoretic
+	 *    toolkit for studying the dynamics of complex systems", 2014.</li>
+	 * 	 <li>Brillinger, <a href="http://www.stat.berkeley.edu/~brill/Papers/MIBJPS.pdf">
+	 * 		"Some data analyses using mutual information"</a>,
+	 * 		Brazilian Journal of Probability and Statistics, <b>18</b>, p. 163, (2004)</li>
+	 * 	 <li>Cheng et al., <a href="http://www.jds-online.com/file_download/112/JDS-369.pdf">
+	 * 		"Data Information in Contingency Tables: A Fallacy of Hierarchical Loglinear Models"</a>,
+	 * 		Journal of Data Science, <b>4</b>, p. 387 (2006).</li>
+	 *   <li>Geweke, <a href="http://dx.doi.org/10.1080/01621459.1982.10477803">
+	 *   	"Measurement of Linear Dependence and Feedback between Multiple Time Series"</a>,
+	 *   	Journal of the American Statistical Association, <b>77</b>, p. 304-313 (1982).</li>
+	 * 	 <li>Barnett and Bossomaier, <a href="http://arxiv.org/abs/1205.6339">
+	 * 		"Transfer Entropy as a Log-likelihood Ratio"</a>,
+	 * 		Physical Review Letters, <b>109</b>, p. 138105+ (2012).</li>
+     * </ul>
+	 * 
+	 * @return p-value for the given channel measure score under this null hypothesis.
+	 * @throws Exception
+	 */
+	public abstract double computePValueForGivenEstimate(double estimate);
+
+	/**
+	 * Compute the estimated observed measured value corresponding to
+	 * a given p-value
+	 * (derived from how the given estimates are <b>analytically</b> distributed  
+	 * under a null hypothesis that the source values of our
+	 * samples had no relation to the destination value, possibly
+	 * in the context of a conditional value).
+	 * 
+	 * <p>See Section II.E "Statistical significance testing" of 
+	 * the JIDT paper below for a description of how this is done for MI,
+	 * conditional MI and TE as per the references below.
+	 * </p>
+	 * 
+	 * <p><b>References:</b><br/>
+	 *  <ul>
+	 *   <li>J.T. Lizier, "JIDT: An information-theoretic
+	 *    toolkit for studying the dynamics of complex systems", 2014.</li>
+	 * 	 <li>Brillinger, <a href="http://www.stat.berkeley.edu/~brill/Papers/MIBJPS.pdf">
+	 * 		"Some data analyses using mutual information"</a>,
+	 * 		Brazilian Journal of Probability and Statistics, <b>18</b>, p. 163, (2004)</li>
+	 * 	 <li>Cheng et al., <a href="http://www.jds-online.com/file_download/112/JDS-369.pdf">
+	 * 		"Data Information in Contingency Tables: A Fallacy of Hierarchical Loglinear Models"</a>,
+	 * 		Journal of Data Science, <b>4</b>, p. 387 (2006).</li>
+	 *   <li>Geweke, <a href="http://dx.doi.org/10.1080/01621459.1982.10477803">
+	 *   	"Measurement of Linear Dependence and Feedback between Multiple Time Series"</a>,
+	 *   	Journal of the American Statistical Association, <b>77</b>, p. 304-313 (1982).</li>
+	 * 	 <li>Barnett and Bossomaier, <a href="http://arxiv.org/abs/1205.6339">
+	 * 		"Transfer Entropy as a Log-likelihood Ratio"</a>,
+	 * 		Physical Review Letters, <b>109</b>, p. 138105+ (2012).</li>
+     * </ul>
+	 * 
+	 * @return the estimate of the channel measure score corresponding to
+	 * the given p-value under this null hypothesis.
+	 * @throws Exception
+	 */
+	public abstract double computeEstimateForGivenPValue(double pValue);
 }

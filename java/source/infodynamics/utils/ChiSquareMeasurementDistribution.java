@@ -18,10 +18,13 @@
 
 package infodynamics.utils;
 
+import infodynamics.utils.commonsmath3.distribution.ChiSquaredDistribution;
+
 /**
  * Class to represent analytic distributions of info theoretic measurements under
- * some null hypothesis of a relationship between the variables, where that
- * distribution is a Chi Square distribution.
+ * some null hypothesis of a relationship between the variables, where the
+ * distribution of <b>a function of</b> those information-theoretic measurements
+ * is a Chi Square distribution.
  *
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
@@ -35,13 +38,43 @@ public class ChiSquareMeasurementDistribution extends
 	protected int degreesOfFreedom;
 	
 	/**
-	 * Construct the distribution
+	 * The number of observations that the information theoretic estimate
+	 * is computed from
+	 */
+	protected int numObservations;
+	
+	/**
+	 * An object of the chi2dist class from commons.math3,
+	 *  which we'll use to access the distribution values
+	 */
+	protected ChiSquaredDistribution chi2dist;
+	
+	/**
+	 * Construct the distribution.
+	 * Note: the Chi squared distribution is technically
+	 * of 2*numObservations*(the info theoretic estimate), not
+	 * of the info theoretic measurement itself.
 	 * 
-	 * @param actualValue actual observed value
+	 * @param actualValue actual observed information-theoretic value
+	 * @param numObservations the number of observations that the information theoretic estimate
+	 * 	is computed from
 	 * @param degreesOfFreedom degrees of freedom for the distribution
 	 */
-	public ChiSquareMeasurementDistribution(double actualValue, int degreesOfFreedom) {
-		super(actualValue, 1 - MathsUtils.chiSquareCdf(actualValue, degreesOfFreedom));
+	public ChiSquareMeasurementDistribution(double actualValue, 
+			int numObservations, int degreesOfFreedom) {
+		super(actualValue, 1 - MathsUtils.chiSquareCdf(2.0*((double)numObservations)*actualValue, degreesOfFreedom));
+		this.numObservations = numObservations;
 		this.degreesOfFreedom = degreesOfFreedom;
+		chi2dist = new ChiSquaredDistribution(degreesOfFreedom);
+	}
+	
+	public double computePValueForGivenEstimate(double estimate) {
+		return 1 - MathsUtils.chiSquareCdf(2.0*((double)numObservations)*estimate, degreesOfFreedom);
+	}
+	
+	public double computeEstimateForGivenPValue(double pValue) {
+		return chi2dist.inverseCumulativeProbability(1 - pValue) / (2.0*((double)numObservations));
+		// Could also call the following, but this doesn't re-use our objects:
+		// return MathsUtils.chiSquareInv(1 - pValue, degreesOfFreedom);
 	}
 }

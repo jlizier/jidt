@@ -544,7 +544,8 @@ public class ConditionalMutualInformationCalculatorDiscrete
 		if (!condMiComputed) {
 			computeAverageLocalOfObservations();
 		}
-		return new ChiSquareMeasurementDistribution(2.0*((double)observations)*average,
+		return new ChiSquareMeasurementDistribution(average,
+				observations,
 				(base1 - 1)*(base2 - 1)*condBase);
 	}
 

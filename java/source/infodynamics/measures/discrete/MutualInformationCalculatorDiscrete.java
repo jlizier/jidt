@@ -317,7 +317,8 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 		if (!miComputed) {
 			computeAverageLocalOfObservations();
 		}
-		return new ChiSquareMeasurementDistribution(2.0*((double)observations)*average,
+		return new ChiSquareMeasurementDistribution(average,
+				observations,
 				(base - 1) * (base - 1));
 	}
 	

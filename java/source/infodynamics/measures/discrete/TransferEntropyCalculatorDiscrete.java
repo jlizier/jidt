@@ -1287,9 +1287,8 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 		if (!estimateComputed) {
 			computeAverageLocalOfObservations();
 		}
-		// We set the "actual value" as 2*N*TE, since this marries up properly
-		//  with the requisite chi^2 distribution
-		return new ChiSquareMeasurementDistribution(2.0*((double)observations)*average,
+		return new ChiSquareMeasurementDistribution(average,
+				observations,
 				(sourceHistoryEmbedLength*base - 1)*(base - 1)*(k*base));
 	}
 

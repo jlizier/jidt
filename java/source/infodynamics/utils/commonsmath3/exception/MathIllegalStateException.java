@@ -1,6 +1,6 @@
 /*
  *  Java Information Dynamics Toolkit (JIDT)
- *  Copyright (C) 2012, Joseph T. Lizier
+ *  Copyright (C) 2017, Joseph T. Lizier
  *  
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 
 /*
  * This class was originally distributed as part of the Apache Commons
- *  Math3 library, under the Apache License Version 2.0, which is 
+ *  Math3 library (3.6.1), under the Apache License Version 2.0, which is 
  *  copied below. This Apache 2 software is now included as a derivative
  *  work in the GPLv3 licensed JIDT project, as per:
  *  http://www.apache.org/licenses/GPL-compatibility.html
@@ -51,11 +51,11 @@ import infodynamics.utils.commonsmath3.exception.util.ExceptionContext;
 import infodynamics.utils.commonsmath3.exception.util.ExceptionContextProvider;
 
 /**
- * Base class for all exceptions that signal a mismatch between the
- * current state and the user's expectations.
+ * Base class for all exceptions that signal that the process
+ * throwing the exception is in a state that does not comply with
+ * the set of states that it is designed to be in.
  *
  * @since 2.2
- * @version $Id$
  */
 public class MathIllegalStateException extends IllegalStateException
     implements ExceptionContextProvider {
