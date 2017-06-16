@@ -387,7 +387,6 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 			}
 		}
 		average = average/(double) observations;
-		miComputed = true;
 
 		return localMI;
 	}
