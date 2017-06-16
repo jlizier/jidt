@@ -18,6 +18,9 @@
 
 package infodynamics.measures.discrete;
 
+import infodynamics.utils.AnalyticMeasurementDistribution;
+import infodynamics.utils.AnalyticNullDistributionComputer;
+import infodynamics.utils.ChiSquareMeasurementDistribution;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.RandomGenerator;
@@ -68,8 +71,11 @@ import infodynamics.utils.RandomGenerator;
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscreteInContextOfPastCalculator {
+public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscreteInContextOfPastCalculator
+	implements AnalyticNullDistributionComputer {
 
+	protected boolean aisComputed = false;
+	
 	/**
 	 * User was formerly forced to create new instances through this factory method.
 	 * Retained for backwards compatibility.
@@ -93,6 +99,12 @@ public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscr
 	 */
 	public ActiveInformationCalculatorDiscrete(int base, int history) {
 		super(base, history);
+	}
+
+	@Override
+	public void initialise() {
+		super.initialise();
+		aisComputed = false;
 	}
 
 	@Override
@@ -297,6 +309,7 @@ public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscr
 		}
 		
 		average = mi;
+		aisComputed = true;
 		return mi;
 	}
 	
@@ -719,6 +732,17 @@ public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscr
 		measDistribution.pValue = (double) countWhereMIIsMoreSignificantThanOriginal / (double) numPermutationsToCheck;
 		measDistribution.actualValue = actualMI;
 		return measDistribution;
+	}
+
+	@Override
+	public AnalyticMeasurementDistribution computeSignificance()
+			throws Exception {
+		if (!aisComputed) {
+			computeAverageLocalOfObservations();
+		}
+		return new ChiSquareMeasurementDistribution(average,
+				observations,
+				(base - 1) * (base_power_k - 1));
 	}
 
 	/**
