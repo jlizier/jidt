@@ -1289,7 +1289,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 		}
 		return new ChiSquareMeasurementDistribution(average,
 				observations,
-				(sourceHistoryEmbedLength*base - 1)*(base - 1)*(k*base));
+				(base_power_l - 1)*(base - 1)*(base_power_k));
 	}
 
 	/**
