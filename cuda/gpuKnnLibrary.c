@@ -12,16 +12,25 @@ extern "C" {
 /**
  * Allocate all necessary memory for the whole calculation in a single call
  * to cudaMalloc, and point the pointers to the right place.
+ *
+ * @param signalLength total number of samples given, including surrogates
+ * @param k nunmber of neighbours to find
+ * @param dimx dimension of source points
+ * @param dimy dimension of dest points
+ * @param source,dest,distances,indexes,radii,nx,ny,digammas device pointers
+ * @param pointset pointer to the data array in host memory
+ *
+ * @return error code
  */
-int allocateDeviceMemory(int signalLength, int kth, int dimx, int dimy,
+int allocateDeviceMemory(int signalLength, int k, int dimx, int dimy,
     float **source, float **dest, float **distances, int **indexes,
     float **radii, int **nx, int **ny, float **digammas, float *pointset) {
 
   float *d_pointset;
   int dims = dimx + dimy;
   size_t mempointset = signalLength * dims * sizeof(float);
-  size_t memdistances = signalLength * kth * sizeof(float);
-  size_t memindexes = signalLength * kth * sizeof(int);
+  size_t memdistances = signalLength * k * sizeof(float);
+  size_t memindexes = signalLength * k * sizeof(int);
   size_t memcounts = 2 * signalLength * sizeof(int);
   size_t memdigammas = signalLength * sizeof(float);
   size_t memtotal = mempointset + memdistances + memindexes + memcounts + memdigammas;
@@ -39,8 +48,8 @@ int allocateDeviceMemory(int signalLength, int kth, int dimx, int dimy,
   *source = d_pointset;
   *dest = *source + signalLength*dimx;
   *distances = *dest + signalLength*dimy;
-  *radii = *distances + (kth-1)*signalLength;
-  *indexes = (int *) (*distances + kth*signalLength);
+  *radii = *distances + (k-1)*signalLength;
+  *indexes = (int *) (*distances + k*signalLength);
   *nx = *indexes + signalLength;
   *ny = *nx + signalLength;
   *digammas = (float *) (*ny + signalLength);
@@ -49,7 +58,10 @@ int allocateDeviceMemory(int signalLength, int kth, int dimx, int dimy,
 }
 
 /**
- * Free all the memory used in GPU.
+ * Free all the memory used in GPU (if allocated using allocateDeviceMemory.
+ *
+ * @param d_pointset pointer to the start of the allocated memory block
+ * @return error code
  */
 int freeDeviceMemory(float *d_pointset) {
   checkCudaErrors( cudaFree(d_pointset) );
@@ -63,8 +75,28 @@ int freeDeviceMemory(float *d_pointset) {
   return 1;
 }
 
-int d_cudaFindKnn(int* d_bf_indexes, float* d_bf_distances, float* d_bf_pointset,
-    float* d_bf_query, int kth, int thelier, int nchunks, int pointdim,
+
+/**
+ * Find the K nearest neighbours of each point and return
+ * their indices and distances.
+ *
+ * Device function. 
+ *
+ * @param d_indexes
+ * @param d_distances
+ * @param d_pointset
+ * @param d_query
+ * @param k nunmber of neighbours to find
+ * @param theiler size of the dynamic correlation exclusion window
+ * @param nchunks number of blocks to split the data for calculation
+ * @param pointdim dimension of points in pointset
+ * @param signalLength total number of samples given, including surrogates
+ * @param useMaxNorm whether to use max norm, uses L2 if false
+ * 
+ * @return error code
+ */
+int d_cudaFindKnn(int* d_indexes, float* d_distances, float* d_pointset,
+    float* d_query, int k, int thelier, int nchunks, int pointdim,
     int signalLength, int useMaxNorm) {
 
   // Kernel parameters
@@ -72,8 +104,8 @@ int d_cudaFindKnn(int* d_bf_indexes, float* d_bf_distances, float* d_bf_pointset
   dim3 grid(1,1,1);
   threads.x = 512;
   grid.x = (signalLength-1)/threads.x + 1;
-  int memkernel = kth*sizeof(float)*threads.x+\
-          kth*sizeof(int)*threads.x;
+  int memkernel = k*sizeof(float)*threads.x+\
+          k*sizeof(int)*threads.x;
   int triallength = signalLength / nchunks;
 
   // Pointer to the function used to calculate norms
@@ -86,8 +118,8 @@ int d_cudaFindKnn(int* d_bf_indexes, float* d_bf_distances, float* d_bf_pointset
   }
 
   // Launch kernel
-  kernelKNNshared<<<grid.x, threads.x, memkernel>>>(d_bf_query, d_bf_pointset,
-      d_bf_indexes, d_bf_distances, pointdim, triallength, signalLength, kth,
+  kernelKNNshared<<<grid.x, threads.x, memkernel>>>(d_query, d_pointset,
+      d_indexes, d_distances, pointdim, triallength, signalLength, k,
       thelier, normFunction);
 
   checkCudaErrors( cudaDeviceSynchronize() );
@@ -102,8 +134,27 @@ int d_cudaFindKnn(int* d_bf_indexes, float* d_bf_distances, float* d_bf_pointset
 }
 
 
-int d_cudaFindRSAll(int* d_bf_npointsrange, float* d_bf_pointset, float* d_bf_query,
-    float* d_bf_vecradius, int thelier, int nchunks, int pointdim,
+/**
+ * Count the number of points within a certain radius of each point and return
+ * the counts in npointsrange.
+ *
+ * Device function. 
+ *
+ * @param d_indexes
+ * @param d_distances
+ * @param d_pointset
+ * @param d_query
+ * @param k nunmber of neighbours to find
+ * @param theiler size of the dynamic correlation exclusion window
+ * @param nchunks number of blocks to split the data for calculation
+ * @param pointdim dimension of points in pointset
+ * @param signalLength total number of samples given, including surrogates
+ * @param useMaxNorm whether to use max norm, uses L2 if false
+ * 
+ * @return error code
+ */
+int d_cudaFindRSAll(int* d_npointsrange, float* d_pointset, float* d_query,
+    float* d_vecradius, int thelier, int nchunks, int pointdim,
     int signalLength, int useMaxNorm) {
 
   // Kernel parameters
@@ -125,8 +176,8 @@ int d_cudaFindRSAll(int* d_bf_npointsrange, float* d_bf_pointset, float* d_bf_qu
 
   // Launch kernel
   kernelBFRSAllshared<<< grid.x, threads.x, memkernel>>>(
-          d_bf_query, d_bf_pointset, d_bf_npointsrange, pointdim,
-          triallength, signalLength, thelier, d_bf_vecradius, normFunction);
+          d_query, d_pointset, d_npointsrange, pointdim,
+          triallength, signalLength, thelier, d_vecradius, normFunction);
 
   checkCudaErrors(cudaDeviceSynchronize());
 
@@ -142,23 +193,42 @@ int d_cudaFindRSAll(int* d_bf_npointsrange, float* d_bf_pointset, float* d_bf_qu
 }
 
 
-int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_pointset,
-    float* h_query, int kth, int thelier, int nchunks, int pointdim,
+/**
+ * Find the K nearest neighbours of each point and return
+ * their indices and distances.
+ *
+ * Host function. 
+ *
+ * @param d_indexes
+ * @param d_distances
+ * @param d_pointset
+ * @param d_query
+ * @param k nunmber of neighbours to find
+ * @param theiler size of the dynamic correlation exclusion window
+ * @param nchunks number of blocks to split the data for calculation
+ * @param pointdim dimension of points in pointset
+ * @param signalLength total number of samples given, including surrogates
+ * @param useMaxNorm whether to use max norm, uses L2 if false
+ * 
+ * @return error code
+ */
+int cudaFindKnn(int* h_indexes, float* h_distances, float* h_pointset,
+    float* h_query, int k, int thelier, int nchunks, int pointdim,
     int signalLength, unsigned int useMaxNorm) {
-  float *d_bf_pointset, *d_bf_query;
-  int *d_bf_indexes;
-  float *d_bf_distances;
+  float *d_pointset, *d_query;
+  int *d_indexes;
+  float *d_distances;
 
   unsigned int meminputsignalquerypointset= pointdim * signalLength * sizeof(float);
-  unsigned int mem_bfcl_outputsignaldistances= kth * signalLength * sizeof(float);
-  unsigned int mem_bfcl_outputsignalindexes = kth * signalLength * sizeof(int);
+  unsigned int mem_bfcl_outputsignaldistances= k * signalLength * sizeof(float);
+  unsigned int mem_bfcl_outputsignalindexes = k * signalLength * sizeof(int);
 
   CPerfTimer pt1 = startTimer("kNN_upload");
-  checkCudaErrors( cudaMalloc( (void**) &(d_bf_query), meminputsignalquerypointset));
-  checkCudaErrors( cudaMalloc( (void**) &(d_bf_pointset), meminputsignalquerypointset));
+  checkCudaErrors( cudaMalloc( (void**) &(d_query), meminputsignalquerypointset));
+  checkCudaErrors( cudaMalloc( (void**) &(d_pointset), meminputsignalquerypointset));
   //GPU output
-  checkCudaErrors( cudaMalloc( (void**) &(d_bf_distances), mem_bfcl_outputsignaldistances ));
-  checkCudaErrors( cudaMalloc( (void**) &(d_bf_indexes), mem_bfcl_outputsignalindexes ));
+  checkCudaErrors( cudaMalloc( (void**) &(d_distances), mem_bfcl_outputsignaldistances ));
+  checkCudaErrors( cudaMalloc( (void**) &(d_indexes), mem_bfcl_outputsignalindexes ));
 
   cudaError_t error = cudaGetLastError();
   if(error!=cudaSuccess){
@@ -167,8 +237,8 @@ int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_pointset,
   }
 
   //Upload input data
-  checkCudaErrors( cudaMemcpy(d_bf_query, h_query, meminputsignalquerypointset, cudaMemcpyHostToDevice ));
-  checkCudaErrors( cudaMemcpy(d_bf_pointset, h_pointset, meminputsignalquerypointset, cudaMemcpyHostToDevice ));
+  checkCudaErrors( cudaMemcpy(d_query, h_query, meminputsignalquerypointset, cudaMemcpyHostToDevice ));
+  checkCudaErrors( cudaMemcpy(d_pointset, h_pointset, meminputsignalquerypointset, cudaMemcpyHostToDevice ));
   error = cudaGetLastError();
   if(error!=cudaSuccess){
     fprintf(stderr,"%s",cudaGetErrorString(error));
@@ -177,8 +247,8 @@ int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_pointset,
   stopTimer(pt1);
   CPerfTimer pt2 = startTimer("kNN_kernel");
 
-  d_cudaFindKnn(d_bf_indexes, d_bf_distances, d_bf_pointset,
-                d_bf_query, kth, thelier, nchunks, pointdim,
+  d_cudaFindKnn(d_indexes, d_distances, d_pointset,
+                d_query, k, thelier, nchunks, pointdim,
                 signalLength, useMaxNorm);
 
 
@@ -187,8 +257,8 @@ int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_pointset,
   CPerfTimer pt3 = startTimer("kNN_download");
 
   //Download result
-  checkCudaErrors( cudaMemcpy( h_bf_distances, d_bf_distances, mem_bfcl_outputsignaldistances, cudaMemcpyDeviceToHost) );
-  checkCudaErrors( cudaMemcpy( h_bf_indexes, d_bf_indexes, mem_bfcl_outputsignalindexes, cudaMemcpyDeviceToHost) );
+  checkCudaErrors( cudaMemcpy( h_distances, d_distances, mem_bfcl_outputsignaldistances, cudaMemcpyDeviceToHost) );
+  checkCudaErrors( cudaMemcpy( h_indexes, d_indexes, mem_bfcl_outputsignalindexes, cudaMemcpyDeviceToHost) );
   error = cudaGetLastError();
   if(error!=cudaSuccess){
     fprintf(stderr,"%s",cudaGetErrorString(error));
@@ -196,10 +266,10 @@ int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_pointset,
   }
 
   //Free resources
-  checkCudaErrors(cudaFree(d_bf_query));
-  checkCudaErrors(cudaFree(d_bf_pointset));
-  checkCudaErrors(cudaFree(d_bf_distances));
-  checkCudaErrors(cudaFree(d_bf_indexes));
+  checkCudaErrors(cudaFree(d_query));
+  checkCudaErrors(cudaFree(d_pointset));
+  checkCudaErrors(cudaFree(d_distances));
+  checkCudaErrors(cudaFree(d_indexes));
   stopTimer(pt3);
   // cudaDeviceReset();
   if(error!=cudaSuccess){
@@ -211,33 +281,43 @@ int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_pointset,
 }
 
 
-int cudaFindKnnSetGPU(int* h_bf_indexes, float* h_bf_distances,
-    float* h_pointset, float* h_query, int kth, int thelier, int nchunks,
+/**
+ * Find the K nearest neighbours of each point and return
+ * their indices and distances.
+ *
+ * For more information refer to {@link #cudaFindKnn}.
+ * 
+ * @return error code
+ */
+int cudaFindKnnSetGPU(int* h_indexes, float* h_distances,
+    float* h_pointset, float* h_query, int k, int thelier, int nchunks,
     int pointdim, int signalLength, unsigned int useMaxNorm, int deviceid) {
   cudaSetDevice(deviceid);
-  return cudaFindKnn(h_bf_indexes, h_bf_distances, h_pointset, h_query,
-      kth, thelier, nchunks, pointdim, signalLength, useMaxNorm);
+  return cudaFindKnn(h_indexes, h_distances, h_pointset, h_query,
+      k, thelier, nchunks, pointdim, signalLength, useMaxNorm);
 }
 
 /*
  * Range search being radius a vector of length number points in queryset/pointset
+ * Count the number of points within a certain radius of each point and return
+ * the counts in npointsrange.
  */
-int cudaFindRSAll(int* h_bf_npointsrange, float* h_pointset, float* h_query,
+int cudaFindRSAll(int* h_npointsrange, float* h_pointset, float* h_query,
     float* h_vecradius, int thelier, int nchunks, int pointdim,
     int signalLength, unsigned int useMaxNorm) {
 
-  float *d_bf_pointset, *d_bf_query, *d_bf_vecradius;
-  int *d_bf_npointsrange;
+  float *d_pointset, *d_query, *d_vecradius;
+  int *d_npointsrange;
 
   unsigned int meminputsignalquerypointset= pointdim * signalLength * sizeof(float);
   unsigned int mem_bfcl_outputsignalnpointsrange= signalLength * sizeof(int);
   unsigned int mem_bfcl_inputvecradius = signalLength * sizeof(float);
 
   CPerfTimer pt1 = startTimer("RS_upload");
-  checkCudaErrors( cudaMalloc( (void**) &(d_bf_query), meminputsignalquerypointset));
-  checkCudaErrors( cudaMalloc( (void**) &(d_bf_pointset), meminputsignalquerypointset));
-  checkCudaErrors( cudaMalloc( (void**) &(d_bf_npointsrange), mem_bfcl_outputsignalnpointsrange ));
-    checkCudaErrors( cudaMalloc( (void**) &(d_bf_vecradius), mem_bfcl_inputvecradius ));
+  checkCudaErrors( cudaMalloc( (void**) &(d_query), meminputsignalquerypointset));
+  checkCudaErrors( cudaMalloc( (void**) &(d_pointset), meminputsignalquerypointset));
+  checkCudaErrors( cudaMalloc( (void**) &(d_npointsrange), mem_bfcl_outputsignalnpointsrange ));
+    checkCudaErrors( cudaMalloc( (void**) &(d_vecradius), mem_bfcl_inputvecradius ));
 
     cudaError_t error = cudaGetLastError();
   if(error!=cudaSuccess){
@@ -245,9 +325,9 @@ int cudaFindRSAll(int* h_bf_npointsrange, float* h_pointset, float* h_query,
     return 0;
   }
   //Upload input data
-  checkCudaErrors( cudaMemcpy(d_bf_query, h_query, meminputsignalquerypointset, cudaMemcpyHostToDevice ));
-  checkCudaErrors( cudaMemcpy(d_bf_pointset, h_pointset, meminputsignalquerypointset, cudaMemcpyHostToDevice ));
-  checkCudaErrors( cudaMemcpy(d_bf_vecradius, h_vecradius, mem_bfcl_inputvecradius, cudaMemcpyHostToDevice ));
+  checkCudaErrors( cudaMemcpy(d_query, h_query, meminputsignalquerypointset, cudaMemcpyHostToDevice ));
+  checkCudaErrors( cudaMemcpy(d_pointset, h_pointset, meminputsignalquerypointset, cudaMemcpyHostToDevice ));
+  checkCudaErrors( cudaMemcpy(d_vecradius, h_vecradius, mem_bfcl_inputvecradius, cudaMemcpyHostToDevice ));
 
     error = cudaGetLastError();
   if(error!=cudaSuccess){
@@ -257,13 +337,13 @@ int cudaFindRSAll(int* h_bf_npointsrange, float* h_pointset, float* h_query,
   stopTimer(pt1);
   CPerfTimer pt2 = startTimer("RS_kernel");
 
-  d_cudaFindRSAll(d_bf_npointsrange, d_bf_pointset, d_bf_query,
-    d_bf_vecradius, thelier, nchunks, pointdim, signalLength, useMaxNorm);
+  d_cudaFindRSAll(d_npointsrange, d_pointset, d_query,
+    d_vecradius, thelier, nchunks, pointdim, signalLength, useMaxNorm);
 
   stopTimer(pt2);
   CPerfTimer pt3 = startTimer("RS_download");
 
-  checkCudaErrors( cudaMemcpy( h_bf_npointsrange, d_bf_npointsrange,mem_bfcl_outputsignalnpointsrange, cudaMemcpyDeviceToHost) );
+  checkCudaErrors( cudaMemcpy( h_npointsrange, d_npointsrange,mem_bfcl_outputsignalnpointsrange, cudaMemcpyDeviceToHost) );
 
 
   if(error!=cudaSuccess){
@@ -272,10 +352,10 @@ int cudaFindRSAll(int* h_bf_npointsrange, float* h_pointset, float* h_query,
   }
 
   // Free resources
-  checkCudaErrors(cudaFree(d_bf_query));
-  checkCudaErrors(cudaFree(d_bf_pointset));
-  checkCudaErrors(cudaFree(d_bf_npointsrange));
-  checkCudaErrors(cudaFree(d_bf_vecradius));
+  checkCudaErrors(cudaFree(d_query));
+  checkCudaErrors(cudaFree(d_pointset));
+  checkCudaErrors(cudaFree(d_npointsrange));
+  checkCudaErrors(cudaFree(d_vecradius));
   cudaDeviceReset();
   if(error!=cudaSuccess){
     fprintf(stderr,"%s",cudaGetErrorString(error));
@@ -286,11 +366,19 @@ int cudaFindRSAll(int* h_bf_npointsrange, float* h_pointset, float* h_query,
   return 1;
 }
 
-int cudaFindRSAllSetGPU(int* h_bf_npointsrange, float* h_pointset,
+/**
+ * Count the number of points within a certain radius of each point and return
+ * the counts in npointsrange.
+ *
+ * For more information refer to {@link #cudaFindRSAll}.
+ * 
+ * @return error code
+ */
+int cudaFindRSAllSetGPU(int* h_npointsrange, float* h_pointset,
     float* h_query, float* h_vecradius, int thelier, int nchunks,
     int pointdim, int signalLength, unsigned int useMaxNorm, int deviceid) {
   cudaSetDevice(deviceid);
-  return cudaFindRSAll(h_bf_npointsrange, h_pointset, h_query, h_vecradius,
+  return cudaFindRSAll(h_npointsrange, h_pointset, h_query, h_vecradius,
       thelier, nchunks, pointdim, signalLength, useMaxNorm);
 }
 
