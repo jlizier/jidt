@@ -755,6 +755,6 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 	}
 	
 	public int getNumObservations() {
-		return continuousData.length;
+		return totalObservations;
 	}
 }
