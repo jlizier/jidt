@@ -26,6 +26,9 @@ import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.RandomGenerator;
 
+import java.util.Iterator;
+import java.util.Vector;
+
 /**
  * <p>Compute the Mutual Information between a vector of continuous variables and discrete
  *  variable using the Kraskov estimation method.</p>
@@ -103,6 +106,16 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
    * Saved digammaK for average and local computations
    */
   protected double digammaK;
+	/**
+	 * Storage for continuous observations supplied via {@link #addObservations(double[][], int[])}
+	 * type calls
+	 */
+	protected Vector<double[][]> vectorOfContinuousObservations;
+	/**
+	 * Storage for discrete observations supplied via {@link #addObservations(double[][], int[])}
+	 * type calls
+	 */
+	protected Vector<int[]> vectorOfDiscreteObservations;
 	
 	protected EuclideanUtils normCalculator;
 	// Storage for the norms from each observation to each other one
@@ -128,6 +141,14 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 	 * Track the std devs of the joint variables if we are normalising them
 	 */
 	protected double[] stds;
+	/**
+	 * Time difference from the source to the destination observations
+	 *  (ie destination lags the source by this time:
+	 *  	we compute I(source_{n}; dest_{n+timeDiff}).
+	 * (Note that our internal sourceObservations and destObservations
+	 *  are adjusted so that there is no timeDiff between them).
+	 */
+	protected int timeDiff = 0;
 
 	public MutualInfoCalculatorMultiVariateWithDiscreteKraskov() {
 		super();
@@ -179,8 +200,22 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		}
 	}
 
-	public void addObservations(double[][] source, double[][] destination) throws Exception {
-		throw new RuntimeException("Not implemented yet");
+	public void addObservations(double[][] continuousObservations,
+      int[] discreteObservations) throws Exception {
+		if (vectorOfContinuousObservations == null) {
+			// startAddObservations was not called first
+			throw new RuntimeException("User did not call startAddObservations before addObservations");
+		}
+		if (continuousObservations.length != discreteObservations.length) {
+			throw new Exception("Time steps for observations2 " +
+					discreteObservations.length + " does not match the length " +
+					"of observations1 " + continuousObservations.length);
+		}
+		if (continuousObservations[0].length != dimensions) {
+			throw new Exception("The continuous observations do not have the expected number of variables (" + dimensions + ")");
+		}
+		vectorOfContinuousObservations.add(continuousObservations);
+		vectorOfDiscreteObservations.add(discreteObservations);
 	}
 
 	public void addObservations(double[][] source, double[][] destination, int startTime, int numTimeSteps) throws Exception {
@@ -196,38 +231,47 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 	}
 
 	public void startAddObservations() {
-		throw new RuntimeException("Not implemented yet");
+		vectorOfContinuousObservations = new Vector<double[][]>();
+		vectorOfDiscreteObservations   = new Vector<int[]>();
 	}
 
-	public void finaliseAddObservations() {
-		throw new RuntimeException("Not implemented yet");
-	}
-
-	public void setObservations(double[][] continuousObservations,
-			int[] discreteObservations) throws Exception {
-		if (continuousObservations.length != discreteObservations.length) {
-			throw new Exception("Time steps for observations2 " +
-					discreteObservations.length + " does not match the length " +
-					"of observations1 " + continuousObservations.length);
-		}
-		if (continuousObservations[0].length == 0) {
-			throw new Exception("Computing MI with a null set of data");
-		}
-		if (continuousObservations[0].length != dimensions) {
-			throw new Exception("The continuous observations do not have the expected number of variables (" + dimensions + ")");
+	public void finaliseAddObservations() throws Exception {
+		if (vectorOfContinuousObservations.size() < 1) {
+			throw new Exception("Cannot compute MI with a null set of data");
 		}
 
-		continuousData = continuousObservations;
-		discreteData = discreteObservations;
-    totalObservations = discreteObservations.length;
+		// First work out the size to allocate the joint vectors, and do the allocation:
+		totalObservations = 0;
+		for (double[][] destination : vectorOfContinuousObservations) {
+			totalObservations += destination.length - timeDiff;
+		}
+		continuousData = new double[totalObservations][dimensions];
+		discreteData   = new int[totalObservations];
+		
+		// Construct the joint vectors from the given observations
+		//  (removing redundant data which is outside any timeDiff)
+		int startObservation = 0;
+		Iterator<double[][]> iterator = vectorOfContinuousObservations.iterator();
+		for (int[] dct : vectorOfDiscreteObservations) {
+			double[][] cnt = iterator.next();
+			// Copy the data from these given observations into our master 
+			//  array, aligning them incorporating the timeDiff:
+			MatrixUtils.arrayCopy(cnt, 0, 0,
+					continuousData, startObservation, 0,
+					cnt.length - timeDiff, dimensions);
+      System.arraycopy(dct, timeDiff, discreteData, startObservation, dct.length - timeDiff);
+			startObservation += cnt.length - timeDiff;
+		}
+		// We don't need to keep the vectors of observation sets anymore:
+		vectorOfContinuousObservations = null;
+		vectorOfDiscreteObservations   = null;
 
 		if (normalise) {
-			// Take a copy since we're going to normalise it
-			// And we need to keep the means/stds ready to normalise local values
+			// We need to keep the means/stds ready to normalise local values
 			//  that are supplied later:
-			means = MatrixUtils.means(continuousObservations);
-			stds = MatrixUtils.stdDevs(continuousObservations, means);
-			continuousData = MatrixUtils.normaliseIntoNewArray(continuousObservations, means, stds);
+			means = MatrixUtils.means(continuousData);
+			stds = MatrixUtils.stdDevs(continuousData, means);
+			MatrixUtils.normaliseIntoNewArray(continuousData, means, stds);
 		}
 
 		// count the discrete states:
@@ -244,6 +288,15 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
     digammaN = MathsUtils.digamma(totalObservations);
     digammaK = MathsUtils.digamma(k);
 	}
+
+
+	public void setObservations(double[][] continuousObservations,
+			int[] discreteObservations) throws Exception {
+    startAddObservations();
+    addObservations(continuousObservations, discreteObservations);
+    finaliseAddObservations();
+	}
+
 
 	/**
 	 * Compute the norms for each marginal time series
