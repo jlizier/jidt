@@ -128,6 +128,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 	public final static String PROP_K = "k";
 	public final static String PROP_NORM_TYPE = "NORM_TYPE";	
 	public static final String PROP_NORMALISE = "NORMALISE";
+	public static final String PROP_TIME_DIFF = "TIME_DIFF";
 	
 	/**
 	 * Track whether we're going to normalise the joint variables individually
@@ -185,18 +186,27 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 	 * 		default is {@link EuclideanUtils#NORM_MAX_NORM}.
 	 *  <li>{@link #PROP_NORMALISE} - whether to normalise the individual
 	 *      variables (true by default)</li>
+	 * 	<li>{@link #PROP_TIME_DIFF} - Time difference between source and
+   *     	destination (0 by default). Must be >= 0.</li>
 	 * </ul>
 	 * 
 	 * @param propertyName name of the property to set
 	 * @param propertyValue value to set on that property
 	 */
-	public void setProperty(String propertyName, String propertyValue) {
+	public void setProperty(String propertyName, String propertyValue)
+      throws Exception {
 		if (propertyName.equalsIgnoreCase(PROP_K)) {
 			k = Integer.parseInt(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_NORM_TYPE)) {
 			normCalculator.setNormToUse(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
 			normalise = Boolean.parseBoolean(propertyValue);
+		} else if (propertyName.equalsIgnoreCase(PROP_TIME_DIFF)) {
+			int val = Integer.parseInt(propertyValue);
+			if (val < 0) {
+				throw new Exception("Time difference must be >= 0. Flip data1 and data2 around if required.");
+			}
+      timeDiff = val;
 		}
 	}
 
