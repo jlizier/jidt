@@ -79,9 +79,30 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 	 * Number of dimenions of the joint continuous variable
 	 */
 	protected int dimensions;
+  /**
+   * Number of observations added to the calculator
+   */
+  protected int totalObservations;
+  /**
+   * Whether to print debug information
+   */
 	protected boolean debug;
+  /**
+   * Last computed value of MI
+   */
 	protected double mi;
+  /**
+   * Whether MI has been computed with the current observations
+   */
 	protected boolean miComputed;
+  /**
+   * Saved digammaN for average and local computations
+   */
+  protected double digammaN;
+  /**
+   * Saved digammaK for average and local computations
+   */
+  protected double digammaK;
 	
 	protected EuclideanUtils normCalculator;
 	// Storage for the norms from each observation to each other one
@@ -122,6 +143,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 	public void initialise(int dimensions, int base) {
 		mi = 0.0;
 		miComputed = false;
+    totalObservations = 0;
 		xNorms = null;
 		continuousData = null;
 		means = null;
@@ -194,8 +216,11 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		if (continuousObservations[0].length != dimensions) {
 			throw new Exception("The continuous observations do not have the expected number of variables (" + dimensions + ")");
 		}
+
 		continuousData = continuousObservations;
 		discreteData = discreteObservations;
+    totalObservations = discreteObservations.length;
+
 		if (normalise) {
 			// Take a copy since we're going to normalise it
 			// And we need to keep the means/stds ready to normalise local values
@@ -204,6 +229,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 			stds = MatrixUtils.stdDevs(continuousObservations, means);
 			continuousData = MatrixUtils.normaliseIntoNewArray(continuousObservations, means, stds);
 		}
+
 		// count the discrete states:
 		counts = new int[base];
 		for (int t = 0; t < discreteData.length; t++) {
@@ -214,6 +240,9 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 				throw new RuntimeException("This implementation assumes there are at least k items in each discrete bin");
 			}
 		}
+
+    digammaN = MathsUtils.digamma(totalObservations);
+    digammaK = MathsUtils.digamma(k);
 	}
 
 	/**
@@ -308,7 +337,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		//  for an entropy over m subspaces.
 		// mi = MathsUtils.digamma(k) - 1.0/(double)k - averageDiGammas + MathsUtils.digamma(N);
 		// Instead do:
-		mi = MathsUtils.digamma(k) - averageDiGammas + MathsUtils.digamma(N);
+		mi = digammaK + digammaN - averageDiGammas;
 		miComputed = true;
 		return mi;
 	}
@@ -364,7 +393,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 				//  for an entropy over m subspaces.
 				// double localValue = MathsUtils.digamma(k) - 1.0/(double)k - localSum + MathsUtils.digamma(N);
 				// Instead do:
-				double localValue = MathsUtils.digamma(k) - localSum + MathsUtils.digamma(N);
+				double localValue = digammaK + digammaN - localSum;
 				testSum += localValue;
 				if (dimensions == 1) {
 					System.out.printf("t=%d: x=%.3f, eps_x=%.3f, n_x=%d, n_y=%d, local=%.3f, running total = %.5f\n",
@@ -383,7 +412,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 					avNx, MathsUtils.digamma((int) avNx), MathsUtils.digamma((int) avNx - 1), avNy, MathsUtils.digamma((int) avNy)));
 			System.out.printf("Independent average num in joint box is %.3f\n", (avNx * avNy / (double) N));
 			System.out.println(String.format("digamma(k)=%.3f - averageDiGammas=%.3f + digamma(N)=%.3f\n",
-					MathsUtils.digamma(k), averageDiGammas, MathsUtils.digamma(N)));
+					digammaK, averageDiGammas, digammaN));
 		}
 		
 		// Don't need the 1/k correction here because the conditional entropy term
@@ -391,7 +420,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		//  for an entropy over m subspaces.
 		// mi = MathsUtils.digamma(k) - 1.0/(double)k - averageDiGammas + MathsUtils.digamma(N);
 		// Instead, do:
-		mi = MathsUtils.digamma(k) - averageDiGammas + MathsUtils.digamma(N);
+		mi = digammaK + digammaN - averageDiGammas;
 		miComputed = true;
 		return mi;
 	}
@@ -455,7 +484,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 				//  for an entropy over m subspaces.
 				// double localValue = MathsUtils.digamma(k) - 1.0/(double)k - localSum + MathsUtils.digamma(N);
 				// Instead do:
-				double localValue = MathsUtils.digamma(k) - localSum + MathsUtils.digamma(N);
+				double localValue = digammaK + digammaN - localSum;
 				testSum += localValue;
 				if (dimensions == 1) {
 					System.out.printf("t=%d: x=%.3f, eps_x=%.3f, n_x=%d, n_y=%d, local=%.3f, running total = %.5f\n",
@@ -478,7 +507,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		//  for an entropy over m subspaces.
 		// mi = MathsUtils.digamma(k) - 1.0/(double)k - averageDiGammas + MathsUtils.digamma(N);
 		// Instead do:
-		mi = MathsUtils.digamma(k) - averageDiGammas + MathsUtils.digamma(N);
+		mi = digammaK + digammaN - averageDiGammas;
 		miComputed = true;
 		return mi;
 	}
@@ -597,11 +626,11 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		// double fixedPartOfLocals = MathsUtils.digamma(k) - 1.0/(double)k +
 		//							MathsUtils.digamma(N);
 		// Instead do:
-		double fixedPartOfLocals = MathsUtils.digamma(k) + MathsUtils.digamma(N_samplesForPdfs); // Use N_samplesForPdfs here because that's what would be in denominator of probability functions
+		double fixedPartOfLocals = digammaK + digammaN; // Use N_samplesForPdfs here because that's what would be in denominator of probability functions
 		double testSum = 0.0;
 		if (debug) {
 			System.out.printf("digamma(k)=%.3f + digamma(N)=%.3f\n",
-					MathsUtils.digamma(k), MathsUtils.digamma(N_samplesForPdfs));
+					digammaK, digammaN);
 		}
 		double avNx = 0;
 		double avNy = 0;
