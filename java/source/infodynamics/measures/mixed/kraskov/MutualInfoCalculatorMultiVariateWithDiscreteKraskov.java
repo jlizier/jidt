@@ -63,7 +63,7 @@ import java.util.Arrays;
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements MutualInfoCalculatorMultiVariateWithDiscrete {
+public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements MutualInfoCalculatorMultiVariateWithDiscrete, Cloneable {
 
 	// Multiplier used in hueristic for determining whether to use a linear search
 	//  for min kth element or a binary search.
@@ -367,6 +367,8 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
     if (kdTreeJoint == null) {
       kdTreeJoint = new KdTree(continuousData);
       kdTreeJoint.setNormType(normType);
+    }
+    if (kdTreeBins == null) {
       kdTreeBins = new KdTree[base];
       for (int b = 0; b < base; b++) {
         kdTreeBins[b] = new KdTree(
@@ -387,74 +389,29 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 	 * @return
 	 * @throws Exception
 	 */
-	public double computeAverageLocalOfObservations(int[] reordering) throws Exception {
-
-
-
-		int N = continuousData.length; // number of observations
-		if (!tryKeepAllPairsNorms || (N > MAX_DATA_SIZE_FOR_KEEP_ALL_PAIRS_NORM)) {
-			// Generate a new re-ordered set of discrete data
-			int[] originalDiscreteData = discreteData;
-			discreteData = MatrixUtils.extractSelectedTimePoints(discreteData, reordering);
-			// Compute the MI
-			double newMI = computeAverageLocalOfObservationsWhileComputingDistances();
-			// restore data2
-			discreteData = originalDiscreteData;
-			return newMI;
-		}
+	public double computeAverageLocalOfObservations(int[] newOrdering)
+			throws Exception {
 		
-		// Otherwise we will use the norms we've already computed, and use a "virtual"
-		//  reordered data2.
-		int[] reorderedDiscreteData = MatrixUtils.extractSelectedTimePoints(discreteData, reordering);
-
-		if (xNorms == null) {
-			computeNorms();
+		if (newOrdering == null) {
+			return computeAverageLocalOfObservations();
 		}
 
-		// Count the average number of points within eps_x and eps_y
-		double averageDiGammas = 0;
-		double avNx = 0;
-		double avNy = 0;
+		// Take a clone of the object to compute the MI of the surrogates:
+		// (this is a shallow copy, it doesn't make new copies of all
+		//  the arrays)
+		MutualInfoCalculatorMultiVariateWithDiscreteKraskov miSurrogateCalculator =
+				(MutualInfoCalculatorMultiVariateWithDiscreteKraskov) this.clone();
 		
-		for (int t = 0; t < N; t++) {
-			// Compute eps_x and eps_y for this time step:
-			//  using x norms to all neighbours
-			//  (note that norm of point t to itself will be set to infinity).
-			// Then find the k closest neighbours in the same discrete bin
-			double eps_x = MatrixUtils.kthMinSubjectTo(xNorms[t], k, reorderedDiscreteData, reorderedDiscreteData[t]);			
-			
-			// Count the number of points whose x distance is less
-			//  than or equal to eps_x
-			int n_x = 0;
-			for (int t2 = 0; t2 < N; t2++) {
-				if (xNorms[t][t2] <= eps_x) {
-					n_x++;
-				}
-			}
-			// n_y is number of points in that bin minus that point
-			int n_y = counts[reorderedDiscreteData[t]] - 1;
-			avNx += n_x;
-			avNy += n_y;
-			// And take the digamma before adding into the 
-			//  average:
-			averageDiGammas += MathsUtils.digamma(n_x) + MathsUtils.digamma(n_y);
-		}
-		averageDiGammas /= (double) N;
-		if (debug) {
-			avNx /= (double)N;
-			avNy /= (double)N;
-			System.out.println(String.format("Average n_x=%.3f, Average n_y=%.3f", avNx, avNy));
-		}
-		
-		// Don't need the 1/k correction here because the conditional entropy term
-		//  is taken over the continuous space only. The correction is (m-1)/k
-		//  for an entropy over m subspaces.
-		// mi = MathsUtils.digamma(k) - 1.0/(double)k - averageDiGammas + MathsUtils.digamma(N);
-		// Instead do:
-		mi = digammaK + digammaN - averageDiGammas;
-		miComputed = true;
-		return mi;
+		// Generate a new re-ordered data set
+		int[] shuffledDiscreteData = MatrixUtils.extractSelectedTimePoints(discreteData, newOrdering);
+		// Perform new initialisations
+		miSurrogateCalculator.initialise(dimensions, base);
+		// Set new observations
+		miSurrogateCalculator.setObservations(continuousData, shuffledDiscreteData);
+		// Compute the MI
+		return miSurrogateCalculator.computeAverageLocalOfObservations();
 	}
+
 
 	public double computeAverageLocalOfObservations() throws Exception {
 
