@@ -22,6 +22,7 @@ import junit.framework.TestCase;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.RandomGenerator;
 import infodynamics.utils.MatrixUtils;
+import infodynamics.utils.MathsUtils;
 
 public class MutualInfoMultiVariateWithDiscreteKraskovTester extends TestCase {
 
@@ -172,8 +173,14 @@ public class MutualInfoMultiVariateWithDiscreteKraskovTester extends TestCase {
   public void testCompareAnalyticalValue() throws Exception {
     MutualInfoCalculatorMultiVariateWithDiscreteKraskov miCalc =
         new MutualInfoCalculatorMultiVariateWithDiscreteKraskov();
+    miCalc.setProperty("NORMALISE", "false");
 
     double[] separation = {2.0, 4.0, 8.0};
+
+    // These values were computed using the test script in the supplementary
+    // material of
+    // B. Ross, "Mutual Information Between Discrete and Continuous Data Sets",
+    // PLOS ONE (http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0087357)
     double[] true_val = {0.3368, 0.6327, 0.6931};
     int N = 10000;
 
@@ -192,6 +199,18 @@ public class MutualInfoMultiVariateWithDiscreteKraskovTester extends TestCase {
       miCalc.setObservations(contData, discData);
       double res = miCalc.computeAverageLocalOfObservations();
       assertEquals(true_val[j], res, 0.05);
+    }
+
+    // Using the last dataset added, compare a few local
+    // values with the analytical calculation
+    int nb_locals_test = 10;
+    double delta = separation[separation.length-1];
+    for (int i = 0; i < nb_locals_test; i++) {
+      int y = rg.generateRandomInts(1, 2)[0];
+      double x = rg.generateNormalData(1, 0, 1)[0] + delta*y;
+      double analytical = Math.log(MathsUtils.normalPdf(x, delta*y, 1)) - Math.log(0.5*(MathsUtils.normalPdf(x, 0, 1) + MathsUtils.normalPdf(x, delta, 1)));
+      double estimated = miCalc.computeLocalUsingPreviousObservations(new double[][] {new double[] {x} }, new int[] {y})[0];
+      assertEquals(analytical, estimated, 0.05);
     }
   }
 }
