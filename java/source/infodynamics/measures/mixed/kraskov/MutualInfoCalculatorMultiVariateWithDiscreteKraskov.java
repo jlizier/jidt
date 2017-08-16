@@ -299,7 +299,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 			//  that are supplied later:
 			means = MatrixUtils.means(continuousData);
 			stds = MatrixUtils.stdDevs(continuousData, means);
-			MatrixUtils.normaliseIntoNewArray(continuousData, means, stds);
+			MatrixUtils.normalise(continuousData, means, stds);
 		}
 
 		// count the discrete states:

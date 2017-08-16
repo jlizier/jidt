@@ -173,7 +173,6 @@ public class MutualInfoMultiVariateWithDiscreteKraskovTester extends TestCase {
   public void testCompareAnalyticalValue() throws Exception {
     MutualInfoCalculatorMultiVariateWithDiscreteKraskov miCalc =
         new MutualInfoCalculatorMultiVariateWithDiscreteKraskov();
-    miCalc.setProperty("NORMALISE", "false");
 
     double[] separation = {2.0, 4.0, 8.0};
 
