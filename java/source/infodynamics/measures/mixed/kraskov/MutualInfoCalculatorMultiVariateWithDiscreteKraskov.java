@@ -460,7 +460,6 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 
     // FIXME
     int dynCorrExclTime = 0;
-    boolean[] one_true = {true};
 
     int[] cumcount = new int[base];
     Arrays.fill(cumcount, 0);
