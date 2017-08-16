@@ -286,9 +286,17 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 
 		// count the discrete states:
 		counts = new int[base];
-		for (int t = 0; t < discreteData.length; t++) {
-			counts[discreteData[t]]++;
-		}
+    try {
+      for (int t = 0; t < discreteData.length; t++) {
+        counts[discreteData[t]]++;
+      }
+    } catch (ArrayIndexOutOfBoundsException e) {
+      totalObservations = 0;
+      continuousData = null;
+      discreteData   = null;
+      throw new RuntimeException("Values of the discrete variable must range from 0 to base-1");
+    }
+
 		for (int b = 0; b < counts.length; b++) {
 			if (counts[b] < k) {
 				throw new RuntimeException("This implementation assumes there are at least k items in each discrete bin");
