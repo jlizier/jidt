@@ -604,58 +604,27 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 			continuousNewStates = MatrixUtils.normaliseIntoNewArray(
 					continuousNewStates, means, stds);
 		}
-		
-		// Thanks to Rosalind Wang for picking up the bug in not using two different N's here
-		int N_newObservations = continuousNewStates.length; // number of new observations we're evaluating
-		int N_samplesForPdfs = continuousData.length; // number of observations we're using to compute the PDFs
-		
-		double[] locals = new double[N_newObservations];
-		
-		// Don't need the 1/k correction here because the conditional entropy term
-		//  is taken over the continuous space only. The correction is (m-1)/k
-		//  for an entropy over m subspaces.
-		// double fixedPartOfLocals = MathsUtils.digamma(k) - 1.0/(double)k +
-		//							MathsUtils.digamma(N);
-		// Instead do:
-		double fixedPartOfLocals = digammaK + digammaN; // Use N_samplesForPdfs here because that's what would be in denominator of probability functions
-		double testSum = 0.0;
-		if (debug) {
-			System.out.printf("digamma(k)=%.3f + digamma(N)=%.3f\n",
-					digammaK, digammaN);
-		}
-		double avNx = 0;
-		double avNy = 0;
-		
-		for (int t = 0; t < N_newObservations; t++) {
-			// Compute eps_x and eps_y for this time step:
-			//  First get x norms to all points in the previously
-			//   given observations.
-			double[] norms = new double[continuousData.length];
-			for (int t2 = 0; t2 < continuousData.length; t2++) {
-				// Compute norm in the continuous space
-				norms[t2] = normCalculator.norm(continuousNewStates[t], continuousData[t2]);
-			}
 
-			// Then find the k closest neighbours in the same discrete bin
-			double eps_x = MatrixUtils.kthMinSubjectTo(norms, k, discreteData, discreteNewStates[t]);			
+		double fixedPartOfLocals = digammaK + MathsUtils.digamma(totalObservations); // Use N_samplesForPdfs here because that's what would be in denominator of probability functions
+		double testSum = 0.0, avNx = 0.0, avNy = 0.0;
+    double[] locals = new double[discreteNewStates.length];
+    for (int t = 0; t < discreteNewStates.length; t++) {
 
-			// Count the number of points whose x distance is less
-			//  than or equal to eps_x
-			int n_x = 0;
-			for (int t2 = 0; t2 < continuousData.length; t2++) {
-				if (norms[t2] <= eps_x) {
-					n_x++;
-				}
-			}
-			// n_y is number of points in that discrete bin
-			int n_y = counts[discreteData[t]];
-			avNx += n_x;
-			avNy += n_y;
+      int b = discreteNewStates[t];
+
+      double[][] x = new double[][] {continuousNewStates[t]};
+      double eps_x = kdTreeBins[b].findKNearestNeighbours(k, x).poll().distance;
+      int n_x = kdTreeJoint.countPointsWithinR(x, eps_x, true);
+			int n_y = counts[b];
+
 			// Now compute the local value:
 			locals[t] = fixedPartOfLocals -
 					MathsUtils.digamma(n_x) - MathsUtils.digamma(n_y);
-			if (debug) {
+
+      if (debug) {
 				testSum += locals[t];
+        avNx += n_x;
+        avNy += n_y;
 				if (dimensions == 1) {
 					System.out.printf("t=%d: x=%.3f, eps_x=%.3f, n_x=%d, n_y=%d, local=%.3f, running total = %.5f\n",
 							t, continuousNewStates[t][0], eps_x, n_x, n_y, locals[t], testSum);
@@ -663,11 +632,11 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 					System.out.printf("t=%d: eps_x=%.3f, n_x=%d, n_y=%d, local=%.3f, running total = %.5f\n",
 							t, eps_x, n_x, n_y, locals[t], testSum);
 				}
-			}
-		}
+      }
+    }
 		if (debug) {
-			avNx /= (double)N_newObservations;
-			avNy /= (double)N_newObservations;
+			avNx /= (double) discreteNewStates.length;
+			avNy /= (double) discreteNewStates.length;
 			System.out.printf("Average n_x=%.3f, Average n_y=%.3f\n", avNx, avNy);
 		}
 		
