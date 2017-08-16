@@ -412,8 +412,15 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		return miSurrogateCalculator.computeAverageLocalOfObservations();
 	}
 
+  public double computeAverageLocalOfObservations() throws Exception {
+    return computeFromObservations(false)[0];
+  }
 
-	public double computeAverageLocalOfObservations() throws Exception {
+  public double[] computeLocalOfPreviousObservations() throws Exception {
+    return computeFromObservations(true);
+  }
+
+	public double[] computeFromObservations(boolean returnLocals) throws Exception {
 
     // FIXME
     int dynCorrExclTime = 0;
@@ -429,6 +436,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		
 		double testSum = 0.0; // Used for debugging prints
     int N = totalObservations;
+    double[] locals = new double[N];
 
 		for (int t = 0; t < N; t++) {
 
@@ -447,13 +455,15 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 			double localSum = MathsUtils.digamma(n_x) + MathsUtils.digamma(n_y);
 			averageDiGammas += localSum;
 
+      // Don't need the 1/k correction here because the conditional entropy term
+      //  is taken over the continuous space only. The correction is (m-1)/k
+      //  for an entropy over m subspaces.
+      // double localValue = MathsUtils.digamma(k) - 1.0/(double)k - localSum + MathsUtils.digamma(N);
+      // Instead do:
+      double localValue = digammaK + digammaN - localSum;
+      locals[t] = localValue;
+
 			if (debug) {
-				// Don't need the 1/k correction here because the conditional entropy term
-				//  is taken over the continuous space only. The correction is (m-1)/k
-				//  for an entropy over m subspaces.
-				// double localValue = MathsUtils.digamma(k) - 1.0/(double)k - localSum + MathsUtils.digamma(N);
-				// Instead do:
-				double localValue = digammaK + digammaN - localSum;
 				testSum += localValue;
 				if (dimensions == 1) {
 					System.out.printf("t=%d: x=%.3f, eps_x=%.3f, n_x=%d, n_y=%d, local=%.3f, running total = %.5f\n",
@@ -482,7 +492,14 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		// Instead, do:
 		mi = digammaK + digammaN - averageDiGammas;
 		miComputed = true;
-		return mi;
+
+    double[] returnValues;
+    if (returnLocals) {
+      returnValues = locals;
+    } else {
+      returnValues = new double[] {mi};
+    }
+		return returnValues;
 	}
 
 
