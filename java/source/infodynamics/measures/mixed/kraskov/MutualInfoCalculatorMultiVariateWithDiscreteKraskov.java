@@ -25,9 +25,11 @@ import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.RandomGenerator;
+import infodynamics.utils.KdTree;
 
 import java.util.Iterator;
 import java.util.Vector;
+import java.util.Arrays;
 
 /**
  * <p>Compute the Mutual Information between a vector of continuous variables and discrete
@@ -116,6 +118,18 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 	 * type calls
 	 */
 	protected Vector<int[]> vectorOfDiscreteObservations;
+  /**
+   * KdTree for range searches in full continuous dataset
+   */
+  protected KdTree kdTreeJoint;
+  /**
+   * KdTrees for neighbour searches in binned continuous datasets
+   */
+  protected KdTree[] kdTreeBins;
+  /**
+   * The norm type in use (see {@link #PROP_NORM_TYPE})
+   */
+  protected int normType = EuclideanUtils.NORM_MAX_NORM;
 	
 	protected EuclideanUtils normCalculator;
 	// Storage for the norms from each observation to each other one
@@ -173,6 +187,8 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		discreteData = null;
 		this.dimensions = dimensions;
 		this.base = base;
+    kdTreeJoint = null;
+    kdTreeBins = null;
 	}
 
 	/**
@@ -198,7 +214,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		if (propertyName.equalsIgnoreCase(PROP_K)) {
 			k = Integer.parseInt(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_NORM_TYPE)) {
-			normCalculator.setNormToUse(propertyValue);
+      normType = KdTree.validateNormType(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
 			normalise = Boolean.parseBoolean(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_TIME_DIFF)) {
@@ -307,6 +323,8 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 
     digammaN = MathsUtils.digamma(totalObservations);
     digammaK = MathsUtils.digamma(k);
+
+    ensureKdTreesConstructed();
 	}
 
 
@@ -338,6 +356,26 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 			}
 		}
 	}
+
+
+  /**
+   * Internal method to ensure that the Kd-tree data structures to represent the
+   * observational data have been constructed (should be called prior to attempting
+   * to use these data structures)
+   */
+  public void ensureKdTreesConstructed() {
+    if (kdTreeJoint == null) {
+      kdTreeJoint = new KdTree(continuousData);
+      kdTreeJoint.setNormType(normType);
+      kdTreeBins = new KdTree[base];
+      for (int b = 0; b < base; b++) {
+        kdTreeBins[b] = new KdTree(
+            MatrixUtils.extractSelectedPointsMatchingCondition(
+              continuousData, discreteData, b));
+        kdTreeBins[b].setNormType(normType);
+      }
+    }
+  }
 	
 	/**
 	 * Compute what the average MI would look like were the second time series reordered
@@ -350,6 +388,9 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 	 * @throws Exception
 	 */
 	public double computeAverageLocalOfObservations(int[] reordering) throws Exception {
+
+
+
 		int N = continuousData.length; // number of observations
 		if (!tryKeepAllPairsNorms || (N > MAX_DATA_SIZE_FOR_KEEP_ALL_PAIRS_NORM)) {
 			// Generate a new re-ordered set of discrete data
@@ -416,17 +457,14 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 	}
 
 	public double computeAverageLocalOfObservations() throws Exception {
-		if (!tryKeepAllPairsNorms || (continuousData.length > MAX_DATA_SIZE_FOR_KEEP_ALL_PAIRS_NORM)) {
-			return computeAverageLocalOfObservationsWhileComputingDistances();
-		}
-		
-		// Postcondition: we'll compute the norms before the main loop,
-		//  unless they have already been computed:
-		
-		if (xNorms == null) {
-			computeNorms();
-		}
-		int N = continuousData.length; // number of observations
+
+    // FIXME
+    int dynCorrExclTime = 0;
+    boolean[] one_true = {true};
+
+    int[] cumcount = new int[base];
+    Arrays.fill(cumcount, 0);
+
 
 		// Count the average number of points within eps_x and eps_y
 		double averageDiGammas = 0;
@@ -434,25 +472,18 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		double avNy = 0;
 		
 		double testSum = 0.0; // Used for debugging prints
-		
-		for (int t = 0; t < N; t++) {
-			// Compute eps_x and eps_y for this time step:
-			//  using x norms to all neighbours
-			//  (note that norm of point t to itself will be set to infinity).
-			// Then find the k closest neighbours in the same discrete bin
-			double eps_x = MatrixUtils.kthMinSubjectTo(xNorms[t], k, discreteData, discreteData[t]);			
+    int N = totalObservations;
 
-			// Count the number of points whose x distance is less
-			//  than or equal to eps_x (not including this point)
-			int n_x = 0;
-			for (int t2 = 0; t2 < N; t2++) {
-				if ((t2 != t) && (xNorms[t][t2] <= eps_x)) {
-					// xNorms has infinity for t == t2 anyway ...
-					n_x++;
-				}
-			}
-			// n_y is number of points in that bin, minus this point
-			int n_y = counts[discreteData[t]] - 1;
+		for (int t = 0; t < N; t++) {
+
+      // Compute eps_x for this time step:
+      // find neighbours in the same discrete bin, then
+      // count points within eps_x in the whole dataset.
+      int b = discreteData[t];
+      double eps_x = kdTreeBins[b].findKNearestNeighbours(k, cumcount[b]++).poll().distance;
+      int n_x = kdTreeJoint.countPointsWithinOrOnR(t, eps_x, dynCorrExclTime);
+      int n_y = counts[b] - 1;
+
 			avNx += n_x;
 			avNy += n_y;
 			// And take the digamma before adding into the 
