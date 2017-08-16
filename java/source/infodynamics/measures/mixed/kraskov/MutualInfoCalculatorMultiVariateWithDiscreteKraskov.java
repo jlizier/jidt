@@ -224,8 +224,10 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		if (continuousObservations[0].length != dimensions) {
 			throw new Exception("The continuous observations do not have the expected number of variables (" + dimensions + ")");
 		}
-		vectorOfContinuousObservations.add(continuousObservations);
-		vectorOfDiscreteObservations.add(discreteObservations);
+    if (continuousObservations.length > timeDiff) {
+      vectorOfContinuousObservations.add(continuousObservations);
+      vectorOfDiscreteObservations.add(discreteObservations);
+    }
 	}
 
 	public void addObservations(double[][] source, double[][] destination, int startTime, int numTimeSteps) throws Exception {
