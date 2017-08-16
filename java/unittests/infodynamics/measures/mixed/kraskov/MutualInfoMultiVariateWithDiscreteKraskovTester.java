@@ -155,6 +155,18 @@ public class MutualInfoMultiVariateWithDiscreteKraskovTester extends TestCase {
     for (int i = 0; i < 5; i++) {
       assertEquals(locals1[i], locals2[i]);
     }
+
+    // Check that computeAverage and average of computeLocal are the same
+    miCalc.initialise(TEST_DIMENSIONS, TEST_BASE);
+    miCalc.setObservations(contData, discData);
+    double average = miCalc.computeAverageLocalOfObservations();
+
+    miCalc.initialise(TEST_DIMENSIONS, TEST_BASE);
+    miCalc.setObservations(contData, discData);
+    double averageOfLocals = MatrixUtils.mean(miCalc.computeLocalOfPreviousObservations());
+
+    assertEquals(average, averageOfLocals, 0.01);
+    
   }
 
   public void testCompareAnalyticalValue() throws Exception {
