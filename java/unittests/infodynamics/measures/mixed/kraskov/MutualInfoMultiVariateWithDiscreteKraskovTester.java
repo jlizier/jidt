@@ -161,23 +161,25 @@ public class MutualInfoMultiVariateWithDiscreteKraskovTester extends TestCase {
     MutualInfoCalculatorMultiVariateWithDiscreteKraskov miCalc =
         new MutualInfoCalculatorMultiVariateWithDiscreteKraskov();
 
-    double SEP = 4.0;
-    double true_val = 0.6327;
+    double[] separation = {2.0, 4.0, 8.0};
+    double[] true_val = {0.3368, 0.6327, 0.6931};
     int N = 10000;
 
     // Generate data with unit Gaussians separated by fixed distance
     RandomGenerator rg = new RandomGenerator();
-    double[][] contData = rg.generateNormalData(N, 1, 0, 1);
-    int[] discData = rg.generateRandomInts(N, 2);
-    for (int i = 0; i < N; i++) {
-      if (discData[i] > 0) {
-        contData[i][0] += SEP;
+    for (int j = 0; j < separation.length; j++) {
+      double[][] contData = rg.generateNormalData(N, 1, 0, 1);
+      int[] discData = rg.generateRandomInts(N, 2);
+      for (int i = 0; i < N; i++) {
+        if (discData[i] > 0) {
+          contData[i][0] += separation[j];
+        }
       }
-    }
 
-    miCalc.initialise(1, 2);
-    miCalc.setObservations(contData, discData);
-    double res = miCalc.computeAverageLocalOfObservations();
-    assertEquals(true_val, res, 0.05);
+      miCalc.initialise(1, 2);
+      miCalc.setObservations(contData, discData);
+      double res = miCalc.computeAverageLocalOfObservations();
+      assertEquals(true_val[j], res, 0.05);
+    }
   }
 }
