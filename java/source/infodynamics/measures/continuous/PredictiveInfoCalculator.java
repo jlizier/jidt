@@ -94,7 +94,8 @@ import infodynamics.utils.EmpiricalNullDistributionComputer;
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public interface PredictiveInfoCalculator extends EmpiricalNullDistributionComputer {
+public interface PredictiveInfoCalculator
+	extends InfoMeasureCalculatorContinuous, EmpiricalNullDistributionComputer {
 
 	/**
 	 * Property name for embedding length <code>k</code> of
@@ -116,13 +117,6 @@ public interface PredictiveInfoCalculator extends EmpiricalNullDistributionCompu
 	 *  past k-vector and the next k-vector.  
 	 */
 	public static final String TAU_PROP_NAME = "TAU";
-
-	/**
-	 * Initialise the calculator for (re-)use, with the existing (or default) values of parameters
-	 * Clears any PDFs of previously supplied observations.
-	 * 
-	 */
-	public void initialise() throws Exception;
 
 	/**
 	 * Initialise the calculator for (re-)use, with some parameters
@@ -166,6 +160,7 @@ public interface PredictiveInfoCalculator extends EmpiricalNullDistributionCompu
 	 * @param propertyValue value of the property
 	 * @throws Exception for invalid property values
 	 */
+	@Override
 	public void setProperty(String propertyName, String propertyValue) throws Exception;
 
 	/**
@@ -235,13 +230,6 @@ public interface PredictiveInfoCalculator extends EmpiricalNullDistributionCompu
 			boolean[] valid) throws Exception;
 
 	/**
-	 * Compute the PI from the previously-supplied samples.
-	 * 
-	 * @return the PI estimate
-	 */
-	public double computeAverageLocalOfObservations() throws Exception;
-
-	/**
 	 * Compute the local PI values for each of the
 	 * previously-supplied samples.
 	 * 
@@ -282,36 +270,4 @@ public interface PredictiveInfoCalculator extends EmpiricalNullDistributionCompu
 	 */
 	public double[] computeLocalUsingPreviousObservations(double[] newObservations) throws Exception;
 
-	/**
-	 * Set or clear debug mode for extra debug printing to stdout
-	 * 
-	 * @param debug new setting for debug mode (on/off)
-	 */
-	public void setDebug(boolean debug);
-	
-	/**
-	 * Return the PI last calculated in a call to {@link #computeAverageLocalOfObservations()}
-	 * or {@link #computeLocalOfPreviousObservations()} after the previous
-	 * {@link #initialise()} call.
-	 * 
-	 * @return the last computed PI value
-	 */
-	public double getLastAverage();
-
-	/**
-	 * Get the number of samples to be used for the PDFs here 
-	 * which have been supplied by calls to
-	 * {@link #setObservations(double[])}, {@link #addObservations(double[])}
-	 * etc.
-	 * 
-	 * <p>Note that the number of samples is not equal to the length of time-series
-	 * supplied (since we need to accumulate the first and last
-	 * <code>(k-1)*tau + 1</code>
-	 * values of each time-series).
-	 * </p>
-	 * 
-	 * @return the number of samples to be used for the PDFs
-	 * @throws Exception
-	 */
-	public int getNumObservations() throws Exception;
 }
