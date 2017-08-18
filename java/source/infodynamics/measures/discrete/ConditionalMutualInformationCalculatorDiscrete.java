@@ -406,7 +406,7 @@ public class ConditionalMutualInformationCalculatorDiscrete
 
 	/**
 	 * <p><b>Note</b> -- in contrast to the generic computeSignificance() method 
-	 * described below, this method for a conditional MI calculator currently fixes the relationship
+	 * described in the documentation below, this method for a conditional MI calculator currently fixes the relationship
 	 * between variable 2 and the conditional, and shuffles
 	 * variable 1 with respect to these.
 	 * </p>
@@ -422,7 +422,7 @@ public class ConditionalMutualInformationCalculatorDiscrete
 	
 	/**
 	 * <p><b>Note</b> -- in contrast to the generic computeSignificance() method 
-	 * described below, this method for a conditional MI calculator currently fixes the relationship
+	 * described in the documentation below, this method for a conditional MI calculator currently fixes the relationship
 	 * between variable 2 and the conditional, and shuffles
 	 * variable 1 with respect to these.
 	 * </p>

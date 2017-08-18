@@ -18,7 +18,7 @@
 
 package infodynamics.measures.continuous;
 
-import infodynamics.utils.EmpiricalMeasurementDistribution;
+import infodynamics.utils.EmpiricalNullDistributionComputer;
 
 /**
  * Interface for implementations of
@@ -84,7 +84,7 @@ import infodynamics.utils.EmpiricalMeasurementDistribution;
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public interface ActiveInfoStorageCalculator {
+public interface ActiveInfoStorageCalculator extends EmpiricalNullDistributionComputer {
 
 	/**
 	 * Property name for embedding length <code>k</code> of
@@ -293,73 +293,6 @@ public interface ActiveInfoStorageCalculator {
 	 * @throws Exception for an invalid input array, e.g. of length less than <code>k+1</code>
 	 */
 	public double[] computeLocalUsingPreviousObservations(double[] newObservations) throws Exception;
-
-	/**
-	 * Generate a bootstrapped distribution of what the AIS would look like,
-	 * under a null hypothesis that the previous <code>k</code> values of our
-	 * samples had no relation to the next value in the time-series.
-	 * 
-	 * <p>See Section II.E "Statistical significance testing" of 
-	 * the JIDT paper below for a description of how this is done for AIS 
-	 * as a mutual information. Basically, the marginal PDFs
-	 * of the past <code>k</code> values, and that of the next value, 
-	 * are preserved, while their joint PDF is destroyed, and the 
-	 * distribution of AIS under these conditions is generated.</p>
-	 * 
-	 * <p>Note that if several disjoint time-series have been added 
-	 * as observations using {@link #addObservations(double[])} etc.,
-	 * then these separate "trials" will be mixed up in the generation
-	 * of surrogates here.</p>
-	 * 
-	 * <p>This method (in contrast to {@link #computeSignificance(int[][])})
-	 * creates <i>random</i> shufflings of the next values for the surrogate AIS
-	 * calculations.</p>
-	 * 
-	 * @param numPermutationsToCheck number of surrogate samples to bootstrap
-	 *  to generate the distribution.
-	 * @return the distribution of AIS scores under this null hypothesis.
-	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
-	 *    toolkit for studying the dynamics of complex systems', 2014."
-	 * @throws Exception
-	 */
-	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception;
-	
-	/**
-	 * Generate a bootstrapped distribution of what the AIS would look like,
-	 * under a null hypothesis that the previous <code>k</code> values of our
-	 * samples had no relation to the next value in the time-series.
-	 * 
-	 * <p>See Section II.E "Statistical significance testing" of 
-	 * the JIDT paper below for a description of how this is done for AIS 
-	 * as a mutual information. Basically, the marginal PDFs
-	 * of the past <code>k</code> values, and that of the next value, 
-	 * are preserved, while their joint PDF is destroyed, and the 
-	 * distribution of AIS under these conditions is generated.</p>
-	 * 
-	 * <p>Note that if several disjoint time-series have been added 
-	 * as observations using {@link #addObservations(double[])} etc.,
-	 * then these separate "trials" will be mixed up in the generation
-	 * of surrogates here.</p>
-	 * 
-	 * <p>This method (in contrast to {@link #computeSignificance(int)})
-	 * allows the user to specify how to construct the surrogates,
-	 * such that repeatable results may be obtained.</p>
-	 * 
-	 * @param newOrderings a specification of how to shuffle the next values
-	 *  to create the surrogates to generate the distribution with. The first
-	 *  index is the permutation number (i.e. newOrderings.length is the number
-	 *  of surrogate samples we use to bootstrap to generate the distribution here.)
-	 *  Each array newOrderings[i] should be an array of length L being 
-	 *  the value returned by {@link #getNumObservations()},
-	 *  containing a permutation of the values in 0..(L-1).
-	 * @return the distribution of AIS scores under this null hypothesis.
-	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
-	 *    toolkit for studying the dynamics of complex systems', 2014."
-	 * @throws Exception where the length of each permutation in newOrderings
-	 *   is not equal to the number L observations that were previously supplied.
-	 */
-	public EmpiricalMeasurementDistribution computeSignificance(
-			int[][] newOrderings) throws Exception;
 
 	/**
 	 * Set or clear debug mode for extra debug printing to stdout

@@ -58,7 +58,7 @@ public interface EmpiricalNullDistributionComputer {
 	 *    toolkit for studying the dynamics of complex systems', 2014."
 	 * @return the empirical distribution of measure scores under this null hypothesis.
 	 */
-	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck);
+	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception;
 	
 	/**
 	 * Generate an <b>empirical</b> (bootstrapped) distribution of what the given measure would look like,
@@ -96,7 +96,9 @@ public interface EmpiricalNullDistributionComputer {
 	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
 	 *    toolkit for studying the dynamics of complex systems', 2014."
 	 * @return the empirical distribution of measure scores under this null hypothesis.
+	 * @throws Exception where e.g. the newOrderings don't supply arrays of the correct
+	 *   length matching the number of observations that we have.
 	 */
-	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings);
+	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings) throws Exception;
 	
 }

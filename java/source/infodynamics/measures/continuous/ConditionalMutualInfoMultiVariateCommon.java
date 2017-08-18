@@ -392,6 +392,12 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	
 	@Override
 	public EmpiricalMeasurementDistribution computeSignificance(
+			int numPermutationsToCheck) throws Exception {
+		return computeSignificance(1, numPermutationsToCheck);
+	}
+	
+	@Override
+	public EmpiricalMeasurementDistribution computeSignificance(
 			int variableToReorder, int numPermutationsToCheck) throws Exception {
 		// Generate the re-ordered indices:
 		RandomGenerator rg = new RandomGenerator();
@@ -403,6 +409,12 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		return computeSignificance(variableToReorder, newOrderings);
 	}
 
+	@Override
+	public EmpiricalMeasurementDistribution computeSignificance(
+			int[][] newOrderings) throws Exception {
+		return computeSignificance(1, newOrderings);
+	}
+	
 	/**
 	 * <p>As described in
 	 * {@link ConditionalMutualInfoCalculatorMultiVariate#computeSignificance(int, int[][])}

@@ -417,7 +417,7 @@ public class PredictiveInfoCalculatorViaMutualInfo implements
 	}
 	
 	/* (non-Javadoc)
-	 * @see infodynamics.measures.continuous.PredictiveInfoCalculator#computeSignificance(int)
+	 * @see infodynamics.utils.EmpiricalNullDistributionComputer#computeSignificance(int)
 	 */
 	@Override
 	public EmpiricalMeasurementDistribution computeSignificance(
@@ -426,7 +426,7 @@ public class PredictiveInfoCalculatorViaMutualInfo implements
 	}
 
 	/* (non-Javadoc)
-	 * @see infodynamics.measures.continuous.PredictiveInfoCalculator#computeSignificance(int[][])
+	 * @see infodynamics.utils.EmpiricalNullDistributionComputer#computeSignificance(int[][])
 	 */
 	@Override
 	public EmpiricalMeasurementDistribution computeSignificance(

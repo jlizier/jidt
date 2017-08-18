@@ -19,6 +19,7 @@
 package infodynamics.measures.continuous;
 
 import infodynamics.utils.EmpiricalMeasurementDistribution;
+import infodynamics.utils.EmpiricalNullDistributionComputer;
 
 /**
  * <p>Interface for implementations of the <b>conditional mutual information</b>,
@@ -75,7 +76,8 @@ import infodynamics.utils.EmpiricalMeasurementDistribution;
  * @see "T. M. Cover and J. A. Thomas, 'Elements of Information
 Theory' (John Wiley & Sons, New York, 1991)."
  */
-public interface ConditionalMutualInfoCalculatorMultiVariate {
+public interface ConditionalMutualInfoCalculatorMultiVariate
+	extends EmpiricalNullDistributionComputer {
 
 	/**
 	 * Initialise the calculator for (re-)use, clearing PDFs,
@@ -303,66 +305,53 @@ public interface ConditionalMutualInfoCalculatorMultiVariate {
 	public double[] computeLocalOfPreviousObservations() throws Exception;
 
 	/**
-	 * Generate a bootstrapped distribution of what the conditional MI would look like,
-	 * under a null hypothesis that the variable identified by
-	 * <code>variableToReorder</code> had no relation to the
-	 * other variable, given the conditional.
-	 * 
-	 * <p>See Section II.E "Statistical significance testing" of 
-	 * the JIDT paper below for a description of how this is done for
-	 * conditional MI. Basically, we shuffle the observations of 
-	 * <code>variableToReorder</code> against the other variable
-	 * and the conditional.
-	 * This keeps the marginal and joint PDFs of the unshuffled variable
-	 *  and conditional the same
-	 *  but destroys any correlation between the named variable and the others.
+	 * <p><b>Note</b> -- in contrast to the generic computeSignificance() method 
+	 * described in the documentation below, this method for a conditional MI calculator currently fixes the relationship
+	 * between variable 2 and the conditional, and shuffles
+	 * variable 1 with respect to these.
+	 * To shuffle variable 2 instead, call {@link #computeSignificance(int, int)}.
 	 * </p>
 	 * 
-	 * <p>Note that if several disjoint time-series have been added 
-	 * as observations using {@link #addObservations(double[][], double[][], double[][])} etc.,
-	 * then these separate "trials" will be mixed up in the generation
-	 * of surrogates here.</p>
-	 * 
-	 * <p>This method (in contrast to {@link #computeSignificance(int, int[][])})
-	 * creates <i>random</i> shufflings of the next values for the surrogate AIS
-	 * calculations.</p>
+	 * @inheritDoc
+	 */
+	@Override
+	public EmpiricalMeasurementDistribution computeSignificance(
+			int numPermutationsToCheck) throws Exception;
+	
+	/**
+	 * Defined as per {@link #computeSignificance(int)} except that this method allows
+	 * the user to specify which variable is shuffled (whilst the other has its
+	 * relationship with the conditional preserved).
 	 * 
 	 * @param variableToReorder which variable to shuffle:
 	 * 	1 for variable 1, 2 for variable 2.
 	 * @param numPermutationsToCheck number of surrogate samples to bootstrap
 	 *  to generate the distribution.
 	 * @return the distribution of channel measure scores under this null hypothesis.
-	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
-	 *    toolkit for studying the dynamics of complex systems', 2014."
+	 * @see {@link #computeSignificance(int)}
 	 * @throws Exception
 	 */
 	public EmpiricalMeasurementDistribution computeSignificance(int variableToReorder,
 			int numPermutationsToCheck) throws Exception;
 	
 	/**
-	 * Generate a bootstrapped distribution of what the conditional MI would look like,
-	 * under a null hypothesis that the variable identified by
-	 * <code>variableToReorder</code> had no relation to the
-	 * other variable, given the conditional.
-	 * 
-	 * <p>See Section II.E "Statistical significance testing" of 
-	 * the JIDT paper below for a description of how this is done for
-	 * conditional MI. Basically, we shuffle the observations of 
-	 * <code>variableToReorder</code> against the other variable
-	 * and the conditional.
-	 * This keeps the marginal and joint PDFs of the unshuffled variable
-	 *  and conditional the same
-	 *  but destroys any correlation between the named variable and the others.
+	 * <p><b>Note</b> -- in contrast to the generic computeSignificance() method 
+	 * described in the documentation below, this method for a conditional MI calculator currently fixes the relationship
+	 * between variable 2 and the conditional, and shuffles
+	 * variable 1 with respect to these.
+	 * To shuffle variable 2 instead, call {@link #computeSignificance(int, int[][])}.
 	 * </p>
 	 * 
-	 * <p>Note that if several disjoint time-series have been added 
-	 * as observations using {@link #addObservations(double[][], double[][], double[][])} etc.,
-	 * then these separate "trials" will be mixed up in the generation
-	 * of surrogates here.</p>
-	 * 
-	 * <p>This method (in contrast to {@link #computeSignificance(int, int)})
-	 * allows the user to specify how to construct the surrogates,
-	 * such that repeatable results may be obtained.</p>
+	 * @inheritDoc
+	 */
+	@Override
+	public EmpiricalMeasurementDistribution computeSignificance(
+			int[][] newOrderings) throws Exception;
+	
+	/**
+	 * Defined as per {@link #computeSignificance(int[][])} except that this method allows
+	 * the user to specify which variable is shuffled (whilst the other has its
+	 * relationship with the conditional preserved).
 	 * 
 	 * @param variableToReorder which variable to shuffle:
 	 * 	1 for variable 1, 2 for variable 2.
@@ -375,8 +364,7 @@ public interface ConditionalMutualInfoCalculatorMultiVariate {
 	 *  would be the value returned by {@link #getNumObservations()}),
 	 *  containing a permutation of the values in 0..(N-1).
 	 * @return the distribution of channel measure scores under this null hypothesis.
-	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
-	 *    toolkit for studying the dynamics of complex systems', 2014."
+	 * @see {@link #computeSignificance(int[][])} except that this method all 
 	 * @throws Exception where the length of each permutation in newOrderings
 	 *   is not equal to the number N samples that were previously supplied.
 	 */
