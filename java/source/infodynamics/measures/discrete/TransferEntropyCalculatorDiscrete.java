@@ -21,6 +21,7 @@ package infodynamics.measures.discrete;
 import infodynamics.utils.AnalyticMeasurementDistribution;
 import infodynamics.utils.AnalyticNullDistributionComputer;
 import infodynamics.utils.ChiSquareMeasurementDistribution;
+import infodynamics.utils.EmpiricalNullDistributionComputer;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
@@ -87,7 +88,8 @@ import infodynamics.utils.RandomGenerator;
  * <a href="http://lizier.me/joseph/">www</a>
  */
 public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalculatorDiscrete 
-	implements ChannelCalculatorDiscrete, AnalyticNullDistributionComputer {
+	implements ChannelCalculatorDiscrete,
+	EmpiricalNullDistributionComputer, AnalyticNullDistributionComputer {
 
 	/**
 	 * Counts of (source,dest_next,dest_embedded_past) tuples
@@ -1205,7 +1207,17 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 
 	@Override
 	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) {
+		RandomGenerator rg = new RandomGenerator();
+		// (Not necessary to check for distinct random perturbations)
+		int[][] newOrderings = rg.generateRandomPerturbations(observations, numPermutationsToCheck);
+		return computeSignificance(newOrderings);
+	}
+	
+	@Override
+	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings) {
 		double actualTE = computeAverageLocalOfObservations();
+		
+		int numPermutationsToCheck = newOrderings.length;
 		
 		// Reconstruct the *joint* source values (not necessarily in order, but using joint values retains their l-tuples)
 		int[] sourceValues = new int[observations];
@@ -1238,12 +1250,6 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 			}
 		}
 		
-		// Construct new source orderings based on the source probabilities only
-		// Generate the re-ordered indices:
-		RandomGenerator rg = new RandomGenerator();
-		// (Not necessary to check for distinct random perturbations)
-		int[][] newOrderings = rg.generateRandomPerturbations(observations, numPermutationsToCheck);
-
 		// If we want a calculator just like this one, we should provide all of 
 		//  the same parameters:
 		TransferEntropyCalculatorDiscrete ate2 =

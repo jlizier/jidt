@@ -22,6 +22,7 @@ import infodynamics.utils.AnalyticMeasurementDistribution;
 import infodynamics.utils.AnalyticNullDistributionComputer;
 import infodynamics.utils.ChiSquareMeasurementDistribution;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
+import infodynamics.utils.EmpiricalNullDistributionComputer;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.RandomGenerator;
 
@@ -72,7 +73,7 @@ import infodynamics.utils.RandomGenerator;
  * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscreteInContextOfPastCalculator
-	implements AnalyticNullDistributionComputer {
+	implements EmpiricalNullDistributionComputer, AnalyticNullDistributionComputer {
 
 	protected boolean aisComputed = false;
 	

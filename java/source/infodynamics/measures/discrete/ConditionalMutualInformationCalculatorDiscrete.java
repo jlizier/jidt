@@ -21,6 +21,7 @@ package infodynamics.measures.discrete;
 import infodynamics.utils.AnalyticMeasurementDistribution;
 import infodynamics.utils.AnalyticNullDistributionComputer;
 import infodynamics.utils.ChiSquareMeasurementDistribution;
+import infodynamics.utils.EmpiricalNullDistributionComputer;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.RandomGenerator;
@@ -64,7 +65,8 @@ Theory' (John Wiley & Sons, New York, 1991).</li>
  * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class ConditionalMutualInformationCalculatorDiscrete
-	extends InfoMeasureCalculatorDiscrete implements AnalyticNullDistributionComputer {
+	extends InfoMeasureCalculatorDiscrete
+	implements EmpiricalNullDistributionComputer, AnalyticNullDistributionComputer {
 
 	/**
 	 * Store the number of symbols for each variable
@@ -403,29 +405,13 @@ public class ConditionalMutualInformationCalculatorDiscrete
 	}
 
 	/**
-	 * Generate a bootstrapped distribution of what the conditional MI would look like,
-	 * under a null hypothesis that the source values of our
-	 * samples had no relation to the destination value (in the
-	 * context of the conditional).
-	 * 
-	 * <p>See Section II.E "Statistical significance testing" of 
-	 * the JIDT paper below for a description of how this is done for MI,
-	 * conditional MI and TE.
-	 * <b>Note that this method currently fixes the relationship
+	 * <p><b>Note</b> -- in contrast to the generic computeSignificance() method 
+	 * described below, this method for a conditional MI calculator currently fixes the relationship
 	 * between variable 2 and the conditional, and shuffles
-	 * variable 1 with respect to these.</b>
+	 * variable 1 with respect to these.
 	 * </p>
 	 * 
-	 * <p>Note that if several disjoint time-series have been added 
-	 * as observations using {@link #addObservations(int[], int[])} etc.,
-	 * then these separate "trials" will be mixed up in the generation
-	 * of surrogates here.</p>
-	 * 
-	 * @param numPermutationsToCheck number of surrogate samples to bootstrap
-	 *  to generate the distribution.
-	 * @return the distribution of conditional MI scores under this null hypothesis.
-	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
-	 *    toolkit for studying the dynamics of complex systems', 2014."
+	 * @inheritDoc
 	 */
 	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) {
 		RandomGenerator rg = new RandomGenerator();
@@ -435,46 +421,17 @@ public class ConditionalMutualInformationCalculatorDiscrete
 	}
 	
 	/**
-	 * Generate a bootstrapped distribution of what the conditional MI would look like,
-	 * under a null hypothesis that the source values of our
-	 * samples had no relation to the destination values.
-	 * 
-	 * <p>See Section II.E "Statistical significance testing" of 
-	 * the JIDT paper below for a description of how this is done for  
-	 * a conditional mutual information. Basically, the marginal PDFs
-	 * of each marginal
-	 * are preserved, while their joint PDF is destroyed, and the 
-	 * distribution of conditional MI under these conditions is generated.
-	 * <b>Note that this method currently fixes the relationship
+	 * <p><b>Note</b> -- in contrast to the generic computeSignificance() method 
+	 * described below, this method for a conditional MI calculator currently fixes the relationship
 	 * between variable 2 and the conditional, and shuffles
-	 * variable 1 with respect to these.</b>
+	 * variable 1 with respect to these.
 	 * </p>
+	 * 
 	 * TODO Need to alter the method signature to allow callers to specify
 	 * which variable is shuffled. (Note to self: when doing this, will
 	 * need to update machine learning code to the new method signature)
 	 * 
-	 * <p>Note that if several disjoint time-series have been added 
-	 * as observations using {@link #addObservations(double[])} etc.,
-	 * then these separate "trials" will be mixed up in the generation
-	 * of surrogates here.</p>
-	 * 
-	 * <p>This method (in contrast to {@link #computeSignificance(int)})
-	 * allows the user to specify how to construct the surrogates,
-	 * such that repeatable results may be obtained.</p>
-	 * 
-	 * @param newOrderings a specification of how to shuffle the values
-	 *  of variable 1
-	 *  to create the surrogates to generate the distribution with. The first
-	 *  index is the permutation number (i.e. newOrderings.length is the number
-	 *  of surrogate samples we use to bootstrap to generate the distribution here.)
-	 *  Each array newOrderings[i] should be an array of length N (where
-	 *  would be the value returned by {@link #getNumObservations()}),
-	 *  containing a permutation of the values in 0..(N-1).
-	 * @return the distribution of conditional MI scores under this null hypothesis.
-	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
-	 *    toolkit for studying the dynamics of complex systems', 2014."
-	 * @throws Exception where the length of each permutation in newOrderings
-	 *   is not equal to the number N samples that were previously supplied.
+	 * @inheritDoc
 	 */
 	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings) {
 		

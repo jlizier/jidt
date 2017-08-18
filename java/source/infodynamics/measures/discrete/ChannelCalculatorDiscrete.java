@@ -18,8 +18,6 @@
 
 package infodynamics.measures.discrete;
 
-import infodynamics.utils.EmpiricalMeasurementDistribution;
-
 /**
  * A basic interface for calculators computing measures on a univariate <i>channel</i>
  * for discrete (ie int[]) data from a
@@ -42,7 +40,8 @@ import infodynamics.utils.EmpiricalMeasurementDistribution;
  * 				<li>the average channel measure: {@link #computeAverageLocalOfObservations()};</li>
  * 				<li>the distribution of channel measure values under the null hypothesis
  * 					of no relationship between source and
- * 					destination values: {@link #computeSignificance(int)};</li>
+ * 					destination values (where the calculator also 
+ * 					implements EmpiricalNullDistributionComputer</li>
  * 				<li>or other quantities as defined by child classes.</li>
  * 			</ul>
  * 		</li>
@@ -104,27 +103,4 @@ public interface ChannelCalculatorDiscrete {
 	 */
 	public double computeAverageLocalOfObservations();
 	
-	/**
-	 * Generate a bootstrapped distribution of what the channel measure would look like,
-	 * under a null hypothesis that the source values of our
-	 * samples had no relation to the destination value.
-	 * (Precise null hypothesis varies between MI and TE).
-	 * 
-	 * <p>See Section II.E "Statistical significance testing" of 
-	 * the JIDT paper below for a description of how this is done for MI,
-	 * conditional MI and TE.
-	 * </p>
-	 * 
-	 * <p>Note that if several disjoint time-series have been added 
-	 * as observations using {@link #addObservations(int[], int[])} etc.,
-	 * then these separate "trials" will be mixed up in the generation
-	 * of surrogates here.</p>
-	 * 
-	 * @param numPermutationsToCheck number of surrogate samples to bootstrap
-	 *  to generate the distribution.
-	 * @return the distribution of channel measure scores under this null hypothesis.
-	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
-	 *    toolkit for studying the dynamics of complex systems', 2014."
-	 */
-	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck);
 }
