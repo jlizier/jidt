@@ -21,7 +21,6 @@ package infodynamics.measures.discrete;
 import infodynamics.utils.AnalyticMeasurementDistribution;
 import infodynamics.utils.AnalyticNullDistributionComputer;
 import infodynamics.utils.ChiSquareMeasurementDistribution;
-import infodynamics.utils.EmpiricalNullDistributionComputer;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
@@ -88,8 +87,7 @@ import infodynamics.utils.RandomGenerator;
  * <a href="http://lizier.me/joseph/">www</a>
  */
 public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalculatorDiscrete 
-	implements ChannelCalculatorDiscrete,
-	EmpiricalNullDistributionComputer, AnalyticNullDistributionComputer {
+	implements ChannelCalculatorDiscrete, AnalyticNullDistributionComputer {
 
 	/**
 	 * Counts of (source,dest_next,dest_embedded_past) tuples

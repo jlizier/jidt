@@ -18,6 +18,8 @@
 
 package infodynamics.measures.discrete;
 
+import infodynamics.utils.EmpiricalNullDistributionComputer;
+
 /**
  * A basic interface for calculators computing measures on a univariate <i>channel</i>
  * for discrete (ie int[]) data from a
@@ -40,8 +42,7 @@ package infodynamics.measures.discrete;
  * 				<li>the average channel measure: {@link #computeAverageLocalOfObservations()};</li>
  * 				<li>the distribution of channel measure values under the null hypothesis
  * 					of no relationship between source and
- * 					destination values (where the calculator also 
- * 					implements EmpiricalNullDistributionComputer</li>
+ * 					destination values: {@link #computeSignificance(int)};</li>
  * 				<li>or other quantities as defined by child classes.</li>
  * 			</ul>
  * 		</li>
@@ -53,7 +54,7 @@ package infodynamics.measures.discrete;
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public interface ChannelCalculatorDiscrete {
+public interface ChannelCalculatorDiscrete extends EmpiricalNullDistributionComputer {
 
 	/**
 	 * Initialise the calculator for (re-)use, with the existing

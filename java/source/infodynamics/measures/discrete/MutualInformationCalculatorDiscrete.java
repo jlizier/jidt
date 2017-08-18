@@ -21,7 +21,6 @@ package infodynamics.measures.discrete;
 import infodynamics.utils.AnalyticMeasurementDistribution;
 import infodynamics.utils.AnalyticNullDistributionComputer;
 import infodynamics.utils.ChiSquareMeasurementDistribution;
-import infodynamics.utils.EmpiricalNullDistributionComputer;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.RandomGenerator;
@@ -65,8 +64,7 @@ Theory' (John Wiley & Sons, New York, 1991).</li>
  * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDiscrete 
-	implements ChannelCalculatorDiscrete, 
-	EmpiricalNullDistributionComputer, AnalyticNullDistributionComputer {
+	implements ChannelCalculatorDiscrete, AnalyticNullDistributionComputer {
 
 	private int timeDiff = 0;
 	private int[][]	jointCount = null; // Count for (i[t-timeDiff], j[t]) tuples
