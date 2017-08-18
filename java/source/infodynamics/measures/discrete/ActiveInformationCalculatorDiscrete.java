@@ -295,7 +295,7 @@ public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscr
 				// Compute MI contribution:
 				if (p_joint > 0.0) {
 					double logTerm = p_joint / (p_next * p_prev);
-					double localValue = Math.log(logTerm) / log_base;
+					double localValue = Math.log(logTerm) / log_2;
 					miCont = p_joint * localValue;
 					if (localValue > max) {
 						max = localValue;
@@ -334,7 +334,7 @@ public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscr
 				if (p_joint > 0.0) {
 					double logTerm = p_joint / p_prev;
 					// Entropy rate takes the negative log:
-					double localValue = - Math.log(logTerm) / log_base;
+					double localValue = - Math.log(logTerm) / log_2;
 					entRateCont = p_joint * localValue;
 				} else {
 					entRateCont = 0.0;
@@ -362,7 +362,7 @@ public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscr
 		  ( (double) nextCount[next] *
 			(double) pastCount[past] );
 		logTerm *= (double) observations;
-		return Math.log(logTerm) / log_base;
+		return Math.log(logTerm) / log_2;
 	}
 
 	@Override
@@ -394,7 +394,7 @@ public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscr
 			//  and we've got two counts on the bottom
 			//  but one count on the top:
 			logTerm *= (double) observations;
-			localActive[t] = Math.log(logTerm) / log_base;
+			localActive[t] = Math.log(logTerm) / log_2;
 			average += localActive[t];
 			if (localActive[t] > max) {
 				max = localActive[t];
@@ -445,7 +445,7 @@ public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscr
 				//  and we've got two counts on the bottom
 				//  but one count on the top:
 				logTerm *= (double) observations;
-				localActive[r][c] = Math.log(logTerm) / log_base;
+				localActive[r][c] = Math.log(logTerm) / log_2;
 				average += localActive[r][c];
 				if (localActive[r][c] > max) {
 					max = localActive[r][c];
@@ -501,7 +501,7 @@ public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscr
 					//  and we've got two counts on the bottom
 					//  but one count on the top:
 					logTerm *= (double) observations;
-					localActive[t][r][c] = Math.log(logTerm) / log_base;
+					localActive[t][r][c] = Math.log(logTerm) / log_2;
 					average += localActive[t][r][c];
 					if (localActive[t][r][c] > max) {
 						max = localActive[t][r][c];
@@ -550,7 +550,7 @@ public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscr
 			//  and we've got two counts on the bottom
 			//  but one count on the top:
 			logTerm *= (double) observations;
-			localActive[r] = Math.log(logTerm) / log_base;
+			localActive[r] = Math.log(logTerm) / log_2;
 			average += localActive[r];
 			if (localActive[r] > max) {
 				max = localActive[r];
@@ -599,7 +599,7 @@ public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscr
 			//  and we've got two counts on the bottom
 			//  but one count on the top:
 			logTerm *= (double) observations;
-			localActive[t] = Math.log(logTerm) / log_base;
+			localActive[t] = Math.log(logTerm) / log_2;
 			average += localActive[t];
 			if (localActive[t] > max) {
 				max = localActive[t];
@@ -767,7 +767,7 @@ public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscr
 				// Compute MI contribution:
 				if (p_joint * p_next * p_prev > 0.0) {
 					double logTerm = p_joint / (p_next * p_prev);
-					double localValue = Math.log(logTerm) / log_base;
+					double localValue = Math.log(logTerm) / log_2;
 					miCont = p_joint * localValue;
 					System.out.println(String.format("%7d    %.2f %7d    %.2f     %.2f    %.2f     %.2f",
 							nextVal, p_next, prevVal, p_prev, p_joint, logTerm, localValue));
