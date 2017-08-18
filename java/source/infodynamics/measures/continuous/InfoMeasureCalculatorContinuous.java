@@ -106,6 +106,7 @@ public interface InfoMeasureCalculatorContinuous {
 	 * from the previously-supplied samples.
 	 * 
 	 * @return the estimate of the measure
+	 *  (in bits or nats, depending on the estimator)
 	 */
 	public abstract double computeAverageLocalOfObservations() throws Exception;
 	

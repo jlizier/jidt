@@ -60,9 +60,9 @@ public class EntropyCalculatorMultiVariateKozachenko
 
 	protected boolean debug = false;
 	private int totalObservations;
-	private int dimensions;
+	private int dimensions = 1;
 	protected double[][] rawData;
-	private double lastEntropy;
+	private double lastAverage = 0.0;
 	private double[] lastLocalEntropy;
 	private boolean isComputed;
 	
@@ -73,9 +73,13 @@ public class EntropyCalculatorMultiVariateKozachenko
 	 */
 	public EntropyCalculatorMultiVariateKozachenko() {
 		totalObservations = 0;
-		dimensions = 0;
 		isComputed = false;
 		lastLocalEntropy = null;
+	}
+
+	@Override
+	public void initialise() throws Exception {
+		initialise(dimensions);
 	}
 
 	public void initialise(int dimensions) {
@@ -86,14 +90,33 @@ public class EntropyCalculatorMultiVariateKozachenko
 		lastLocalEntropy = null;
 	}
 	
-	/**
-	 * No properties are defined here, so this method will have no effect.
-	 */
+	@Override
 	public void setProperty(String propertyName, String propertyValue)
 			throws Exception {
-		// No properties here to set
+		boolean propertySet = true;
+		if (propertyName.equalsIgnoreCase(NUM_DIMENSIONS_PROP_NAME)) {
+			dimensions = Integer.parseInt(propertyValue);
+		} else {
+			// No property was set
+			propertySet = false;
+		}
+		if (debug && propertySet) {
+			System.out.println(this.getClass().getSimpleName() + ": Set property " + propertyName +
+					" to " + propertyValue);
+		}
 	}
 
+	@Override
+	public String getProperty(String propertyName) throws Exception {
+		if (propertyName.equalsIgnoreCase(NUM_DIMENSIONS_PROP_NAME)) {
+			return Integer.toString(dimensions);
+		} else {
+			// No property was set, and no superclass to call:
+			return null;
+		}
+	}
+
+	@Override
 	public void setObservations(double[][] observations) {
 		rawData = observations;
 		totalObservations = observations.length;
@@ -137,9 +160,10 @@ public class EntropyCalculatorMultiVariateKozachenko
 	/**
 	 * @return entropy in natural units
 	 */
+	@Override
 	public double computeAverageLocalOfObservations() {
 		if (isComputed) {
-			return lastEntropy;
+			return lastAverage;
 		}
 		double sdTermHere = sdTerm(totalObservations, dimensions);
 		double emConstHere = eulerMacheroniTerm(totalObservations);
@@ -167,7 +191,7 @@ public class EntropyCalculatorMultiVariateKozachenko
 		}
 		entropy += emConstHere;
 		entropy += sdTermHere;
-		lastEntropy = entropy;
+		lastAverage = entropy;
 		isComputed = true;
 		return entropy;
 	}
@@ -175,6 +199,7 @@ public class EntropyCalculatorMultiVariateKozachenko
 	/**
 	 * @return local entropies in natural units
 	 */
+	@Override
 	public double[] computeLocalOfPreviousObservations() {
 		if (lastLocalEntropy != null) {
 			return lastLocalEntropy;
@@ -205,7 +230,7 @@ public class EntropyCalculatorMultiVariateKozachenko
 			}
 		}
 		entropy /= (double) totalObservations;
-		lastEntropy = entropy;
+		lastAverage = entropy;
 		lastLocalEntropy = localEntropy;
 		return localEntropy;
 	}
@@ -213,6 +238,7 @@ public class EntropyCalculatorMultiVariateKozachenko
 	/**
 	 * Not implemented yet
 	 */
+	@Override
 	public double[] computeLocalUsingPreviousObservations(double[][] states) throws Exception {
 		throw new Exception("Local method for other data not implemented");
 	}
@@ -289,15 +315,19 @@ public class EntropyCalculatorMultiVariateKozachenko
 		return result;
 	}
 	
+	@Override
 	public void setDebug(boolean debug) {
 		this.debug = debug;
 	}
 
+	@Override
 	public double getLastAverage() {
-		return lastEntropy;
+		return lastAverage;
 	}
 
+	@Override
 	public int getNumObservations() {
 		return totalObservations;
 	}
+
 }
