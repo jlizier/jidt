@@ -165,7 +165,10 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	 */
 	protected double[] condStds = null;
 
-	
+	@Override
+	public void initialise() {
+		initialise(dimensionsVar1, dimensionsVar2, dimensionsCond);
+	}
 	
 	@Override
 	public void initialise(int var1Dimensions, int var2Dimensions, int condDimensions) {

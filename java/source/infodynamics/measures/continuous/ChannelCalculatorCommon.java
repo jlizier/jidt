@@ -76,45 +76,9 @@ import infodynamics.utils.EmpiricalNullDistributionComputer;
  * @see ChannelCalculatorMultiVariate
  *
  */
-public abstract interface ChannelCalculatorCommon extends EmpiricalNullDistributionComputer {
+public abstract interface ChannelCalculatorCommon
+	extends InfoMeasureCalculatorContinuous, EmpiricalNullDistributionComputer {
 
-	/**
-	 * Initialise the calculator for (re-)use, with the existing
-	 * (or default) values of parameters.
-	 * 
-	 * @throws Exception
-	 */
-	public void initialise() throws Exception;
-
-	/**
-	 * Set properties for the calculator.
-	 * New property values are not guaranteed to take effect until the next call
-	 *  to an initialise method. 
-	 * 
-	 * <p>No general properties are defined at the interface level here, i.e.
-	 * there are only properties defined by child interfaces and classes.</p>
-	 * 
-	 * @param propertyName name of the property
-	 * @param propertyValue value of the property
-	 * @throws Exception for invalid property values
-	 */
-	public void setProperty(String propertyName, String propertyValue) throws Exception;
-
-	/**
-	 * Get current property values for the calculator.
-	 * 
-	 * <p>Valid property names, and what their
-	 * values should represent, are the same as those for
-	 * {@link #setProperty(String, String)}</p>
-	 * 
-	 * <p>Unknown property values are responded to with a null return value.</p>
-	 * 
-	 * @param propertyName name of the property
-	 * @return current value of the property
-	 * @throws Exception for invalid property values
-	 */
-	public String getProperty(String propertyName) throws Exception;
-	
 	/**
 	 * Signal that we will add in the samples for computing the PDF 
 	 * from several disjoint time-series or trials via calls to
@@ -141,13 +105,6 @@ public abstract interface ChannelCalculatorCommon extends EmpiricalNullDistribut
 	public boolean getAddedMoreThanOneObservationSet();
 	
 	/**
-	 * Compute the channel measure from the previously-supplied samples.
-	 * 
-	 * @return the estimate of the channel measure
-	 */
-	public double computeAverageLocalOfObservations() throws Exception;
-
-	/**
 	 * <p>Computes the local values of the implemented channel measure,
 	 *  for each valid observation in the previously supplied observations
 	 *  (with PDFs computed using all of the previously supplied observation sets).</p>
@@ -166,34 +123,4 @@ public abstract interface ChannelCalculatorCommon extends EmpiricalNullDistribut
 	 */
 	public double[] computeLocalOfPreviousObservations() throws Exception;
 
-	/**
-	 * Set or clear debug mode for extra debug printing to stdout
-	 * 
-	 * @param debug new setting for debug mode (on/off)
-	 */
-	public void setDebug(boolean debug);
-	
-	/**
-	 * Return the channel measure last calculated in a call to {@link #computeAverageLocalOfObservations()}
-	 * or {@link #computeLocalOfPreviousObservations()} after the previous
-	 * {@link #initialise()} call.
-	 * 
-	 * @return the last computed channel measure value
-	 */
-	public double getLastAverage();
-
-	/**
-	 * Get the number of samples to be used for the PDFs here 
-	 * which have been supplied by calls to
-	 * {@link #setObservations(double[])}, {@link #addObservations(double[])}
-	 * etc.
-	 * 	
-	 * <p>Note that the number of samples may not be equal to the length of time-series
-	 * supplied (e.g. for transfer entropy, where we need to accumulate
-	 * a number of samples for the past history of the destination).
-	 * </p>
-	 * 
-	 * @return the number of samples to be used for the PDFs
-	 */
-	public int getNumObservations() throws Exception;
 }

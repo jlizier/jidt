@@ -77,7 +77,7 @@ import infodynamics.utils.EmpiricalNullDistributionComputer;
 Theory' (John Wiley & Sons, New York, 1991)."
  */
 public interface ConditionalMutualInfoCalculatorMultiVariate
-	extends EmpiricalNullDistributionComputer {
+	extends InfoMeasureCalculatorContinuous, EmpiricalNullDistributionComputer {
 
 	/**
 	 * Initialise the calculator for (re-)use, clearing PDFs,
@@ -91,35 +91,6 @@ public interface ConditionalMutualInfoCalculatorMultiVariate
 	 */
 	public void initialise(int var1Dimensions, int var2Dimensions, int condDimentions) throws Exception;
 
-	/**
-	 * Set properties for the calculator.
-	 * New property values are not guaranteed to take effect until the next call
-	 *  to an initialise method. 
-	 * 
-	 * <p>No general properties are defined at the interface level here, i.e.
-	 * there are only properties defined by child interfaces and classes.</p>
-	 * 
-	 * @param propertyName name of the property
-	 * @param propertyValue value of the property
-	 * @throws Exception for invalid property values
-	 */
-	public void setProperty(String propertyName, String propertyValue) throws Exception;
-
-	/**
-	 * Get current property values for the calculator.
-	 * 
-	 * <p>Valid property names, and what their
-	 * values should represent, are the same as those for
-	 * {@link #setProperty(String, String)}</p>
-	 * 
-	 * <p>Unknown property values are responded to with a null return value.</p>
-	 * 
-	 * @param propertyName name of the property
-	 * @return current value of the property
-	 * @throws Exception for invalid property values
-	 */
-	public String getProperty(String propertyName) throws Exception;
-	
 	/**
 	 * Sets a single series from which to compute the PDF.
 	 * Cannot be called in conjunction with
@@ -275,15 +246,6 @@ public interface ConditionalMutualInfoCalculatorMultiVariate
 	public void finaliseAddObservations() throws Exception;
 	
 	/**
-	 * Compute the average conditional MI from the previously-supplied samples.
-	 * 
-	 * @return the estimate of the conditional MI in either bits or nats
-	 *  depending on the estimator
-	 * @throws Exception
-	 */
-	public double computeAverageLocalOfObservations() throws Exception;
-
-	/**
 	 * <p>Computes the local values of the conditional mutual information,
 	 *  for each valid observation in the previously supplied observations
 	 *  (with PDFs computed using all of the previously supplied observation sets).</p>
@@ -413,32 +375,11 @@ public interface ConditionalMutualInfoCalculatorMultiVariate
 		throws Exception;
 
 	/**
-	 * Set or clear debug mode for extra debug printing to stdout
-	 * 
-	 * @param debug new setting for debug mode (on/off)
-	 */
-	public void setDebug(boolean debug);
-	
-	/**
-	 * Return the conditional MI last calculated in a call to {@link #computeAverageLocalOfObservations()}
-	 * or {@link #computeLocalOfPreviousObservations()} after the previous
-	 * {@link #initialise(int, int, int)} call.
-	 * 
-	 * @return the last computed conditional MI value
-	 */
-	public double getLastAverage();
-
-	/**
-	 * Get the number of samples to be used for the PDFs here 
-	 * which have been supplied by calls to
-	 * {@link #setObservations(double[][], double[][], double[][])}, {@link #addObservations(double[][], double[][], double[][])}
-	 * etc.
-	 * 	
-	 * @return the number of samples to be used for the PDFs
 	 * @throws Exception if the implementing class computes MI without
 	 * explicit observations (e.g. see
 	 * {@link infodynamics.measures.continuous.gaussian.ConditionalMutualInfoCalculatorMultiVariateGaussian})
 	 */
+	@Override
 	public int getNumObservations() throws Exception;
 	
 	/**

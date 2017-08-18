@@ -84,7 +84,8 @@ import infodynamics.utils.EmpiricalNullDistributionComputer;
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public interface ActiveInfoStorageCalculator extends EmpiricalNullDistributionComputer {
+public interface ActiveInfoStorageCalculator extends
+	InfoMeasureCalculatorContinuous, EmpiricalNullDistributionComputer {
 
 	/**
 	 * Property name for embedding length <code>k</code> of
@@ -99,13 +100,6 @@ public interface ActiveInfoStorageCalculator extends EmpiricalNullDistributionCo
 	 *  past k-vector and the next observation.  
 	 */
 	public static final String TAU_PROP_NAME = "TAU";
-
-	/**
-	 * Initialise the calculator for (re-)use, with the existing (or default) values of parameters
-	 * Clears any PDFs of previously supplied observations.
-	 * 
-	 */
-	public void initialise() throws Exception;
 
 	/**
 	 * Initialise the calculator for (re-)use, with some parameters
@@ -148,23 +142,9 @@ public interface ActiveInfoStorageCalculator extends EmpiricalNullDistributionCo
 	 * @param propertyValue value of the property
 	 * @throws Exception for invalid property values
 	 */
+	@Override
 	public void setProperty(String propertyName, String propertyValue) throws Exception;
 
-	/**
-	 * Get current property values for the calculator.
-	 * 
-	 * <p>Valid property names, and what their
-	 * values should represent, are the same as those for
-	 * {@link #setProperty(String, String)}</p>
-	 * 
-	 * <p>Unknown property values are responded to with a null return value.</p>
-	 * 
-	 * @param propertyName name of the property
-	 * @return current value of the property
-	 * @throws Exception for invalid property values
-	 */
-	public String getProperty(String propertyName) throws Exception;
-	
 	/**
 	 * Sets a single time-series from which to compute the PDF for the AIS.
 	 * Cannot be called in conjunction with other methods for setting/adding
@@ -248,13 +228,6 @@ public interface ActiveInfoStorageCalculator extends EmpiricalNullDistributionCo
 	public void addObservations(double[] observations, boolean[] valid) throws Exception;
 
 	/**
-	 * Compute the AIS from the previously-supplied samples.
-	 * 
-	 * @return the AIS estimate
-	 */
-	public double computeAverageLocalOfObservations() throws Exception;
-
-	/**
 	 * Compute the local AIS values for each of the
 	 * previously-supplied samples.
 	 * 
@@ -293,38 +266,5 @@ public interface ActiveInfoStorageCalculator extends EmpiricalNullDistributionCo
 	 * @throws Exception for an invalid input array, e.g. of length less than <code>k+1</code>
 	 */
 	public double[] computeLocalUsingPreviousObservations(double[] newObservations) throws Exception;
-
-	/**
-	 * Set or clear debug mode for extra debug printing to stdout
-	 * 
-	 * @param debug new setting for debug mode (on/off)
-	 */
-	public void setDebug(boolean debug);
-	
-	/**
-	 * Return the AIS last calculated in a call to {@link #computeAverageLocalOfObservations()}
-	 * or {@link #computeLocalOfPreviousObservations()} after the previous
-	 * {@link #initialise()} call.
-	 * 
-	 * @return the last computed AIS value
-	 */
-	public double getLastAverage();
-
-	/**
-	 * Get the number of samples to be used for the PDFs here 
-	 * which have been supplied by calls to
-	 * {@link #setObservations(double[])}, {@link #addObservations(double[])}
-	 * etc.
-	 * 
-	 * <p>Note that the number of samples is not equal to the length of time-series
-	 * supplied (since we need to accumulate the first
-	 * <code>(k-1)*tau + 1</code>
-	 * values of each time-series before taking a sample for AIS).
-	 * </p>
-	 * 
-	 * @return the number of samples to be used for the PDFs
-	 * @throws Exception
-	 */
-	public int getNumObservations() throws Exception;
 
 }
