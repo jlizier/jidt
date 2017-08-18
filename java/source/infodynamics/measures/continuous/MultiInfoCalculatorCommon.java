@@ -45,7 +45,7 @@ public abstract class MultiInfoCalculatorCommon implements MultiInfoCalculator {
 	/**
 	 * Number of joint variables to consider
 	 */
-	protected int dimensions = 0;
+	protected int dimensions = 1;
 	/**
 	 * Number of samples supplied
 	 */
@@ -81,6 +81,11 @@ public abstract class MultiInfoCalculatorCommon implements MultiInfoCalculator {
 	private double samplingFactor = 0.1;
 	private Random rand;
 
+	@Override
+	public void initialise() {
+		initialise(dimensions);
+	}
+	
 	@Override
 	public void initialise(int dimensions) {
 		this.dimensions = dimensions;
@@ -124,6 +129,17 @@ public abstract class MultiInfoCalculatorCommon implements MultiInfoCalculator {
 		if (debug && propertySet) {
 			System.out.println(this.getClass().getSimpleName() + ": Set property " + propertyName +
 					" to " + propertyValue);
+		}
+	}
+
+	@Override
+	public String getProperty(String propertyName) throws Exception {
+		if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
+			return Boolean.toString(normalise);
+		} else if (propertyName.equalsIgnoreCase(SAMPLING_FACTOR_PROP_NAME)) {
+			return Double.toString(samplingFactor);
+		} else {
+			return null;
 		}
 	}
 
@@ -256,6 +272,11 @@ public abstract class MultiInfoCalculatorCommon implements MultiInfoCalculator {
 		miSurrogateCalculator.setObservations(shuffledData);
 		// Compute the MI
 		return miSurrogateCalculator.computeAverageLocalOfObservations();
+	}
+
+	@Override
+	public int getNumObservations() throws Exception {
+		return totalObservations;
 	}
 
 	@Override

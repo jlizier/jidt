@@ -76,7 +76,8 @@ import infodynamics.utils.EmpiricalMeasurementDistribution;
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public interface MultiInfoCalculator {
+public interface MultiInfoCalculator
+	extends InfoMeasureCalculatorContinuous {
 
 	/**
 	 * Property name for whether to normalise incoming values to mean 0,
@@ -120,6 +121,7 @@ public interface MultiInfoCalculator {
 	 * @param propertyValue value of the property
 	 * @throws Exception for invalid property values
 	 */
+	@Override
 	public void setProperty(String propertyName, String propertyValue) throws Exception;
 	
 	/**
@@ -188,14 +190,6 @@ public interface MultiInfoCalculator {
 	 * @throws Exception 
 	 */
 	public void finaliseAddObservations() throws Exception;
-
-	/**
-	 * Compute the multi-information from the previously-supplied samples.
-	 * 
-	 * @return the estimate of the multi-information
-	 * @throws Exception
-	 */
-	public double computeAverageLocalOfObservations() throws Exception;
 
 	/**
 	 * <p>Computes the local values of the multi-information,
@@ -337,20 +331,4 @@ public interface MultiInfoCalculator {
 	 *   is not equal to the number N samples that were previously supplied.
 	 */
 	public EmpiricalMeasurementDistribution computeSignificance(int[][][] newOrderings) throws Exception;
-	
-	/**
-	 * Set or clear debug mode for extra debug printing to stdout
-	 * 
-	 * @param debug new setting for debug mode (on/off)
-	 */
-	public void setDebug(boolean debug);
-	
-	/**
-	 * Return the multi-information last calculated in a call to {@link #computeAverageLocalOfObservations()}
-	 * or {@link #computeLocalOfPreviousObservations()} after the previous
-	 * {@link #initialise(int)} call.
-	 * 
-	 * @return the last computed multi-information value
-	 */
-	public double getLastAverage();
 }
