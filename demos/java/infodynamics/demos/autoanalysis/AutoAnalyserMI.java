@@ -18,7 +18,6 @@
 
 package infodynamics.demos.autoanalysis;
 
-import infodynamics.measures.continuous.ChannelCalculatorCommon;
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.measures.continuous.gaussian.MutualInfoCalculatorMultiVariateGaussian;
 import infodynamics.measures.continuous.kernel.MutualInfoCalculatorMultiVariateKernel;
@@ -41,7 +40,7 @@ import java.awt.event.MouseListener;
  * @author Joseph Lizier
  *
  */
-public class AutoAnalyserMI extends AutoAnalyser
+public class AutoAnalyserMI extends AutoAnalyserChannelCalculator
 	implements ActionListener, DocumentListener, MouseListener {
 
 	/**
@@ -58,6 +57,8 @@ public class AutoAnalyserMI extends AutoAnalyser
 	 * Constructor to initialise the GUI for MI
 	 */
 	protected void makeSpecificInitialisations() {
+		
+		super.makeSpecificInitialisations();
 		
 		// Set up the properties for MI:
 		measureAcronym = "MI";
@@ -159,7 +160,8 @@ public class AutoAnalyserMI extends AutoAnalyser
 	/**
 	 * Method to assign and initialise our continuous calculator class
 	 */
-	protected ChannelCalculatorCommon assignCalcObjectContinuous(String selectedCalcType) throws Exception {
+	@Override
+	protected MutualInfoCalculatorMultiVariate assignCalcObjectContinuous(String selectedCalcType) throws Exception {
 		if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_GAUSSIAN)) {
 			return new MutualInfoCalculatorMultiVariateGaussian();
 		} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_KRASKOV_ALG1)) {
@@ -203,13 +205,6 @@ public class AutoAnalyserMI extends AutoAnalyser
 				new MutualInformationCalculatorDiscrete(base, timeDiff),
 				base,
 				base + ", " + timeDiff);
-	}
-
-	protected void setObservations(ChannelCalculatorCommon calc,
-			double[] source, double[] dest) throws Exception {
-		// We know this is a MutualInfoCalculatorMultiVariate
-		MutualInfoCalculatorMultiVariate miCalc = (MutualInfoCalculatorMultiVariate) calc;
-		miCalc.setObservations(source, dest);
 	}
 
 	/**
