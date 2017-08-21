@@ -18,9 +18,11 @@
 
 package infodynamics.measures.continuous.kozachenko;
 
+import infodynamics.measures.continuous.EntropyCalculator;
 import infodynamics.measures.continuous.EntropyCalculatorMultiVariate;
 import infodynamics.utils.EuclideanUtils;
 import infodynamics.utils.MathsUtils;
+import infodynamics.utils.MatrixUtils;
 
 /**
  * <p>Computes the differential entropy of a given set of observations
@@ -56,7 +58,7 @@ import infodynamics.utils.MathsUtils;
  * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class EntropyCalculatorMultiVariateKozachenko  
-	implements EntropyCalculatorMultiVariate {
+	implements EntropyCalculator, EntropyCalculatorMultiVariate {
 
 	protected boolean debug = false;
 	private int totalObservations;
@@ -124,6 +126,19 @@ public class EntropyCalculatorMultiVariateKozachenko
 		lastLocalEntropy = null;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see infodynamics.measures.continuous.EntropyCalculator#setObservations(double[])
+	 * 
+	 * This method here to ensure we make compatibility with the 
+	 *  EntropyCalculator interface.
+	 */
+	@Override
+	public void setObservations(double[] observations) {
+		rawData = MatrixUtils.reshape(observations, observations.length, 1);
+		setObservations(rawData);
+	}
+	
 	/**
 	 * Each row of the data is an observation; each column of
 	 *  the row is a new variable in the multivariate observation.
@@ -329,5 +344,4 @@ public class EntropyCalculatorMultiVariateKozachenko
 	public int getNumObservations() {
 		return totalObservations;
 	}
-
 }
