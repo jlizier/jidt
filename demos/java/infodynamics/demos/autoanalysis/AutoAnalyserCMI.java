@@ -60,8 +60,6 @@ public class AutoAnalyserCMI extends AutoAnalyser
 	protected String[] kraskovPropertiesFieldNames;
 	protected String[] kraskovPropertyDescriptions;
 
-	protected static final String DISCRETE_PROPNAME_TIME_DIFF = "time difference";
-	
 	protected static final String CALC_TYPE_KRASKOV_ALG1 = CALC_TYPE_KRASKOV + " alg. 1";
 	protected static final String CALC_TYPE_KRASKOV_ALG2 = CALC_TYPE_KRASKOV + " alg. 2";
 	
