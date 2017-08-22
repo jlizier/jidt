@@ -226,7 +226,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 		super(base);
 		
 		k = history;
-    base_others = base; // If unspecified, the base of the conditional variables is the same as src and tgt
+		base_others = base; // If unspecified, the base of the conditional variables is the same as src and tgt
 		this.numOtherInfoContributors = numOtherInfoContributors;
 		base_power_k = MathsUtils.power(base, k);
 		base_power_num_others = MathsUtils.power(base, numOtherInfoContributors);

@@ -64,7 +64,7 @@ public class AutoAnalyserCMI extends AutoAnalyser
 	protected static final String CALC_TYPE_KRASKOV_ALG2 = CALC_TYPE_KRASKOV + " alg. 2";
 	
 	/**
-	 * Constructor to initialise the GUI for MI
+	 * Constructor to initialise the GUI for CMI
 	 */
 	protected void makeSpecificInitialisations() {
 		
