@@ -65,10 +65,10 @@ public class AutoAnalyserMI extends AutoAnalyserChannelCalculator
 		appletTitle = "JIDT Mutual Information Auto-Analyser"; 
 		
 		calcTypes = new String[] {
-				CALC_TYPE_DISCRETE, CALC_TYPE_GAUSSIAN,
+				CALC_TYPE_DISCRETE, CALC_TYPE_BINNED, CALC_TYPE_GAUSSIAN,
 				CALC_TYPE_KRASKOV_ALG1, CALC_TYPE_KRASKOV_ALG2,
 				CALC_TYPE_KERNEL};
-		unitsForEachCalc = new String[] {"bits", "nats", "nats", "nats", "bits"};
+		unitsForEachCalc = new String[] {"bits", "bits", "nats", "nats", "nats", "bits"};
 		
 		// Discrete:
 		discreteClass = MutualInformationCalculatorDiscrete.class;
@@ -181,9 +181,10 @@ public class AutoAnalyserMI extends AutoAnalyserChannelCalculator
 	 * Method to assign and initialise our discrete calculator class
 	 */
 	protected DiscreteCalcAndArguments assignCalcObjectDiscrete() throws Exception {
-		String timeDiffPropValueStr, basePropValueStr;
+		int timeDiff, base;
 		try {
-			timeDiffPropValueStr = propertyValues.get(DISCRETE_PROPNAME_TIME_DIFF);
+			String timeDiffPropValueStr = propertyValues.get(DISCRETE_PROPNAME_TIME_DIFF);
+			timeDiff = Integer.parseInt(timeDiffPropValueStr);
 		} catch (Exception ex) {
 			JOptionPane.showMessageDialog(this,
 					ex.getMessage());
@@ -191,15 +192,14 @@ public class AutoAnalyserMI extends AutoAnalyserChannelCalculator
 			return null;
 		}
 		try {
-			basePropValueStr = propertyValues.get(DISCRETE_PROPNAME_BASE);
+			String basePropValueStr = propertyValues.get(DISCRETE_PROPNAME_BASE);
+			base = Integer.parseInt(basePropValueStr);
 		} catch (Exception ex) {
 			JOptionPane.showMessageDialog(this,
 					ex.getMessage());
 			resultsLabel.setText("Cannot find a value for property " + DISCRETE_PROPNAME_BASE);
 			return null;
 		}
-		int timeDiff = Integer.parseInt(timeDiffPropValueStr);
-		int base = Integer.parseInt(basePropValueStr);
 		
 		return new DiscreteCalcAndArguments(
 				new MutualInformationCalculatorDiscrete(base, timeDiff),

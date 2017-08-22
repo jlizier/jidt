@@ -72,12 +72,12 @@ public class AutoAnalyserEntropy extends AutoAnalyser {
 
 		// Set up the properties for Entropy:
 		measureAcronym = "H";
-		appletTitle = "JIDT Entropy Auto-Analyser"; 
+		appletTitle = "JIDT Entropy Auto-Analyser";
 		
 		calcTypes = new String[] {
-				CALC_TYPE_DISCRETE, CALC_TYPE_GAUSSIAN,
+				CALC_TYPE_DISCRETE, CALC_TYPE_BINNED, CALC_TYPE_GAUSSIAN,
 				CALC_TYPE_KOZ_LEO, CALC_TYPE_KERNEL};
-		unitsForEachCalc = new String[] {"bits", "nats", "nats", "bits"};
+		unitsForEachCalc = new String[] {"bits", "bits", "nats", "nats", "bits"};
 		
 		// Discrete:
 		discreteClass = MutualInformationCalculatorDiscrete.class;
@@ -211,9 +211,16 @@ public class AutoAnalyserEntropy extends AutoAnalyser {
 		
 		// Set observations
 		if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
-			EntropyCalculatorDiscrete calc = (EntropyCalculatorDiscrete) calcDiscrete; 
+			EntropyCalculatorDiscrete calc = (EntropyCalculatorDiscrete) calcDiscrete;
 			calc.addObservations(
 					MatrixUtils.selectColumn(dataDiscrete, variableColumn));
+		} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_BINNED)) {
+			EntropyCalculatorDiscrete calc = (EntropyCalculatorDiscrete) calcDiscrete;
+			calc.addObservations(
+					MatrixUtils.discretise(
+							MatrixUtils.selectColumn(data, variableColumn),
+							// Should be no parse error on the alphabet size by now
+							Integer.parseInt(propertyValues.get(DISCRETE_PROPNAME_BASE))));
 		} else {
 			EntropyCalculator calc = (EntropyCalculator) calcContinuous;
 			calc.setObservations(
@@ -282,7 +289,17 @@ public class AutoAnalyserEntropy extends AutoAnalyser {
 			resultsLabel.setText("Cannot find a value for property " + DISCRETE_PROPNAME_BASE);
 			return null;
 		}
-		int base = Integer.parseInt(basePropValueStr);
+		int base;
+		try {
+			base = Integer.parseInt(basePropValueStr);
+		} catch (NumberFormatException nfe) {
+			JOptionPane.showMessageDialog(this,
+					"Cannot parse number for property " + DISCRETE_PROPNAME_BASE
+					+ ": " + nfe.getMessage());
+			resultsLabel.setText("Cannot parse number for property " +
+					DISCRETE_PROPNAME_BASE + ": " + nfe.getMessage());
+			return null;
+		}
 		
 		return new DiscreteCalcAndArguments(
 				new EntropyCalculatorDiscrete(base),

@@ -161,10 +161,19 @@ public abstract class AutoAnalyserChannelCalculator extends AutoAnalyser {
 		
 		// Set observations
 		if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
-			ChannelCalculatorDiscrete cc = (ChannelCalculatorDiscrete) calcDiscrete; 
+			ChannelCalculatorDiscrete cc = (ChannelCalculatorDiscrete) calcDiscrete;
 			cc.addObservations(
 					MatrixUtils.selectColumn(dataDiscrete, sourceColumn),
 					MatrixUtils.selectColumn(dataDiscrete, destColumn));
+		} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_BINNED)) {
+			ChannelCalculatorDiscrete cc = (ChannelCalculatorDiscrete) calcDiscrete;
+			cc.addObservations(
+					MatrixUtils.discretise(
+						MatrixUtils.selectColumn(data, sourceColumn),
+						Integer.parseInt(propertyValues.get(DISCRETE_PROPNAME_BASE))),
+					MatrixUtils.discretise(
+						MatrixUtils.selectColumn(data, destColumn),
+						Integer.parseInt(propertyValues.get(DISCRETE_PROPNAME_BASE))));
 		} else {
 			ChannelCalculator cc = (ChannelCalculator) calcContinuous;
 			cc.setObservations(

@@ -90,6 +90,7 @@ public abstract class AutoAnalyser extends JFrame
 	
 	// Set options for the Calculator type:
 	public final static String CALC_TYPE_DISCRETE = "Discrete";
+	public final static String CALC_TYPE_BINNED = "Binned";
 	// Child classes must define options for other calculator types
 	//  and initialise the calcTypes array and unitsForEachCalc array
 	protected String[] calcTypes;
@@ -277,7 +278,7 @@ public abstract class AutoAnalyser extends JFrame
 		calcTypeLabel.setToolTipText("Select estimator type. \"Discrete\" is for discrete or pre-binned data; all others for continuous data.");
 		calcTypeLabel.setBorder(BorderFactory.createEmptyBorder(0,0,10,0));
 		calcTypeComboBox = (JComboBox<String>) new JComboBox<String>(calcTypes);
-		calcTypeComboBox.setSelectedIndex(2); // Select 2nd continuous estimator by default
+		calcTypeComboBox.setSelectedIndex(3); // Select 2nd continuous estimator by default
 		calcTypeComboBox.addActionListener(this);
 		// Don't set an empty border as it becomes clickable as well,
 		//  we'll use an empty label instead
@@ -714,7 +715,8 @@ public abstract class AutoAnalyser extends JFrame
 			javaCode.append("import infodynamics.utils.EmpiricalMeasurementDistribution;\n");
 		}
 		javaCode.append("import infodynamics.utils.MatrixUtils;\n\n");
-		if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+		if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE) ||
+				selectedCalcType.equalsIgnoreCase(CALC_TYPE_BINNED)) {
 			// Cover all children:
 			javaCode.append("import infodynamics.measures.discrete.*;\n");
 		} else {
@@ -754,7 +756,8 @@ public abstract class AutoAnalyser extends JFrame
 			String javaConstructorLine = null;
 			String pythonPreConstructorLine = null;
 			String matlabConstructorLine = null;
-			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE) ||
+					selectedCalcType.equalsIgnoreCase(CALC_TYPE_BINNED)) {
 				// Defer our processing for this to below ...
 			} else {
 				calcContinuous = assignCalcObjectContinuous(selectedCalcType);
@@ -815,6 +818,17 @@ public abstract class AutoAnalyser extends JFrame
 					}
 					javaCode.append("\n");
 				}
+			} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_BINNED)) {
+				javaCode.append("    double[][] data = afr.getDouble2DMatrix();\n");
+				if (! allCombosCheckBox.isSelected()) {
+					for (int i=0; i < numVariables; i++) {
+						javaCode.append("    int[] " +  variableColNumLabels[i].toLowerCase() +
+								" = MatrixUtils.discretise(\n        " +
+								"MatrixUtils.selectColumn(data, " + singleCalcColumns[i] + "), " +
+								propertyValues.get(DISCRETE_PROPNAME_BASE) + ");\n");
+					}
+					javaCode.append("\n");
+				}
 			} else {
 				javaCode.append("    double[][] data = afr.getDouble2DMatrix();\n");
 				if (! allCombosCheckBox.isSelected()) {
@@ -840,14 +854,19 @@ public abstract class AutoAnalyser extends JFrame
 						pythonCode.append(variableColNumLabels[i].toLowerCase() + " = JArray(JInt, 1)(data[:," +
 								singleCalcColumns[i] + "].tolist())\n");
 					}
-					pythonCode.append("\n");
+				} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_BINNED)) {
+					pythonCode.append("mUtils = JPackage('infodynamics.utils').MatrixUtils\n");
+					for (int i=0; i < numVariables; i++) {
+						pythonCode.append(variableColNumLabels[i].toLowerCase() + " = mUtils.discretise(JArray(JDouble, 1)(data[:," +
+								singleCalcColumns[i] + "].tolist()), " + propertyValues.get(DISCRETE_PROPNAME_BASE) + ")\n");
+					}
 				} else {
 					for (int i=0; i < numVariables; i++) {
 						pythonCode.append(variableColNumLabels[i].toLowerCase() + " = data[:," +
 								singleCalcColumns[i] + "]\n");
 					}
-					pythonCode.append("\n");
 				}
+				pythonCode.append("\n");
 			}
 			// 3. Matlab
 			matlabCode.append("% " + loadDataComment);
@@ -859,14 +878,19 @@ public abstract class AutoAnalyser extends JFrame
 						matlabCode.append(variableColNumLabels[i].toLowerCase() + " = octaveToJavaIntArray(data(:," +
 								(singleCalcColumns[i]+1) + "));\n");
 					}
-					matlabCode.append("\n");
+				} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_BINNED)) {
+					matlabCode.append("mUtils = javaObject('infodynamics.utils.MatrixUtils');\n");
+					for (int i=0; i < numVariables; i++) {
+						matlabCode.append(variableColNumLabels[i].toLowerCase() + " = mUtils.discretise(octaveToJavaDoubleArray(data(:," +
+								(singleCalcColumns[i]+1) + ")), " + propertyValues.get(DISCRETE_PROPNAME_BASE) + ");\n");
+					}
 				} else {
 					for (int i=0; i < numVariables; i++) {
 						matlabCode.append(variableColNumLabels[i].toLowerCase() + " = octaveToJavaDoubleArray(data(:," +
 								(singleCalcColumns[i]+1) + "));\n");
 					}
-					matlabCode.append("\n");
 				}
+				matlabCode.append("\n");
 			}
 
 			// Construct the calculator and set relevant properties:
@@ -874,7 +898,8 @@ public abstract class AutoAnalyser extends JFrame
 			javaCode.append("    // " + constructComment);
 			pythonCode.append("# " + constructComment);
 			matlabCode.append("% " + constructComment);
-			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE) ||
+					selectedCalcType.equalsIgnoreCase(CALC_TYPE_BINNED)) {
 				DiscreteCalcAndArguments dcaa = assignCalcObjectDiscrete();
 				if (dcaa == null) {
 					return;
@@ -883,16 +908,19 @@ public abstract class AutoAnalyser extends JFrame
 				int base = dcaa.base;
 				String args = dcaa.arguments;
 
-				// Now check that the data is ok:
-				int minInData = MatrixUtils.min(dataDiscrete);
-				int maxInData = MatrixUtils.max(dataDiscrete);
-				if ((minInData < 0) || (maxInData >= base)) {
-					JOptionPane.showMessageDialog(this,
-							"Values in data file (in range " + minInData +
-							":" + maxInData + ") lie outside the expected range 0:" +
-							(base-1) + " for base " + base);
-					resultsLabel.setText(" ");
-					return;
+				if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+					// Now check that the data is ok:
+					//  (no need to do this for binned)
+					int minInData = MatrixUtils.min(dataDiscrete);
+					int maxInData = MatrixUtils.max(dataDiscrete);
+					if ((minInData < 0) || (maxInData >= base)) {
+						JOptionPane.showMessageDialog(this,
+								"Values in data file (in range " + minInData +
+								":" + maxInData + ") lie outside the expected range 0:" +
+								(base-1) + " for base " + base);
+						resultsLabel.setText(" ");
+						return;
+					}
 				}
 				
 				// 1. Java
@@ -972,6 +1000,13 @@ public abstract class AutoAnalyser extends JFrame
 			StringBuffer extraFormatTerms = new StringBuffer();
 			if (variableCombinations.size() > 1) {
 				// We're doing all combinations.
+				
+				if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_BINNED)) {
+					// Set up the use of utilities for binning if required
+					pythonCode.append("mUtils = JPackage('infodynamics.utils').MatrixUtils\n");
+					matlabCode.append("mUtils = javaObject('infodynamics.utils.MatrixUtils');\n");
+				}
+				
 				// Set up the loops for these:
 				String[] columnVariables = setUpLoopsForAllCombos(javaCode, pythonCode, matlabCode);
 				
@@ -994,7 +1029,20 @@ public abstract class AutoAnalyser extends JFrame
 						matlabCode.append(matlabPrefix + variableColNumLabels[i].toLowerCase() +
 								" = octaveToJavaIntArray(data(:, " + columnVariables[i] + "));\n");
 						pythonCode.append(pythonPrefix + variableColNumLabels[i].toLowerCase() +
-								" = JArray(JInt, 1)(data[:, " + columnVariables[i] + "].tolist())\n");						
+								" = JArray(JInt, 1)(data[:, " + columnVariables[i] + "].tolist())\n");
+					}
+				} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_BINNED)) {
+					for (int i = 0; i < numVariables; i++) {
+						javaCode.append(javaPrefix + "int[] " + variableColNumLabels[i].toLowerCase() +
+								" = MatrixUtils.discretise(\n" + javaPrefix + "    " +
+								"MatrixUtils.selectColumn(data, " + columnVariables[i] + "), " +
+								propertyValues.get(DISCRETE_PROPNAME_BASE) + ");\n");
+						matlabCode.append(matlabPrefix + variableColNumLabels[i].toLowerCase() +
+								" = mUtils.discretise(octaveToJavaDoubleArray(data(:," +
+								columnVariables[i] + ")), " + propertyValues.get(DISCRETE_PROPNAME_BASE) + ");\n");
+						pythonCode.append(pythonPrefix + variableColNumLabels[i].toLowerCase() +
+								" = mUtils.discretise(JArray(JDouble, 1)(data[:," +
+								columnVariables[i] + "].tolist()), " + propertyValues.get(DISCRETE_PROPNAME_BASE) + ")\n");
 					}
 				} else {
 					for (int i = 0; i < numVariables; i++) {
@@ -1026,7 +1074,8 @@ public abstract class AutoAnalyser extends JFrame
 			// Set observations
 			String supplyDataComment = "4. Supply the sample data:\n";
 			String setObservationsMethod;
-			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE) ||
+					selectedCalcType.equalsIgnoreCase(CALC_TYPE_BINNED)) {
 				setObservationsMethod = "addObservations";
 			} else {
 				setObservationsMethod = "setObservations";
@@ -1113,7 +1162,8 @@ public abstract class AutoAnalyser extends JFrame
 				
 				// And tell the user to see results in the console:
 				resultsLabel.setText("See console for all pairs calculation results");
-				if (!selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+				if (!(selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE) ||
+						selectedCalcType.equalsIgnoreCase(CALC_TYPE_BINNED))) {
 					System.out.println("Property values not read back into GUI for all pairs calculation");
 				}
 			}
@@ -1157,7 +1207,8 @@ public abstract class AutoAnalyser extends JFrame
 					}
 					
 					// Initialise
-					if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+					if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE) ||
+							selectedCalcType.equalsIgnoreCase(CALC_TYPE_BINNED)) {
 						calcDiscrete.initialise();
 					} else {
 						calcContinuous.initialise();
@@ -1167,7 +1218,8 @@ public abstract class AutoAnalyser extends JFrame
 										
 					// Compute the result:
 					double result;
-					if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+					if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE) ||
+							selectedCalcType.equalsIgnoreCase(CALC_TYPE_BINNED)) {
 						result = calcDiscrete.computeAverageLocalOfObservations();
 					} else {
 						result = calcContinuous.computeAverageLocalOfObservations();
@@ -1179,7 +1231,8 @@ public abstract class AutoAnalyser extends JFrame
 						if (statSigAnalyticCheckBox.isSelected()) {
 							// analytic check of statistical significance:
 							AnalyticNullDistributionComputer analyticCalc;
-							if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+							if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE) ||
+									selectedCalcType.equalsIgnoreCase(CALC_TYPE_BINNED)) {
 								analyticCalc =
 										(AnalyticNullDistributionComputer) calcDiscrete;
 							} else {
@@ -1195,7 +1248,8 @@ public abstract class AutoAnalyser extends JFrame
 							// permutation test of statistical significance:
 							EmpiricalMeasurementDistribution measDist;
 							EmpiricalNullDistributionComputer empiricalNullDistCalc;
-							if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+							if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE) ||
+									selectedCalcType.equalsIgnoreCase(CALC_TYPE_BINNED)) {
 								empiricalNullDistCalc =
 										(EmpiricalNullDistributionComputer) calcDiscrete;
 							} else {
@@ -1234,7 +1288,8 @@ public abstract class AutoAnalyser extends JFrame
 				}
 	
 				if ((variableCombinations.size() == 1) && 
-						!selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+						!(selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE) ||
+						 (selectedCalcType.equalsIgnoreCase(CALC_TYPE_BINNED)))) {
 					// Read the current property values back out (in case of 
 					//  automated parameter assignment)
 					for (String propName : propertyNames) {
@@ -1508,7 +1563,8 @@ public abstract class AutoAnalyser extends JFrame
 		propertyFieldNames = new Vector<String>();
 		propertyDescriptions = new Vector<String>();
 		
-		if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+		if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE) ||
+				selectedCalcType.equalsIgnoreCase(CALC_TYPE_BINNED)) {
 			// Simply add the properties for this estimator, along
 			//  with their default values
 			int i = 0;
@@ -1604,13 +1660,16 @@ public abstract class AutoAnalyser extends JFrame
 	protected CalcProperties assignCalcProperties(String selectedCalcType) 
 		throws Exception {
 		
-		if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
+		if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE) ||
+				selectedCalcType.equalsIgnoreCase(CALC_TYPE_BINNED)) {
 			CalcProperties calcProperties = new CalcProperties();
 			calcProperties.calcClass = discreteClass;
 			calcProperties.calc = null; // Not used
 			calcProperties.classSpecificPropertyNames = discreteProperties;
 			calcProperties.classSpecificPropertiesFieldNames = null; // Not used
 			calcProperties.classSpecificPropertyDescriptions = discretePropertyDescriptions;
+			// TODO Later can add binning method to the properties for 
+			//  binned calculator here.
 			return calcProperties;
 		} else {
 			// We don't handle any other calculators here

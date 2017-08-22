@@ -66,9 +66,9 @@ public class AutoAnalyserTE extends AutoAnalyserChannelCalculator
 		appletTitle = "JIDT Transfer Entropy Auto-Analyser"; 
 		
 		calcTypes = new String[] {
-				CALC_TYPE_DISCRETE, CALC_TYPE_GAUSSIAN,
+				CALC_TYPE_DISCRETE, CALC_TYPE_BINNED, CALC_TYPE_GAUSSIAN,
 				CALC_TYPE_KRASKOV, CALC_TYPE_KERNEL};
-		unitsForEachCalc = new String[] {"bits", "nats", "nats", "bits"};
+		unitsForEachCalc = new String[] {"bits", "bits", "nats", "nats", "bits"};
 		
 		// Discrete:
 		discreteClass = TransferEntropyCalculatorDiscrete.class;
