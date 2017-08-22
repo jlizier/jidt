@@ -238,6 +238,15 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	}
 
 	@Override
+	public void setObservations(double[] var1, double[] var2,
+			double[] cond) throws Exception {
+		startAddObservations();
+		addObservations(var1, var2, cond);
+		finaliseAddObservations();
+		addedMoreThanOneObservationSet = false;
+	}
+
+	@Override
 	public void startAddObservations() {
 		vectorOfVar1Observations = new Vector<double[][]>();
 		vectorOfVar2Observations = new Vector<double[][]>();
@@ -276,6 +285,23 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		}
 	}
 
+	@Override
+	public void addObservations(double[] var1, double[] var2,
+			double[] cond) throws Exception {
+		if ((dimensionsVar1 != 1) || (dimensionsVar2 != 1) ||
+				(dimensionsCond != 1)) {
+			throw new Exception("The number of dimensions for each variable (having been initialised to " +
+					dimensionsVar1 + ", " + dimensionsVar2 + " & " +
+					dimensionsCond + ") can only be 1 when " +
+					"the univariate addObservations(double[],double[],double[]) and " + 
+					"setObservations(double[],double[],double[]) methods are called");
+		}
+		addObservations(MatrixUtils.reshape(var1, var1.length, 1),
+						MatrixUtils.reshape(var2, var2.length, 1),
+						MatrixUtils.reshape(cond, cond.length, 1));
+
+	}
+	
 	@Override
 	public void addObservations(double[][] var1, double[][] var2,
 			double[][] cond,
