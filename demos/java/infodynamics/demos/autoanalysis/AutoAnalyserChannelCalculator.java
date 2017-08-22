@@ -64,6 +64,9 @@ public abstract class AutoAnalyserChannelCalculator extends AutoAnalyser {
 		useStatSigCheckBox = true;
 		wordForCombinations = "pairs";
 		variableRelationshipFormatString = "col_%d -> col_%d";
+		
+		disableVariableColTextFieldsForAllCombos = new boolean[] {true, true};
+		indentsForAllCombos = 2;
 	}
 
 	@Override

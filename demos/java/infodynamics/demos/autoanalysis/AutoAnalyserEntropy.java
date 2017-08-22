@@ -69,7 +69,9 @@ public class AutoAnalyserEntropy extends AutoAnalyser {
 		useStatSigCheckBox = false;
 		wordForCombinations = "variables";
 		variableRelationshipFormatString = "col_%d";
-
+		disableVariableColTextFieldsForAllCombos = new boolean[] {true};
+		indentsForAllCombos = 1;
+		
 		// Set up the properties for Entropy:
 		measureAcronym = "H";
 		appletTitle = "JIDT Entropy Auto-Analyser";

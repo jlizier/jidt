@@ -121,6 +121,9 @@ public abstract class AutoAnalyser extends JFrame
 	//  Should be overridden by the child classes.
 	protected String[] variableColNumLabels = null;
 	
+	protected boolean[] disableVariableColTextFieldsForAllCombos = null;
+	protected int indentsForAllCombos = 1;
+	
 	// Store which calculator type we're using:
 	@SuppressWarnings("rawtypes")
 	protected Class calcClass = null;
@@ -688,22 +691,30 @@ public abstract class AutoAnalyser extends JFrame
 		
 		int[] singleCalcColumns = new int[numVariables];
 		Vector<int[]> variableCombinations = new Vector<int[]>();
-		if (allCombosCheckBox.isSelected()) {
-			// We're doing all combinations
-			fillOutAllCombinations(variableCombinations);
-		} else {
-			// we're doing a single combination
-			for (int i = 0; i < numVariables; i++) {
-				singleCalcColumns[i] = Integer.parseInt(variableColTextFields[i].getText());
-				if ((singleCalcColumns[i] < 0) || (singleCalcColumns[i] >= dataColumns)) {
-					JOptionPane.showMessageDialog(this,
-							String.format("%s column must be between 0 and %d for this data set",
-									variableColNumLabels[i], dataColumns-1));
-					resultsLabel.setText(" ");				
-					return;
+		try {
+			if (allCombosCheckBox.isSelected()) {
+				// We're doing all combinations
+				fillOutAllCombinations(variableCombinations);
+			} else {
+				// we're doing a single combination
+				for (int i = 0; i < numVariables; i++) {
+					singleCalcColumns[i] = Integer.parseInt(variableColTextFields[i].getText());
+					if ((singleCalcColumns[i] < 0) || (singleCalcColumns[i] >= dataColumns)) {
+						JOptionPane.showMessageDialog(this,
+								String.format("%s column must be between 0 and %d for this data set",
+										variableColNumLabels[i], dataColumns-1));
+						resultsLabel.setText(" ");
+						return;
+					}
 				}
+				variableCombinations.add(singleCalcColumns);
 			}
-			variableCombinations.add(singleCalcColumns);
+		} catch (Exception e) {
+			// Catches number format exception, and column number out of bounds
+			JOptionPane.showMessageDialog(this,
+					e.getMessage());
+			resultsLabel.setText("Cannot parse a column number from input: " + e.getMessage());
+			return;
 		}
 
 		// Generate headers:
@@ -1013,10 +1024,13 @@ public abstract class AutoAnalyser extends JFrame
 				// Get the indents right from here on, 
 				//  and prepare a string of the column labels for
 				//  each variable, to be used in later formatting.
-				for (int i = 0; i < numVariables; i++) {
+				for (int i = 0; i < indentsForAllCombos; i++) {
 					javaPrefix += "    ";
 					pythonPrefix += "\t";
 					matlabPrefix += "\t";
+				}
+				
+				for (int i = 0; i < numVariables; i++) {
 					extraFormatTerms.append(columnVariables[i] + ", ");
 				}
 				
@@ -1324,7 +1338,7 @@ public abstract class AutoAnalyser extends JFrame
 	 *  
 	 * @param variableCombinations
 	 */
-	protected abstract void fillOutAllCombinations(Vector<int[]> variableCombinations);
+	protected abstract void fillOutAllCombinations(Vector<int[]> variableCombinations) throws Exception;
 	
 	/**
 	 * Method to allow child classes to set up the loops over all combinations of
@@ -1748,7 +1762,9 @@ public abstract class AutoAnalyser extends JFrame
 			// "All pairs" checkbox -- update in case changed:
 			if (allCombosCheckBox.isSelected()) {
 				for (int i = 0; i < numVariables; i++) {
-					variableColTextFields[i].setEnabled(false);
+					if (disableVariableColTextFieldsForAllCombos[i]) {
+						variableColTextFields[i].setEnabled(false);
+					}
 				}
 			} else {
 				for (int i = 0; i < numVariables; i++) {
