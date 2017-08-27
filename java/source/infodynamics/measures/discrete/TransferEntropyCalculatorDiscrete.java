@@ -1107,14 +1107,17 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 		for (int pastVal = 0; pastVal < base_power_k; pastVal++) {
 			// compute p(past)
 			// double p_past = (double) pastCount[pastVal] / (double) observations;
+			if (pastCount[pastVal] == 0) {
+				continue;
+			}
 			for (int destVal = 0; destVal < base; destVal++) {
 				// compute p(dest,past)
 				// double p_dest_past = (double) destPastCount[destVal][pastVal] / (double) observations;
+				if (nextPastCount[destVal][pastVal] == 0) {
+					continue;
+				}
+				double denom = (double) nextPastCount[destVal][pastVal] / (double) pastCount[pastVal];
 				for (int sourceVal = 0; sourceVal < base_power_l; sourceVal++) {
-					// compute p(source,dest,past)
-					double p_source_dest_past = (double) sourceNextPastCount[sourceVal][destVal][pastVal] / (double) observations;
-					// compute p(source,past)
-					// double p_source_past = (double) sourcePastCount[sourceVal][pastVal] / (double) observations;
 					// Compute TE contribution:
 					if (sourceNextPastCount[sourceVal][destVal][pastVal] != 0) {
 						/* Double check: should never happen
@@ -1125,9 +1128,13 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 						}
 						*/
 						
+						// compute p(source,dest,past)
+						double p_source_dest_past = (double) sourceNextPastCount[sourceVal][destVal][pastVal] / (double) observations;
+						// compute p(source,past)
+						// double p_source_past = (double) sourcePastCount[sourceVal][pastVal] / (double) observations;
 						double logTerm = ((double) sourceNextPastCount[sourceVal][destVal][pastVal] / (double) sourcePastCount[sourceVal][pastVal]) /
-						 	((double) nextPastCount[destVal][pastVal] / (double) pastCount[pastVal]);
-						double localValue = Math.log(logTerm) / log_2;
+						 	(denom);
+						double localValue = Math.log(logTerm); // We'll / log_2 later, to save a floating pt op;
 						teCont = p_source_dest_past * localValue;
 						if (localValue > max) {
 							max = localValue;
@@ -1144,6 +1151,11 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 				}
 			}
 		}
+		
+		te /= log_2;
+		max /= log_2;
+		min /= log_2;
+		meanSqLocals /= (log_2 * log_2);
 		
 		average = te;
 		std = Math.sqrt(meanSqLocals - average * average);
@@ -1389,6 +1401,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 							(double) sourcePastCount[thisSourceVal][thisPastVal]) /
 			 		((double) nextPastCount[destVal][thisPastVal] / (double) pastCount[thisPastVal]);
 			localTE[t] = Math.log(logTerm) / log_2;
+			average += localTE[t];
 			if (localTE[t] > max) {
 				max = localTE[t];
 			} else if (localTE[t] < min) {
