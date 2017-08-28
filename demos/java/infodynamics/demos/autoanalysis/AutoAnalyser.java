@@ -753,9 +753,10 @@ public abstract class AutoAnalyser extends JFrame
 		// 3. Matlab:
 		StringBuffer matlabCode = new StringBuffer();
 		matlabCode.append("% Add JIDT jar library to the path\n");
-		matlabCode.append("javaaddpath('../../infodynamics.jar');\n");
+		matlabCode.append("jidtPath = '../../';\n");
+		matlabCode.append("javaaddpath([jidtPath, '/infodynamics.jar']);\n");
 		matlabCode.append("% Add utilities to the path\n");
-		matlabCode.append("addpath('../octave');\n\n");
+		matlabCode.append("addpath([jidtPath, '/demos/octave']);\n\n");
 		
 		try{
 			// Create both discrete and continuous calculators to make
@@ -1026,7 +1027,7 @@ public abstract class AutoAnalyser extends JFrame
 				//  each variable, to be used in later formatting.
 				for (int i = 0; i < indentsForAllCombos; i++) {
 					javaPrefix += "    ";
-					pythonPrefix += "\t";
+					pythonPrefix += "    ";
 					matlabPrefix += "\t";
 				}
 				
@@ -1161,7 +1162,7 @@ public abstract class AutoAnalyser extends JFrame
 					extraFormatTerms + "result" + statSigFormatTerms + ");\n");
 			// 2. Python
 			pythonCode.append("\n" + pythonPrefix + "print(\"" + resultsPrefixString +
-					"%.4f " + units + resultsSuffixString + "\" %\n\t" + pythonPrefix + "(" +
+					"%.4f " + units + resultsSuffixString + "\" %\n    " + pythonPrefix + "(" +
 					extraFormatTerms + "result" + statSigFormatTerms + "))\n");
 			// 3. Matlab
 			matlabCode.append("\n" + matlabPrefix + "fprintf('" + resultsPrefixString +
