@@ -1138,13 +1138,23 @@ public abstract class AutoAnalyser extends JFrame
 			String statSigFormatTerms = "";
 			if (statSigCheckBox.isSelected()) {
 				// Compute statistical significance
-				String statSigComment = "6. Compute the (statistical significance via) null distribution (e.g. 100 permutations):\n";
+				String statSigComment = "6. Compute the (statistical significance via) null distribution";
+				String javaReturnClass, numPermutationsToPrint;
+				if (statSigAnalyticCheckBox.isSelected()) {
+					javaReturnClass = "AnalyticMeasurementDistribution";
+					numPermutationsToPrint = ""; // Missing argument will signal analytic calculation
+					statSigComment = statSigComment + " analytically:\n";
+				} else {
+					javaReturnClass = "EmpiricalMeasurementDistribution";
+					numPermutationsToPrint = Integer.toString(numPermutationsToCheck);
+					statSigComment = statSigComment + " empirically (e.g. with 100 permutations):\n";
+				}
 				javaCode.append(javaPrefix + "// " + statSigComment);
-				javaCode.append(javaPrefix + "EmpiricalMeasurementDistribution measDist = calc.computeSignificance(100);\n");
+				javaCode.append(javaPrefix + javaReturnClass + " measDist = calc.computeSignificance(" + numPermutationsToPrint + ");\n");
 				pythonCode.append(pythonPrefix + "# " + statSigComment);
-				pythonCode.append(pythonPrefix + "measDist = calc.computeSignificance(100)\n");
+				pythonCode.append(pythonPrefix + "measDist = calc.computeSignificance(" + numPermutationsToPrint + ")\n");
 				matlabCode.append(matlabPrefix + "% " + statSigComment);
-				matlabCode.append(matlabPrefix + "measDist = calc.computeSignificance(100);\n");
+				matlabCode.append(matlabPrefix + "measDist = calc.computeSignificance(" + numPermutationsToPrint + ");\n");
 				if (statSigAnalyticCheckBox.isSelected()) {
 					resultsSuffixString = " (analytic p(surrogate > measured)=%.5f)";
 					statSigFormatTerms = ", measDist.pValue";
