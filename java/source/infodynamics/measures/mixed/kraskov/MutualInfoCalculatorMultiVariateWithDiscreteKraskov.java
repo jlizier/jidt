@@ -65,16 +65,27 @@ import java.util.Arrays;
  */
 public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements MutualInfoCalculatorMultiVariateWithDiscrete, Cloneable {
 
-	// Multiplier used in hueristic for determining whether to use a linear search
-	//  for min kth element or a binary search.
-	protected static final double CUTOFF_MULTIPLIER = 1.5;
-	
 	/**
 	 * we compute distances to the kth neighbour
 	 */
 	protected int k = 4;
+	/**
+	 * The set of continuous data observations, retained in case the user wants
+   * to retrieve the local entropy values of these.
+	 * They're held in the order in which they were supplied in the
+	 *  {@link addObservations(double[][], int[])} functions.
+	 */
 	protected double[][] continuousData;
+	/**
+	 * The set of discrete data observations, retained in case the user wants
+   * to retrieve the local entropy values of these.
+	 * They're held in the order in which they were supplied in the
+	 *  {@link addObservations(double[][], int[])} functions.
+	 */
 	protected int[] discreteData;
+  /**
+   * Counts of how many observations belong to each discrete bin.
+   */
 	protected int[] counts;
 	/**
 	 * Number of possible states of the discrete variable
@@ -130,20 +141,28 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
    * The norm type in use (see {@link #PROP_NORM_TYPE})
    */
   protected int normType = EuclideanUtils.NORM_MAX_NORM;
-	
-	protected EuclideanUtils normCalculator;
-	// Storage for the norms from each observation to each other one
-	protected double[][] xNorms;
-	// Keep the norms each time (making reordering very quick)
-	//  (Should only be set to false for testing)
-	public static boolean tryKeepAllPairsNorms = true;
-	public static int MAX_DATA_SIZE_FOR_KEEP_ALL_PAIRS_NORM = 2000;
-	
+  /**
+   * Property name for the number of K nearest neighbours used in
+   * the KSG algorithm in the full joint space (default 4).
+   */
 	public final static String PROP_K = "k";
+  /**
+   * Property name for what type of norm to use between data points
+   *  for each marginal variable -- Options are defined by 
+   *  {@link KdTree#setNormType(String)} and the
+   *  default is {@link EuclideanUtils#NORM_MAX_NORM}.
+   */
 	public final static String PROP_NORM_TYPE = "NORM_TYPE";	
+  /**
+   * Property name for whether to normalise the incoming data to 
+   * mean 0, standard deviation 1 (default true)
+   */
 	public static final String PROP_NORMALISE = "NORMALISE";
+	/**
+	 * Property name for time difference between source and destination (0 by default,
+	 * must be >= 0)
+	 */ 
 	public static final String PROP_TIME_DIFF = "TIME_DIFF";
-	
 	/**
 	 * Track whether we're going to normalise the joint variables individually
 	 */
@@ -167,7 +186,6 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 
 	public MutualInfoCalculatorMultiVariateWithDiscreteKraskov() {
 		super();
-		normCalculator = new EuclideanUtils(EuclideanUtils.NORM_MAX_NORM);
 	}
 
 	/**
@@ -180,7 +198,6 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		mi = 0.0;
 		miComputed = false;
     totalObservations = 0;
-		xNorms = null;
 		continuousData = null;
 		means = null;
 		stds = null;
@@ -334,29 +351,6 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
     addObservations(continuousObservations, discreteObservations);
     finaliseAddObservations();
 	}
-
-
-	/**
-	 * Compute the norms for each marginal time series
-	 *
-	 */
-	protected void computeNorms() {
-		int N = continuousData.length; // number of observations
-		
-		xNorms = new double[N][N];
-		for (int t = 0; t < N; t++) {
-			// Compute the norms from t to all other time points
-			for (int t2 = 0; t2 < N; t2++) {
-				if (t2 == t) {
-					xNorms[t][t2] = Double.POSITIVE_INFINITY;
-					continue;
-				}
-				// Compute norm in the continuous space
-				xNorms[t][t2] = normCalculator.norm(continuousData[t], continuousData[t2]);
-			}
-		}
-	}
-
 
   /**
    * Internal method to ensure that the Kd-tree data structures to represent the
