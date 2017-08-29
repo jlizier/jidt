@@ -62,6 +62,8 @@ import java.util.Arrays;
  * 
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
+ * @author Pedro A.M. Mediano (<a href="pmediano at imperial.ac.uk">email</a>,
+ * <a href="http://www.doc.ic.ac.uk/~pam213">www</a>)
  */
 public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements MutualInfoCalculatorMultiVariateWithDiscrete, Cloneable {
 
