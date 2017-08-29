@@ -723,7 +723,11 @@ public abstract class AutoAnalyser extends JFrame
 		javaCode.append("package infodynamics.demos.autoanalysis;\n\n");
 		javaCode.append("import infodynamics.utils.ArrayFileReader;\n");
 		if (statSigCheckBox.isSelected()) {
-			javaCode.append("import infodynamics.utils.EmpiricalMeasurementDistribution;\n");
+			if (statSigAnalyticCheckBox.isSelected()) {
+				javaCode.append("import infodynamics.utils.AnalyticMeasurementDistribution;\n");
+			} else {
+				javaCode.append("import infodynamics.utils.EmpiricalMeasurementDistribution;\n");
+			}
 		}
 		javaCode.append("import infodynamics.utils.MatrixUtils;\n\n");
 		if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE) ||
