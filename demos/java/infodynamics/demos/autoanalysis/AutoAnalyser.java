@@ -958,7 +958,11 @@ public abstract class AutoAnalyser extends JFrame
 			} else {
 				// Construct the calculator:
 				// 1. Java
-				javaCode.append("    " + abstractContinuousClass.getSimpleName() + " calc;\n");
+				// If we wanted to create as superclass:
+				// javaCode.append("    " + abstractContinuousClass.getSimpleName() + " calc;\n");
+				// But that gives problems when we use interfaces such as AnalyticNullDistributionComputer,
+				//  so we'll store it as the instantiated class:
+				javaCode.append("    " + calcContinuous.getClass().getSimpleName() + " calc;\n");
 				javaCode.append(javaConstructorLine);
 				// 2. Python
 				pythonCode.append(pythonPreConstructorLine);
