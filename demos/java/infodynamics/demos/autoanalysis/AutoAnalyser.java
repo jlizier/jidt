@@ -68,6 +68,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Vector;
 
@@ -739,28 +740,43 @@ public abstract class AutoAnalyser extends JFrame
 			//  used for property names
 			javaCode.append("import infodynamics.measures.continuous.*;\n");
 		}
+		// Work out full path of the jar and code utilities:
+		String jarLocation, pythonDemosLocation, matlabDemosLocation;
+		try {
+			File jarLocationFile = new File(System.getProperty("user.dir") + "/../../infodynamics.jar");
+			jarLocation = jarLocationFile.getCanonicalPath();
+			File pythonDemosLocationFile = new File(System.getProperty("user.dir") + "/../python");
+			pythonDemosLocation = pythonDemosLocationFile.getCanonicalPath();
+			File matlabDemosLocationFile = new File(System.getProperty("user.dir") + "/../octave");
+			matlabDemosLocation = matlabDemosLocationFile.getCanonicalPath();
+		} catch (IOException ioex) {
+			JOptionPane.showMessageDialog(this,
+					ioex.getMessage());
+			resultsLabel.setText("Cannot find jar and Matlab/Python utility locations: " + ioex.getMessage());
+			return;
+		}
 		// 2. Python
 		StringBuffer pythonCode = new StringBuffer();
 		pythonCode.append("from jpype import *\n");
 		pythonCode.append("import numpy\n");
-		pythonCode.append("# I think this is a bit of a hack, python users will do better on this:\n");
-		pythonCode.append("sys.path.append(\"../python\")\n");
+		pythonCode.append("# Our python data file readers are a bit of a hack, python users will do better on this:\n");
+		pythonCode.append("sys.path.append(\"" + pythonDemosLocation + "\")\n");
 		if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
 			pythonCode.append("import readIntsFile\n\n");
 		} else {
 			pythonCode.append("import readFloatsFile\n\n");
 		}
-		pythonCode.append("# Add JIDT jar library to the path\n\n");
-		pythonCode.append("jarLocation = \"../../infodynamics.jar\"\n");
+		pythonCode.append("# Add JIDT jar library to the path\n");
+		pythonCode.append("jarLocation = \"" + jarLocation + "\"\n");
 		pythonCode.append("# Start the JVM (add the \"-Xmx\" option with say 1024M if you get crashes due to not enough memory space)\n");
 		pythonCode.append("startJVM(getDefaultJVMPath(), \"-ea\", \"-Djava.class.path=\" + jarLocation)\n\n");
 		// 3. Matlab:
 		StringBuffer matlabCode = new StringBuffer();
-		matlabCode.append("% Add JIDT jar library to the path\n");
-		matlabCode.append("jidtPath = '../../';\n");
-		matlabCode.append("javaaddpath([jidtPath, '/infodynamics.jar']);\n");
+		matlabCode.append("% Add JIDT jar library to the path, and disable warnings that it's already there:\n");
+		matlabCode.append("warning('off','MATLAB:Java:DuplicateClass');\n");
+		matlabCode.append("javaaddpath('" + jarLocation + "');\n");
 		matlabCode.append("% Add utilities to the path\n");
-		matlabCode.append("addpath([jidtPath, '/demos/octave']);\n\n");
+		matlabCode.append("addpath('" + matlabDemosLocation + "');\n\n");
 		
 		try{
 			// Create both discrete and continuous calculators to make
