@@ -186,6 +186,9 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 	 */
 	protected int timeDiff = 0;
 
+  /**
+   * Construct an instance of the KSG mixed MI calculator
+   */
 	public MutualInfoCalculatorMultiVariateWithDiscreteKraskov() {
 		super();
 	}
@@ -277,11 +280,26 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		throw new RuntimeException("Not implemented yet");
 	}
 
+  /**
+   * Prepare the calculator to receive observations.
+   *
+   * Must be called between {@link #initialise()} and any addObservations
+   * method. Does not need to be called if
+   * {@link setObservations(double[][], int[])} is used.
+   */
 	public void startAddObservations() {
 		vectorOfContinuousObservations = new Vector<double[][]>();
 		vectorOfDiscreteObservations   = new Vector<int[]>();
 	}
 
+  /**
+   * Prepare observations previously added through any addObservations method
+   * for calculations.
+   *
+   * Must be called between any addObservations method and any compute method.
+   * Does not need to be called if {@link setObservations(double[][], int[])}
+   * is used.
+   */
 	public void finaliseAddObservations() throws Exception {
 		if (vectorOfContinuousObservations.size() < 1) {
 			throw new Exception("Cannot compute MI with a null set of data");
@@ -408,15 +426,51 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		return miSurrogateCalculator.computeAverageLocalOfObservations();
 	}
 
+  /**
+   * Calculate the average MI in nats.
+   */
   public double computeAverageLocalOfObservations() throws Exception {
     return computeFromObservations(false)[0];
   }
 
+  /**
+   * <p>Computes the local values of the MI,
+   *  for each valid observation in the previously supplied observations
+   *  (with PDFs computed using all of the previously supplied observation sets).</p>
+   *  
+   * <p>If the samples were supplied via a single call such as
+   * {@link #setObservations(double[][], int[])},
+   * then the return value is a single time-series of local
+   * channel measure values corresponding to these samples.</p>
+   * 
+   * <p>Otherwise where disjoint time-series observations were supplied using several 
+   *  calls such as {@link #addObservations(double[][], int[])}
+   *  then the local values for each disjoint observation set will be appended here
+   *  to create a single "time-series" return array.</p>
+   * 
+   * @return the "time-series" of local MIs in nats
+   * @throws Exception
+   */
   public double[] computeLocalOfPreviousObservations() throws Exception {
     return computeFromObservations(true);
   }
 
-	public double[] computeFromObservations(boolean returnLocals) throws Exception {
+  /**
+   * This protected method handles the computation of either the average or
+   * local MI (over parts of the total observations).
+   * 
+   * <p>The method returns:<ol>
+   *  <li>for (returnLocals == false), an array of size 1,
+   *      containing the average MI </li>
+   *  <li>for local MIs (returnLocals == true), the array of local MI values</li>
+   *  </ol>
+   * 
+   * @param returnLocals whether to return an array or local values, or else
+   *  sums of these values
+   * @return either the average MI, or array of local MI value, in nats not bits
+   * @throws Exception
+   */
+	protected double[] computeFromObservations(boolean returnLocals) throws Exception {
 
     // FIXME
     int dynCorrExclTime = 0;
@@ -500,17 +554,20 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 
 
 	/**
-	 * Compute the significance of the mutual information of the previously supplied observations.
-	 * We destroy the p(x,y) correlations, while retaining the p(x), p(y) marginals, to check how
-	 *  significant this mutual information actually was.
+	 * Compute the significance of the mutual information of the previously
+   * supplied observations.
+   *
+	 * We destroy the p(x,y) correlations, while retaining the p(x), p(y)
+   * marginals, to check how significant this mutual information actually was.
 	 *  
-	 * This is in the spirit of Chavez et. al., "Statistical assessment of nonlinear causality:
-	 *  application to epileptic EEG signals", Journal of Neuroscience Methods 124 (2003) 113-128
-	 *  which was performed for Transfer entropy.
+	 * This is in the spirit of Chavez et. al., "Statistical assessment of
+   * nonlinear causality: application to epileptic EEG signals", Journal of
+   * Neuroscience Methods 124 (2003) 113-128 which was performed for transfer
+   * entropy.
 	 * 
 	 * @param numPermutationsToCheck
-	 * @return the proportion of MI scores from the distribution which have higher or equal MIs to ours.
-	 *  (i.e. 1 - CDF of our score)
+	 * @return the proportion of MI scores from the distribution which have
+   * higher or equal MIs to ours. (i.e. 1 - CDF of our score)
 	 */
 	public synchronized EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception {
 		// Generate the re-ordered indices:
@@ -521,16 +578,20 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 	}
 	
 	/**
-	 * Compute the significance of the mutual information of the previously supplied observations.
-	 * We destroy the p(x,y) correlations, while retaining the p(x), p(y) marginals, to check how
-	 *  significant this mutual information actually was.
+	 * Compute the significance of the mutual information of the previously
+   * supplied observations.
+   *
+	 * We destroy the p(x,y) correlations, while retaining the p(x), p(y)
+   * marginals, to check how significant this mutual information actually was.
 	 *  
-	 * This is in the spirit of Chavez et. al., "Statistical assessment of nonlinear causality:
-	 *  application to epileptic EEG signals", Journal of Neuroscience Methods 124 (2003) 113-128
-	 *  which was performed for Transfer entropy.
+	 * This is in the spirit of Chavez et. al., "Statistical assessment of
+   * nonlinear causality: application to epileptic EEG signals", Journal of
+   * Neuroscience Methods 124 (2003) 113-128 which was performed for transfer
+   * entropy.
 	 * 
 	 * @param newOrderings the specific new orderings to use
-	 * @return the proportion of MI scores from the distribution which have higher or equal MIs to ours.
+	 * @return the proportion of MI scores from the distribution which have
+   * higher or equal MIs to ours.
 	 */
 	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings) throws Exception {
 		
@@ -577,8 +638,8 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 	 *  it should be ignored, since the data point was not counted in its
 	 *  own counts in the standard version anyway.</p>
 	 *  
-	 *  <p><b>Importantly</b>, the supplied observations are intended to be new observations,
-	 *  not those fed in to compute the PDFs from. There would be
+	 *  <p><b>Importantly</b>, the supplied observations are intended to be new
+   *  observations, not those fed in to compute the PDFs from. There would be
 	 *  some subtle changes necessary to accomodate computing locals on
 	 *  the same data set (e.g. not counting the current point as one
 	 *  of those within eps_x etc.). 
@@ -643,10 +704,29 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		this.debug = debug;
 	}
 
+	/**
+	 * Return the MI last calculated in a call to {@link #computeAverageLocalOfObservations()}
+	 * or {@link #computeLocalOfPreviousObservations()} after the previous
+	 * {@link #initialise()} call.
+	 * 
+	 * @return the last computed average mutual information
+	 */
 	public double getLastAverage() {
 		return mi;
 	}
 	
+	/**
+	 * Get the number of samples to be used for the PDFs here 
+	 * which have been supplied by calls to
+	 * {@link #setObservations(double[][], int[])},
+	 * {@link #addObservations(double[][], int[])}
+	 * etc.
+	 * 
+	 * <p>Note that the number of samples may not be equal to the length of time-series
+	 * supplied (i.e. where a {@link PROP_TIME_DIFF}
+	 * is set).
+	 * </p>
+	 */
 	public int getNumObservations() {
 		return totalObservations;
 	}
