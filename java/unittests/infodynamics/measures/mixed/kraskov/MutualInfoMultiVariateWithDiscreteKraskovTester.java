@@ -212,4 +212,46 @@ public class MutualInfoMultiVariateWithDiscreteKraskovTester extends TestCase {
       assertEquals(analytical, estimated, 0.05);
     }
   }
+
+  public void testProperties() throws Exception {
+    MutualInfoCalculatorMultiVariateWithDiscreteKraskov miCalc =
+        new MutualInfoCalculatorMultiVariateWithDiscreteKraskov();
+
+    // Generate data with unit Gaussians separated by fixed distance
+    double separation = 4.0;
+    double true_val = 0.6327;
+    int N = 1000;
+    RandomGenerator rg = new RandomGenerator();
+    double[][] contData = rg.generateNormalData(N, 1, 0, 1);
+    int[] discData = rg.generateRandomInts(N, 2);
+    for (int i = 0; i < N; i++) {
+      if (discData[i] > 0) {
+        contData[i][0] += separation;
+      }
+    }
+
+    // Test we get correct result with default properties
+    miCalc.initialise(1, 2);
+    miCalc.setObservations(contData, discData);
+    double res1 = miCalc.computeAverageLocalOfObservations();
+    assertEquals(true_val, res1, 0.05);
+
+    // Test that timeDiff has an effect
+    miCalc.setProperty("TIME_DIFF", "1");
+    miCalc.initialise(1, 2);
+    miCalc.setObservations(contData, discData);
+    double res2 = miCalc.computeAverageLocalOfObservations();
+    assertEquals(0.0, res2, 0.05);
+    miCalc.setProperty("TIME_DIFF", "0");
+
+    // Test that K has an effect
+    miCalc.setProperty("K", "2");
+    miCalc.initialise(1, 2);
+    miCalc.setObservations(contData, discData);
+    double res3 = miCalc.computeAverageLocalOfObservations();
+    assertTrue(Math.abs(res3 - res1) > 0.001);
+    miCalc.setProperty("k", "4");
+
+
+  }
 }
