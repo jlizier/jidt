@@ -560,6 +560,9 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
         // again in the for-loop when tt == t
         n_y++;
         for (int tt = t - dynCorrExclTime; tt <= t + dynCorrExclTime; tt++) {
+          if ((tt < 0) || (tt >= totalObservations)) {
+            continue;
+          }
           if (discreteData[tt] == b) {
             n_y--;
           }
