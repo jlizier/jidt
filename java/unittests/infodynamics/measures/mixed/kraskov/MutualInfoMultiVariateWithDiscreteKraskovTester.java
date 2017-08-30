@@ -252,6 +252,20 @@ public class MutualInfoMultiVariateWithDiscreteKraskovTester extends TestCase {
     assertTrue(Math.abs(res3 - res1) > 0.001);
     miCalc.setProperty("k", "4");
 
+    // Test that noiseLevel has an effect
+    miCalc.setProperty("NOISE_LEVEL_TO_ADD", "20.0");
+    miCalc.initialise(1, 2);
+    miCalc.setObservations(contData, discData);
+    double res4 = miCalc.computeAverageLocalOfObservations();
+    assertEquals(0.0, res4, 0.05);
+    miCalc.setProperty("NOISE_LEVEL_TO_ADD", "false");
+    
+    // Test that dynCorrExcl has an effect
+    miCalc.setProperty("DYN_CORR_EXCL", "10");
+    miCalc.initialise(1, 2);
+    miCalc.setObservations(contData, discData);
+    double res5 = miCalc.computeAverageLocalOfObservations();
+    assertTrue(Math.abs(res5 - res1) > 0.001);
 
   }
 }
