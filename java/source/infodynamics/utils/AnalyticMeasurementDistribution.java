@@ -77,6 +77,21 @@ public abstract class AnalyticMeasurementDistribution extends MeasurementDistrib
 	public abstract double computePValueForGivenEstimate(double estimate);
 
 	/**
+	 * Computes p-values corresponding to a set of estimates, each done via
+	 * {@link #computePValueForGivenEstimate(double)}
+	 * 
+	 * @param estimates array of estimates to return corresponding p-values for.
+	 * @return
+	 */
+	public double[] computePValuesForGivenEstimates(double[] estimates) {
+		double[] pValues = new double[estimates.length];
+		for (int i = 0; i < estimates.length; i++) {
+			pValues[i] = computePValueForGivenEstimate(estimates[i]);
+		}
+		return estimates;
+	}
+
+	/**
 	 * Compute the estimated observed measured value corresponding to
 	 * a given p-value
 	 * (derived from how the given estimates are <b>analytically</b> distributed  
@@ -107,9 +122,25 @@ public abstract class AnalyticMeasurementDistribution extends MeasurementDistrib
 	 * 		Physical Review Letters, <b>109</b>, p. 138105+ (2012).</li>
      * </ul>
 	 * 
+	 * @param pValue the sample p-value for the given channel measure score under this null hypothesis.
 	 * @return the estimate of the channel measure score corresponding to
 	 * the given p-value under this null hypothesis.
 	 * @throws Exception
 	 */
 	public abstract double computeEstimateForGivenPValue(double pValue);
+	
+	/**
+	 * Computes estimates corresponding to a set of p-values, each done via
+	 * {@link #computeEstimateForGivenPValue(double)}
+	 * 
+	 * @param pValues array of p-values to return corresponding estimates for.
+	 * @return
+	 */
+	public double[] computeEstimatesForGivenPValues(double[] pValues) {
+		double[] estimates = new double[pValues.length];
+		for (int i = 0; i < pValues.length; i++) {
+			estimates[i] = computeEstimateForGivenPValue(pValues[i]);
+		}
+		return estimates;
+	}
 }
