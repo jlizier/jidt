@@ -30,6 +30,7 @@ import infodynamics.utils.KdTree;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.Arrays;
+import java.util.Random;
 
 /**
  * <p>Compute the Mutual Information between a vector of continuous variables and discrete
@@ -165,6 +166,17 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 	 * must be >= 0)
 	 */ 
 	public static final String PROP_TIME_DIFF = "TIME_DIFF";
+  /**
+   * Property name for an amount of random Gaussian noise to be
+   *  added to the data (default is 1e-8, matching the MILCA toolkit).
+   */
+  public static final String PROP_ADD_NOISE = "NOISE_LEVEL_TO_ADD";
+  /**
+   * Property name for a dynamics exclusion time window 
+   * otherwise known as Theiler window (see Kantz and Schreiber).
+   * Default is 0 which means no dynamic exclusion window.
+   */
+  public static final String PROP_DYN_CORR_EXCL_TIME = "DYN_CORR_EXCL"; 
 	/**
 	 * Track whether we're going to normalise the joint variables individually
 	 */
@@ -185,6 +197,18 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 	 *  are adjusted so that there is no timeDiff between them).
 	 */
 	protected int timeDiff = 0;
+  /**
+   * Whether to add an amount of random noise to the incoming data
+   */
+  protected boolean addNoise = true;
+  /**
+   * Amount of random Gaussian noise to add to the incoming data
+   */
+  protected double noiseLevel = (double) 1e-8;
+  /**
+   * Size of dynamic correlation exclusion window.
+   */
+  protected int dynCorrExclTime = 0;
 
   /**
    * Construct an instance of the KSG mixed MI calculator
@@ -226,6 +250,18 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 	 *      variables (true by default)</li>
 	 * 	<li>{@link #PROP_TIME_DIFF} - Time difference between source and
    *     	destination (0 by default). Must be >= 0.</li>
+   *  <li>{@link #PROP_ADD_NOISE} -- a standard deviation for an amount of
+   *    random Gaussian noise to add to
+   *      each variable, to avoid having neighbourhoods with artificially
+   *      large counts. (We also accept "false" to indicate "0".)
+   *      The amount is added in after any normalisation,
+   *      so can be considered as a number of standard deviations of the data.
+   *      (Recommended by Kraskov. MILCA uses 1e-8; but adds in
+   *      a random amount of noise in [0,noiseLevel) ).
+   *      Default 1e-8 to match the noise order in MILCA toolkit.</li>
+   *  <li>{@link #PROP_DYN_CORR_EXCL_TIME} -- a dynamics exclusion time window,
+   *      also known as Theiler window (see Kantz and Schreiber);
+   *      default is 0 which means no dynamic exclusion window.</li>
 	 * </ul>
 	 * 
 	 * @param propertyName name of the property to set
@@ -239,6 +275,17 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
       normType = KdTree.validateNormType(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
 			normalise = Boolean.parseBoolean(propertyValue);
+    } else if (propertyName.equalsIgnoreCase(PROP_DYN_CORR_EXCL_TIME)) {
+      dynCorrExclTime = Integer.parseInt(propertyValue);
+    } else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
+      if (propertyValue.equals("0") ||
+          propertyValue.equalsIgnoreCase("false")) {
+        addNoise = false;
+        noiseLevel = 0;
+      } else {
+        addNoise = true;
+        noiseLevel = Double.parseDouble(propertyValue);
+      }
 		} else if (propertyName.equalsIgnoreCase(PROP_TIME_DIFF)) {
 			int val = Integer.parseInt(propertyValue);
 			if (val < 0) {
@@ -358,6 +405,17 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 			}
 		}
 
+    if (addNoise) {
+      Random random = new Random();
+      // Add Gaussian noise of std dev noiseLevel to the data
+      for (int r = 0; r < totalObservations; r++) {
+        for (int c = 0; c < dimensions; c++) {
+          continuousData[r][c] +=
+              random.nextGaussian()*noiseLevel;
+        }
+      }
+    }
+
     digammaN = MathsUtils.digamma(totalObservations);
     digammaK = MathsUtils.digamma(k);
 
@@ -472,9 +530,6 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
    */
 	protected double[] computeFromObservations(boolean returnLocals) throws Exception {
 
-    // FIXME
-    int dynCorrExclTime = 0;
-
     int[] cumcount = new int[base];
     Arrays.fill(cumcount, 0);
 
@@ -496,7 +551,20 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
       int b = discreteData[t];
       double eps_x = kdTreeBins[b].findKNearestNeighbours(k, cumcount[b]++).poll().distance;
       int n_x = kdTreeJoint.countPointsWithinOrOnR(t, eps_x, dynCorrExclTime);
+
+      // Number of points in discrete bin b, not counting itself
       int n_y = counts[b] - 1;
+
+      if (dynCorrExclTime > 0) {
+        // Add one here because later we are going to subtract the point itself
+        // again in the for-loop when tt == t
+        n_y++;
+        for (int tt = t - dynCorrExclTime; tt <= t + dynCorrExclTime; tt++) {
+          if (discreteData[tt] == b) {
+            n_y--;
+          }
+        }
+      }
 
 			avNx += n_x;
 			avNy += n_y;
