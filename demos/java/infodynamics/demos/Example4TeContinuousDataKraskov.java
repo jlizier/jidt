@@ -65,9 +65,14 @@ public class Example4TeContinuousDataKraskov {
 		//  data is a set of random variables) - the result will be of the order
 		//  of what we expect, but not exactly equal to it; in fact, there will
 		//  be a large variance around it.
+		// Expected correlation is expected covariance / product of expected standard deviations:
+		//  (where square of destArray standard dev is sum of squares of std devs of
+		//  underlying distributions)
+		double corr_expected = covariance /
+				(1.0 * Math.sqrt(Math.pow(covariance,2) + Math.pow(1-covariance,2)));
 		System.out.printf("TE result %.4f nats; expected to be close to " +
 				"%.4f nats for these correlated Gaussians\n",
-				result, Math.log(1.0/(1-Math.pow(covariance,2))));
+				result, -0.5 * Math.log(1-Math.pow(corr_expected,2)));
 
 		//  Perform calculation with uncorrelated source:
 		teCalc.initialise(); // Initialise leaving the parameters the same

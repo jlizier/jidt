@@ -45,10 +45,14 @@ teCalc = teCalcClass()
 teCalc.setProperty("NORMALISE", "true") # Normalise the individual variables
 teCalc.initialise(1, 0.5) # Use history length 1 (Schreiber k=1), kernel width of 0.5 normalised units
 teCalc.setObservations(JArray(JDouble, 1)(sourceArray), JArray(JDouble, 1)(destArray))
-# For copied source, should give something close to 1 bit:
 result = teCalc.computeAverageLocalOfObservations()
+# For copied source, should give something close to 1 bit:
+# Expected correlation is expected covariance / product of expected standard deviations:
+#  (where square of destArray standard dev is sum of squares of std devs of
+#  underlying distributions)
+corr_expected = covariance / (1 * math.sqrt(covariance**2 + (1-covariance)**2));
 print("TE result %.4f bits; expected to be close to %.4f bits for these correlated Gaussians but biased upwards" % \
-    (result, math.log(1/(1-math.pow(covariance,2)))/math.log(2)))
+    (result, -0.5*math.log(1-math.pow(corr_expected,2))/math.log(2)))
 teCalc.initialise() # Initialise leaving the parameters the same
 teCalc.setObservations(JArray(JDouble, 1)(sourceArray2), JArray(JDouble, 1)(destArray))
 # For random source, it should give something close to 0 bits

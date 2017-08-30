@@ -51,6 +51,10 @@ public class EntropyCalculatorKernel implements EntropyCalculator {
 	 */
 	protected int totalObservations = 0;
 	/**
+	 * Last computed average
+	 */
+	private double lastAverage;
+	/**
 	 * Whether we're in debug mode
 	 */
 	protected boolean debug = false;
@@ -93,8 +97,10 @@ public class EntropyCalculatorKernel implements EntropyCalculator {
 		svke = new KernelEstimatorUniVariate();
 		svke.setDebug(debug);
 		svke.setNormalise(normalise);
+		lastAverage = 0.0;
 	}
 
+	@Override
 	public void initialise() {
 		initialise(kernelWidth);
 	}
@@ -110,15 +116,18 @@ public class EntropyCalculatorKernel implements EntropyCalculator {
 	 */
 	public void initialise(double kernelWidth) {
 		this.kernelWidth = kernelWidth;
+		lastAverage = 0.0;
 		svke.initialise(kernelWidth);
 	}
 
+	@Override
 	public void setObservations(double observations[]) {
 		this.observations = observations;
 		svke.setObservations(observations);
 		totalObservations = observations.length;
 	}
 	
+	@Override
 	public double computeAverageLocalOfObservations() {
 		double entropy = 0.0;
 		for (int t = 0; t < observations.length; t++) {
@@ -131,9 +140,11 @@ public class EntropyCalculatorKernel implements EntropyCalculator {
 						(entropy/Math.log(2.0)));
 			}
 		}
-		return entropy / (double) totalObservations / Math.log(2.0);
+		lastAverage = entropy / (double) totalObservations / Math.log(2.0);
+		return lastAverage;
 	}
 	
+	@Override
 	public void setDebug(boolean debug) {
 		this.debug = debug;
 		if (svke != null) {
@@ -163,6 +174,7 @@ public class EntropyCalculatorKernel implements EntropyCalculator {
 	 * @param propertyValue value of the property
 	 * @throws Exception for invalid property values
 	 */
+	@Override
 	public void setProperty(String propertyName, String propertyValue) throws Exception {
 		boolean propertySet = true;
 
@@ -184,6 +196,29 @@ public class EntropyCalculatorKernel implements EntropyCalculator {
 			System.out.println(this.getClass().getSimpleName() + ": Set property " + propertyName +
 					" to " + propertyValue);
 		}
+	}
+
+	@Override
+	public String getProperty(String propertyName) throws Exception {
+		if (propertyName.equalsIgnoreCase(KERNEL_WIDTH_PROP_NAME) ||
+				propertyName.equalsIgnoreCase(EPSILON_PROP_NAME)) {
+			return Double.toString(kernelWidth);
+		} else if (propertyName.equalsIgnoreCase(NORMALISE_PROP_NAME)) {
+			return Boolean.toString(normalise);
+		} else {
+			// no superclass to try:
+			return null;
+		}
+	}
+
+	@Override
+	public int getNumObservations() throws Exception {
+		return totalObservations;
+	}
+
+	@Override
+	public double getLastAverage() {
+		return lastAverage;
 	}
 
 }

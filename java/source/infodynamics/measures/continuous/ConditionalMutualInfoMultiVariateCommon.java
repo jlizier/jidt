@@ -165,7 +165,10 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	 */
 	protected double[] condStds = null;
 
-	
+	@Override
+	public void initialise() {
+		initialise(dimensionsVar1, dimensionsVar2, dimensionsCond);
+	}
 	
 	@Override
 	public void initialise(int var1Dimensions, int var2Dimensions, int condDimensions) {
@@ -235,6 +238,15 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	}
 
 	@Override
+	public void setObservations(double[] var1, double[] var2,
+			double[] cond) throws Exception {
+		startAddObservations();
+		addObservations(var1, var2, cond);
+		finaliseAddObservations();
+		addedMoreThanOneObservationSet = false;
+	}
+
+	@Override
 	public void startAddObservations() {
 		vectorOfVar1Observations = new Vector<double[][]>();
 		vectorOfVar2Observations = new Vector<double[][]>();
@@ -273,6 +285,23 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		}
 	}
 
+	@Override
+	public void addObservations(double[] var1, double[] var2,
+			double[] cond) throws Exception {
+		if ((dimensionsVar1 != 1) || (dimensionsVar2 != 1) ||
+				(dimensionsCond != 1)) {
+			throw new Exception("The number of dimensions for each variable (having been initialised to " +
+					dimensionsVar1 + ", " + dimensionsVar2 + " & " +
+					dimensionsCond + ") can only be 1 when " +
+					"the univariate addObservations(double[],double[],double[]) and " + 
+					"setObservations(double[],double[],double[]) methods are called");
+		}
+		addObservations(MatrixUtils.reshape(var1, var1.length, 1),
+						MatrixUtils.reshape(var2, var2.length, 1),
+						MatrixUtils.reshape(cond, cond.length, 1));
+
+	}
+	
 	@Override
 	public void addObservations(double[][] var1, double[][] var2,
 			double[][] cond,
@@ -392,6 +421,12 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	
 	@Override
 	public EmpiricalMeasurementDistribution computeSignificance(
+			int numPermutationsToCheck) throws Exception {
+		return computeSignificance(1, numPermutationsToCheck);
+	}
+	
+	@Override
+	public EmpiricalMeasurementDistribution computeSignificance(
 			int variableToReorder, int numPermutationsToCheck) throws Exception {
 		// Generate the re-ordered indices:
 		RandomGenerator rg = new RandomGenerator();
@@ -403,6 +438,12 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		return computeSignificance(variableToReorder, newOrderings);
 	}
 
+	@Override
+	public EmpiricalMeasurementDistribution computeSignificance(
+			int[][] newOrderings) throws Exception {
+		return computeSignificance(1, newOrderings);
+	}
+	
 	/**
 	 * <p>As described in
 	 * {@link ConditionalMutualInfoCalculatorMultiVariate#computeSignificance(int, int[][])}

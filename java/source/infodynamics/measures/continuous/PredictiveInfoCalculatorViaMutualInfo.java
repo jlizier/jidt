@@ -217,6 +217,22 @@ public class PredictiveInfoCalculatorViaMutualInfo implements
 		}
 	}
 
+	@Override
+	public String getProperty(String propertyName) throws Exception {
+		if (propertyName.equalsIgnoreCase(K_PROP_NAME) ||
+			propertyName.equalsIgnoreCase(K_EMBEDDING_PROP_NAME)) {
+			return Integer.toString(k);
+		} else if (propertyName.equalsIgnoreCase(TAU_PROP_NAME)) {
+			return Integer.toString(tau);
+		} else {
+			// No property was set on this class, assume it is for the underlying
+			//  MI calculator, even if it is for 
+			//  MutualInfoCalculatorMultiVariate.PROP_TIME_DIFF which
+			//  is not a valid property for the PI calculator:
+			return miCalc.getProperty(propertyName);
+		}
+	}
+	
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.PredictiveInfoCalculator#setObservations(double[])
 	 */
@@ -372,9 +388,6 @@ public class PredictiveInfoCalculatorViaMutualInfo implements
 		return startAndEndTimePairs;
 	}
 	
-	/* (non-Javadoc)
-	 * @see infodynamics.measures.continuous.PredictiveInfoCalculator#computeAverageLocalOfObservations()
-	 */
 	@Override
 	public double computeAverageLocalOfObservations() throws Exception {
 		return miCalc.computeAverageLocalOfObservations();
@@ -417,7 +430,7 @@ public class PredictiveInfoCalculatorViaMutualInfo implements
 	}
 	
 	/* (non-Javadoc)
-	 * @see infodynamics.measures.continuous.PredictiveInfoCalculator#computeSignificance(int)
+	 * @see infodynamics.utils.EmpiricalNullDistributionComputer#computeSignificance(int)
 	 */
 	@Override
 	public EmpiricalMeasurementDistribution computeSignificance(
@@ -426,7 +439,7 @@ public class PredictiveInfoCalculatorViaMutualInfo implements
 	}
 
 	/* (non-Javadoc)
-	 * @see infodynamics.measures.continuous.PredictiveInfoCalculator#computeSignificance(int[][])
+	 * @see infodynamics.utils.EmpiricalNullDistributionComputer#computeSignificance(int[][])
 	 */
 	@Override
 	public EmpiricalMeasurementDistribution computeSignificance(
@@ -434,26 +447,17 @@ public class PredictiveInfoCalculatorViaMutualInfo implements
 		return miCalc.computeSignificance(newOrderings);
 	}
 
-	/* (non-Javadoc)
-	 * @see infodynamics.measures.continuous.PredictiveInfoCalculator#setDebug(boolean)
-	 */
 	@Override
 	public void setDebug(boolean debug) {
 		this.debug = debug;
 		miCalc.setDebug(debug);
 	}
 
-	/* (non-Javadoc)
-	 * @see infodynamics.measures.continuous.PredictiveInfoCalculator#getLastAverage()
-	 */
 	@Override
 	public double getLastAverage() {
 		return miCalc.getLastAverage();
 	}
 
-	/* (non-Javadoc)
-	 * @see infodynamics.measures.continuous.PredictiveInfoCalculator#getNumObservations()
-	 */
 	@Override
 	public int getNumObservations() throws Exception {
 		return miCalc.getNumObservations();

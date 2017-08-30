@@ -232,4 +232,14 @@ public class ConditionalTransferEntropyCalculatorKraskov
 			props.put(propertyName, propertyValue); // This will keep properties for the super class as well as the cond MI calculator, but this is ok
 		}
 	}
+	
+	@Override
+	public String getProperty(String propertyName) throws Exception {
+		if (propertyName.equalsIgnoreCase(PROP_KRASKOV_ALG_NUM)) {
+			return Integer.toString(kraskovAlgorithmNumber);
+		} else {
+			// Assume it was a property for the parent class or underlying conditional MI calculator
+			return super.getProperty(propertyName);
+		}
+	}
 }

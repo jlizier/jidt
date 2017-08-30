@@ -18,7 +18,7 @@
 
 package infodynamics.measures.continuous;
 
-import infodynamics.utils.EmpiricalMeasurementDistribution;
+import infodynamics.utils.EmpiricalNullDistributionComputer;
 
 /**
  * Interface for implementations of
@@ -94,7 +94,8 @@ import infodynamics.utils.EmpiricalMeasurementDistribution;
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public interface PredictiveInfoCalculator {
+public interface PredictiveInfoCalculator
+	extends InfoMeasureCalculatorContinuous, EmpiricalNullDistributionComputer {
 
 	/**
 	 * Property name for embedding length <code>k</code> of
@@ -116,13 +117,6 @@ public interface PredictiveInfoCalculator {
 	 *  past k-vector and the next k-vector.  
 	 */
 	public static final String TAU_PROP_NAME = "TAU";
-
-	/**
-	 * Initialise the calculator for (re-)use, with the existing (or default) values of parameters
-	 * Clears any PDFs of previously supplied observations.
-	 * 
-	 */
-	public void initialise() throws Exception;
 
 	/**
 	 * Initialise the calculator for (re-)use, with some parameters
@@ -166,6 +160,7 @@ public interface PredictiveInfoCalculator {
 	 * @param propertyValue value of the property
 	 * @throws Exception for invalid property values
 	 */
+	@Override
 	public void setProperty(String propertyName, String propertyValue) throws Exception;
 
 	/**
@@ -235,13 +230,6 @@ public interface PredictiveInfoCalculator {
 			boolean[] valid) throws Exception;
 
 	/**
-	 * Compute the PI from the previously-supplied samples.
-	 * 
-	 * @return the PI estimate
-	 */
-	public double computeAverageLocalOfObservations() throws Exception;
-
-	/**
 	 * Compute the local PI values for each of the
 	 * previously-supplied samples.
 	 * 
@@ -282,103 +270,4 @@ public interface PredictiveInfoCalculator {
 	 */
 	public double[] computeLocalUsingPreviousObservations(double[] newObservations) throws Exception;
 
-	/**
-	 * Generate a bootstrapped distribution of what the PI would look like,
-	 * under a null hypothesis that the previous <code>k</code> values of our
-	 * samples had no relation to the next <code>k</code> values in the time-series.
-	 * 
-	 * <p>See Section II.E "Statistical significance testing" of 
-	 * the JIDT paper below for a description of how this is done for PI 
-	 * as a mutual information. Basically, the marginal PDFs
-	 * of the past <code>k</code> values, and that of the next <code>k</code> values, 
-	 * are preserved, while their joint PDF is destroyed, and the 
-	 * distribution of PI under these conditions is generated.</p>
-	 * 
-	 * <p>Note that if several disjoint time-series have been added 
-	 * as observations using {@link #addObservations(double[])} etc.,
-	 * then these separate "trials" will be mixed up in the generation
-	 * of surrogates here.</p>
-	 * 
-	 * <p>This method (in contrast to {@link #computeSignificance(int[][])})
-	 * creates <i>random</i> shufflings of the next vectors for the surrogate PI
-	 * calculations.</p>
-	 * 
-	 * @param numPermutationsToCheck number of surrogate samples to bootstrap
-	 *  to generate the distribution.
-	 * @return the distribution of PI scores under this null hypothesis.
-	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
-	 *    toolkit for studying the dynamics of complex systems', 2014."
-	 * @throws Exception
-	 */
-	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception;
-	
-	/**
-	 * Generate a bootstrapped distribution of what the PI would look like,
-	 * under a null hypothesis that the previous <code>k</code> values of our
-	 * samples had no relation to the next <code>k</code> values in the time-series.
-	 * 
-	 * <p>See Section II.E "Statistical significance testing" of 
-	 * the JIDT paper below for a description of how this is done for PI 
-	 * as a mutual information. Basically, the marginal PDFs
-	 * of the past <code>k</code> values, and that of the next <code>k</code> values, 
-	 * are preserved, while their joint PDF is destroyed, and the 
-	 * distribution of PI under these conditions is generated.</p>
-	 * 
-	 * <p>Note that if several disjoint time-series have been added 
-	 * as observations using {@link #addObservations(double[])} etc.,
-	 * then these separate "trials" will be mixed up in the generation
-	 * of surrogates here.</p>
-	 * 
-	 * <p>This method (in contrast to {@link #computeSignificance(int)})
-	 * allows the user to specify how to construct the surrogates,
-	 * such that repeatable results may be obtained.</p>
-	 * 
-	 * @param newOrderings a specification of how to shuffle the next <code>k</code> values vectors
-	 *  to create the surrogates to generate the distribution with. The first
-	 *  index is the permutation number (i.e. newOrderings.length is the number
-	 *  of surrogate samples we use to bootstrap to generate the distribution here.)
-	 *  Each array newOrderings[i] should be an array of length L being
-	 *  the value returned by {@link #getNumObservations()},
-	 *  containing a permutation of the values in 0..(L-1).
-	 * @return the distribution of PI scores under this null hypothesis.
-	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
-	 *    toolkit for studying the dynamics of complex systems', 2014."
-	 * @throws Exception where the length of each permutation in newOrderings
-	 *   is not equal to the number L observations that were previously supplied.
-	 */
-	public EmpiricalMeasurementDistribution computeSignificance(
-			int[][] newOrderings) throws Exception;
-
-	/**
-	 * Set or clear debug mode for extra debug printing to stdout
-	 * 
-	 * @param debug new setting for debug mode (on/off)
-	 */
-	public void setDebug(boolean debug);
-	
-	/**
-	 * Return the PI last calculated in a call to {@link #computeAverageLocalOfObservations()}
-	 * or {@link #computeLocalOfPreviousObservations()} after the previous
-	 * {@link #initialise()} call.
-	 * 
-	 * @return the last computed PI value
-	 */
-	public double getLastAverage();
-
-	/**
-	 * Get the number of samples to be used for the PDFs here 
-	 * which have been supplied by calls to
-	 * {@link #setObservations(double[])}, {@link #addObservations(double[])}
-	 * etc.
-	 * 
-	 * <p>Note that the number of samples is not equal to the length of time-series
-	 * supplied (since we need to accumulate the first and last
-	 * <code>(k-1)*tau + 1</code>
-	 * values of each time-series).
-	 * </p>
-	 * 
-	 * @return the number of samples to be used for the PDFs
-	 * @throws Exception
-	 */
-	public int getNumObservations() throws Exception;
 }

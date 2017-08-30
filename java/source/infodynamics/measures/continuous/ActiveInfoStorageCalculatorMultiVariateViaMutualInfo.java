@@ -21,7 +21,6 @@ package infodynamics.measures.continuous;
 import java.util.Iterator;
 import java.util.Vector;
 
-import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.MatrixUtils;
 
 /**

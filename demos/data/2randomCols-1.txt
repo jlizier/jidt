@@ -1,4 +1,4 @@
-# Two random columns of data in [0..1) each
+% Two random columns of data in [0..1) each
  2.97438473e-01 1.58412125e-01
  3.72029104e-02 7.49930621e-01
  4.30819357e-01 4.23417397e-01

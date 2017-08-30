@@ -71,7 +71,8 @@ package infodynamics.measures.continuous;
  * @see "T. M. Cover and J. A. Thomas, 'Elements of Information
 Theory' (John Wiley & Sons, New York, 1991)."
  */
-public interface MutualInfoCalculatorMultiVariate extends ChannelCalculatorMultiVariate {
+public interface MutualInfoCalculatorMultiVariate
+	extends ChannelCalculator, ChannelCalculatorMultiVariate {
 
 	/**
 	 * Property name for time difference between source and destination (0 by default,

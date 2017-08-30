@@ -49,6 +49,7 @@
 ;  data is a set of random variables) - the result will be of the order
 ;  of what we expect, but not exactly equal to it; in fact, there will
 ;  be a large variance around it.
+; TODO The analytic result quoted here isn't quite right, see e.g. octave demos (can't be bothered fixing here...)
 (println "TE result " (.computeAverageLocalOfObservations teCalc)
 	" nats expected to be close to " (Math/log (/ 1 (- 1 (* covariance covariance))))
 	" nats for these correlated Gaussians")

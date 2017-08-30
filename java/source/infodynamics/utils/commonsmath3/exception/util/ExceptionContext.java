@@ -1,6 +1,6 @@
 /*
  *  Java Information Dynamics Toolkit (JIDT)
- *  Copyright (C) 2012, Joseph T. Lizier
+ *  Copyright (C) 2017, Joseph T. Lizier
  *  
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 
 /*
  * This class was originally distributed as part of the Apache Commons
- *  Math3 library, under the Apache License Version 2.0, which is 
+ *  Math3 library (3.6.1), under the Apache License Version 2.0, which is 
  *  copied below. This Apache 2 software is now included as a derivative
  *  work in the GPLv3 licensed JIDT project, as per:
  *  http://www.apache.org/licenses/GPL-compatibility.html
@@ -63,7 +63,6 @@ import java.util.Locale;
  * All Commons Math exceptions delegate the interface's methods to this class.
  *
  * @since 3.0
- * @version $Id$
  */
 public class ExceptionContext implements Serializable {
     /** Serializable version Id. */
@@ -313,12 +312,12 @@ public class ExceptionContext implements Serializable {
     private void serializeContext(ObjectOutputStream out)
         throws IOException {
         // Step 1.
-        final int len = context.keySet().size();
+        final int len = context.size();
         out.writeInt(len);
-        for (String key : context.keySet()) {
+        for (Map.Entry<String, Object> entry : context.entrySet()) {
             // Step 2.
-            out.writeObject(key);
-            final Object value = context.get(key);
+            out.writeObject(entry.getKey());
+            final Object value = entry.getValue();
             if (value instanceof Serializable) {
                 // Step 3a.
                 out.writeObject(value);

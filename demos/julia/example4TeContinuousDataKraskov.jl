@@ -49,8 +49,12 @@ result = jcall(teCalc, "computeAverageLocalOfObservations", jdouble, ());
 #  data is a set of random variables) - the result will be of the order
 #  of what we expect, but not exactly equal to it; in fact, there will
 #  be a large variance around it.
+# Expected correlation is expected covariance / product of expected standard deviations:
+#  (where square of destArray standard dev is sum of squares of std devs of
+#  underlying distributions)
+corr_expected = covariance / (1 * sqrt(covariance^2 + (1-covariance)^2));
 @printf("TE result %.4f nats; expected to be close to %.4f nats for these correlated Gaussians\n",
-    result, log(1/(1-covariance^2)));
+    result, -0.5*log(1-corr_expected^2));
 
 # Perform calculation with uncorrelated source:
 jcall(teCalc, "initialise", Void, ()); # Initialise leaving the parameters the same

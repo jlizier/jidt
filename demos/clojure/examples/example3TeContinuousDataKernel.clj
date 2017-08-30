@@ -45,6 +45,7 @@
 
 (.setObservations teCalc sourceArray destArray)
 ; For copied source, should give something close to expected value for correlated Gaussians:
+; TODO The analytic result quoted here isn't quite right, see e.g. octave demos (can't be bothered fixing here...)
 (println "TE result " (.computeAverageLocalOfObservations teCalc)
 	" expected to be close to " (/ (Math/log (/ 1 (- 1 (* covariance covariance)))) (Math/log 2))
 	" for these correlated Gaussians but biased upward")

@@ -54,8 +54,36 @@ Theory' (John Wiley & Sons, New York, 1991).</li>
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public interface EntropyCalculatorMultiVariate {
+public interface EntropyCalculatorMultiVariate 
+	extends InfoMeasureCalculatorContinuous {
 
+	/**
+	 * Property name for the number of dimensions
+	 */
+	public static final String NUM_DIMENSIONS_PROP_NAME = "NUM_DIMENSIONS";
+	
+	/**
+	 * Set properties for the underlying calculator implementation.
+	 * New property values are not guaranteed to take effect until the next call
+	 *  to an initialise method. 
+	 * 
+	 * <p>Property names defined at the interface level, and what their
+	 * values should represent, include:</p>
+	 * <ul>
+	 *  <li>{@link #NUM_DIMENSIONS_PROP_NAME} -- number of dimensions in the joint
+	 * 		variable that we are computing the entropy of.</li>
+	 * </ul>
+	 *  
+	 * <p>Unknown property values are ignored.</p>
+	 * 
+	 * <p>Note that implementing classes may defined additional properties.</p>
+	 * 
+	 * @param propertyName name of the property
+	 * @param propertyValue value of the property
+	 * @throws Exception for invalid property values
+	 */
+	public void setProperty(String propertyName, String propertyValue) throws Exception;
+	
 	/**
 	 * Initialise the calculator for (re-)use, with the existing (or default) values
 	 * of calculator-specific parameters.
@@ -65,20 +93,6 @@ public interface EntropyCalculatorMultiVariate {
 	 */
 	public void initialise(int dimensions);
 	
-	/**
-	 * Set properties for the underlying calculator implementation.
-	 * New property values are not guaranteed to take effect until the next call
-	 *  to an initialise method. 
-	 * 
-	 * <p>No general properties are defined at the interface level, i.e.
-	 * there are only calculator-specific properties.</p>
-	 *  
-	 * @param propertyName name of the property
-	 * @param propertyValue value of the property
-	 * @throws Exception for invalid property values
-	 */
-	public void setProperty(String propertyName, String propertyValue) throws Exception;
-
 	/**
 	 * Set the observations for which to compute the PDFs for the entropy
 	 * Should only be called once, the last call contains the
@@ -92,13 +106,6 @@ public interface EntropyCalculatorMultiVariate {
 	 *  may throw other more specific exceptions also.
 	 */
 	public void setObservations(double observations[][]) throws Exception;
-	
-	/**
-	 * Compute the entropy from the previously-supplied samples.
-	 * 
-	 * @return the entropy estimate, in bits or nats depending on the estimator.
-	 */
-	public double computeAverageLocalOfObservations();
 	
 	/**
 	 * Compute the local entropy values for each of the
@@ -127,29 +134,4 @@ public interface EntropyCalculatorMultiVariate {
 	 */
 	public double[] computeLocalOfPreviousObservations() throws Exception;
 	
-	/**
-	 * Return the entropy last calculated in a call to {@link #computeAverageLocalOfObservations()}
-	 * or {@link #computeLocalOfPreviousObservations()} after the previous
-	 * {@link #initialise(int)} call.
-	 * 
-	 * @return the last computed entropy value
-	 */
-	public double getLastAverage();
-	
-	/**
-	 * Set or clear debug mode for extra debug printing to stdout
-	 * 
-	 * @param debug new setting for debug mode (on/off)
-	 */
-	public void setDebug(boolean debug);
-	
-	/**
-	 * Get the number of samples to be used for the PDFs here 
-	 * which have been supplied by calls to
-	 * {@link #setObservations(double[][])}.
-	 * 
-	 * @return the number of samples to be used for the PDFs
-	 * @throws Exception
-	 */
-	public int getNumObservations() throws Exception;
 }

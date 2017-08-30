@@ -22,7 +22,7 @@ package infodynamics.utils;
  * Calculators implementing this interface must provide a
  *  {@link #computeSignificance()} method to compute
  *  the statistical significance of their measurement, returning an analytically
- *  determined distribution {@link AnalyticNullDistributionComputer}.
+ *  determined distribution {@link AnalyticMeasurementDistribution}.
  * 
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)

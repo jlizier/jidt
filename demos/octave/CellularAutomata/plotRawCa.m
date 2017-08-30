@@ -40,7 +40,7 @@ function plotRawCa(states, rule, plotOptions, saveIt, saveFormat)
 		plotOptions.plotRows = size(states, 1);
 	end
 	if not(isfield(plotOptions, 'plotCols'))
-		plotOptions.plotCols = columns(states);
+		plotOptions.plotCols = size(states, 2);
 	end
 	if not(isfield(plotOptions, 'plotStartRow'))
 		plotOptions.plotStartRow = 1;

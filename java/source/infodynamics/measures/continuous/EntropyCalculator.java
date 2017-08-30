@@ -46,29 +46,7 @@ Theory' (John Wiley & Sons, New York, 1991).</li>
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public interface EntropyCalculator {
-
-	/**
-	 * Initialise the calculator for (re-)use, with the existing (or default) values of calculator-specific parameters
- 	 * Clears any PDFs of previously supplied observations.
-	 */
-	public void initialise() throws Exception;
-	
-	/**
-	 * Set properties for the underlying calculator implementation.
-	 * New property values are not guaranteed to take effect until the next call
-	 *  to an initialise method. 
-	 * 
-	 * <p>No general properties are defined at the interface level, i.e.
-	 * there are only calculator-specific properties.</p>
-	 * 
-	 * <p>Unknown property values are ignored.</p>
-	 * 
-	 * @param propertyName name of the property
-	 * @param propertyValue value of the property
-	 * @throws Exception for invalid property values
-	 */
-	public void setProperty(String propertyName, String propertyValue) throws Exception;
+public interface EntropyCalculator extends InfoMeasureCalculatorContinuous {
 
 	// TODO Add addObservations() methods for entropy calculator
 	
@@ -81,17 +59,4 @@ public interface EntropyCalculator {
 	 */
 	public void setObservations(double observations[]);
 	
-	/**
-	 * Compute the entropy from the previously-supplied samples.
-	 * 
-	 * @return the entropy estimate
-	 */
-	public double computeAverageLocalOfObservations();
-
-	/**
-	 * Set or clear debug mode for extra debug printing to stdout
-	 * 
-	 * @param debug new setting for debug mode (on/off)
-	 */
-	public void setDebug(boolean debug);
 }

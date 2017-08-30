@@ -222,40 +222,7 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 		return computeSignificance(newOrderings);
 	}
 	
-	/**
-	 * Generate a bootstrapped distribution of what the MI would look like,
-	 * under a null hypothesis that the source values of our
-	 * samples had no relation to the destination values.
-	 * 
-	 * <p>See Section II.E "Statistical significance testing" of 
-	 * the JIDT paper below for a description of how this is done for  
-	 * a mutual information. Basically, the marginal PDFs
-	 * of each marginal
-	 * are preserved, while their joint PDF is destroyed, and the 
-	 * distribution of MI under these conditions is generated.</p>
-	 * 
-	 * <p>Note that if several disjoint time-series have been added 
-	 * as observations using {@link #addObservations(double[])} etc.,
-	 * then these separate "trials" will be mixed up in the generation
-	 * of surrogates here.</p>
-	 * 
-	 * <p>This method (in contrast to {@link #computeSignificance(int)})
-	 * allows the user to specify how to construct the surrogates,
-	 * such that repeatable results may be obtained.</p>
-	 * 
-	 * @param newOrderings a specification of how to shuffle the next values
-	 *  to create the surrogates to generate the distribution with. The first
-	 *  index is the permutation number (i.e. newOrderings.length is the number
-	 *  of surrogate samples we use to bootstrap to generate the distribution here.)
-	 *  Each array newOrderings[i] should be an array of length N (where
-	 *  would be the value returned by {@link #getNumObservations()}),
-	 *  containing a permutation of the values in 0..(N-1).
-	 * @return the distribution of MI scores under this null hypothesis.
-	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
-	 *    toolkit for studying the dynamics of complex systems', 2014."
-	 * @throws Exception where the length of each permutation in newOrderings
-	 *   is not equal to the number N samples that were previously supplied.
-	 */
+	@Override
 	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings) {
 		double actualMI = computeAverageLocalOfObservations();
 		
@@ -317,7 +284,8 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 		if (!miComputed) {
 			computeAverageLocalOfObservations();
 		}
-		return new ChiSquareMeasurementDistribution(2.0*((double)observations)*average,
+		return new ChiSquareMeasurementDistribution(average,
+				observations,
 				(base - 1) * (base - 1));
 	}
 	
@@ -386,7 +354,6 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 			}
 		}
 		average = average/(double) observations;
-		miComputed = true;
 
 		return localMI;
 	}

@@ -18,8 +18,6 @@
 
 package infodynamics.measures.continuous;
 
-import infodynamics.utils.EmpiricalMeasurementDistribution;
-
 /**
  * Interface for implementations of Active Information Storage estimators on
  * multivariate continuous time-series data. That is, it is applied to
@@ -103,4 +101,6 @@ public interface ActiveInfoStorageCalculatorMultiVariate {
 	 */
 	public void initialise(int dimensions, int k, int tau) throws Exception;
 
+	// TODO We seem to be missing a lot of functionality which should be defined here,
+	//  as implemented in the univariate measure. will have to go back and do this.
 }

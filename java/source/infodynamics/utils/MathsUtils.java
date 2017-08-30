@@ -18,6 +18,7 @@
 
 package infodynamics.utils;
 
+import infodynamics.utils.commonsmath3.distribution.ChiSquaredDistribution;
 import infodynamics.utils.commonsmath3.special.Gamma;
 
 /**
@@ -336,7 +337,7 @@ public class MathsUtils {
 	}
 
 	/**
-	 * <p>Return the value of the cummulative distribution function of the
+	 * <p>Return the value of the cumulative distribution function of the
 	 *  chi-square distribution, evaluated at x, for k degrees of freedom.</p>
 	 *  
 	 * <p>Note that this relies on our approximation of the error function,
@@ -358,6 +359,20 @@ public class MathsUtils {
 		//		gammaOfArgOn2Plus1(k-2); // denominator is Gamma(k/2)
 		// New approach:
 		return Gamma.regularizedGammaP(((double)k)/2.0, x/2.0);
+	}
+	
+	/**
+	 * Return the value of the quantile (inverse of the CDF) for the 
+	 * given cdf value (between 0 and 1) of the chi-square distribution
+	 * with l degrees of freedom.
+	 * 
+	 * @param cdf value of the CDF to evaluate the inverse for 
+	 * @param k degrees of freedom (must have k>0)
+	 * @return
+	 */
+	public static double chiSquareInv(double cdf, int k) {
+		ChiSquaredDistribution chi2dist = new ChiSquaredDistribution(k);
+		return chi2dist.inverseCumulativeProbability(cdf);
 	}
 	
 	/**

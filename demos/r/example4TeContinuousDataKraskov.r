@@ -48,7 +48,11 @@ result <- .jcall(teCalc,"D","computeAverageLocalOfObservations")
 #  data is a set of random variables) - the result will be of the order
 #  of what we expect, but not exactly equal to it; in fact, there will
 #  be a large variance around it.
-cat("TE result ",  result, "nats; expected to be close to ", log(1/(1-covariance^2)), " nats for these correlated Gaussians\n")
+# Expected correlation is expected covariance / product of expected standard deviations:
+#  (where square of destArray standard dev is sum of squares of std devs of
+#  underlying distributions)
+corr_expected <- covariance / (1 * sqrt(covariance^2 + (1-covariance)^2));
+cat("TE result ",  result, "nats; expected to be close to ", -0.5*log(1-corr_expected^2), " nats for these correlated Gaussians\n")
 
 # Perform calculation with uncorrelated source:
 .jcall(teCalc,"V","initialise") # Initialise leaving the parameters the same
