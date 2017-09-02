@@ -65,7 +65,7 @@ public class MutualInfoCalculatorMultiVariateKernel
 	public static final String NORMALISE_PROP_NAME = "NORMALISE";
 	
 	private boolean dynCorrExcl = false;
-	private int dynCorrExclTime = 100;
+	private int dynCorrExclTime = 0;
 	/**
 	 * Property name for a dynamics exclusion time window (see Kantz and Schreiber),
 	 * default is 0 which means no dynamic exclusion window.
