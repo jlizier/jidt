@@ -692,30 +692,33 @@ public abstract class AutoAnalyser extends JFrame
 		
 		int[] singleCalcColumns = new int[numVariables];
 		Vector<int[]> variableCombinations = new Vector<int[]>();
-		try {
-			if (allCombosCheckBox.isSelected()) {
-				// We're doing all combinations
-				fillOutAllCombinations(variableCombinations);
-			} else {
-				// we're doing a single combination
-				for (int i = 0; i < numVariables; i++) {
-					singleCalcColumns[i] = Integer.parseInt(variableColTextFields[i].getText());
-					if ((singleCalcColumns[i] < 0) || (singleCalcColumns[i] >= dataColumns)) {
-						JOptionPane.showMessageDialog(this,
-								String.format("%s column must be between 0 and %d for this data set",
-										variableColNumLabels[i], dataColumns-1));
-						resultsLabel.setText(" ");
-						return;
+		if (computeResultCheckBox.isSelected()) {
+			// Only need variableCombinations filled out if we're computing
+			try {
+				if (allCombosCheckBox.isSelected()) {
+					// We're doing all combinations
+					fillOutAllCombinations(variableCombinations);
+				} else {
+					// we're doing a single combination
+					for (int i = 0; i < numVariables; i++) {
+						singleCalcColumns[i] = Integer.parseInt(variableColTextFields[i].getText());
+						if ((singleCalcColumns[i] < 0) || (singleCalcColumns[i] >= dataColumns)) {
+							JOptionPane.showMessageDialog(this,
+									String.format("%s column must be between 0 and %d for this data set",
+											variableColNumLabels[i], dataColumns-1));
+							resultsLabel.setText(" ");
+							return;
+						}
 					}
+					variableCombinations.add(singleCalcColumns);
 				}
-				variableCombinations.add(singleCalcColumns);
+			} catch (Exception e) {
+				// Catches number format exception, and column number out of bounds
+				JOptionPane.showMessageDialog(this,
+						e.getMessage());
+				resultsLabel.setText("Cannot parse a column number from input: " + e.getMessage());
+				return;
 			}
-		} catch (Exception e) {
-			// Catches number format exception, and column number out of bounds
-			JOptionPane.showMessageDialog(this,
-					e.getMessage());
-			resultsLabel.setText("Cannot parse a column number from input: " + e.getMessage());
-			return;
 		}
 
 		// Generate headers:
@@ -1034,7 +1037,7 @@ public abstract class AutoAnalyser extends JFrame
 			String pythonPrefix = "";
 			String matlabPrefix = "";
 			StringBuffer extraFormatTerms = new StringBuffer();
-			if (variableCombinations.size() > 1) {
+			if (allCombosCheckBox.isSelected()) {
 				// We're doing all combinations.
 				
 				if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_BINNED)) {
@@ -1147,7 +1150,7 @@ public abstract class AutoAnalyser extends JFrame
 			matlabCode.append(matlabPrefix + "result = calc.computeAverageLocalOfObservations();\n");
 			
 			String resultsPrefixString;
-			if (variableCombinations.size() > 1) {
+			if (allCombosCheckBox.isSelected()) {
 				resultsPrefixString = String.format(measureAcronym + "_%s(%s) = ",
 						selectedCalcType, variableRelationshipFormatString);
 			} else {
@@ -1203,7 +1206,7 @@ public abstract class AutoAnalyser extends JFrame
 					"%.4f " + units + resultsSuffixString + "\\n', ...\n\t" + matlabPrefix +
 					extraFormatTerms + "result" + statSigFormatTerms + ");\n");
 			
-			if (variableCombinations.size() > 1) {
+			if (allCombosCheckBox.isSelected()) {
 				// We're doing all combos
 				
 				// Finalise the loops in the code:
@@ -1249,7 +1252,7 @@ public abstract class AutoAnalyser extends JFrame
 				//  button to cancel the calculation whilst it's running
 				for (int[] columnCombo : variableCombinations) {
 					
-					if ((variableCombinations.size() > 1) && skipColumnCombo(columnCombo)) {
+					if (allCombosCheckBox.isSelected() && skipColumnCombo(columnCombo)) {
 						System.out.print("Skipping column combo ");
 						MatrixUtils.printArray(System.out, columnCombo);
 						continue;
@@ -1316,7 +1319,7 @@ public abstract class AutoAnalyser extends JFrame
 					}
 					
 					String resultsText;
-					if (variableCombinations.size() > 1) {
+					if (allCombosCheckBox.isSelected()) {
 						// We're doing all pairs
 						// OLD:
 						// resultsText = String.format(
@@ -1336,7 +1339,7 @@ public abstract class AutoAnalyser extends JFrame
 					System.out.println(resultsText);
 				}
 	
-				if ((variableCombinations.size() == 1) && 
+				if ((allCombosCheckBox.isSelected()) && 
 						!(selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE) ||
 						 (selectedCalcType.equalsIgnoreCase(CALC_TYPE_BINNED)))) {
 					// Read the current property values back out (in case of 
