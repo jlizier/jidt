@@ -162,7 +162,7 @@ public class AutoAnalyserEntropy extends AutoAnalyser {
 		pythonCode.append("\n");
 		pythonCode.append("# Compute for all variables:\n");
 		pythonCode.append("for v in range(" + dataColumns + "):\n");
-		String pythonPrefix = "\t";
+		String pythonPrefix = "    ";
 		pythonCode.append(pythonPrefix+ "# For each variable:\n");
 		// 3. Matlab code
 		matlabCode.append("\n");

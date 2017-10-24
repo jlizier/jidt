@@ -191,11 +191,11 @@ public class AutoAnalyserCMI extends AutoAnalyser
 		pythonCode.append("c = " + conditional + "\n");
 		pythonCode.append("# Compute for all pairs:\n");
 		pythonCode.append("for s in range(" + dataColumns + "):\n");
-		pythonCode.append("\tfor d in range(" + dataColumns + "):\n");
-		String pythonPrefix = "\t\t";
+		pythonCode.append("    for d in range(" + dataColumns + "):\n");
+		String pythonPrefix = "        ";
 		pythonCode.append(pythonPrefix+ "# For each source-dest pair (given conditional):\n");
 		pythonCode.append(pythonPrefix + "if ((s == d) or (s == c) or (d == c)):\n");
-		pythonCode.append(pythonPrefix + "\tcontinue\n");
+		pythonCode.append(pythonPrefix + "    continue\n");
 		// 3. Matlab code
 		matlabCode.append("\n");
 		matlabCode.append("c = " + (conditional+1) + ";\n");
