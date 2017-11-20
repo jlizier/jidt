@@ -552,7 +552,10 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		
 		double testSum = 0.0; // Used for debugging prints
     int N = totalObservations;
-    double[] locals = new double[N];
+    double[] locals = null;
+    if (returnLocals) {
+      locals = new double[N];
+    }
 
 		for (int t = 0; t < N; t++) {
 
@@ -593,7 +596,9 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
       // double localValue = MathsUtils.digamma(k) - 1.0/(double)k - localSum + MathsUtils.digamma(N);
       // Instead do:
       double localValue = digammaK + digammaN - localSum;
-      locals[t] = localValue;
+      if (returnLocals) {
+        locals[t] = localValue;
+      }
 
 			if (debug) {
 				testSum += localValue;
