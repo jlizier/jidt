@@ -484,6 +484,9 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		
 		// Generate a new re-ordered data set
 		int[] shuffledDiscreteData = MatrixUtils.extractSelectedTimePoints(discreteData, newOrdering);
+    // Since the observations in the original calculator have already been
+    // shifted according to timeDiff, set timeDiff = 0 in the surrogate calculator.
+    miSurrogateCalculator.setProperty(PROP_TIME_DIFF, "0");
 		// Perform new initialisations
 		miSurrogateCalculator.initialise(dimensions, base);
 		// Set new observations
