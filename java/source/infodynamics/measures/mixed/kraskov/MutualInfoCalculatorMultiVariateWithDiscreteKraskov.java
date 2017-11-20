@@ -171,12 +171,15 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
    *  added to the data (default is 1e-8, matching the MILCA toolkit).
    */
   public static final String PROP_ADD_NOISE = "NOISE_LEVEL_TO_ADD";
-  /**
-   * Property name for a dynamics exclusion time window 
-   * otherwise known as Theiler window (see Kantz and Schreiber).
-   * Default is 0 which means no dynamic exclusion window.
-   */
-  public static final String PROP_DYN_CORR_EXCL_TIME = "DYN_CORR_EXCL"; 
+
+  // TODO: properly implement dynCorrExclTime
+  // /**
+  //  * Property name for a dynamics exclusion time window 
+  //  * otherwise known as Theiler window (see Kantz and Schreiber).
+  //  * Default is 0 which means no dynamic exclusion window.
+  //  */
+  // public static final String PROP_DYN_CORR_EXCL_TIME = "DYN_CORR_EXCL"; 
+
 	/**
 	 * Track whether we're going to normalise the joint variables individually
 	 */
@@ -206,7 +209,9 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
    */
   protected double noiseLevel = (double) 1e-8;
   /**
-   * Size of dynamic correlation exclusion window.
+   * Size of dynamic correlation exclusion window. By default is set to 0.
+   *
+   * NOTE non-zero exclusion windows are not yet supported in mixed calculators.
    */
   protected int dynCorrExclTime = 0;
 
@@ -275,8 +280,9 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
       normType = KdTree.validateNormType(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
 			normalise = Boolean.parseBoolean(propertyValue);
-    } else if (propertyName.equalsIgnoreCase(PROP_DYN_CORR_EXCL_TIME)) {
-      dynCorrExclTime = Integer.parseInt(propertyValue);
+    // TODO: properly implement dynCorrExclTime
+    // } else if (propertyName.equalsIgnoreCase(PROP_DYN_CORR_EXCL_TIME)) {
+    //   dynCorrExclTime = Integer.parseInt(propertyValue);
     } else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
       if (propertyValue.equals("0") ||
           propertyValue.equalsIgnoreCase("false")) {
@@ -569,19 +575,24 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
       // Number of points in discrete bin b, not counting itself
       int n_y = counts[b] - 1;
 
-      if (dynCorrExclTime > 0) {
-        // Add one here because later we are going to subtract the point itself
-        // again in the for-loop when tt == t
-        n_y++;
-        for (int tt = t - dynCorrExclTime; tt <= t + dynCorrExclTime; tt++) {
-          if ((tt < 0) || (tt >= totalObservations)) {
-            continue;
-          }
-          if (discreteData[tt] == b) {
-            n_y--;
-          }
-        }
-      }
+      // TODO: properly implement dynCorrExclTime. Code left here for future
+      // development. To implement exclusion window in the full joint space we need
+      // to track the sample indices in each point in the kdTreeBins. See comments in
+      // https://github.com/jlizier/jidt/pull/58#pullrequestreview-64865317
+      //
+      // if (dynCorrExclTime > 0) {
+      //   // Add one here because later we are going to subtract the point itself
+      //   // again in the for-loop when tt == t
+      //   n_y++;
+      //   for (int tt = t - dynCorrExclTime; tt <= t + dynCorrExclTime; tt++) {
+      //     if ((tt < 0) || (tt >= totalObservations)) {
+      //       continue;
+      //     }
+      //     if (discreteData[tt] == b) {
+      //       n_y--;
+      //     }
+      //   }
+      // }
 
 			avNx += n_x;
 			avNy += n_y;
