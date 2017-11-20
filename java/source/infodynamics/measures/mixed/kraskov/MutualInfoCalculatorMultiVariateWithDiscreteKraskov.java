@@ -287,11 +287,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
         noiseLevel = Double.parseDouble(propertyValue);
       }
 		} else if (propertyName.equalsIgnoreCase(PROP_TIME_DIFF)) {
-			int val = Integer.parseInt(propertyValue);
-			if (val < 0) {
-				throw new Exception("Time difference must be >= 0. Flip data1 and data2 around if required.");
-			}
-      timeDiff = val;
+			timeDiff = Integer.parseInt(propertyValue);
 		}
 	}
 
@@ -309,7 +305,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		if (continuousObservations[0].length != dimensions) {
 			throw new Exception("The continuous observations do not have the expected number of variables (" + dimensions + ")");
 		}
-    if (continuousObservations.length > timeDiff) {
+    if (continuousObservations.length > Math.abs(timeDiff)) {
       vectorOfContinuousObservations.add(continuousObservations);
       vectorOfDiscreteObservations.add(discreteObservations);
     }
@@ -355,7 +351,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		// First work out the size to allocate the joint vectors, and do the allocation:
 		totalObservations = 0;
 		for (double[][] destination : vectorOfContinuousObservations) {
-			totalObservations += destination.length - timeDiff;
+			totalObservations += destination.length - Math.abs(timeDiff);
 		}
 		continuousData = new double[totalObservations][dimensions];
 		discreteData   = new int[totalObservations];
@@ -367,12 +363,24 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
 		for (int[] dct : vectorOfDiscreteObservations) {
 			double[][] cnt = iterator.next();
 			// Copy the data from these given observations into our master 
-			//  array, aligning them incorporating the timeDiff:
+			//  array, aligning them incorporating the timeDiff. Depending on whether
+      //  timeDiff >= 0, we have to put first the elements of one array or the
+      //  other.
+      if (timeDiff >= 0) {
 			MatrixUtils.arrayCopy(cnt, 0, 0,
 					continuousData, startObservation, 0,
 					cnt.length - timeDiff, dimensions);
       System.arraycopy(dct, timeDiff, discreteData, startObservation, dct.length - timeDiff);
 			startObservation += cnt.length - timeDiff;
+
+      } else {
+        MatrixUtils.arrayCopy(cnt, Math.abs(timeDiff), 0,
+            continuousData, startObservation, 0,
+            cnt.length - Math.abs(timeDiff), dimensions);
+        System.arraycopy(dct, 0, discreteData, startObservation, dct.length - Math.abs(timeDiff));
+        startObservation += cnt.length - Math.abs(timeDiff);
+      }
+
 		}
 		// We don't need to keep the vectors of observation sets anymore:
 		vectorOfContinuousObservations = null;
