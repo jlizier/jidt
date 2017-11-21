@@ -928,7 +928,7 @@ CASE("Test random surrogates in 2D")
   float *dest   = (float *) malloc(N * dimy * sizeof(float));
   for (int i = 0; i < N*dimy; i++) { dest[i] = rand()/((float) RAND_MAX); };
 
-  float result[2];
+  float result[3];
 
   jidt_error_t err;
   printf("====================================\n");
