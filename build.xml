@@ -21,9 +21,8 @@
 	<property name="reports.tests" location="${unittestsouttoplevel}/reports"/>
 	<property name="javadocsdir" location="javadocs"/>
 	<property name="versionfile" value="version-${version}.txt"/>
-  <!-- To enable GPU code, uncomment from here... -->
+  <!-- To enable GPU code, set the following variable to true -->
   <property name="enablegpu" value="true"/>
-  <!-- ...to here -->
 	
 	<path id="project.classpath">
 		<pathelement location="bin"/>
