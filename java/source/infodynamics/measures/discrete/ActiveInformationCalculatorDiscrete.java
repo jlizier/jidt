@@ -18,7 +18,11 @@
 
 package infodynamics.measures.discrete;
 
+import infodynamics.utils.AnalyticMeasurementDistribution;
+import infodynamics.utils.AnalyticNullDistributionComputer;
+import infodynamics.utils.ChiSquareMeasurementDistribution;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
+import infodynamics.utils.EmpiricalNullDistributionComputer;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.RandomGenerator;
 
@@ -68,8 +72,11 @@ import infodynamics.utils.RandomGenerator;
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscreteInContextOfPastCalculator {
+public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscreteInContextOfPastCalculator
+	implements EmpiricalNullDistributionComputer, AnalyticNullDistributionComputer {
 
+	protected boolean aisComputed = false;
+	
 	/**
 	 * User was formerly forced to create new instances through this factory method.
 	 * Retained for backwards compatibility.
@@ -93,6 +100,12 @@ public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscr
 	 */
 	public ActiveInformationCalculatorDiscrete(int base, int history) {
 		super(base, history);
+	}
+
+	@Override
+	public void initialise() {
+		super.initialise();
+		aisComputed = false;
 	}
 
 	@Override
@@ -282,7 +295,7 @@ public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscr
 				// Compute MI contribution:
 				if (p_joint > 0.0) {
 					double logTerm = p_joint / (p_next * p_prev);
-					double localValue = Math.log(logTerm) / log_base;
+					double localValue = Math.log(logTerm) / log_2;
 					miCont = p_joint * localValue;
 					if (localValue > max) {
 						max = localValue;
@@ -297,6 +310,7 @@ public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscr
 		}
 		
 		average = mi;
+		aisComputed = true;
 		return mi;
 	}
 	
@@ -320,7 +334,7 @@ public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscr
 				if (p_joint > 0.0) {
 					double logTerm = p_joint / p_prev;
 					// Entropy rate takes the negative log:
-					double localValue = - Math.log(logTerm) / log_base;
+					double localValue = - Math.log(logTerm) / log_2;
 					entRateCont = p_joint * localValue;
 				} else {
 					entRateCont = 0.0;
@@ -348,7 +362,7 @@ public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscr
 		  ( (double) nextCount[next] *
 			(double) pastCount[past] );
 		logTerm *= (double) observations;
-		return Math.log(logTerm) / log_base;
+		return Math.log(logTerm) / log_2;
 	}
 
 	@Override
@@ -380,7 +394,7 @@ public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscr
 			//  and we've got two counts on the bottom
 			//  but one count on the top:
 			logTerm *= (double) observations;
-			localActive[t] = Math.log(logTerm) / log_base;
+			localActive[t] = Math.log(logTerm) / log_2;
 			average += localActive[t];
 			if (localActive[t] > max) {
 				max = localActive[t];
@@ -431,7 +445,7 @@ public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscr
 				//  and we've got two counts on the bottom
 				//  but one count on the top:
 				logTerm *= (double) observations;
-				localActive[r][c] = Math.log(logTerm) / log_base;
+				localActive[r][c] = Math.log(logTerm) / log_2;
 				average += localActive[r][c];
 				if (localActive[r][c] > max) {
 					max = localActive[r][c];
@@ -487,7 +501,7 @@ public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscr
 					//  and we've got two counts on the bottom
 					//  but one count on the top:
 					logTerm *= (double) observations;
-					localActive[t][r][c] = Math.log(logTerm) / log_base;
+					localActive[t][r][c] = Math.log(logTerm) / log_2;
 					average += localActive[t][r][c];
 					if (localActive[t][r][c] > max) {
 						max = localActive[t][r][c];
@@ -536,7 +550,7 @@ public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscr
 			//  and we've got two counts on the bottom
 			//  but one count on the top:
 			logTerm *= (double) observations;
-			localActive[r] = Math.log(logTerm) / log_base;
+			localActive[r] = Math.log(logTerm) / log_2;
 			average += localActive[r];
 			if (localActive[r] > max) {
 				max = localActive[r];
@@ -585,7 +599,7 @@ public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscr
 			//  and we've got two counts on the bottom
 			//  but one count on the top:
 			logTerm *= (double) observations;
-			localActive[t] = Math.log(logTerm) / log_base;
+			localActive[t] = Math.log(logTerm) / log_2;
 			average += localActive[t];
 			if (localActive[t] > max) {
 				max = localActive[t];
@@ -721,6 +735,17 @@ public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscr
 		return measDistribution;
 	}
 
+	@Override
+	public AnalyticMeasurementDistribution computeSignificance()
+			throws Exception {
+		if (!aisComputed) {
+			computeAverageLocalOfObservations();
+		}
+		return new ChiSquareMeasurementDistribution(average,
+				observations,
+				(base - 1) * (base_power_k - 1));
+	}
+
 	/**
 	 * Debug method to write the current probability distribution functions 
 	 *  
@@ -742,7 +767,7 @@ public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscr
 				// Compute MI contribution:
 				if (p_joint * p_next * p_prev > 0.0) {
 					double logTerm = p_joint / (p_next * p_prev);
-					double localValue = Math.log(logTerm) / log_base;
+					double localValue = Math.log(logTerm) / log_2;
 					miCont = p_joint * localValue;
 					System.out.println(String.format("%7d    %.2f %7d    %.2f     %.2f    %.2f     %.2f",
 							nextVal, p_next, prevVal, p_prev, p_joint, logTerm, localValue));

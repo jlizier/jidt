@@ -41,9 +41,13 @@ teCalc<-.jnew("infodynamics/measures/continuous/kernel/TransferEntropyCalculator
 .jcall(teCalc,"V","setProperty", "NORMALISE", "true") # Normalise the individual variables
 .jcall(teCalc,"V","initialise", 1L, 0.5) # Use history length 1 (Schreiber k=1), kernel width of 0.5 normalised units
 .jcall(teCalc,"V","setObservations", sourceArray, destArray)
-# For copied source, should give something close to expected value for correlated Gaussians:
 result <- .jcall(teCalc,"D","computeAverageLocalOfObservations")
-cat("TE result ",  result, "bits; expected to be close to ", log(1/(1-covariance^2))/log(2), " bits for these correlated Gaussians but biased upwards\n")
+# For copied source, should give something close to expected value for correlated Gaussians.
+# Expected correlation is expected covariance / product of expected standard deviations:
+#  (where square of destArray standard dev is sum of squares of std devs of
+#  underlying distributions)
+corr_expected <- covariance / (1 * sqrt(covariance^2 + (1-covariance)^2));
+cat("TE result ",  result, "bits; expected to be close to ", -0.5*log(1-corr_expected^2)/log(2), " bits for these correlated Gaussians but biased upwards\n")
 
 .jcall(teCalc,"V","initialise") # Initialise leaving the parameters the same
 .jcall(teCalc,"V","setObservations", sourceArray2, destArray)

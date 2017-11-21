@@ -75,6 +75,11 @@ public class EntropyCalculatorMultiVariateKernel implements EntropyCalculatorMul
 	public static final String NORMALISE_PROP_NAME = "NORMALISE";
 	
 	/**
+	 * Number of joint variables/dimensions
+	 */
+	protected int dimensions = 1;
+
+	/**
 	 * Default value for kernel width
 	 */
 	private static final double DEFAULT_EPSILON = 0.25;
@@ -101,6 +106,11 @@ public class EntropyCalculatorMultiVariateKernel implements EntropyCalculatorMul
 		lastEntropy = 0.0;
 	}
 
+	@Override
+	public void initialise() throws Exception {
+		initialise(dimensions);
+	}
+
 	public void initialise(int dimensions) {
 		initialise(dimensions, kernelWidth);
 	}
@@ -118,17 +128,20 @@ public class EntropyCalculatorMultiVariateKernel implements EntropyCalculatorMul
 	 */
 	public void initialise(int dimensions, double kernelWidth) {
 		this.kernelWidth = kernelWidth;
+		this.dimensions = dimensions;
 		mvke.initialise(dimensions, kernelWidth);
 		// this.dimensions = dimensions;
 		lastEntropy = 0.0;
 	}
 
+	@Override
 	public void setObservations(double observations[][]) {
 		mvke.setObservations(observations);
 		totalObservations = observations.length;
 		this.observations = observations;
 	}
 
+	@Override
 	public double computeAverageLocalOfObservations() {
 		double entropy = 0.0;
 		for (int b = 0; b < totalObservations; b++) {
@@ -143,12 +156,28 @@ public class EntropyCalculatorMultiVariateKernel implements EntropyCalculatorMul
 		return lastEntropy;
 	}
 
-	
+	@Override
 	public double[] computeLocalOfPreviousObservations() {
-		return computeLocalUsingPreviousObservations(observations);
+		return computeLocalUsingPreviousObservations(true, observations);
 	}
 
+	@Override
 	public double[] computeLocalUsingPreviousObservations(double states[][]) {
+		return computeLocalUsingPreviousObservations(false, states);
+	}
+	
+	/**
+	 * Internal method for computing locals of a set of observations
+	 *  based on existing PDFs.
+	 * 
+	 * @param isPreviousObservations whether we're using the points
+	 *   that the PDFs were computed from or not.
+	 * @param states samples to compute the local joint entropies on.
+	 * @return
+	 */
+	protected double[] computeLocalUsingPreviousObservations(
+			boolean isPreviousObservations, double states[][]) {
+		
 		double entropy = 0.0;
 		double[] localEntropy = new double[states.length];
 		for (int b = 0; b < states.length; b++) {
@@ -161,14 +190,19 @@ public class EntropyCalculatorMultiVariateKernel implements EntropyCalculatorMul
 			}
 		}
 		entropy /= (double) totalObservations / Math.log(2.0);
+		if (isPreviousObservations) {
+			lastEntropy = entropy; 
+		}
 		return localEntropy;
 	}
 
+	@Override
 	public void setDebug(boolean debug) {
 		this.debug = debug;
 		mvke.setDebug(debug);
 	}
 
+	@Override
 	public double getLastAverage() {
 		return lastEntropy;
 	}
@@ -187,6 +221,7 @@ public class EntropyCalculatorMultiVariateKernel implements EntropyCalculatorMul
 	 * 			is an absolute value. Default is {@link #DEFAULT_KERNEL_WIDTH}.</li>
 	 * 		<li>{@link #NORMALISE_PROP_NAME} -- whether to normalise the incoming variable values
 	 * 			to mean 0, standard deviation 1, or not (default false). Sets {@link #normalise}.</li>
+	 *  	<li>any valid properties for {@link EntropyCalculatorMultiVariate#setProperty(String, String)}.</li>
 	 * </ul> 
 	 * 
 	 * <p>Unknown property values are ignored.</p>
@@ -195,6 +230,7 @@ public class EntropyCalculatorMultiVariateKernel implements EntropyCalculatorMul
 	 * @param propertyValue value of the property
 	 * @throws Exception for invalid property values
 	 */
+	@Override
 	public void setProperty(String propertyName, String propertyValue) throws Exception {
 		boolean propertySet = true;
 
@@ -208,6 +244,8 @@ public class EntropyCalculatorMultiVariateKernel implements EntropyCalculatorMul
 		} else if (propertyName.equalsIgnoreCase(NORMALISE_PROP_NAME)) {
 			normalise = Boolean.parseBoolean(propertyValue);
 			mvke.setNormalise(normalise);
+		} else if (propertyName.equalsIgnoreCase(NUM_DIMENSIONS_PROP_NAME)) {
+			dimensions = Integer.parseInt(propertyValue);
 		} else {
 			// No property was set
 			propertySet = false;
@@ -218,6 +256,22 @@ public class EntropyCalculatorMultiVariateKernel implements EntropyCalculatorMul
 		}
 	}
 
+	@Override
+	public String getProperty(String propertyName) throws Exception {
+		if (propertyName.equalsIgnoreCase(KERNEL_WIDTH_PROP_NAME) ||
+				propertyName.equalsIgnoreCase(EPSILON_PROP_NAME)) {
+			return Double.toString(kernelWidth);
+		} else if (propertyName.equalsIgnoreCase(NORMALISE_PROP_NAME)) {
+			return Boolean.toString(normalise);
+		} else if (propertyName.equalsIgnoreCase(NUM_DIMENSIONS_PROP_NAME)) {
+			return Integer.toString(dimensions);
+		} else {
+			// No property was set, and no superclass to call:
+			return null;
+		}
+	}
+
+	@Override
 	public int getNumObservations() throws Exception {
 		return totalObservations;
 	}

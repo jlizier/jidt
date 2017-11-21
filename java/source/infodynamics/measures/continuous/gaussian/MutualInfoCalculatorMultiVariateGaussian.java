@@ -342,7 +342,8 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	 * @throws Exception
 	 */
 	public ChiSquareMeasurementDistribution computeSignificance() {
-		return new ChiSquareMeasurementDistribution(2*totalObservations*lastAverage,
+		return new ChiSquareMeasurementDistribution(lastAverage,
+				totalObservations,
 				dimensionsSource * dimensionsDest);
 	}
 	
@@ -517,5 +518,4 @@ public class MutualInfoCalculatorMultiVariateGaussian
 		
 		return localValues;
 	}
-
 }

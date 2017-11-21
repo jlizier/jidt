@@ -183,7 +183,7 @@ public abstract class MultiInfoCalculatorKraskov
 	 * <ul>
 	 *  <li>{@link #PROP_K} -- number of k nearest neighbours to use in joint kernel space
 	 *      in the KSG algorithm (default is 4).</li>
-	 *  <li>{@link #PROP_NORM_TYPE} -- normalization type to apply to 
+	 *  <li>{@link #PROP_NORM_TYPE} -- norm type to apply to 
 	 *      working out the norms between the points in each marginal space.
 	 * 	    Options are defined by {@link KdTree#setNormType(String)} -
 	 * 	    default is {@link EuclideanUtils#NORM_MAX_NORM}.</li>
@@ -198,7 +198,9 @@ public abstract class MultiInfoCalculatorKraskov
 	 *      so can be considered as a number of standard deviations of the data.
 	 *      (Recommended by Kraskov. MILCA uses 1e-8; but adds in
 	 *      a random amount of noise in [0,noiseLevel) ).
-	 *      Default 1e-8 to match the noise order in MILCA toolkit..</li>
+	 *      Default 1e-8 to match the noise order in MILCA toolkit.</li>
+	 *   <li>Any property accepted by the superclass
+	 *      {@link MultiInfoCalculatorCommon#setProperty(String, String)}</li>
 	 * </ul>
 	 * 
 	 * <p>Unknown property values are ignored.</p>
@@ -241,6 +243,24 @@ public abstract class MultiInfoCalculatorKraskov
 		if (debug && propertySet) {
 			System.out.println(this.getClass().getSimpleName() + ": Set property " + propertyName +
 					" to " + propertyValue);
+		}
+	}
+
+	@Override
+	public String getProperty(String propertyName) throws Exception {
+		if (propertyName.equalsIgnoreCase(PROP_K)) {
+			return Integer.toString(k);
+		} else if (propertyName.equalsIgnoreCase(PROP_NORM_TYPE)) {
+			return KdTree.convertNormTypeToString(normType);
+		} else if (propertyName.equalsIgnoreCase(PROP_DYN_CORR_EXCL_TIME)) {
+			return Integer.toString(dynCorrExclTime);
+		} else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
+			return Double.toString(noiseLevel);
+		} else if (propertyName.equalsIgnoreCase(PROP_NUM_THREADS)) {
+			return Integer.toString(numThreads);
+		} else {
+			// try the superclass, including for PROP_NORMALISE:
+			return super.getProperty(propertyName);
 		}
 	}
 

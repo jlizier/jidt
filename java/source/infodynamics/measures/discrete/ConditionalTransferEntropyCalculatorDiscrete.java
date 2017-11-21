@@ -18,6 +18,7 @@
 
 package infodynamics.measures.discrete;
 
+import infodynamics.utils.EmpiricalNullDistributionComputer;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
@@ -109,10 +110,12 @@ import infodynamics.utils.RandomGenerator;
  * <a href="http://www.doc.ic.ac.uk/~pam213">www</a>)
  *
  */
-public class ConditionalTransferEntropyCalculatorDiscrete extends InfoMeasureCalculatorDiscrete {
+public class ConditionalTransferEntropyCalculatorDiscrete
+	extends InfoMeasureCalculatorDiscrete 
+	implements EmpiricalNullDistributionComputer {
 
 	protected int k = 0; // history length k.
-  protected int base_others = 0; // base of the conditional variables
+	protected int base_others = 0; // base of the conditional variables
 	protected int base_power_k = 0;
 	protected int base_power_num_others = 0;
 	protected int numOtherInfoContributors = 0;
@@ -223,7 +226,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete extends InfoMeasureCal
 		super(base);
 		
 		k = history;
-    base_others = base; // If unspecified, the base of the conditional variables is the same as src and tgt
+		base_others = base; // If unspecified, the base of the conditional variables is the same as src and tgt
 		this.numOtherInfoContributors = numOtherInfoContributors;
 		base_power_k = MathsUtils.power(base, k);
 		base_power_num_others = MathsUtils.power(base, numOtherInfoContributors);
@@ -624,31 +627,19 @@ public class ConditionalTransferEntropyCalculatorDiscrete extends InfoMeasureCal
 		return te;
 	}
 	
-	/**
-	 * Generate a bootstrapped distribution of what the 
-	 * conditional TE would look like,
-	 * under a null hypothesis that the source values of our
-	 * samples had no relation to the destination value
-	 * (in the context of the destination past and conditionals).
-	 * 
-	 * <p>See Section II.E "Statistical significance testing" of 
-	 * the JIDT paper below for a description of how this is done for MI,
-	 * conditional MI and TE.
-	 * </p>
-	 * 
-	 * <p>Note that if several disjoint time-series have been added 
-	 * as observations using {@link #addObservations(int[], int[])} etc.,
-	 * then these separate "trials" will be mixed up in the generation
-	 * of surrogates here.</p>
-	 * 
-	 * @param numPermutationsToCheck number of surrogate samples to bootstrap
-	 *  to generate the distribution.
-	 * @return the distribution of conditional TE scores under this null hypothesis.
-	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
-	 *    toolkit for studying the dynamics of complex systems', 2014."
-	 */
+	@Override
 	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) {
+		RandomGenerator rg = new RandomGenerator();
+		// (Not necessary to check for distinct random perturbations)
+		int[][] newOrderings = rg.generateRandomPerturbations(observations, numPermutationsToCheck);
+		return computeSignificance(newOrderings);
+	}
+	
+	@Override
+	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings) {
 		double actualTE = computeAverageLocalOfObservations();
+		
+		int numPermutationsToCheck = newOrderings.length;
 		
 		// Reconstruct the source values (not necessarily in order)
 		int[] sourceValues = new int[observations];
@@ -694,12 +685,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete extends InfoMeasureCal
 			}
 		}
 		
-		// Construct new source orderings based on the source probabilities only
-		// Generate the re-ordered indices:
-		RandomGenerator rg = new RandomGenerator();
-		// (Not necessary to check for distinct random perturbations)
-		int[][] newOrderings = rg.generateRandomPerturbations(observations, numPermutationsToCheck);
-
+		// TODO stop using deprecated method
 		ConditionalTransferEntropyCalculatorDiscrete cte = newInstance(base, k, numOtherInfoContributors);
 		cte.initialise();
 		cte.observations = observations;
@@ -957,7 +943,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete extends InfoMeasureCal
 	 *   (indexed only by time step)
 	 * @return time-series of local conditional TE values
 	 */
-	private double[] computeLocalFromPreviousObservations
+	public double[] computeLocalFromPreviousObservations
 		(int source[], int dest[], int[] conditional){
 
 		int rows = source.length;
@@ -1015,7 +1001,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete extends InfoMeasureCal
 	 *   (indexed first by time step then by variable number)
 	 * @return time-series of local conditional TE values
 	 */
-	private double[] computeLocalFromPreviousObservations
+	public double[] computeLocalFromPreviousObservations
 		(int source[], int dest[], int[][] conditionals){
 
 		int rows = source.length;

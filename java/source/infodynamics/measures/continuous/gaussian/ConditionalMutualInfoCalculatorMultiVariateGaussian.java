@@ -528,7 +528,8 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 		// return new ChiSquareMeasurementDistribution(2.0*((double)totalObservations)*lastAverage,
 		//		dimensionsVar1 * dimensionsVar2);
 		// Taking the subsets into account:
-		return new ChiSquareMeasurementDistribution(2.0*((double)totalObservations)*lastAverage,
+		return new ChiSquareMeasurementDistribution(lastAverage,
+				totalObservations,
 				var1IndicesInCovariance.length * var2IndicesInCovariance.length);
 	}
 	

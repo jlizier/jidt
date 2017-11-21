@@ -259,6 +259,21 @@ public abstract class MutualInfoMultiVariateCommon implements
 		vectorOfDestinationObservations.add(destToAdd);
 	}
 
+	public void addObservations(double[] source, double[] destination,
+			int startTime, int numTimeSteps) throws Exception {
+		
+		if ((dimensionsDest != 1) || (dimensionsSource != 1)) {
+			throw new Exception("The number of source and dest dimensions (having been initialised to " +
+					dimensionsSource + " and " + dimensionsDest + ") can only be 1 when " +
+					"the univariate addObservations(double[],double[]) and " + 
+					"setObservations(double[],double[]) methods are called");
+		}
+		addObservations(MatrixUtils.reshape(source, source.length, 1),
+						MatrixUtils.reshape(destination, destination.length, 1),
+						startTime, numTimeSteps);
+	}
+
+
 	public void setObservations(double[][] source, double[][] destination,
 			boolean[] sourceValid, boolean[] destValid) throws Exception {
 		
@@ -274,6 +289,20 @@ public abstract class MutualInfoMultiVariateCommon implements
 		finaliseAddObservations();
 	}
 
+	public void setObservations(double[] source, double[] destination,
+			boolean[] sourceValid, boolean[] destValid) throws Exception {
+
+		if ((dimensionsDest != 1) || (dimensionsSource != 1)) {
+			throw new Exception("The number of source and dest dimensions (having been initialised to " +
+					dimensionsSource + " and " + dimensionsDest + ") can only be 1 when " +
+					"the univariate addObservations(double[],double[]) and " + 
+					"setObservations(double[],double[]) methods are called");
+		}
+		setObservations(MatrixUtils.reshape(source, source.length, 1),
+				MatrixUtils.reshape(destination, destination.length, 1),
+				sourceValid, destValid);
+	}
+	
 	public void setObservations(double[][] source, double[][] destination,
 			boolean[][] sourceValid, boolean[][] destValid) throws Exception {
 
@@ -483,6 +512,20 @@ public abstract class MutualInfoMultiVariateCommon implements
 		miSurrogateCalculator.setObservations(shuffledSourceData, destObservations);
 		// Compute the MI
 		return miSurrogateCalculator.computeAverageLocalOfObservations();
+	}
+
+	public double[] computeLocalUsingPreviousObservations(
+			double[] newSourceObservations, double[] newDestObservations)
+					throws Exception {
+		if ((dimensionsDest != 1) || (dimensionsSource != 1)) {
+			throw new Exception("The number of source and dest dimensions (having been initialised to " +
+					dimensionsSource + " and " + dimensionsDest + ") can only be 1 when " +
+					"the univariate addObservations(double[],double[]) and " + 
+					"setObservations(double[],double[]) methods are called");
+		}
+		return computeLocalUsingPreviousObservations(
+				MatrixUtils.reshape(newSourceObservations, newSourceObservations.length, 1),
+				MatrixUtils.reshape(newDestObservations, newDestObservations.length, 1));
 	}
 
 	public void setDebug(boolean debug) {

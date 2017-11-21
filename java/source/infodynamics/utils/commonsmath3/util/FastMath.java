@@ -1,6 +1,6 @@
 /*
  *  Java Information Dynamics Toolkit (JIDT)
- *  Copyright (C) 2012, Joseph T. Lizier
+ *  Copyright (C) 2017, Joseph T. Lizier
  *  
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 
 /*
  * This class was originally distributed as part of the Apache Commons
- *  Math3 library, under the Apache License Version 2.0, which is 
+ *  Math3 library (3.6.1), under the Apache License Version 2.0, which is 
  *  copied below. This Apache 2 software is now included as a derivative
  *  work in the GPLv3 licensed JIDT project, as per:
  *  http://www.apache.org/licenses/GPL-compatibility.html
@@ -46,6 +46,9 @@
 package infodynamics.utils.commonsmath3.util;
 
 import java.io.PrintStream;
+
+import infodynamics.utils.commonsmath3.exception.MathArithmeticException;
+import infodynamics.utils.commonsmath3.exception.util.LocalizedFormats;
 
 /**
  * Faster, more accurate, portable alternative to {@link Math} and
@@ -103,7 +106,6 @@ import java.io.PrintStream;
  * <li>{@link #scalb(float, int)}</li>
  * </ul>
  * </p>
- * @version $Id$
  * @since 2.2
  */
 public class FastMath {
@@ -342,10 +344,17 @@ public class FastMath {
     /** Mask used to clear the non-sign part of a long. */
     private static final long MASK_NON_SIGN_LONG = 0x7fffffffffffffffl;
 
+    /** Mask used to extract exponent from double bits. */
+    private static final long MASK_DOUBLE_EXPONENT = 0x7ff0000000000000L;
+
+    /** Mask used to extract mantissa from double bits. */
+    private static final long MASK_DOUBLE_MANTISSA = 0x000fffffffffffffL;
+
+    /** Mask used to add implicit high order bit for normalized double. */
+    private static final long IMPLICIT_HIGH_BIT = 0x0010000000000000L;
+
     /** 2^52 - double numbers this large must be integral (no fraction) or NaN or Infinite */
     private static final double TWO_POWER_52 = 4503599627370496.0;
-    /** 2^53 - double numbers this large must be even. */
-    private static final double TWO_POWER_53 = 2 * TWO_POWER_52;
 
     /** Constant: {@value}. */
     private static final double F_1_3 = 1d / 3d;
@@ -834,6 +843,24 @@ public class FastMath {
         return nextAfter(a, Float.POSITIVE_INFINITY);
     }
 
+    /** Compute next number towards negative infinity.
+     * @param a number to which neighbor should be computed
+     * @return neighbor of a towards negative infinity
+     * @since 3.4
+     */
+    public static double nextDown(final double a) {
+        return nextAfter(a, Double.NEGATIVE_INFINITY);
+    }
+
+    /** Compute next number towards negative infinity.
+     * @param a number to which neighbor should be computed
+     * @return neighbor of a towards negative infinity
+     * @since 3.4
+     */
+    public static float nextDown(final float a) {
+        return nextAfter(a, Float.NEGATIVE_INFINITY);
+    }
+
     /** Returns a pseudo-random number between 0.0 and 1.0.
      * <p><b>Note:</b> this implementation currently delegates to {@link Math#random}
      * @return a random number between 0.0 and 1.0
@@ -847,7 +874,7 @@ public class FastMath {
      *
      * Computes exp(x), function result is nearly rounded.   It will be correctly
      * rounded to the theoretical value for 99.9% of input values, otherwise it will
-     * have a 1 UPL error.
+     * have a 1 ULP error.
      *
      * Method:
      *    Lookup intVal = exp(int(x))
@@ -876,16 +903,17 @@ public class FastMath {
     private static double exp(double x, double extra, double[] hiPrec) {
         double intPartA;
         double intPartB;
-        int intVal;
+        int intVal = (int) x;
 
         /* Lookup exp(floor(x)).
          * intPartA will have the upper 22 bits, intPartB will have the lower
          * 52 bits.
          */
         if (x < 0.0) {
-            intVal = (int) -x;
 
-            if (intVal > 746) {
+            // We don't check against intVal here as conversion of large negative double values
+            // may be affected by a JIT bug. Subsequent comparisons can safely use intVal
+            if (x < -746d) {
                 if (hiPrec != null) {
                     hiPrec[0] = 0.0;
                     hiPrec[1] = 0.0;
@@ -893,7 +921,7 @@ public class FastMath {
                 return 0.0;
             }
 
-            if (intVal > 709) {
+            if (intVal < -709) {
                 /* This will produce a subnormal output */
                 final double result = exp(x+40.19140625, extra, hiPrec) / 285040095144011776.0;
                 if (hiPrec != null) {
@@ -903,7 +931,7 @@ public class FastMath {
                 return result;
             }
 
-            if (intVal == 709) {
+            if (intVal == -709) {
                 /* exp(1.494140625) is nearly a machine number... */
                 final double result = exp(x+1.494140625, extra, hiPrec) / 4.455505956692756620;
                 if (hiPrec != null) {
@@ -913,15 +941,9 @@ public class FastMath {
                 return result;
             }
 
-            intVal++;
+            intVal--;
 
-            intPartA = ExpIntTable.EXP_INT_TABLE_A[EXP_INT_TABLE_MAX_INDEX-intVal];
-            intPartB = ExpIntTable.EXP_INT_TABLE_B[EXP_INT_TABLE_MAX_INDEX-intVal];
-
-            intVal = -intVal;
         } else {
-            intVal = (int) x;
-
             if (intVal > 709) {
                 if (hiPrec != null) {
                     hiPrec[0] = Double.POSITIVE_INFINITY;
@@ -930,9 +952,10 @@ public class FastMath {
                 return Double.POSITIVE_INFINITY;
             }
 
-            intPartA = ExpIntTable.EXP_INT_TABLE_A[EXP_INT_TABLE_MAX_INDEX+intVal];
-            intPartB = ExpIntTable.EXP_INT_TABLE_B[EXP_INT_TABLE_MAX_INDEX+intVal];
         }
+
+        intPartA = ExpIntTable.EXP_INT_TABLE_A[EXP_INT_TABLE_MAX_INDEX+intVal];
+        intPartB = ExpIntTable.EXP_INT_TABLE_B[EXP_INT_TABLE_MAX_INDEX+intVal];
 
         /* Get the fractional part of x, find the greatest multiple of 2^-10 less than
          * x and look up the exp function of it.
@@ -944,13 +967,13 @@ public class FastMath {
 
         /* epsilon is the difference in x from the nearest multiple of 2^-10.  It
          * has a value in the range 0 <= epsilon < 2^-10.
-         * Do the subtraction from x as the last step to avoid possible loss of percison.
+         * Do the subtraction from x as the last step to avoid possible loss of precision.
          */
         final double epsilon = x - (intVal + intFrac / 1024.0);
 
         /* Compute z = exp(epsilon) - 1.0 via a minimax polynomial.  z has
        full double precision (52 bits).  Since z < 2^-10, we will have
-       62 bits of precision when combined with the contant 1.  This will be
+       62 bits of precision when combined with the constant 1.  This will be
        used in the last addition below to get proper rounding. */
 
         /* Remez generated polynomial.  Converges on the interval [0, 2^-10], error
@@ -974,6 +997,13 @@ public class FastMath {
        much larger than the others.  If there are extra bits specified from the
        pow() function, use them. */
         final double tempC = tempB + tempA;
+
+        // If tempC is positive infinite, the evaluation below could result in NaN,
+        // because z could be negative at the same time.
+        if (tempC == Double.POSITIVE_INFINITY) {
+            return Double.POSITIVE_INFINITY;
+        }
+
         final double result;
         if (extra != 0.0) {
             result = tempC*extra*z + tempC*extra + tempC*z + tempB + tempA;
@@ -1470,166 +1500,141 @@ public class FastMath {
      * @param y   a double
      * @return double
      */
-    public static double pow(double x, double y) {
-        final double lns[] = new double[2];
+    public static double pow(final double x, final double y) {
 
-        if (y == 0.0) {
+        if (y == 0) {
+            // y = -0 or y = +0
             return 1.0;
-        }
-
-        if (x != x) { // X is NaN
-            return x;
-        }
-
-
-        if (x == 0) {
-            long bits = Double.doubleToRawLongBits(x);
-            if ((bits & 0x8000000000000000L) != 0) {
-                // -zero
-                long yi = (long) y;
-
-                if (y < 0 && y == yi && (yi & 1) == 1) {
-                    return Double.NEGATIVE_INFINITY;
-                }
-
-                if (y > 0 && y == yi && (yi & 1) == 1) {
-                    return -0.0;
-                }
-            }
-
-            if (y < 0) {
-                return Double.POSITIVE_INFINITY;
-            }
-            if (y > 0) {
-                return 0.0;
-            }
-
-            return Double.NaN;
-        }
-
-        if (x == Double.POSITIVE_INFINITY) {
-            if (y != y) { // y is NaN
-                return y;
-            }
-            if (y < 0.0) {
-                return 0.0;
-            } else {
-                return Double.POSITIVE_INFINITY;
-            }
-        }
-
-        if (y == Double.POSITIVE_INFINITY) {
-            if (x * x == 1.0) {
-                return Double.NaN;
-            }
-
-            if (x * x > 1.0) {
-                return Double.POSITIVE_INFINITY;
-            } else {
-                return 0.0;
-            }
-        }
-
-        if (x == Double.NEGATIVE_INFINITY) {
-            if (y != y) { // y is NaN
-                return y;
-            }
-
-            if (y < 0) {
-                long yi = (long) y;
-                if (y == yi && (yi & 1) == 1) {
-                    return -0.0;
-                }
-
-                return 0.0;
-            }
-
-            if (y > 0)  {
-                long yi = (long) y;
-                if (y == yi && (yi & 1) == 1) {
-                    return Double.NEGATIVE_INFINITY;
-                }
-
-                return Double.POSITIVE_INFINITY;
-            }
-        }
-
-        if (y == Double.NEGATIVE_INFINITY) {
-
-            if (x * x == 1.0) {
-                return Double.NaN;
-            }
-
-            if (x * x < 1.0) {
-                return Double.POSITIVE_INFINITY;
-            } else {
-                return 0.0;
-            }
-        }
-
-        /* Handle special case x<0 */
-        if (x < 0) {
-            // y is an even integer in this case
-            if (y >= TWO_POWER_53 || y <= -TWO_POWER_53) {
-                return pow(-x, y);
-            }
-
-            if (y == (long) y) {
-                // If y is an integer
-                return ((long)y & 1) == 0 ? pow(-x, y) : -pow(-x, y);
-            } else {
-                return Double.NaN;
-            }
-        }
-
-        /* Split y into ya and yb such that y = ya+yb */
-        double ya;
-        double yb;
-        if (y < 8e298 && y > -8e298) {
-            double tmp1 = y * HEX_40000000;
-            ya = y + tmp1 - tmp1;
-            yb = y - ya;
         } else {
-            double tmp1 = y * 9.31322574615478515625E-10;
-            double tmp2 = tmp1 * 9.31322574615478515625E-10;
-            ya = (tmp1 + tmp2 - tmp1) * HEX_40000000 * HEX_40000000;
-            yb = y - ya;
+
+            final long yBits        = Double.doubleToRawLongBits(y);
+            final int  yRawExp      = (int) ((yBits & MASK_DOUBLE_EXPONENT) >> 52);
+            final long yRawMantissa = yBits & MASK_DOUBLE_MANTISSA;
+            final long xBits        = Double.doubleToRawLongBits(x);
+            final int  xRawExp      = (int) ((xBits & MASK_DOUBLE_EXPONENT) >> 52);
+            final long xRawMantissa = xBits & MASK_DOUBLE_MANTISSA;
+
+            if (yRawExp > 1085) {
+                // y is either a very large integral value that does not fit in a long or it is a special number
+
+                if ((yRawExp == 2047 && yRawMantissa != 0) ||
+                    (xRawExp == 2047 && xRawMantissa != 0)) {
+                    // NaN
+                    return Double.NaN;
+                } else if (xRawExp == 1023 && xRawMantissa == 0) {
+                    // x = -1.0 or x = +1.0
+                    if (yRawExp == 2047) {
+                        // y is infinite
+                        return Double.NaN;
+                    } else {
+                        // y is a large even integer
+                        return 1.0;
+                    }
+                } else {
+                    // the absolute value of x is either greater or smaller than 1.0
+
+                    // if yRawExp == 2047 and mantissa is 0, y = -infinity or y = +infinity
+                    // if 1085 < yRawExp < 2047, y is simply a large number, however, due to limited
+                    // accuracy, at this magnitude it behaves just like infinity with regards to x
+                    if ((y > 0) ^ (xRawExp < 1023)) {
+                        // either y = +infinity (or large engouh) and abs(x) > 1.0
+                        // or     y = -infinity (or large engouh) and abs(x) < 1.0
+                        return Double.POSITIVE_INFINITY;
+                    } else {
+                        // either y = +infinity (or large engouh) and abs(x) < 1.0
+                        // or     y = -infinity (or large engouh) and abs(x) > 1.0
+                        return +0.0;
+                    }
+                }
+
+            } else {
+                // y is a regular non-zero number
+
+                if (yRawExp >= 1023) {
+                    // y may be an integral value, which should be handled specifically
+                    final long yFullMantissa = IMPLICIT_HIGH_BIT | yRawMantissa;
+                    if (yRawExp < 1075) {
+                        // normal number with negative shift that may have a fractional part
+                        final long integralMask = (-1L) << (1075 - yRawExp);
+                        if ((yFullMantissa & integralMask) == yFullMantissa) {
+                            // all fractional bits are 0, the number is really integral
+                            final long l = yFullMantissa >> (1075 - yRawExp);
+                            return FastMath.pow(x, (y < 0) ? -l : l);
+                        }
+                    } else {
+                        // normal number with positive shift, always an integral value
+                        // we know it fits in a primitive long because yRawExp > 1085 has been handled above
+                        final long l =  yFullMantissa << (yRawExp - 1075);
+                        return FastMath.pow(x, (y < 0) ? -l : l);
+                    }
+                }
+
+                // y is a non-integral value
+
+                if (x == 0) {
+                    // x = -0 or x = +0
+                    // the integer powers have already been handled above
+                    return y < 0 ? Double.POSITIVE_INFINITY : +0.0;
+                } else if (xRawExp == 2047) {
+                    if (xRawMantissa == 0) {
+                        // x = -infinity or x = +infinity
+                        return (y < 0) ? +0.0 : Double.POSITIVE_INFINITY;
+                    } else {
+                        // NaN
+                        return Double.NaN;
+                    }
+                } else if (x < 0) {
+                    // the integer powers have already been handled above
+                    return Double.NaN;
+                } else {
+
+                    // this is the general case, for regular fractional numbers x and y
+
+                    // Split y into ya and yb such that y = ya+yb
+                    final double tmp = y * HEX_40000000;
+                    final double ya = (y + tmp) - tmp;
+                    final double yb = y - ya;
+
+                    /* Compute ln(x) */
+                    final double lns[] = new double[2];
+                    final double lores = log(x, lns);
+                    if (Double.isInfinite(lores)) { // don't allow this to be converted to NaN
+                        return lores;
+                    }
+
+                    double lna = lns[0];
+                    double lnb = lns[1];
+
+                    /* resplit lns */
+                    final double tmp1 = lna * HEX_40000000;
+                    final double tmp2 = (lna + tmp1) - tmp1;
+                    lnb += lna - tmp2;
+                    lna = tmp2;
+
+                    // y*ln(x) = (aa+ab)
+                    final double aa = lna * ya;
+                    final double ab = lna * yb + lnb * ya + lnb * yb;
+
+                    lna = aa+ab;
+                    lnb = -(lna - aa - ab);
+
+                    double z = 1.0 / 120.0;
+                    z = z * lnb + (1.0 / 24.0);
+                    z = z * lnb + (1.0 / 6.0);
+                    z = z * lnb + 0.5;
+                    z = z * lnb + 1.0;
+                    z *= lnb;
+
+                    final double result = exp(lna, z, null);
+                    //result = result + result * z;
+                    return result;
+
+                }
+            }
+
         }
 
-        /* Compute ln(x) */
-        final double lores = log(x, lns);
-        if (Double.isInfinite(lores)){ // don't allow this to be converted to NaN
-            return lores;
-        }
-
-        double lna = lns[0];
-        double lnb = lns[1];
-
-        /* resplit lns */
-        double tmp1 = lna * HEX_40000000;
-        double tmp2 = lna + tmp1 - tmp1;
-        lnb += lna - tmp2;
-        lna = tmp2;
-
-        // y*ln(x) = (aa+ab)
-        final double aa = lna * ya;
-        final double ab = lna * yb + lnb * ya + lnb * yb;
-
-        lna = aa+ab;
-        lnb = -(lna - aa - ab);
-
-        double z = 1.0 / 120.0;
-        z = z * lnb + (1.0 / 24.0);
-        z = z * lnb + (1.0 / 6.0);
-        z = z * lnb + 0.5;
-        z = z * lnb + 1.0;
-        z *= lnb;
-
-        final double result = exp(lna, z, null);
-        //result = result + result * z;
-        return result;
     }
-
 
     /**
      * Raise a double to an int power.
@@ -1640,61 +1645,150 @@ public class FastMath {
      * @since 3.1
      */
     public static double pow(double d, int e) {
+        return pow(d, (long) e);
+    }
 
+    /**
+     * Raise a double to a long power.
+     *
+     * @param d Number to raise.
+     * @param e Exponent.
+     * @return d<sup>e</sup>
+     * @since 3.6
+     */
+    public static double pow(double d, long e) {
         if (e == 0) {
             return 1.0;
-        } else if (e < 0) {
-            e = -e;
-            d = 1.0 / d;
+        } else if (e > 0) {
+            return new Split(d).pow(e).full;
+        } else {
+            return new Split(d).reciprocal().pow(-e).full;
+        }
+    }
+
+    /** Class operator on double numbers split into one 26 bits number and one 27 bits number. */
+    private static class Split {
+
+        /** Split version of NaN. */
+        public static final Split NAN = new Split(Double.NaN, 0);
+
+        /** Split version of positive infinity. */
+        public static final Split POSITIVE_INFINITY = new Split(Double.POSITIVE_INFINITY, 0);
+
+        /** Split version of negative infinity. */
+        public static final Split NEGATIVE_INFINITY = new Split(Double.NEGATIVE_INFINITY, 0);
+
+        /** Full number. */
+        private final double full;
+
+        /** High order bits. */
+        private final double high;
+
+        /** Low order bits. */
+        private final double low;
+
+        /** Simple constructor.
+         * @param x number to split
+         */
+        Split(final double x) {
+            full = x;
+            high = Double.longBitsToDouble(Double.doubleToRawLongBits(x) & ((-1L) << 27));
+            low  = x - high;
         }
 
-        // split d as two 26 bits numbers
-        // beware the following expressions must NOT be simplified, they rely on floating point arithmetic properties
-        final int splitFactor = 0x8000001;
-        final double cd       = splitFactor * d;
-        final double d1High   = cd - (cd - d);
-        final double d1Low    = d - d1High;
+        /** Simple constructor.
+         * @param high high order bits
+         * @param low low order bits
+         */
+        Split(final double high, final double low) {
+            this(high == 0.0 ? (low == 0.0 && Double.doubleToRawLongBits(high) == Long.MIN_VALUE /* negative zero */ ? -0.0 : low) : high + low, high, low);
+        }
 
-        // prepare result
-        double resultHigh = 1;
-        double resultLow  = 0;
+        /** Simple constructor.
+         * @param full full number
+         * @param high high order bits
+         * @param low low order bits
+         */
+        Split(final double full, final double high, final double low) {
+            this.full = full;
+            this.high = high;
+            this.low  = low;
+        }
 
-        // d^(2p)
-        double d2p     = d;
-        double d2pHigh = d1High;
-        double d2pLow  = d1Low;
+        /** Multiply the instance by another one.
+         * @param b other instance to multiply by
+         * @return product
+         */
+        public Split multiply(final Split b) {
+            // beware the following expressions must NOT be simplified, they rely on floating point arithmetic properties
+            final Split  mulBasic  = new Split(full * b.full);
+            final double mulError  = low * b.low - (((mulBasic.full - high * b.high) - low * b.high) - high * b.low);
+            return new Split(mulBasic.high, mulBasic.low + mulError);
+        }
 
-        while (e != 0) {
+        /** Compute the reciprocal of the instance.
+         * @return reciprocal of the instance
+         */
+        public Split reciprocal() {
 
-            if ((e & 0x1) != 0) {
-                // accurate multiplication result = result * d^(2p) using Veltkamp TwoProduct algorithm
-                // beware the following expressions must NOT be simplified, they rely on floating point arithmetic properties
-                final double tmpHigh = resultHigh * d2p;
-                final double cRH     = splitFactor * resultHigh;
-                final double rHH     = cRH - (cRH - resultHigh);
-                final double rHL     = resultHigh - rHH;
-                final double tmpLow  = rHL * d2pLow - (((tmpHigh - rHH * d2pHigh) - rHL * d2pHigh) - rHH * d2pLow);
-                resultHigh = tmpHigh;
-                resultLow  = resultLow * d2p + tmpLow;
+            final double approximateInv = 1.0 / full;
+            final Split  splitInv       = new Split(approximateInv);
+
+            // if 1.0/d were computed perfectly, remultiplying it by d should give 1.0
+            // we want to estimate the error so we can fix the low order bits of approximateInvLow
+            // beware the following expressions must NOT be simplified, they rely on floating point arithmetic properties
+            final Split product = multiply(splitInv);
+            final double error  = (product.high - 1) + product.low;
+
+            // better accuracy estimate of reciprocal
+            return Double.isNaN(error) ? splitInv : new Split(splitInv.high, splitInv.low - error / full);
+
+        }
+
+        /** Computes this^e.
+         * @param e exponent (beware, here it MUST be > 0; the only exclusion is Long.MIN_VALUE)
+         * @return d^e, split in high and low bits
+         * @since 3.6
+         */
+        private Split pow(final long e) {
+
+            // prepare result
+            Split result = new Split(1);
+
+            // d^(2p)
+            Split d2p = new Split(full, high, low);
+
+            for (long p = e; p != 0; p >>>= 1) {
+
+                if ((p & 0x1) != 0) {
+                    // accurate multiplication result = result * d^(2p) using Veltkamp TwoProduct algorithm
+                    result = result.multiply(d2p);
+                }
+
+                // accurate squaring d^(2(p+1)) = d^(2p) * d^(2p) using Veltkamp TwoProduct algorithm
+                d2p = d2p.multiply(d2p);
+
             }
 
-            // accurate squaring d^(2(p+1)) = d^(2p) * d^(2p) using Veltkamp TwoProduct algorithm
-            // beware the following expressions must NOT be simplified, they rely on floating point arithmetic properties
-            final double tmpHigh = d2pHigh * d2p;
-            final double cD2pH   = splitFactor * d2pHigh;
-            final double d2pHH   = cD2pH - (cD2pH - d2pHigh);
-            final double d2pHL   = d2pHigh - d2pHH;
-            final double tmpLow  = d2pHL * d2pLow - (((tmpHigh - d2pHH * d2pHigh) - d2pHL * d2pHigh) - d2pHH * d2pLow);
-            final double cTmpH   = splitFactor * tmpHigh;
-            d2pHigh = cTmpH - (cTmpH - tmpHigh);
-            d2pLow  = d2pLow * d2p + tmpLow + (tmpHigh - d2pHigh);
-            d2p     = d2pHigh + d2pLow;
-
-            e >>= 1;
+            if (Double.isNaN(result.full)) {
+                if (Double.isNaN(full)) {
+                    return Split.NAN;
+                } else {
+                    // some intermediate numbers exceeded capacity,
+                    // and the low order bits became NaN (because infinity - infinity = NaN)
+                    if (FastMath.abs(full) < 1) {
+                        return new Split(FastMath.copySign(0.0, full), 0.0);
+                    } else if (full < 0 && (e & 0x1) == 1) {
+                        return Split.NEGATIVE_INFINITY;
+                    } else {
+                        return Split.POSITIVE_INFINITY;
+                    }
+                }
+            } else {
+                return result;
+            }
 
         }
-
-        return resultHigh + resultLow;
 
     }
 
@@ -3662,6 +3756,319 @@ public class FastMath {
      */
     public static double IEEEremainder(double dividend, double divisor) {
         return StrictMath.IEEEremainder(dividend, divisor); // TODO provide our own implementation
+    }
+
+    /** Convert a long to interger, detecting overflows
+     * @param n number to convert to int
+     * @return integer with same valie as n if no overflows occur
+     * @exception MathArithmeticException if n cannot fit into an int
+     * @since 3.4
+     */
+    public static int toIntExact(final long n) throws MathArithmeticException {
+        if (n < Integer.MIN_VALUE || n > Integer.MAX_VALUE) {
+            throw new MathArithmeticException(LocalizedFormats.OVERFLOW);
+        }
+        return (int) n;
+    }
+
+    /** Increment a number, detecting overflows.
+     * @param n number to increment
+     * @return n+1 if no overflows occur
+     * @exception MathArithmeticException if an overflow occurs
+     * @since 3.4
+     */
+    public static int incrementExact(final int n) throws MathArithmeticException {
+
+        if (n == Integer.MAX_VALUE) {
+            throw new MathArithmeticException(LocalizedFormats.OVERFLOW_IN_ADDITION, n, 1);
+        }
+
+        return n + 1;
+
+    }
+
+    /** Increment a number, detecting overflows.
+     * @param n number to increment
+     * @return n+1 if no overflows occur
+     * @exception MathArithmeticException if an overflow occurs
+     * @since 3.4
+     */
+    public static long incrementExact(final long n) throws MathArithmeticException {
+
+        if (n == Long.MAX_VALUE) {
+            throw new MathArithmeticException(LocalizedFormats.OVERFLOW_IN_ADDITION, n, 1);
+        }
+
+        return n + 1;
+
+    }
+
+    /** Decrement a number, detecting overflows.
+     * @param n number to decrement
+     * @return n-1 if no overflows occur
+     * @exception MathArithmeticException if an overflow occurs
+     * @since 3.4
+     */
+    public static int decrementExact(final int n) throws MathArithmeticException {
+
+        if (n == Integer.MIN_VALUE) {
+            throw new MathArithmeticException(LocalizedFormats.OVERFLOW_IN_SUBTRACTION, n, 1);
+        }
+
+        return n - 1;
+
+    }
+
+    /** Decrement a number, detecting overflows.
+     * @param n number to decrement
+     * @return n-1 if no overflows occur
+     * @exception MathArithmeticException if an overflow occurs
+     * @since 3.4
+     */
+    public static long decrementExact(final long n) throws MathArithmeticException {
+
+        if (n == Long.MIN_VALUE) {
+            throw new MathArithmeticException(LocalizedFormats.OVERFLOW_IN_SUBTRACTION, n, 1);
+        }
+
+        return n - 1;
+
+    }
+
+    /** Add two numbers, detecting overflows.
+     * @param a first number to add
+     * @param b second number to add
+     * @return a+b if no overflows occur
+     * @exception MathArithmeticException if an overflow occurs
+     * @since 3.4
+     */
+    public static int addExact(final int a, final int b) throws MathArithmeticException {
+
+        // compute sum
+        final int sum = a + b;
+
+        // check for overflow
+        if ((a ^ b) >= 0 && (sum ^ b) < 0) {
+            throw new MathArithmeticException(LocalizedFormats.OVERFLOW_IN_ADDITION, a, b);
+        }
+
+        return sum;
+
+    }
+
+    /** Add two numbers, detecting overflows.
+     * @param a first number to add
+     * @param b second number to add
+     * @return a+b if no overflows occur
+     * @exception MathArithmeticException if an overflow occurs
+     * @since 3.4
+     */
+    public static long addExact(final long a, final long b) throws MathArithmeticException {
+
+        // compute sum
+        final long sum = a + b;
+
+        // check for overflow
+        if ((a ^ b) >= 0 && (sum ^ b) < 0) {
+            throw new MathArithmeticException(LocalizedFormats.OVERFLOW_IN_ADDITION, a, b);
+        }
+
+        return sum;
+
+    }
+
+    /** Subtract two numbers, detecting overflows.
+     * @param a first number
+     * @param b second number to subtract from a
+     * @return a-b if no overflows occur
+     * @exception MathArithmeticException if an overflow occurs
+     * @since 3.4
+     */
+    public static int subtractExact(final int a, final int b) {
+
+        // compute subtraction
+        final int sub = a - b;
+
+        // check for overflow
+        if ((a ^ b) < 0 && (sub ^ b) >= 0) {
+            throw new MathArithmeticException(LocalizedFormats.OVERFLOW_IN_SUBTRACTION, a, b);
+        }
+
+        return sub;
+
+    }
+
+    /** Subtract two numbers, detecting overflows.
+     * @param a first number
+     * @param b second number to subtract from a
+     * @return a-b if no overflows occur
+     * @exception MathArithmeticException if an overflow occurs
+     * @since 3.4
+     */
+    public static long subtractExact(final long a, final long b) {
+
+        // compute subtraction
+        final long sub = a - b;
+
+        // check for overflow
+        if ((a ^ b) < 0 && (sub ^ b) >= 0) {
+            throw new MathArithmeticException(LocalizedFormats.OVERFLOW_IN_SUBTRACTION, a, b);
+        }
+
+        return sub;
+
+    }
+
+    /** Multiply two numbers, detecting overflows.
+     * @param a first number to multiply
+     * @param b second number to multiply
+     * @return a*b if no overflows occur
+     * @exception MathArithmeticException if an overflow occurs
+     * @since 3.4
+     */
+    public static int multiplyExact(final int a, final int b) {
+        if (((b  >  0)  && (a > Integer.MAX_VALUE / b || a < Integer.MIN_VALUE / b)) ||
+            ((b  < -1)  && (a > Integer.MIN_VALUE / b || a < Integer.MAX_VALUE / b)) ||
+            ((b == -1)  && (a == Integer.MIN_VALUE))) {
+            throw new MathArithmeticException(LocalizedFormats.OVERFLOW_IN_MULTIPLICATION, a, b);
+        }
+        return a * b;
+    }
+
+    /** Multiply two numbers, detecting overflows.
+     * @param a first number to multiply
+     * @param b second number to multiply
+     * @return a*b if no overflows occur
+     * @exception MathArithmeticException if an overflow occurs
+     * @since 3.4
+     */
+    public static long multiplyExact(final long a, final long b) {
+        if (((b  >  0l)  && (a > Long.MAX_VALUE / b || a < Long.MIN_VALUE / b)) ||
+            ((b  < -1l)  && (a > Long.MIN_VALUE / b || a < Long.MAX_VALUE / b)) ||
+            ((b == -1l)  && (a == Long.MIN_VALUE))) {
+                throw new MathArithmeticException(LocalizedFormats.OVERFLOW_IN_MULTIPLICATION, a, b);
+            }
+            return a * b;
+    }
+
+    /** Finds q such that a = q b + r with 0 <= r < b if b > 0 and b < r <= 0 if b < 0.
+     * <p>
+     * This methods returns the same value as integer division when
+     * a and b are same signs, but returns a different value when
+     * they are opposite (i.e. q is negative).
+     * </p>
+     * @param a dividend
+     * @param b divisor
+     * @return q such that a = q b + r with 0 <= r < b if b > 0 and b < r <= 0 if b < 0
+     * @exception MathArithmeticException if b == 0
+     * @see #floorMod(int, int)
+     * @since 3.4
+     */
+    public static int floorDiv(final int a, final int b) throws MathArithmeticException {
+
+        if (b == 0) {
+            throw new MathArithmeticException(LocalizedFormats.ZERO_DENOMINATOR);
+        }
+
+        final int m = a % b;
+        if ((a ^ b) >= 0 || m == 0) {
+            // a an b have same sign, or division is exact
+            return a / b;
+        } else {
+            // a and b have opposite signs and division is not exact
+            return (a / b) - 1;
+        }
+
+    }
+
+    /** Finds q such that a = q b + r with 0 <= r < b if b > 0 and b < r <= 0 if b < 0.
+     * <p>
+     * This methods returns the same value as integer division when
+     * a and b are same signs, but returns a different value when
+     * they are opposite (i.e. q is negative).
+     * </p>
+     * @param a dividend
+     * @param b divisor
+     * @return q such that a = q b + r with 0 <= r < b if b > 0 and b < r <= 0 if b < 0
+     * @exception MathArithmeticException if b == 0
+     * @see #floorMod(long, long)
+     * @since 3.4
+     */
+    public static long floorDiv(final long a, final long b) throws MathArithmeticException {
+
+        if (b == 0l) {
+            throw new MathArithmeticException(LocalizedFormats.ZERO_DENOMINATOR);
+        }
+
+        final long m = a % b;
+        if ((a ^ b) >= 0l || m == 0l) {
+            // a an b have same sign, or division is exact
+            return a / b;
+        } else {
+            // a and b have opposite signs and division is not exact
+            return (a / b) - 1l;
+        }
+
+    }
+
+    /** Finds r such that a = q b + r with 0 <= r < b if b > 0 and b < r <= 0 if b < 0.
+     * <p>
+     * This methods returns the same value as integer modulo when
+     * a and b are same signs, but returns a different value when
+     * they are opposite (i.e. q is negative).
+     * </p>
+     * @param a dividend
+     * @param b divisor
+     * @return r such that a = q b + r with 0 <= r < b if b > 0 and b < r <= 0 if b < 0
+     * @exception MathArithmeticException if b == 0
+     * @see #floorDiv(int, int)
+     * @since 3.4
+     */
+    public static int floorMod(final int a, final int b) throws MathArithmeticException {
+
+        if (b == 0) {
+            throw new MathArithmeticException(LocalizedFormats.ZERO_DENOMINATOR);
+        }
+
+        final int m = a % b;
+        if ((a ^ b) >= 0 || m == 0) {
+            // a an b have same sign, or division is exact
+            return m;
+        } else {
+            // a and b have opposite signs and division is not exact
+            return b + m;
+        }
+
+    }
+
+    /** Finds r such that a = q b + r with 0 <= r < b if b > 0 and b < r <= 0 if b < 0.
+     * <p>
+     * This methods returns the same value as integer modulo when
+     * a and b are same signs, but returns a different value when
+     * they are opposite (i.e. q is negative).
+     * </p>
+     * @param a dividend
+     * @param b divisor
+     * @return r such that a = q b + r with 0 <= r < b if b > 0 and b < r <= 0 if b < 0
+     * @exception MathArithmeticException if b == 0
+     * @see #floorDiv(long, long)
+     * @since 3.4
+     */
+    public static long floorMod(final long a, final long b) {
+
+        if (b == 0l) {
+            throw new MathArithmeticException(LocalizedFormats.ZERO_DENOMINATOR);
+        }
+
+        final long m = a % b;
+        if ((a ^ b) >= 0l || m == 0l) {
+            // a an b have same sign, or division is exact
+            return m;
+        } else {
+            // a and b have opposite signs and division is not exact
+            return b + m;
+        }
+
     }
 
     /**

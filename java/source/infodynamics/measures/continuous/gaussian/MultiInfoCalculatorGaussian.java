@@ -2,7 +2,6 @@ package infodynamics.measures.continuous.gaussian;
 
 import infodynamics.measures.continuous.MultiInfoCalculatorCommon;
 import infodynamics.utils.MatrixUtils;
-import infodynamics.utils.MathsUtils;
 
 /**
  * <p>Computes the differential multi-information of a given multivariate

@@ -60,12 +60,23 @@ public class EntropyCalculatorGaussian implements EntropyCalculator {
 	protected boolean debug;
 	
 	/**
+	 * Total number of observations supplied.
+	 */
+	protected int totalObservations;
+	
+	/**
+	 * Store the last computed average Entropy
+	 */
+	protected double lastAverage;
+	
+	/**
 	 * Construct an instance
 	 */
 	public EntropyCalculatorGaussian() {
 		// Nothing to do
 	}
 	
+	@Override
 	public void initialise() {
 		// Nothing to do
 	}
@@ -73,6 +84,7 @@ public class EntropyCalculatorGaussian implements EntropyCalculator {
 	public void setObservations(double[] observations) {
 		variance = MatrixUtils.stdDev(observations);
 		variance *= variance;
+		totalObservations = observations.length;
 	}
 
 	/**
@@ -100,10 +112,13 @@ public class EntropyCalculatorGaussian implements EntropyCalculator {
 	 * @return the entropy of the previously provided observations or from the supplied
 	 *   covariance matrix. Entropy returned in <b>nats</b>, not bits!
 	 */
+	@Override
 	public double computeAverageLocalOfObservations() {
-		return 0.5 * Math.log(2.0*Math.PI*Math.E*variance);
+		lastAverage = 0.5 * Math.log(2.0*Math.PI*Math.E*variance);
+		return lastAverage;
 	}
 
+	@Override
 	public void setDebug(boolean debug) {
 		this.debug = debug;
 	}
@@ -111,9 +126,29 @@ public class EntropyCalculatorGaussian implements EntropyCalculator {
 	/**
 	 * No properties are defined here, so this method will have no effect.
 	 */
+	@Override
 	public void setProperty(String propertyName, String propertyValue)
 			throws Exception {
 		// No properties to set here
 	}
 
+	/**
+	 * No properties are defined here, so this method will always return null.
+	 */
+	@Override
+	public String getProperty(String propertyName)
+			throws Exception {
+		// No properties to return here
+		return null;
+	}
+
+	@Override
+	public int getNumObservations() throws Exception {
+		return totalObservations;
+	}
+
+	@Override
+	public double getLastAverage() {
+		return lastAverage;
+	}
 }

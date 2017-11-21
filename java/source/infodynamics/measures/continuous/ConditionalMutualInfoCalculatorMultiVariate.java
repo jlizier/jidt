@@ -19,6 +19,7 @@
 package infodynamics.measures.continuous;
 
 import infodynamics.utils.EmpiricalMeasurementDistribution;
+import infodynamics.utils.EmpiricalNullDistributionComputer;
 
 /**
  * <p>Interface for implementations of the <b>conditional mutual information</b>,
@@ -75,7 +76,8 @@ import infodynamics.utils.EmpiricalMeasurementDistribution;
  * @see "T. M. Cover and J. A. Thomas, 'Elements of Information
 Theory' (John Wiley & Sons, New York, 1991)."
  */
-public interface ConditionalMutualInfoCalculatorMultiVariate {
+public interface ConditionalMutualInfoCalculatorMultiVariate
+	extends InfoMeasureCalculatorContinuous, EmpiricalNullDistributionComputer {
 
 	/**
 	 * Initialise the calculator for (re-)use, clearing PDFs,
@@ -89,35 +91,6 @@ public interface ConditionalMutualInfoCalculatorMultiVariate {
 	 */
 	public void initialise(int var1Dimensions, int var2Dimensions, int condDimentions) throws Exception;
 
-	/**
-	 * Set properties for the calculator.
-	 * New property values are not guaranteed to take effect until the next call
-	 *  to an initialise method. 
-	 * 
-	 * <p>No general properties are defined at the interface level here, i.e.
-	 * there are only properties defined by child interfaces and classes.</p>
-	 * 
-	 * @param propertyName name of the property
-	 * @param propertyValue value of the property
-	 * @throws Exception for invalid property values
-	 */
-	public void setProperty(String propertyName, String propertyValue) throws Exception;
-
-	/**
-	 * Get current property values for the calculator.
-	 * 
-	 * <p>Valid property names, and what their
-	 * values should represent, are the same as those for
-	 * {@link #setProperty(String, String)}</p>
-	 * 
-	 * <p>Unknown property values are responded to with a null return value.</p>
-	 * 
-	 * @param propertyName name of the property
-	 * @return current value of the property
-	 * @throws Exception for invalid property values
-	 */
-	public String getProperty(String propertyName) throws Exception;
-	
 	/**
 	 * Sets a single series from which to compute the PDF.
 	 * Cannot be called in conjunction with
@@ -140,6 +113,29 @@ public interface ConditionalMutualInfoCalculatorMultiVariate {
 	 */
 	public void setObservations(double[][] var1, double[][] var2,
 			double[][] cond) throws Exception;
+
+	/**
+	 * Sets a single series from which to compute the PDF.
+	 * Cannot be called in conjunction with
+	 * {@link #startAddObservations()} / {@link #addObservations(double[][], double[][], double[][])} or
+	 * {@link #addObservations(double[][], double[][], double[][], int, int)} /
+	 * {@link #finaliseAddObservations()}.</p>
+	 * 
+	 * <p>The supplied series may be (multivariate) time-series or 
+	 * simply a set of separate observations without a time interpretation.
+	 * 
+	 * <p>This method can only be used where dimensions of all
+	 * variables have been set to 1.</p>
+	 * 
+	 * @param var1 univariate observations for variable 1
+	 * @param var2 univariate observations for variable 2
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @param cond univariate observations for the conditional
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @throws Exception
+	 */
+	public void setObservations(double[] var1, double[] var2,
+			double[] cond) throws Exception;
 
 	/**
 	 * Sets a single series from which to compute the PDF,
@@ -238,6 +234,31 @@ public interface ConditionalMutualInfoCalculatorMultiVariate {
 			double[][] cond) throws Exception;
 	
 	/**
+	 * <p>Adds a new set of observations to update the PDFs with - is
+	 * intended to be called multiple times.
+	 * Must be called after {@link #startAddObservations()}; call
+	 * {@link #finaliseAddObservations()} once all observations have
+	 * been supplied.</p>
+	 * 
+	 * <p>Note that the arrays must not be over-written by the user
+	 *  until after finaliseAddObservations() has been called
+	 *  (they are not copied by this method necessarily, but the method
+	 *  may simply hold a pointer to them).</p>
+	 * 
+	 * <p>This method can only be used where dimensions of all
+	 * variables have been set to 1.</p>
+	 * 
+	 * @param var1 univariate observations for variable 1
+	 * @param var2 univariate observations for variable 2
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @param cond univariate observations for the conditional
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @throws Exception
+	 */
+	public void addObservations(double[] var1, double[] var2,
+			double[] cond) throws Exception;
+	
+	/**
 	 * <p>Adds a new sub-series of observations to update the PDFs with - is
 	 * intended to be called multiple times.
 	 * Must be called after {@link #startAddObservations()}; call
@@ -273,15 +294,6 @@ public interface ConditionalMutualInfoCalculatorMultiVariate {
 	public void finaliseAddObservations() throws Exception;
 	
 	/**
-	 * Compute the average conditional MI from the previously-supplied samples.
-	 * 
-	 * @return the estimate of the conditional MI in either bits or nats
-	 *  depending on the estimator
-	 * @throws Exception
-	 */
-	public double computeAverageLocalOfObservations() throws Exception;
-
-	/**
 	 * <p>Computes the local values of the conditional mutual information,
 	 *  for each valid observation in the previously supplied observations
 	 *  (with PDFs computed using all of the previously supplied observation sets).</p>
@@ -303,66 +315,53 @@ public interface ConditionalMutualInfoCalculatorMultiVariate {
 	public double[] computeLocalOfPreviousObservations() throws Exception;
 
 	/**
-	 * Generate a bootstrapped distribution of what the conditional MI would look like,
-	 * under a null hypothesis that the variable identified by
-	 * <code>variableToReorder</code> had no relation to the
-	 * other variable, given the conditional.
-	 * 
-	 * <p>See Section II.E "Statistical significance testing" of 
-	 * the JIDT paper below for a description of how this is done for
-	 * conditional MI. Basically, we shuffle the observations of 
-	 * <code>variableToReorder</code> against the other variable
-	 * and the conditional.
-	 * This keeps the marginal and joint PDFs of the unshuffled variable
-	 *  and conditional the same
-	 *  but destroys any correlation between the named variable and the others.
+	 * <p><b>Note</b> -- in contrast to the generic computeSignificance() method 
+	 * described in the documentation below, this method for a conditional MI calculator currently fixes the relationship
+	 * between variable 2 and the conditional, and shuffles
+	 * variable 1 with respect to these.
+	 * To shuffle variable 2 instead, call {@link #computeSignificance(int, int)}.
 	 * </p>
 	 * 
-	 * <p>Note that if several disjoint time-series have been added 
-	 * as observations using {@link #addObservations(double[][], double[][], double[][])} etc.,
-	 * then these separate "trials" will be mixed up in the generation
-	 * of surrogates here.</p>
-	 * 
-	 * <p>This method (in contrast to {@link #computeSignificance(int, int[][])})
-	 * creates <i>random</i> shufflings of the next values for the surrogate AIS
-	 * calculations.</p>
+	 * @inheritDoc
+	 */
+	@Override
+	public EmpiricalMeasurementDistribution computeSignificance(
+			int numPermutationsToCheck) throws Exception;
+	
+	/**
+	 * Defined as per {@link #computeSignificance(int)} except that this method allows
+	 * the user to specify which variable is shuffled (whilst the other has its
+	 * relationship with the conditional preserved).
 	 * 
 	 * @param variableToReorder which variable to shuffle:
 	 * 	1 for variable 1, 2 for variable 2.
 	 * @param numPermutationsToCheck number of surrogate samples to bootstrap
 	 *  to generate the distribution.
 	 * @return the distribution of channel measure scores under this null hypothesis.
-	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
-	 *    toolkit for studying the dynamics of complex systems', 2014."
+	 * @see {@link #computeSignificance(int)}
 	 * @throws Exception
 	 */
 	public EmpiricalMeasurementDistribution computeSignificance(int variableToReorder,
 			int numPermutationsToCheck) throws Exception;
 	
 	/**
-	 * Generate a bootstrapped distribution of what the conditional MI would look like,
-	 * under a null hypothesis that the variable identified by
-	 * <code>variableToReorder</code> had no relation to the
-	 * other variable, given the conditional.
-	 * 
-	 * <p>See Section II.E "Statistical significance testing" of 
-	 * the JIDT paper below for a description of how this is done for
-	 * conditional MI. Basically, we shuffle the observations of 
-	 * <code>variableToReorder</code> against the other variable
-	 * and the conditional.
-	 * This keeps the marginal and joint PDFs of the unshuffled variable
-	 *  and conditional the same
-	 *  but destroys any correlation between the named variable and the others.
+	 * <p><b>Note</b> -- in contrast to the generic computeSignificance() method 
+	 * described in the documentation below, this method for a conditional MI calculator currently fixes the relationship
+	 * between variable 2 and the conditional, and shuffles
+	 * variable 1 with respect to these.
+	 * To shuffle variable 2 instead, call {@link #computeSignificance(int, int[][])}.
 	 * </p>
 	 * 
-	 * <p>Note that if several disjoint time-series have been added 
-	 * as observations using {@link #addObservations(double[][], double[][], double[][])} etc.,
-	 * then these separate "trials" will be mixed up in the generation
-	 * of surrogates here.</p>
-	 * 
-	 * <p>This method (in contrast to {@link #computeSignificance(int, int)})
-	 * allows the user to specify how to construct the surrogates,
-	 * such that repeatable results may be obtained.</p>
+	 * @inheritDoc
+	 */
+	@Override
+	public EmpiricalMeasurementDistribution computeSignificance(
+			int[][] newOrderings) throws Exception;
+	
+	/**
+	 * Defined as per {@link #computeSignificance(int[][])} except that this method allows
+	 * the user to specify which variable is shuffled (whilst the other has its
+	 * relationship with the conditional preserved).
 	 * 
 	 * @param variableToReorder which variable to shuffle:
 	 * 	1 for variable 1, 2 for variable 2.
@@ -375,8 +374,7 @@ public interface ConditionalMutualInfoCalculatorMultiVariate {
 	 *  would be the value returned by {@link #getNumObservations()}),
 	 *  containing a permutation of the values in 0..(N-1).
 	 * @return the distribution of channel measure scores under this null hypothesis.
-	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
-	 *    toolkit for studying the dynamics of complex systems', 2014."
+	 * @see {@link #computeSignificance(int[][])} except that this method all 
 	 * @throws Exception where the length of each permutation in newOrderings
 	 *   is not equal to the number N samples that were previously supplied.
 	 */
@@ -425,32 +423,11 @@ public interface ConditionalMutualInfoCalculatorMultiVariate {
 		throws Exception;
 
 	/**
-	 * Set or clear debug mode for extra debug printing to stdout
-	 * 
-	 * @param debug new setting for debug mode (on/off)
-	 */
-	public void setDebug(boolean debug);
-	
-	/**
-	 * Return the conditional MI last calculated in a call to {@link #computeAverageLocalOfObservations()}
-	 * or {@link #computeLocalOfPreviousObservations()} after the previous
-	 * {@link #initialise(int, int, int)} call.
-	 * 
-	 * @return the last computed conditional MI value
-	 */
-	public double getLastAverage();
-
-	/**
-	 * Get the number of samples to be used for the PDFs here 
-	 * which have been supplied by calls to
-	 * {@link #setObservations(double[][], double[][], double[][])}, {@link #addObservations(double[][], double[][], double[][])}
-	 * etc.
-	 * 	
-	 * @return the number of samples to be used for the PDFs
 	 * @throws Exception if the implementing class computes MI without
 	 * explicit observations (e.g. see
 	 * {@link infodynamics.measures.continuous.gaussian.ConditionalMutualInfoCalculatorMultiVariateGaussian})
 	 */
+	@Override
 	public int getNumObservations() throws Exception;
 	
 	/**

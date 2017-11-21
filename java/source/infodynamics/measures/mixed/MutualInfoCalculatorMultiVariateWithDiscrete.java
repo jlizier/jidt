@@ -77,7 +77,8 @@ public interface MutualInfoCalculatorMultiVariateWithDiscrete {
 	 * @param propertyName name of property
 	 * @param propertyValue value of property
 	 */
-	public void setProperty(String propertyName, String propertyValue);
+	public void setProperty(String propertyName, String propertyValue)
+      throws Exception;
 	
 	/**
 	 * Set the properties from which the mutual information should be computed.

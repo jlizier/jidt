@@ -98,17 +98,17 @@ public class ConditionalTransferEntropyCalculatorViaCondMutualInfo implements
 	 * Array of embedding lengths for each conditional variable.
 	 *  Can be an empty array or null if there are no conditional variables.
 	 */
-	protected int[] condEmbedDims = null;
+	protected int[] condEmbedDims = new int[] {1};
 	/**
 	 * Array of embedding delays for the conditional variables.
 	 *  Must be same length as condEmbedDims array.
 	 */
-	protected int[] cond_taus = null;
+	protected int[] cond_taus = new int[] {1};
 	/**
 	 * Array of time lags between last element of each conditional variable
 	 *  and destination next value.
 	 */
-	protected int[] condDelays = null;
+	protected int[] condDelays = new int[] {1};
 	
 	/**
 	 * Time index of the last point in the destination embedding of the first
@@ -380,11 +380,23 @@ public class ConditionalTransferEntropyCalculatorViaCondMutualInfo implements
 		} else if (propertyName.equalsIgnoreCase(DELAY_PROP_NAME)) {
 			return Integer.toString(delay);
 		} else if (propertyName.equalsIgnoreCase(COND_EMBED_LENGTHS_PROP_NAME)) {
-			return MatrixUtils.arrayToString(condEmbedDims);
+			if (condEmbedDims == null) {
+				return "";
+			} else {
+				return MatrixUtils.arrayToString(condEmbedDims);
+			}
 		} else if (propertyName.equalsIgnoreCase(COND_EMBED_DELAYS_PROP_NAME)) {
-			return MatrixUtils.arrayToString(cond_taus);
+			if (cond_taus == null) {
+				return "";
+			} else {
+				return MatrixUtils.arrayToString(cond_taus);
+			}
 		} else if (propertyName.equalsIgnoreCase(COND_DELAYS_PROP_NAME)) {
-			return MatrixUtils.arrayToString(condDelays);
+			if (condDelays == null) {
+				return "";
+			} else {
+				return MatrixUtils.arrayToString(condDelays);
+			}
 		} else {
 			// No property matches for this class, assume it is for the underlying
 			//  conditional MI calculator

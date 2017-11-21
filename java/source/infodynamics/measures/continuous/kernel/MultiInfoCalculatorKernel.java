@@ -210,6 +210,19 @@ public class MultiInfoCalculatorKernel
 	}
 
 	@Override
+	public String getProperty(String propertyName) throws Exception {
+		if (propertyName.equalsIgnoreCase(KERNEL_WIDTH_PROP_NAME) ||
+				propertyName.equalsIgnoreCase(EPSILON_PROP_NAME)) {
+			return Double.toString(kernelWidth);
+		} else if (propertyName.equalsIgnoreCase(DYN_CORR_EXCL_TIME_NAME)) {
+			return Integer.toString(dynCorrExclTime);
+		} else {
+			// Try the superclass, including for PROP_NORMALISE
+			return super.getProperty(propertyName);
+		}
+	}
+
+	@Override
 	public void startAddObservations() {
 		if (dynCorrExcl) {
 			// We have not properly implemented dynamic correlation exclusion for

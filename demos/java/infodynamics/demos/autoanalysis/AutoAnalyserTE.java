@@ -18,7 +18,6 @@
 
 package infodynamics.demos.autoanalysis;
 
-import infodynamics.measures.continuous.ChannelCalculatorCommon;
 import infodynamics.measures.continuous.ConditionalMutualInfoMultiVariateCommon;
 import infodynamics.measures.continuous.TransferEntropyCalculator;
 import infodynamics.measures.continuous.gaussian.TransferEntropyCalculatorGaussian;
@@ -41,7 +40,7 @@ import java.awt.event.MouseListener;
  * @author Joseph Lizier
  *
  */
-public class AutoAnalyserTE extends AutoAnalyser
+public class AutoAnalyserTE extends AutoAnalyserChannelCalculator
 	implements ActionListener, DocumentListener, MouseListener {
 
 	/**
@@ -60,9 +59,16 @@ public class AutoAnalyserTE extends AutoAnalyser
 	 */
 	protected void makeSpecificInitialisations() {
 		
+		super.makeSpecificInitialisations();
+		
 		// Set up the properties for TE:
 		measureAcronym = "TE";
 		appletTitle = "JIDT Transfer Entropy Auto-Analyser"; 
+		
+		calcTypes = new String[] {
+				CALC_TYPE_DISCRETE, CALC_TYPE_BINNED, CALC_TYPE_GAUSSIAN,
+				CALC_TYPE_KRASKOV, CALC_TYPE_KERNEL};
+		unitsForEachCalc = new String[] {"bits", "bits", "nats", "nats", "bits"};
 		
 		// Discrete:
 		discreteClass = TransferEntropyCalculatorDiscrete.class;
@@ -214,7 +220,7 @@ public class AutoAnalyserTE extends AutoAnalyser
 	/**
 	 * Method to assign and initialise our continuous calculator class
 	 */
-	protected ChannelCalculatorCommon assignCalcObjectContinuous(String selectedCalcType) throws Exception {
+	protected TransferEntropyCalculator assignCalcObjectContinuous(String selectedCalcType) throws Exception {
 		if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_GAUSSIAN)) {
 			return new TransferEntropyCalculatorGaussian();
 		} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_KRASKOV)) {
@@ -292,13 +298,6 @@ public class AutoAnalyserTE extends AutoAnalyser
 				new TransferEntropyCalculatorDiscrete(base, k, k_tau, l, l_tau, delay),
 				base,
 				base + ", " + k + ", " + k_tau + ", " + l + ", " + l_tau + ", " + delay);
-	}
-
-	protected void setObservations(ChannelCalculatorCommon calc,
-			double[] source, double[] dest) throws Exception {
-		// We know this is a TransferEntropyCalculator
-		TransferEntropyCalculator teCalc = (TransferEntropyCalculator) calc;
-		teCalc.setObservations(source, dest);
 	}
 
 	/**

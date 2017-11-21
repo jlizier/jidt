@@ -22,7 +22,7 @@
 	<property name="javadocsdir" location="javadocs"/>
 	<property name="versionfile" value="version-${version}.txt"/>
   <!-- To enable GPU code, set the following variable to true -->
-  <property name="enablegpu" value="true"/>
+  <property name="enablegpu" value="false"/>
 	
 	<path id="project.classpath">
 		<pathelement location="bin"/>

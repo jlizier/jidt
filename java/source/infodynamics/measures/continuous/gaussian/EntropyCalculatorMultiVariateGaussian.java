@@ -72,22 +72,22 @@ public class EntropyCalculatorMultiVariateGaussian
 	/**
 	 * Number of dimensions for our multivariate data
 	 */
-	protected int dimensions;
+	protected int dimensions = 1;
 	
 	/**
 	 * Determinant of the covariance matrix; stored to save computation time
 	 */
-	protected double detCovariance;
+	protected double detCovariance = 0.0;
 
 	/**
 	 * Last average entropy we computed
 	 */
-	protected double lastAverage;
+	protected double lastAverage = 0;
 	
 	/**
 	 * Whether we are in debug mode
 	 */
-	protected boolean debug;
+	protected boolean debug = false;
 	
 	/**
 	 * Construct an instance
@@ -96,12 +96,18 @@ public class EntropyCalculatorMultiVariateGaussian
 		// Nothing to do
 	}
 	
+	@Override
+	public void initialise() throws Exception {
+		initialise(dimensions);
+	}
+
 	public void initialise(int dimensions) {
 		means = null;
 		L = null;
 		observations = null;
 		this.dimensions = dimensions;
 		detCovariance = 0;
+		lastAverage = 0.0;
 	}
 
 	/**
@@ -109,6 +115,7 @@ public class EntropyCalculatorMultiVariateGaussian
 	 *  dimensions, or covariance matrix is not positive definite (reflecting 
 	 *  redundant variables in the observations)
 	 */
+	@Override
 	public void setObservations(double[][] observations) throws Exception {
 		// Check that the observations was of the correct number of dimensions:
 		if (observations[0].length != dimensions) {
@@ -187,6 +194,7 @@ public class EntropyCalculatorMultiVariateGaussian
 	 * @return the joint entropy of the previously provided observations or from the
 	 *  supplied covariance matrix. Returned in nats (NOT bits).
 	 */
+	@Override
 	public double computeAverageLocalOfObservations() {
 		// Simple way:
 		// detCovariance = MatrixUtils.determinantSymmPosDefMatrix(covariance);
@@ -197,18 +205,38 @@ public class EntropyCalculatorMultiVariateGaussian
 		return lastAverage;
 	}
 
+	@Override
 	public void setDebug(boolean debug) {
 		this.debug = debug;
 	}
 
-	/**
-	 * No properties are defined here, so this method will have no effect.
-	 */
+	@Override
 	public void setProperty(String propertyName, String propertyValue)
 			throws Exception {
-		// No properties to set here
+		boolean propertySet = true;
+		if (propertyName.equalsIgnoreCase(NUM_DIMENSIONS_PROP_NAME)) {
+			dimensions = Integer.parseInt(propertyValue);
+		} else {
+			// No property was set
+			propertySet = false;
+		}
+		if (debug && propertySet) {
+			System.out.println(this.getClass().getSimpleName() + ": Set property " + propertyName +
+					" to " + propertyValue);
+		}
 	}
 
+	@Override
+	public String getProperty(String propertyName) throws Exception {
+		if (propertyName.equalsIgnoreCase(NUM_DIMENSIONS_PROP_NAME)) {
+			return Integer.toString(dimensions);
+		} else {
+			// No property was set, and no superclass to call:
+			return null;
+		}
+	}
+	
+	@Override
 	public double getLastAverage() {
 		return lastAverage;
 	}
