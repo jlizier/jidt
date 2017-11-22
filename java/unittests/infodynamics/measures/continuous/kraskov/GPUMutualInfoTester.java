@@ -262,5 +262,61 @@ public class GPUMutualInfoTester extends TestCase {
     return;
   }
 
+  /**
+   * Test that GPU MI calculation with a non-zero dynamic correlation
+   * exclusion window gives correct results.
+   *
+   * Only runs if CUDA code has been precompiled.
+   *
+   * @throws Exception if something goes wrong
+   */
+  public void testGPUExclusionWindow() throws Exception {
+
+    MutualInfoCalculatorMultiVariateKraskov miCalc = 
+      new MutualInfoCalculatorMultiVariateKraskov1();
+    miCalc.setDebug(true);
+
+    boolean gpuLoaded = true;
+    try {
+      miCalc.ensureCudaLibraryLoaded();
+    } catch (Throwable e) {
+      gpuLoaded = false;
+    }
+
+    // This will effectively ignore the test if GPU library not loaded properly
+    if (!gpuLoaded) {
+      return;
+    }
+
+    // Now starts the actual test. Set up variables and properties
+    miCalc.setProperty("NOISE_LEVEL_TO_ADD", "0");
+    miCalc.setProperty("DYN_CORR_EXCL", "2");
+    ArrayFileReader afr;
+    double cpu_val, gpu_val;
+
+    // Test for low-dimensional data
+		afr = new ArrayFileReader("demos/data/2coupledRandomCols-1.txt");
+		double [][] data = afr.getDouble2DMatrix();
+
+    miCalc.setProperty("USE_GPU", "false");
+    miCalc.initialise(1,1);
+    miCalc.setObservations(MatrixUtils.selectColumn(data, 0),
+                           MatrixUtils.selectColumn(data, 1));
+    cpu_val = miCalc.computeAverageLocalOfObservations();
+
+    miCalc.setProperty("USE_GPU", "true");
+    miCalc.initialise(1,1);
+    miCalc.setObservations(MatrixUtils.selectColumn(data, 0),
+                           MatrixUtils.selectColumn(data, 1));
+    gpu_val = miCalc.computeAverageLocalOfObservations();
+
+    System.out.printf("GPU calculation with theiler window. CPU got (%f)\n", cpu_val);
+    System.out.printf("GPU calculation with theiler window. GPU got (%f)\n", gpu_val);
+
+    assertEquals(cpu_val, cpu_val, 0.00001);
+
+    return;
+  }
+
 }
 
