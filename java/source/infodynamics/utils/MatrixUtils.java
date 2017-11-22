@@ -3922,7 +3922,11 @@ public class MatrixUtils {
 	public static String arrayToString(int[] array) {
 		StringBuffer sb = new StringBuffer();
 		for (int r = 0; r < array.length; r++) {
-			sb.append(array[r] + ",");
+			sb.append(array[r]);
+			if (r < array.length - 1) {
+				// There is one more element to print after this:
+				sb.append(",");
+			}
 		}
 		return sb.toString();
 	}
