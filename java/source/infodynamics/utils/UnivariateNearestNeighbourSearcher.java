@@ -1000,6 +1000,60 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 		return count;
 	}
 	
+	@Override
+	public int countPointsWithinR(int sampleIndex, double r, boolean allowEqualToR,
+			boolean[] additionalCriteria, int[] remapping) {
+		
+		int count = 0;
+		// Find where this node sits in the sorted array:
+		int indexInSortedArray = indicesInSortedArray[sampleIndex];
+		// Check the points with smaller data values first:
+		for (int i = indexInSortedArray - 1; i >= 0; i--) {
+			if (!additionalCriteria[remapping[sortedArrayIndices[i]]]) {
+				// This point failed the additional criteria,
+				//  so skip checking it.
+				// We check this first, even though it's the norm 
+				//  that really determines whether we need to continue
+				//  checking or not. In some circumstances this may be
+				//  slower, but for our main application - KSG conditional MI -
+				//  this should be faster.
+				continue;
+			}
+			double theNorm = norm(originalDataSet[sampleIndex],
+					originalDataSet[sortedArrayIndices[i]], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r)) ||
+				(!allowEqualToR && (theNorm < r))) {
+				count++;
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		// Next check the points with larger data values:
+		for (int i = indexInSortedArray + 1; i < numObservations; i++) {
+			if (!additionalCriteria[remapping[sortedArrayIndices[i]]]) {
+				// This point failed the additional criteria,
+				//  so skip checking it.
+				// We check this first, even though it's the norm 
+				//  that really determines whether we need to continue
+				//  checking or not. In some circumstances this may be
+				//  slower, but for our main application - KSG conditional MI -
+				//  this should be faster.
+				continue;
+			}
+			double theNorm = norm(originalDataSet[sampleIndex],
+					originalDataSet[sortedArrayIndices[i]], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r)) ||
+				(!allowEqualToR && (theNorm < r))) {
+				count++;
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		return count;
+	}
+	
 	/**
 	 * As per {@link #countPointsWithinR(int, double, boolean, boolean[])}
 	 *  only for a specific data point.

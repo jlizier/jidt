@@ -42,6 +42,8 @@ public abstract class NearestNeighbourSearcher {
 
 	/**
 	 * Factory method to construct the searcher from a set of double[][] data.
+	 * This will return a {@link KdTree} or if the data is univaraite
+	 * (i.e. only one column) a {@link UnivariateNearestNeighbourSearcher}
 	 * 
 	 * @param data a double[][] 2D data set, first indexed
 	 *  by time, second index by variable number.
@@ -545,6 +547,29 @@ public abstract class NearestNeighbourSearcher {
 	 */
 	public abstract int countPointsWithinR(int sampleIndex, double r,
 			boolean allowEqualToR, boolean[] additionalCriteria);
+
+	/**
+	 * As per {@link #countPointsWithinR(int, double, boolean)}
+	 * however each point is subject to also meeting the additional
+	 * criteria of being true in additionalCriteria, 
+	 * and the search points are reindexed according to the remapping
+	 * specified in remapping
+	 * 
+	 * @param sampleIndex sample index in the data to find a nearest neighbour
+	 *  for (already remapped if required)
+	 * @param r radius within which to count points
+	 * @param allowEqualToR if true, then count points at radius r also,
+	 *   otherwise only those strictly within r
+	 * @param additionalCriteria array of booleans. Only count a point if it
+	 *  is within r and is true in additionalCrtieria.
+	 * @param remapping array of time indices with which to remap the search points
+	 *  onto the same time index space as the additionalCriteria (this will
+	 *  apply to the supplied sampleIndex as well as other search points) 
+	 * @return the count of points within r.
+	 */
+	public abstract int countPointsWithinR(int sampleIndex, double r,
+			boolean allowEqualToR, boolean[] additionalCriteria,
+			int[] remapping);
 
 	/**
 	 * As per {@link #countPointsWithinR(double[][], double, boolean)}

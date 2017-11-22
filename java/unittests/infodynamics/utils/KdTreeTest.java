@@ -1396,6 +1396,95 @@ public class KdTreeTest extends TestCase {
 		}
 	}
 	
+	public void testAdditionalCriteriaWithRemapping() throws Exception {
+		// The following will include a little unit testing
+		//  of UnivariateNearestNeighbourSearcher
+		//  for the data0 in both cases, and the remaining data in 
+		//  the last:
+		validateAdditionalCriteriaWithRemapping(3, 1, false);
+		validateAdditionalCriteriaWithRemapping(2, 1, false);
+		// and now these will only test KdTree:
+		validateAdditionalCriteriaWithRemapping(3, 3, true);
+		validateAdditionalCriteriaWithRemapping(3, 3, false);
+	}
+	
+	public void validateAdditionalCriteriaWithRemapping(int variables,
+			int dimensionsPerVariable, boolean allowEqualsR) throws Exception {
+		int samples = 1000;
+		double[][][] data = new double[variables][][];
+		double[][][] dataAfter1Original = new double[variables-1][][];
+		for (int v = 0; v < variables; v++) {
+			data[v] = rg.generateNormalData(samples, dimensionsPerVariable, 0, 1);
+			if (v > 0) {
+				dataAfter1Original[v-1] = data[v];
+			}
+		}
+		double[][] data1 = data[0];
+		// Now shuffle dataAfter1 inside the data variable:
+		RandomGenerator rg = new RandomGenerator();
+		int[][] newOrderings = rg.generateRandomPerturbations(
+				samples, 1);
+		for (int v = 1; v < variables; v++) {
+			data[v] = MatrixUtils.extractSelectedTimePointsReusingArrays(data[v], newOrderings[0]);
+		}
+		// And store the reverse time index mapping (of the original time index for each data point in the 1 surrodate):
+		int[][] reverseMapping = new int[1][samples];
+		for (int n = 0; n < samples; n++) {
+			reverseMapping[0][newOrderings[0][n]] = n;
+		}
+
+		long startTime = Calendar.getInstance().getTimeInMillis();
+		int[] dimensions = new int[variables];
+		for (int v = 0; v < variables; v++) {
+			dimensions[v] = dimensionsPerVariable;
+		}
+		int[] dimensionsAfter1 = new int[variables-1];
+		for (int v = 1; v < variables; v++) {
+			dimensionsAfter1[v-1] = dimensionsPerVariable;
+		}
+		KdTree kdTree = new KdTree(dimensions, data);
+		NearestNeighbourSearcher nnSearcherExceptVar1 =
+				NearestNeighbourSearcher.create(dimensionsAfter1, dataAfter1Original);
+		NearestNeighbourSearcher nnSearcherVar1 =
+				NearestNeighbourSearcher.create(data1);
+		long endTimeTree = Calendar.getInstance().getTimeInMillis();
+		System.out.printf("Additional criteria test: Tree of %d points constructed in : %.3f sec\n",
+				samples, ((double) (endTimeTree - startTime)/1000.0));
+
+		double[] r1 = {1.0};
+		boolean[] isWithinR = new boolean[samples];
+		int[] indicesWithinR = new int[samples+1];
+
+		for (int i = 0; i < r1.length; i++) {
+			for (int t = 0; t < samples; t++) {
+				// Establish our ground truth, including the shuffled variables after 1:
+				int count = kdTree.countPointsWithinR(t, r1[i], allowEqualsR);
+				// Alternative if we need to debug:
+				// Collection<NeighbourNodeData> coll = kdTree.findPointsWithinR(t, r1[i], allowEqualsR);
+				// int count = coll.size();
+				
+				// Now search in variable 1 first, then use that 
+				//  to help the others:
+				nnSearcherVar1.findPointsWithinR(t, r1[i], allowEqualsR,
+						isWithinR, indicesWithinR);
+				int countUsingVar1 = kdTree.countPointsWithinR(t, r1[i],
+						allowEqualsR, 0, isWithinR);
+				assertEquals(count, countUsingVar1);
+				
+				// And then search the kdTree which does not have variable 1, unshuffled but providing the reverse mapping:
+				int countAdditionalCriteria =
+						nnSearcherExceptVar1.countPointsWithinR(newOrderings[0][t], r1[i],
+								allowEqualsR, isWithinR, reverseMapping[0]);
+				assertEquals(count, countAdditionalCriteria);
+				
+				// Finally, reset our boolean array:
+				for (int t2 = 0; indicesWithinR[t2] != -1; t2++) {
+					isWithinR[indicesWithinR[t2]] = false;
+				}
+			}
+		}
+	}
+
 	public void testPreviouslyTestedVariableMethodMultipleRs() throws Exception {
 		
 		for (int vars = 2; vars <= 3; vars++) {

@@ -3129,6 +3129,136 @@ public class KdTree extends NearestNeighbourSearcher {
 	}
 	
 	@Override
+	public int countPointsWithinR(int sampleIndex, double r,
+			boolean allowEqualToR, boolean[] additionalCriteria, int[] remapping) {
+		if (rootNode == null) {
+			return 0;
+		}
+		return countPointsWithinR(sampleIndex, rootNode, 0, r, allowEqualToR,
+				additionalCriteria, remapping);
+	}
+	
+	/**
+	 * Count the number of points within radius r of a given sample (sampleIndex),
+	 * in the tree rooted at node (which is at the specified level in the tree),
+	 * subject to an additional criteria,
+	 * and the search points are reindexed according to the remapping specified in remapping.
+	 * 
+	 * Nearest neighbour function to compare to r is a max norm between the
+	 * high-level variables, with norm for each variable being the specified norm.
+	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
+	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
+	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
+	 * 
+	 * @param sampleIndex sample index in the data to find a nearest neighbour
+	 *  for
+	 * @param node node to start searching from in the kd-tree. Cannot be null
+	 * @param level which level we're currently at in the tree
+	 * @param r radius within which to count points
+	 * @param allowEqualToR if true, then count points at radius r also,
+	 *   otherwise only those strictly within r
+	 * @param additionalCriteria array of booleans. Only count a point if it
+	 *  is within r and is true in additionalCrtieria.
+	 * @param remapping array of time indices with which to remap the search points
+	 *  onto the same time index space as the additionalCriteria (this will
+	 *  apply to the supplied sampleIndex as well as other search points) 
+	 * @return count of points within r
+	 */
+	protected int countPointsWithinR(int sampleIndex,
+			KdTreeNode node, int level, double r, boolean allowEqualToR,
+			boolean[] additionalCriteria, int[] remapping) {
+		
+		int count = 0;
+		
+		// Point to the correct array for the data at this level
+		int currentDim = level % totalDimensions;
+		double[][] data = dimensionToArray[currentDim];
+		int actualDim = dimensionToArrayIndex[currentDim];
+		
+		// Check the distance on this particular dimension
+		double distOnThisDim = data[sampleIndex][actualDim] -
+								data[node.indexOfThisPoint][actualDim];
+		
+		double absDistOnThisDim;
+		if (normTypeToUse == EuclideanUtils.NORM_MAX_NORM) {
+			absDistOnThisDim = (distOnThisDim > 0) ? distOnThisDim : - distOnThisDim;
+		} else {
+			// norm type is EuclideanUtils#NORM_EUCLIDEAN_SQUARED
+			// Track the square distance
+			absDistOnThisDim = distOnThisDim * distOnThisDim;
+		}
+		
+		if ((node.indexOfThisPoint != sampleIndex) &&
+			((absDistOnThisDim <  r) ||
+			 ( allowEqualToR && (absDistOnThisDim == r)))) {
+			// Preliminary check says we need to compute the full distance
+			//  to use or at least to check if it should be counted.
+			if (additionalCriteria[remapping[node.indexOfThisPoint]]) {
+				// The additional criteria was ok, so continue:
+				boolean withinBounds = true;
+				for (int v = 0; v < originalDataSets.length; v++) {
+					// For each of our separate (multivariate) variables,
+					//  compute the (specified) norm in that variable's space:
+					double distForVariableV;
+					// Distance calculation terminates early with Double.POSITIVE_INFINITY
+					//  if it is clearly larger than r:
+					distForVariableV = normWithAbort(
+							originalDataSets[v][sampleIndex],
+							originalDataSets[v][node.indexOfThisPoint],
+							r, normTypeToUse);
+					if ((distForVariableV >= r) && 
+							!(allowEqualToR && (distForVariableV == r))) {
+						// We don't fit on this dimension, no point
+						//  checking the others:
+						withinBounds = false;
+						break;
+					}
+				}
+				if (withinBounds) {
+					// This node gets counted
+					count++;
+				}
+			}
+		}
+		
+		KdTreeNode closestSubTree = null;
+		KdTreeNode furthestSubTree = null;
+		// And translate this to which subtree is closer
+		if (distOnThisDim < 0) {
+			// We need to search the left tree
+			closestSubTree = node.leftTree;
+			furthestSubTree = node.rightTree;
+		} else {
+			// We need to search the right tree
+			closestSubTree = node.rightTree;
+			furthestSubTree = node.leftTree;
+		}
+		// Update the search on that subtree
+		if (closestSubTree != null) {
+			count += countPointsWithinR(sampleIndex, closestSubTree,
+					level + 1, r, allowEqualToR, additionalCriteria, remapping);
+		}
+		if ((absDistOnThisDim <  r) ||
+			( allowEqualToR && (distOnThisDim < 0) && (absDistOnThisDim == r))) {
+			// It's possible we could have a node within (or on) r
+			//  in the other branch as well, so search there too.
+			// (Note: we only check furthest subtree in the == case
+			//  when it's allowed
+			//  *if* it's the right subtree, as only the right sub-tree
+			//  can have node with distance in this coordinate *equal* to
+			//  that of the current node -- left subtree must be strictly
+			//  less than the coordinate of the current node, so
+			//  distance to any of those points could not be equal.)
+			if (furthestSubTree != null) {
+				count += countPointsWithinR(sampleIndex, furthestSubTree,
+						level + 1, r, allowEqualToR, additionalCriteria, remapping);
+			}
+		}
+		
+		return count;
+	}
+	
+	@Override
 	public int countPointsWithinR(double[][] sampleVectors, double r,
 			boolean allowEqualToR, boolean[] additionalCriteria) {
 		if (rootNode == null) {
