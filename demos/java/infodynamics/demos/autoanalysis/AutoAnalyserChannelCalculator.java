@@ -53,6 +53,15 @@ public abstract class AutoAnalyserChannelCalculator extends AutoAnalyser {
 	protected String[] kraskovProperties;
 	protected String[] kraskovPropertiesFieldNames;
 	protected String[] kraskovPropertyDescriptions;
+	
+	
+	public AutoAnalyserChannelCalculator() {
+		super();
+	}
+
+	public AutoAnalyserChannelCalculator(String pathToAutoAnalyserDir) {
+		super(pathToAutoAnalyserDir);
+	}
 
 	/**
 	 * Constructor to initialise the GUI for a channel calculator

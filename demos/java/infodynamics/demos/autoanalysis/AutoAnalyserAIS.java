@@ -62,6 +62,14 @@ public class AutoAnalyserAIS extends AutoAnalyser {
 	protected String[] kraskovPropertiesFieldNames;
 	protected String[] kraskovPropertyDescriptions;
 
+	public AutoAnalyserAIS() {
+		super();
+	}
+
+	public AutoAnalyserAIS(String pathToAutoAnalyserDir) {
+		super(pathToAutoAnalyserDir);
+	}
+
 	/**
 	 * Constructor to initialise the GUI for a channel calculator
 	 */

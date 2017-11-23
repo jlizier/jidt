@@ -61,6 +61,14 @@ public class AutoAnalyserCTE extends AutoAnalyser
 	protected String[] kraskovPropertiesFieldNames;
 	protected String[] kraskovPropertyDescriptions;
 
+	public AutoAnalyserCTE() {
+		super();
+	}
+
+	public AutoAnalyserCTE(String pathToAutoAnalyserDir) {
+		super(pathToAutoAnalyserDir);
+	}
+
 	/**
 	 * Constructor to initialise the GUI for Conditional TE
 	 */

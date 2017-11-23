@@ -207,6 +207,11 @@ public abstract class AutoAnalyser extends JFrame
 	
 	protected String appletTitle;
 	
+	// Specifies a prefix from the current working directory to
+	//  the demos/AutoAnalyser/ directory. Is empty if it is assumed
+	//  we are already in that directory. Can be set in the constructor
+	protected String pathToAutoAnalyserDir = "";
+	
 	public class TextAreaWithImage extends JTextArea {
 
 	    /**
@@ -257,19 +262,28 @@ public abstract class AutoAnalyser extends JFrame
 	 * Constructor to generate the application windows
 	 */
 	public AutoAnalyser() {
+		this("");
+	}
+
+	/**
+	 * Constructor to generate the application windows
+	 */
+	public AutoAnalyser(String pathToAutoAnalyserDir) {
+	
+		this.pathToAutoAnalyserDir = pathToAutoAnalyserDir;
 		
 		makeSpecificInitialisations();
 		
 		// Build the swing applet
 		
-		ImageIcon icon = new ImageIcon("../../JIDT-logo.png"); // Location for distributions
+		ImageIcon icon = new ImageIcon(pathToAutoAnalyserDir + "../../JIDT-logo.png"); // Location for distributions
 		if (icon.getImageLoadStatus() != MediaTracker.COMPLETE) {
-			// Try the alternative image location for SVN checkouts
-			icon = new ImageIcon("../../web/JIDT-logo.png");
+			// Try the alternative image location for git checkouts
+			icon = new ImageIcon(pathToAutoAnalyserDir + "../../web/JIDT-logo.png");
 		}
 		setIconImage(icon.getImage());
 		
-		Image watermarkImage = (new ImageIcon("JIDT-logo-watermark.png")).getImage();
+		Image watermarkImage = (new ImageIcon(pathToAutoAnalyserDir + "JIDT-logo-watermark.png")).getImage();
 		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setSize(1100,670);
@@ -612,7 +626,8 @@ public abstract class AutoAnalyser extends JFrame
 		//  one
 		JFileChooser dataFileChooser;
 		if (dataFile == null) {
-			dataFileChooser = new JFileChooser(System.getProperty("user.dir") + "/../data/");
+			dataFileChooser = new JFileChooser(
+					System.getProperty("user.dir") + "/" + pathToAutoAnalyserDir + "../data/");
 		} else {
 			dataFileChooser = new JFileChooser(dataFile);
 		}
@@ -746,11 +761,14 @@ public abstract class AutoAnalyser extends JFrame
 		// Work out full path of the jar and code utilities:
 		String jarLocation, pythonDemosLocation, matlabDemosLocation;
 		try {
-			File jarLocationFile = new File(System.getProperty("user.dir") + "/../../infodynamics.jar");
+			File jarLocationFile = new File(System.getProperty("user.dir") +
+					"/" + pathToAutoAnalyserDir + "../../infodynamics.jar");
 			jarLocation = jarLocationFile.getCanonicalPath();
-			File pythonDemosLocationFile = new File(System.getProperty("user.dir") + "/../python");
+			File pythonDemosLocationFile = new File(System.getProperty("user.dir") +
+					"/" + pathToAutoAnalyserDir + "../python");
 			pythonDemosLocation = pythonDemosLocationFile.getCanonicalPath();
-			File matlabDemosLocationFile = new File(System.getProperty("user.dir") + "/../octave");
+			File matlabDemosLocationFile = new File(System.getProperty("user.dir") +
+					"/" + pathToAutoAnalyserDir + "../octave");
 			matlabDemosLocation = matlabDemosLocationFile.getCanonicalPath();
 		} catch (IOException ioex) {
 			JOptionPane.showMessageDialog(this,
@@ -1234,15 +1252,15 @@ public abstract class AutoAnalyser extends JFrame
 			
 			// Now write the code to a file
 			// 1. Java
-			FileWriter codeFileWriter = new FileWriter("../java/infodynamics/demos/autoanalysis/GeneratedCalculator.java");
+			FileWriter codeFileWriter = new FileWriter(pathToAutoAnalyserDir + "../java/infodynamics/demos/autoanalysis/GeneratedCalculator.java");
 			codeFileWriter.write(javaCode.toString());
 			codeFileWriter.close();
 			// 2. Python
-			codeFileWriter = new FileWriter("GeneratedCalculator.py");
+			codeFileWriter = new FileWriter(pathToAutoAnalyserDir + "GeneratedCalculator.py");
 			codeFileWriter.write(pythonCode.toString());
 			codeFileWriter.close();
 			// 3. Matlab
-			codeFileWriter = new FileWriter("GeneratedCalculator.m");
+			codeFileWriter = new FileWriter(pathToAutoAnalyserDir + "GeneratedCalculator.m");
 			codeFileWriter.write(matlabCode.toString());
 			codeFileWriter.close();
 			

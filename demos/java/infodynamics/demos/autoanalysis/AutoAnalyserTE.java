@@ -54,6 +54,14 @@ public class AutoAnalyserTE extends AutoAnalyserChannelCalculator
 	protected static final String DISCRETE_PROPNAME_L_TAU = "l_TAU";
 	protected static final String DISCRETE_PROPNAME_DELAY = "DELAY";
 	
+	public AutoAnalyserTE() {
+		super();
+	}
+
+	public AutoAnalyserTE(String pathToAutoAnalyserDir) {
+		super(pathToAutoAnalyserDir);
+	}
+
 	/**
 	 * Constructor to initialise the GUI for TE
 	 */

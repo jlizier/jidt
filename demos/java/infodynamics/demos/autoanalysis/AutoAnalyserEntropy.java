@@ -59,6 +59,14 @@ public class AutoAnalyserEntropy extends AutoAnalyser {
 	protected String[] klPropertiesFieldNames;
 	protected String[] klPropertyDescriptions;
 
+	public AutoAnalyserEntropy() {
+		super();
+	}
+
+	public AutoAnalyserEntropy(String pathToAutoAnalyserDir) {
+		super(pathToAutoAnalyserDir);
+	}
+
 	/**
 	 * Constructor to initialise the GUI for a channel calculator
 	 */
