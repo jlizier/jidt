@@ -4,5 +4,5 @@
 cd ../..
 
 # Run the AutoAnalyser Launcher:
-java -classpath "../../infodynamics.jar" infodynamics.demos.autoanalysis.AutoAnalyserLauncher
+java -classpath "infodynamics.jar" infodynamics.demos.autoanalysis.AutoAnalyserLauncher
 
