@@ -271,6 +271,8 @@ public abstract class AutoAnalyser extends JFrame
 	public AutoAnalyser(String pathToAutoAnalyserDir) {
 	
 		this.pathToAutoAnalyserDir = pathToAutoAnalyserDir;
+		System.out.println("Starting with path to AutoAnalyser folder: " + System.getProperty("user.dir") +
+				"/" + pathToAutoAnalyserDir);
 		
 		makeSpecificInitialisations();
 		
