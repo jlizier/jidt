@@ -17,7 +17,6 @@
 	<property name="unittestsouttoplevel" location="unittests"/>
 	<property name="unittestssrc" location="java/unittests"/>
 	<property name="unittestsbin" location="${unittestsouttoplevel}/bin"/>
-	<property name="autoanalyserdemo" location="demos/java"/>
 	<property name="reports.tests" location="${unittestsouttoplevel}/reports"/>
 	<property name="javadocsdir" location="javadocs"/>
 	<property name="versionfile" value="version-${version}.txt"/>
@@ -42,7 +41,7 @@
 	</target>
 
 	<!-- Compile the java toolkit -->
-	<target name="compile" depends="init" description="compile the source and unittests">
+	<target name="compile" depends="init" description="compile the source">
 		<!-- Compile to Java 6 to provide compatibility for users with older JREs.
 		     Caveat: The flags here only check the language compatibility, but
 		     may still use newer libraries which may cause issues for users with JDK 6.
@@ -67,7 +66,14 @@
 	<!-- Jar the toolkit -->
 	<target name="jar" depends="compile" description="Create the jar for distribution">
 		<!-- Put everything in ${bin} into the infodynamics-${version}.jar file -->
-		<jar jarfile="${jarplainname}" basedir="${bin}" excludes="cuda/*.o,cuda/*.a,cuda/findComputeCapability"/>
+		<jar jarfile="${jarplainname}" basedir="${bin}" excludes="cuda/*.o,cuda/*.a,cuda/findComputeCapability">
+			<manifest>
+				<attribute name="Main-Class" value="infodynamics.demos.autoanalysis.AutoAnalyserLauncher"/>
+			</manifest>
+		</jar>
+		<!-- Set the jar to be runnable: (only has effect on unix/linux)
+		     so we can double click to run the AutoAnalyser -->
+		<chmod file="${jarplainname}" perm="u+x"/>
 	</target>
 
 	<!-- Compile and run the JUnit tests -->
@@ -105,29 +111,13 @@
 		<antcall target="gputest" if:true="${enablegpu}"/>
 	</target>
 
-	<!-- Compile the autoanalyser demo -->
-	<target name="autoanalyser" depends="jar" description="compile the autoanalyser demo">
-		<!-- Compile to Java 6 to provide compatibility for users with older JREs.
-		     Caveat: The flags here only check the language compatibility, but
-		     may still use newer libraries which may cause issues for users with JDK 6.
-		     Indeed, one gets the warning: "bootstrap class path not set in conjunction with -source 1.6"
-		     To fix this, one would use the bootstrap classpath to point our JDK to an rt.jar
-		     for Java 6. 
-		     At this stage, I'm sure I'm not using new library calls from Java 7, so we can
-		     ignore the warning, and I don't want to bother installing Java 6 just to compile
-		     like this. I'll endeavour not to use JDK 7 libraries so as not to cause
-		     any issues here ... -->
-		<javac srcdir="${autoanalyserdemo}" includes="infodynamics/demos/autoanalysis/*.java" excludes="infodynamics/demos/autoanalysis/GeneratedCalculator.java" includeAntRuntime="false" target="1.6" source="1.6">
-			<classpath refid="project.classpath"/>
-		</javac>
-	</target>
-
-	<!-- Make javadocs, excluding the classes we've derived from Apache Commons Math -->
+	<!-- Make javadocs, excluding the AutoAnalyser and classes we've derived from Apache Commons Math -->
 	<target name="javadocs" depends="compile" description="Make the javadocs for the toolkit">
 		<delete dir="${javadocsdir}"/>
 		<javadoc destdir="${javadocsdir}">
 			<fileset dir="${src}">
 				<include name="**/*.java"/>
+				<exclude name="infodynamics/demos/**/*.java"/>
 				<exclude name="**/commonsmath3/*.java"/>
 				<exclude name="**/commonsmath3/**/*.java"/>
 			</fileset>
@@ -185,7 +175,7 @@
 	<!-- Compile and jar the toolkit with debug symbols -->
 	<target name="debug" depends="init" description="compile and jar with debug symbols">
 		<echo message="Compiling for debug"/>
-		<javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false" target="1.7" source="1.7" debug="true">
+		<javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false" target="1.6" source="1.6" debug="true">
 			<classpath refid="apache-classpath"/>
 		</javac>
 
@@ -304,7 +294,7 @@
 	</target>
 	
 	<!-- Developer build - builds everything and makes the full distribution file -->
-	<target name="dist" depends="jar,junit,autoanalyser,javadocs,readmefiles" description="developer: generate the full distribution">
+	<target name="dist" depends="jar,junit,javadocs,readmefiles" description="developer: generate the full distribution">
 		<echo message="${ant.project.name}: ${ant.file}"/>
 		<zip destfile="${distnamezip}">
 			<fileset file="build.xml"/>
