@@ -12,6 +12,7 @@
 	<property name="distname" value="${mainfilename}-dist-${version}" />
 	<property name="distnamezip" value="${distname}.zip" />
 	<property name="src" location="java/source"/>
+	<property name="cudasrc" location="cuda"/>
 	<property name="bin" location="bin"/>
 	<property name="unittestsouttoplevel" location="unittests"/>
 	<property name="unittestssrc" location="java/unittests"/>
@@ -20,9 +21,8 @@
 	<property name="reports.tests" location="${unittestsouttoplevel}/reports"/>
 	<property name="javadocsdir" location="javadocs"/>
 	<property name="versionfile" value="version-${version}.txt"/>
-  <!-- To enable GPU code, uncomment from here... -->
+  <!-- To enable GPU code, set the following variable to true -->
   <property name="enablegpu" value="false"/>
-  <!-- ...to here -->
 	
 	<path id="project.classpath">
 		<pathelement location="bin"/>
@@ -35,23 +35,25 @@
 	<!-- Make required directories -->
 	<target name="init" description="Create the compiled code directories">
 		<mkdir dir="${bin}"/>
+    <mkdir dir="${bin}/cuda"/>
 		<mkdir dir="${unittestsbin}"/>
+    <mkdir dir="${unittestsbin}/cuda"/>
 		<mkdir dir="${reports.tests}"/>
 	</target>
 
 	<!-- Compile the java toolkit -->
 	<target name="compile" depends="init" description="compile the source and unittests">
-		<!-- Compile to Java 7 to provide compatibility for users with older JREs.
+		<!-- Compile to Java 6 to provide compatibility for users with older JREs.
 		     Caveat: The flags here only check the language compatibility, but
-		     may still use newer libraries which may cause issues for users with JDK 7.
-		     Indeed, one gets the warning: "bootstrap class path not set in conjunction with -source 1.7"
+		     may still use newer libraries which may cause issues for users with JDK 6.
+		     Indeed, one gets the warning: "bootstrap class path not set in conjunction with -source 1.6"
 		     To fix this, one would use the bootstrap classpath to point our JDK to an rt.jar
-		     for Java 7. 
-		     At this stage, I'm sure I'm not using new library calls from Java 8, so we can
+		     for Java 6. 
+         At this stage, I'm sure I'm not using new library calls from Java 7/8, so we can
 		     ignore the warning, and I don't want to bother installing Java 7 just to compile
 		     like this. I'll endeavour not to use JDK 8 libraries so as not to cause
 		     any issues here ... -->
-		<javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false" target="1.7" source="1.7">
+		<javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false" target="1.6" source="1.6">
 			<classpath refid="apache-classpath"/>
     </javac>
 
@@ -65,7 +67,7 @@
 	<!-- Jar the toolkit -->
 	<target name="jar" depends="compile" description="Create the jar for distribution">
 		<!-- Put everything in ${bin} into the infodynamics-${version}.jar file -->
-    <jar jarfile="${jarplainname}" basedir="${bin}" excludes="**/cuda/"/>
+    <jar jarfile="${jarplainname}" basedir="${bin}" excludes="cuda/*.o,cuda/*.a,cuda/findComputeCapability"/>
 	</target>
 
 	<!-- Compile and run the JUnit tests -->
@@ -94,6 +96,7 @@
 					<exclude name="**/*AbstractTester.class"/>
 					<exclude name="**/ActiveInfoStorageCalculatorCorrelationIntegrals.class"/>
 					<exclude name="**/ActiveInfoStorageCalculatorKernelDirect.class"/>
+					<exclude name="**/*GPU*.class"/>
 				</fileset>
 			</batchtest>
 		</junit>
@@ -196,7 +199,7 @@
 
   <!-- Compile GPU code -->
   <target name="gpu" depends="init" description="compile only C/C++ GPU code">
-    <exec executable="make" dir="${src}/infodynamics/measures/continuous/kraskov/cuda/" resultproperty="return.code">
+    <exec executable="make" dir="${cudasrc}" failonerror="true" resultproperty="return.code">
       <env key="DEBUG" value="${DEBUG}"/>
     </exec>
     <fail>
@@ -204,18 +207,11 @@
         <isfailure code="${return.code}"/>
       </condition>
     </fail>
-    <move todir="${bin}/infodynamics/measures/continuous/kraskov/cuda">
-      <filelist dir="${src}/infodynamics/measures/continuous/kraskov/cuda">
-        <file name="gpuKnnLibrary.o"/>
-        <file name="libgpuKnnLibrary.a"/>
-        <file name="libKraskov.so"/>
-      </filelist>
-    </move>
   </target>
 
   <!-- Clean GPU code -->
   <target name="gpuclean" description="clean only C/C++ GPU code">
-    <exec executable="make" dir="${src}/infodynamics/measures/continuous/kraskov/cuda/">
+    <exec executable="make" dir="${cudasrc}" failonerror="true">
       <arg value="clean"/>
     </exec>
   </target>
@@ -224,20 +220,16 @@
   <target name="gputest" depends="gpu, compile" description="compile and run C unit tests for GPU code">
 
 		<!-- Compile and run the C-only GPU unit tests -->
-    <exec executable="make" dir="${src}/infodynamics/measures/continuous/kraskov/cuda/" resultproperty="return.code">
-      <arg value="unittest"/>
+    <exec executable="make" dir="${cudasrc}" failonerror="true" resultproperty="return.code">
+      <arg value="test"/>
     </exec>
     <fail>
       <condition>
         <isfailure code="${return.code}"/>
       </condition>
     </fail>
-    <move todir="${unittestsbin}/infodynamics/measures/continuous/kraskov/cuda"
-      file="${src}/infodynamics/measures/continuous/kraskov/cuda/unittest"/>
-    <copy todir="${unittestsbin}/infodynamics/measures/continuous/kraskov/cuda"
-      file="${bin}/infodynamics/measures/continuous/kraskov/cuda/libKraskov.so"/>
 
-    <exec executable="./unittest" dir="${unittestsbin}/infodynamics/measures/continuous/kraskov/cuda/" resultproperty="return.code"/>
+    <exec executable="./unittest" dir="${unittestsbin}/cuda/" failonerror="true" resultproperty="return.code"/>
     <fail>
       <condition>
         <isfailure code="${return.code}"/>
@@ -260,9 +252,8 @@
 			<formatter type="plain"/>
 			<batchtest todir="${reports.tests}"> <!-- Writes full reports with stdout and stderr to ${reports.tests} -->
 				<fileset dir="${unittestsbin}">
-					<include name="**/GPUMutualInfoTester.class"/>
-					<include name="**/GPUPerformanceTester.class"/>
-				</fileset>
+					<include name="**/*GPU*.class"/>
+        </fileset>
 			</batchtest>
 		</junit>
 

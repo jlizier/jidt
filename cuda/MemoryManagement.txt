@@ -1,0 +1,189 @@
+Memory management in KSG CUDA functions
+=======================================
+
+This file contains information about how memory is allocated and managed in the
+CUDA KSG calculators. It is meant to act as documentation and as a tool for
+future developers.
+
+All memory is allocated (in a single cudaMalloc call) and distributed in the
+function allocateDeviceMemory. The location of all pointers in memory is as
+follows (diagram not to scale):
+
+                         _____
+float *pointset    ->   |
+                        |
+                        |
+                        |
+                        |
+                        |
+                        |
+                        |
+                        |
+                        |
+                        |
+                        |
+float *distances   ->   |
+                        |
+                        |
+                        |
+                        |
+int *indexes       ->   |
+                        |
+                        |
+                        |
+                        |
+int *npoints_x     ->   |
+                        |
+                        |
+                        |
+int *npoints_y     ->   |
+                        |
+                        |
+                        |
+float *digammas    ->   |
+                        |
+                        |
+                        |_____
+
+
+
+The pointset contains both the source and the target data. Source data is
+represented by a tensor X[i,j,k], where k runs across data samples, j across
+source dimensions and i across different surrogate shufflings (or different
+realisations of the process). Assume we have R realisations of a process with M
+variables, of N samples each. Then the arrangement of X in memory is:
+
+                              _____             _
+float *pointset, *source ->   |        X[0,0,0]  |
+                              |        X[0,0,1]  |
+                              |        .         |
+                              |        .         |  Shuffle 0, dimension 0
+                              |        .         |
+                              |        X[0,0,N] _
+                              |        X[1,0,0]  |
+                              |        X[1,0,1]  |
+                              |        .         |
+                              |        .         |  Shuffle 1, dimension 0
+                              |        .         |
+                              |        X[1,0,N] _|
+                              |        .
+                              |        .            ... Dimension 0 of all other shuffles
+                              |        .         
+                              |        X[R,0,N] _
+                              |        X[0,1,0]  |
+                              |        X[0,1,1]  |
+                              |        .         |
+                              |        .         |  Shuffle 0, dimension 1
+                              |        .         |
+                              |        X[0,1,N] _|
+                              |        X[1,1,0]  |
+                              |        X[1,1,1]  |
+                              |        .         |  Shuffle 1, dimension 1
+                              |        .         |
+                              |        .         |
+                              |        X[1,1,N] _|
+                              |        .
+                              |        .           ... All other dimensions of all other shuffles
+                              |        .
+                              |        X[R,M,N]
+float *dest              ->   |                 
+                              |        
+                              |        
+                              |        
+                              |        
+                              |        
+                              |        
+                              |        
+                              |        
+                              |
+                              |
+                              |_____
+
+
+dest follows the same structure as source.
+
+Distances contains the distances between each point and its K nearest
+neighbours. D[p,q,r] represents the distance from point r to its q'th
+neighbour, for each shuffling p. Assume we have R realisations of a process of
+N samples each, and we are finding the K nearest neighbours of each point. Then
+the arrangement of D in memory is as follows:
+
+                      _____            _
+float *distances ->  |        D[0,0,0]  |
+                     |        D[0,0,1]  |
+                     |        .         |
+                     |        .         |  Shuffle 0, distances to 1st neighbour
+                     |        .         |
+                     |        D[0,0,N] _|
+                     |        D[1,0,0]  |
+                     |        D[1,0,1]  |
+                     |        .         |
+                     |        .         |  Shuffle 1, distances to 1st neighbour
+                     |        .         |
+                     |        D[1,0,N] _|
+                     |        .
+                     |        .            ... Distances to 1st neighbour of all other surrogates
+                     |        .
+                     |        D[R,0,N] _
+                     |        D[0,1,0]  |
+                     |        D[0,1,1]  |
+                     |        .         |
+                     |        .         |  Shuffle 0, distances to 2nd neighbour
+                     |        .         |
+                     |        D[0,1,N] _|
+                     |        .
+                     |        .            ... Distances to all other neighbours of all other surrogates
+                     |        .
+                     |        D[R,K-1,N]_
+float *radii     ->  |        D[0,K,0]  |
+                     |        D[0,K,1]  |
+                     |        .         |
+                     |        .         |  Shuffle 0, distances to K-th neighbour
+                     |        .         |
+                     |        D[1,K,N] _|
+                     |        .
+                     |        .            ... Distances to K-th neighbour of all other surrogates
+                     |        .
+                     |_____   D[R,K,N]
+
+
+The distances from each point to its K-th nearest neighbour are particularly
+important since they are used in other parts of the algorithm, and they are
+called the range search radii.
+
+Indexes contain the index of each nearest neighbour of each point in the main
+pointset, and follow the same structure as distances.
+
+Npoints contains the count of points -- in either the source (nx) or the dest
+(ny) -- that lie within the range search radius of each point. NX[i,j] represents
+the number of points in source which are closer to $j$ than $j$'s radii.
+
+                        _____
+int *npoints, *nx  ->  |        NX[0,0]
+                       |        NX[0,1]
+                       |        .
+                       |        .
+                       |        .
+                       |        NX[0,N]
+                       |        NX[1,0]
+                       |        NX[1,1]
+                       |        .
+                       |        .
+                       |        .
+                       |        NX[R,N]
+int *ny            ->  |        NY[0,0]
+                       |        .
+                       |        .
+                       |        .
+                       |_____   NY[R,N]
+
+The array ny contains the equivalent point count in dest, and follows the same
+structure as nx.
+
+Digammas also follow the same structure as nx and ny, and are calculated as
+
+digammas[i] = digamma(nx[i]+1) + digamma(ny[i]+1)
+
+Reference: Kraskov, A., Stoegbauer, H., Grassberger, P., "Estimating mutual
+information", Physical Review E 69, (2004) 066138.
+

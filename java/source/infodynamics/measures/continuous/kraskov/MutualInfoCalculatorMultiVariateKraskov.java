@@ -21,8 +21,6 @@ package infodynamics.measures.continuous.kraskov;
 import java.util.Calendar;
 import java.util.PriorityQueue;
 import java.util.Random;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.io.File;
 
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
@@ -34,6 +32,7 @@ import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.NearestNeighbourSearcher;
 import infodynamics.utils.NeighbourNodeData;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
+import infodynamics.utils.NativeUtils;
 
 /**
  * <p>Computes the differential mutual information of two given multivariate sets of
@@ -627,7 +626,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
         System.out.printf("Calling GPU calculation with returnLocals=%b and nb_surrogates=%d\n", returnLocals, nb_surrogates);
       }
       res = MIKraskov(totalObservations, sourceObservations, dimensionsSource,
-          destObservations, dimensionsDest, k, returnLocals, useMaxNorm,
+          destObservations, dimensionsDest, k, dynCorrExclTime, returnLocals, useMaxNorm,
           isAlgorithm1, nb_surrogates, null!=newOrderings, newOrderings);
       if (debug) {
         System.out.println("GPU calculation finished successfully. Returning results");
@@ -664,8 +663,9 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
    */
   private native double[] MIKraskov(
       int N, double[][] source, int dimx, double[][] dest, int dimy,
-      int k, boolean returnLocals, boolean useMaxNorm, boolean isAlgorithm1,
-      int nb_surrogates, boolean orderingsGiven, int[][] newOrderings);
+      int k, int theiler, boolean returnLocals, boolean useMaxNorm,
+      boolean isAlgorithm1, int nb_surrogates, boolean orderingsGiven,
+      int[][] newOrderings);
 
   /**
    * Internal method to ensure that the Kd-tree data structures to represent the
@@ -705,41 +705,21 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 
     if (!cudaLibraryLoaded) {
 
-      String fullPath;
-
-      if (gpuLibraryPath.length() < 1) {
-        // If user didn't provide a path, try the default
-        Path jarPath = Paths.get(MutualInfoCalculatorMultiVariateKraskov.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-        String fileSep = System.getProperty("file.separator", "");
-        if (fileSep.length() == 0) {
-          throw new Exception("Unable to find default GPU library path. Provide path manually through setProperty().");
+      try {
+        if (gpuLibraryPath.length() < 1) {
+          NativeUtils.loadLibraryFromJar("/cuda/libKraskov.so");
+        } else {
+          System.load(gpuLibraryPath);
         }
-        String jarFolder = jarPath.toString().substring(0, jarPath.toString().lastIndexOf(fileSep));
-        String relPath = fileSep + "bin" + fileSep +
-                        "infodynamics" + fileSep + "measures" + fileSep +
-                        "continuous" + fileSep + "kraskov" + fileSep + "cuda" +
-                        fileSep + "libKraskov.so";
-        fullPath = jarFolder + relPath;
-      } else {
-        // Otherwise, use the provided path.
-        fullPath = gpuLibraryPath;
-      }
-
-      // Check if file exists
-      File lib = new File(fullPath);
-      if (!lib.exists()) {
+      } catch (Throwable e) {
         String errmsg = "GPU library not found. To compile GPU code set the enablegpu flag to true in build.xml";
-        if (gpuLibraryPath.length() > 1) {
+        if (gpuLibraryPath.length() > 0) {
           errmsg += "\nGPU library was not found in the path provided. Provide full path including library file name.";
           errmsg += "\nExample: /home/johndoe/myfolder/libKraskov.so";
         }
         throw new Exception(errmsg);
       }
 
-      // If it does, then try to load it
-      System.load(fullPath);
-
-      System.out.println("CUDA native library loaded.");
       cudaLibraryLoaded = true;
 
     }
