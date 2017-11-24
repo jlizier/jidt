@@ -21,23 +21,23 @@
 	<property name="reports.tests" location="${unittestsouttoplevel}/reports"/>
 	<property name="javadocsdir" location="javadocs"/>
 	<property name="versionfile" value="version-${version}.txt"/>
-  <!-- To enable GPU code, set the following variable to true -->
-  <property name="enablegpu" value="false"/>
+	<!-- To enable GPU code, set the following variable to true -->
+	<property name="enablegpu" value="false"/>
 	
 	<path id="project.classpath">
 		<pathelement location="bin"/>
 	</path>
 
-  <path id="apache-classpath">
-    <pathelement path="./share/commons-math3-3.5.jar"/>
-  </path>
+	<path id="apache-classpath">
+		<pathelement path="./share/commons-math3-3.5.jar"/>
+	</path>
 
 	<!-- Make required directories -->
 	<target name="init" description="Create the compiled code directories">
 		<mkdir dir="${bin}"/>
-    <mkdir dir="${bin}/cuda"/>
+		<mkdir dir="${bin}/cuda"/>
 		<mkdir dir="${unittestsbin}"/>
-    <mkdir dir="${unittestsbin}/cuda"/>
+		<mkdir dir="${unittestsbin}/cuda"/>
 		<mkdir dir="${reports.tests}"/>
 	</target>
 
@@ -49,25 +49,25 @@
 		     Indeed, one gets the warning: "bootstrap class path not set in conjunction with -source 1.6"
 		     To fix this, one would use the bootstrap classpath to point our JDK to an rt.jar
 		     for Java 6. 
-         At this stage, I'm sure I'm not using new library calls from Java 7/8, so we can
+		     At this stage, I'm sure I'm not using new library calls from Java 7/8, so we can
 		     ignore the warning, and I don't want to bother installing Java 7 just to compile
 		     like this. I'll endeavour not to use JDK 8 libraries so as not to cause
 		     any issues here ... -->
 		<javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false" target="1.6" source="1.6">
 			<classpath refid="apache-classpath"/>
-    </javac>
+		</javac>
 
-    <!-- Compiling Cpp code -->
-    <antcall target="gpu" if:true="${enablegpu}">
-      <param name="DEBUG" value="0"/>
-    </antcall>
+		<!-- Compiling Cpp code -->
+		<antcall target="gpu" if:true="${enablegpu}">
+			<param name="DEBUG" value="0"/>
+		</antcall>
 
 	</target>
 
 	<!-- Jar the toolkit -->
 	<target name="jar" depends="compile" description="Create the jar for distribution">
 		<!-- Put everything in ${bin} into the infodynamics-${version}.jar file -->
-    <jar jarfile="${jarplainname}" basedir="${bin}" excludes="cuda/*.o,cuda/*.a,cuda/findComputeCapability"/>
+		<jar jarfile="${jarplainname}" basedir="${bin}" excludes="cuda/*.o,cuda/*.a,cuda/findComputeCapability"/>
 	</target>
 
 	<!-- Compile and run the JUnit tests -->
@@ -87,7 +87,7 @@
 			<classpath>
 				<path refid="project.classpath"/>
 				<pathelement path="${unittestsbin}"/>
-        <pathelement location="${basedir}/clover.jar"/>
+				<pathelement location="${basedir}/clover.jar"/>
 			</classpath>
 			<formatter type="plain"/>
 			<batchtest todir="${reports.tests}"> <!-- Writes full reports with stdout and stderr to ${reports.tests} -->
@@ -101,8 +101,8 @@
 			</batchtest>
 		</junit>
 
-    <!-- If applicable, run also GPU tests -->
-    <antcall target="gputest" if:true="${enablegpu}"/>
+		<!-- If applicable, run also GPU tests -->
+		<antcall target="gputest" if:true="${enablegpu}"/>
 	</target>
 
 	<!-- Compile the autoanalyser demo -->
@@ -165,7 +165,7 @@
 		<delete>
 			 <fileset dir="demos/java/infodynamics/demos/autoanalysis" includes="GeneratedCalculator.*"/>
 		</delete>
-    <antcall target="gpuclean"/>
+		<antcall target="gpuclean"/>
 		<!-- Don't delete the readme and version files - the user may not have the template to recreate them from -->
 	</target>
 	
@@ -182,63 +182,63 @@
 	***********************************
 	-->
 
-  <!-- Compile and jar the toolkit with debug symbols -->
-  <target name="debug" depends="init" description="compile and jar with debug symbols">
-    <echo message="Compiling for debug"/>
-    <javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false" target="1.7" source="1.7" debug="true">
+	<!-- Compile and jar the toolkit with debug symbols -->
+	<target name="debug" depends="init" description="compile and jar with debug symbols">
+		<echo message="Compiling for debug"/>
+		<javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false" target="1.7" source="1.7" debug="true">
 			<classpath refid="apache-classpath"/>
-    </javac>
+		</javac>
 
-    <!-- Compiling Cpp code -->
-    <antcall target="gpu" if:true="${enablegpu}">
-      <param name="DEBUG" value="1"/>
-    </antcall>
+		<!-- Compiling Cpp code -->
+		<antcall target="gpu" if:true="${enablegpu}">
+			<param name="DEBUG" value="1"/>
+		</antcall>
 
-    <jar jarfile="${jarplainname}" basedir="${bin}"/>
-  </target>
+		<jar jarfile="${jarplainname}" basedir="${bin}"/>
+	</target>
 
-  <!-- Compile GPU code -->
-  <target name="gpu" depends="init" description="compile only C/C++ GPU code">
-    <exec executable="make" dir="${cudasrc}" failonerror="true" resultproperty="return.code">
-      <env key="DEBUG" value="${DEBUG}"/>
-    </exec>
-    <fail>
-      <condition>
-        <isfailure code="${return.code}"/>
-      </condition>
-    </fail>
-  </target>
+	<!-- Compile GPU code -->
+	<target name="gpu" depends="init" description="compile only C/C++ GPU code">
+		<exec executable="make" dir="${cudasrc}" failonerror="true" resultproperty="return.code">
+			<env key="DEBUG" value="${DEBUG}"/>
+		</exec>
+		<fail>
+			<condition>
+				<isfailure code="${return.code}"/>
+			</condition>
+		</fail>
+	</target>
 
-  <!-- Clean GPU code -->
-  <target name="gpuclean" description="clean only C/C++ GPU code">
-    <exec executable="make" dir="${cudasrc}" failonerror="true">
-      <arg value="clean"/>
-    </exec>
-  </target>
+	<!-- Clean GPU code -->
+	<target name="gpuclean" description="clean only C/C++ GPU code">
+		<exec executable="make" dir="${cudasrc}" failonerror="true">
+			<arg value="clean"/>
+		</exec>
+	</target>
 
-  <!-- Test GPU code -->
-  <target name="gputest" depends="gpu, compile" description="compile and run C unit tests for GPU code">
+	<!-- Test GPU code -->
+	<target name="gputest" depends="gpu, compile" description="compile and run C unit tests for GPU code">
 
 		<!-- Compile and run the C-only GPU unit tests -->
-    <exec executable="make" dir="${cudasrc}" failonerror="true" resultproperty="return.code">
-      <arg value="test"/>
-    </exec>
-    <fail>
-      <condition>
-        <isfailure code="${return.code}"/>
-      </condition>
-    </fail>
+		<exec executable="make" dir="${cudasrc}" failonerror="true" resultproperty="return.code">
+			<arg value="test"/>
+		</exec>
+		<fail>
+			<condition>
+				<isfailure code="${return.code}"/>
+			</condition>
+		</fail>
 
-    <exec executable="./unittest" dir="${unittestsbin}/cuda/" failonerror="true" resultproperty="return.code"/>
-    <fail>
-      <condition>
-        <isfailure code="${return.code}"/>
-      </condition>
-    </fail>
+		<exec executable="./unittest" dir="${unittestsbin}/cuda/" failonerror="true" resultproperty="return.code"/>
+		<fail>
+			<condition>
+				<isfailure code="${return.code}"/>
+			</condition>
+		</fail>
 
 		<!-- Compile and run the Java+C GPU tests -->
 		<javac destdir="${unittestsbin}" includeAntRuntime="true" debug="true">
-      <src path="${unittestssrc}"/>
+			<src path="${unittestssrc}"/>
 			<classpath refid="project.classpath"/>
 			<classpath refid="apache-classpath"/>
 		</javac>
@@ -247,17 +247,17 @@
 			<classpath>
 				<path refid="project.classpath"/>
 				<pathelement path="${unittestsbin}"/>
-        <pathelement location="${basedir}/clover.jar"/>
+				<pathelement location="${basedir}/clover.jar"/>
 			</classpath>
 			<formatter type="plain"/>
 			<batchtest todir="${reports.tests}"> <!-- Writes full reports with stdout and stderr to ${reports.tests} -->
 				<fileset dir="${unittestsbin}">
 					<include name="**/*GPU*.class"/>
-        </fileset>
+				</fileset>
 			</batchtest>
 		</junit>
 
-  </target>
+	</target>
 
 	<!-- Developer build - creates readme and version files -->
 	<target name="readmefiles" description="developer: create the readme and version files from templates">
