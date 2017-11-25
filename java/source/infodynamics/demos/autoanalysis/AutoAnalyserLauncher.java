@@ -36,6 +36,7 @@ import java.awt.MediaTracker;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.lang.reflect.Constructor;
+import java.net.URL;
 
 /**
  * This class provides a single GUI to launch the AutoAnalyser GUIs from.
@@ -75,17 +76,41 @@ public class AutoAnalyserLauncher extends JFrame
 	
 	protected String appletTitle = "JIDT AutoAnalyser Launcher";
 	
+	protected String offsetFromJidtToAutoAnalyserFolder = "demos/AutoAnalyser/";
+	
+	protected String autoAnalyserFolder = null;
+	
 	/**
 	 * Constructor to generate the application windows
 	 */
-	public AutoAnalyserLauncher() {
+	public AutoAnalyserLauncher(boolean useCurrentLocation) {
 		
+		String jidtFolder = null;
+		if (!useCurrentLocation) {
+			// Figure out the location of the resource this class was run from.
+			// Presumably it is the infodynamics.jar file:
+			URL resource = getClass().getProtectionDomain().getCodeSource().getLocation();
+			if (resource.getPath().endsWith("jar")) {
+				// This resource came from a jar
+				jidtFolder = resource.getPath().replaceFirst("infodynamics.jar", "");
+				autoAnalyserFolder = jidtFolder + offsetFromJidtToAutoAnalyserFolder;
+			}
+			// System.out.println(resource.getPath());
+		}
+		if (autoAnalyserFolder == null) {
+			// Either useCurrentLocation is true, or the current resource did not
+			//  come from the infodynamics.jar file. Either way, we're simply
+			//  going to assume the current location is the auto analyser folder
+			autoAnalyserFolder = System.getProperty("user.dir") + "/";
+			jidtFolder = autoAnalyserFolder + "/../../";
+		}
+
 		// Build the swing applet
-				
-		ImageIcon icon = new ImageIcon("JIDT-logo.png"); // Location for distributions
+		
+		ImageIcon icon = new ImageIcon(jidtFolder + "JIDT-logo.png"); // Location for distributions
 		if (icon.getImageLoadStatus() != MediaTracker.COMPLETE) {
 			// Try the alternative image location for git checkouts
-			icon = new ImageIcon("web/JIDT-logo.png");
+			icon = new ImageIcon(jidtFolder + "web/JIDT-logo.png");
 		}
 		setIconImage(icon.getImage());
 		
@@ -159,7 +184,7 @@ public class AutoAnalyserLauncher extends JFrame
 					//  passing in the offset to the AutoAnalyser directory.
 					@SuppressWarnings({ "rawtypes", "unchecked" })
 					Constructor cons = launcherClasses[i].getConstructor(String.class);
-					cons.newInstance("demos/AutoAnalyser/");
+					cons.newInstance(autoAnalyserFolder);
 				} catch (Exception ex) {
 					JOptionPane.showMessageDialog(null, ex.getMessage(),
 							"Error launching " + buttonLabels[i] + " AutoAnalyser",
@@ -179,6 +204,9 @@ public class AutoAnalyserLauncher extends JFrame
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		new AutoAnalyserLauncher();
+		// Assume that any command argument means to take the current
+		//  directory as the AutoAnalyser folder.
+		//  Double clicking jar won't pass any arguments in.
+		new AutoAnalyserLauncher(args.length > 0);
 	}
 }

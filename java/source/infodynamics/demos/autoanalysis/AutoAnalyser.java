@@ -207,10 +207,12 @@ public abstract class AutoAnalyser extends JFrame
 	
 	protected String appletTitle;
 	
-	// Specifies a prefix from the current working directory to
-	//  the demos/AutoAnalyser/ directory. Is empty if it is assumed
-	//  we are already in that directory. Can be set in the constructor
+	// Specifies the location of the demos/AutoAnalyser/ directory.
+	//  Is set in the constructor (either by argument or by assuming
+	//   this is the same as a the working directory).
 	protected String pathToAutoAnalyserDir = "";
+	// Main JIDT git/distribution folder, inferred from pathToAutoAnalyserDir
+	protected String jidtFolder = "";
 	
 	public class TextAreaWithImage extends JTextArea {
 
@@ -262,7 +264,8 @@ public abstract class AutoAnalyser extends JFrame
 	 * Constructor to generate the application windows
 	 */
 	public AutoAnalyser() {
-		this("");
+		// Assume our working directory is the AutoAnalyser directory:
+		this(System.getProperty("user.dir") + "/");
 	}
 
 	/**
@@ -271,17 +274,20 @@ public abstract class AutoAnalyser extends JFrame
 	public AutoAnalyser(String pathToAutoAnalyserDir) {
 	
 		this.pathToAutoAnalyserDir = pathToAutoAnalyserDir;
-		System.out.println("Starting with path to AutoAnalyser folder: " + System.getProperty("user.dir") +
-				"/" + pathToAutoAnalyserDir);
+		System.out.println("Working directory is: " +
+				System.getProperty("user.dir"));
+		System.out.println("Starting with path to AutoAnalyser folder: " +
+				pathToAutoAnalyserDir);
+		jidtFolder = pathToAutoAnalyserDir + "../../";
 		
 		makeSpecificInitialisations();
 		
 		// Build the swing applet
 		
-		ImageIcon icon = new ImageIcon(pathToAutoAnalyserDir + "../../JIDT-logo.png"); // Location for distributions
+		ImageIcon icon = new ImageIcon(jidtFolder + "JIDT-logo.png"); // Location for distributions
 		if (icon.getImageLoadStatus() != MediaTracker.COMPLETE) {
 			// Try the alternative image location for git checkouts
-			icon = new ImageIcon(pathToAutoAnalyserDir + "../../web/JIDT-logo.png");
+			icon = new ImageIcon(jidtFolder + "web/JIDT-logo.png");
 		}
 		setIconImage(icon.getImage());
 		
@@ -629,7 +635,8 @@ public abstract class AutoAnalyser extends JFrame
 		JFileChooser dataFileChooser;
 		if (dataFile == null) {
 			dataFileChooser = new JFileChooser(
-					System.getProperty("user.dir") + "/" + pathToAutoAnalyserDir + "../data/");
+					pathToAutoAnalyserDir + "../data/");
+			System.out.println("Choosing data from: " + pathToAutoAnalyserDir + "../data/");
 		} else {
 			dataFileChooser = new JFileChooser(dataFile);
 		}
@@ -763,14 +770,11 @@ public abstract class AutoAnalyser extends JFrame
 		// Work out full path of the jar and code utilities:
 		String jarLocation, pythonDemosLocation, matlabDemosLocation;
 		try {
-			File jarLocationFile = new File(System.getProperty("user.dir") +
-					"/" + pathToAutoAnalyserDir + "../../infodynamics.jar");
+			File jarLocationFile = new File(jidtFolder + "infodynamics.jar");
 			jarLocation = jarLocationFile.getCanonicalPath();
-			File pythonDemosLocationFile = new File(System.getProperty("user.dir") +
-					"/" + pathToAutoAnalyserDir + "../python");
+			File pythonDemosLocationFile = new File(pathToAutoAnalyserDir + "../python");
 			pythonDemosLocation = pythonDemosLocationFile.getCanonicalPath();
-			File matlabDemosLocationFile = new File(System.getProperty("user.dir") +
-					"/" + pathToAutoAnalyserDir + "../octave");
+			File matlabDemosLocationFile = new File(pathToAutoAnalyserDir + "../octave");
 			matlabDemosLocation = matlabDemosLocationFile.getCanonicalPath();
 		} catch (IOException ioex) {
 			JOptionPane.showMessageDialog(this,
