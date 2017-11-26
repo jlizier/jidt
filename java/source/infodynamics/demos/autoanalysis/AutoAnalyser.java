@@ -1257,18 +1257,29 @@ public abstract class AutoAnalyser extends JFrame
 			matlabCodeTextArea.setCaretPosition(0); // Pull focus to the top
 			
 			// Now write the code to a file
-			// 1. Java
-			FileWriter codeFileWriter = new FileWriter(pathToAutoAnalyserDir + "../java/infodynamics/demos/autoanalysis/GeneratedCalculator.java");
-			codeFileWriter.write(javaCode.toString());
-			codeFileWriter.close();
-			// 2. Python
-			codeFileWriter = new FileWriter(pathToAutoAnalyserDir + "GeneratedCalculator.py");
-			codeFileWriter.write(pythonCode.toString());
-			codeFileWriter.close();
-			// 3. Matlab
-			codeFileWriter = new FileWriter(pathToAutoAnalyserDir + "GeneratedCalculator.m");
-			codeFileWriter.write(matlabCode.toString());
-			codeFileWriter.close();
+			String resultsSuffix = "";
+			try {
+				// 1. Java
+				FileWriter codeFileWriter = new FileWriter(pathToAutoAnalyserDir + "../java/infodynamics/demos/autoanalysis/GeneratedCalculator.java");
+				codeFileWriter.write(javaCode.toString());
+				codeFileWriter.close();
+				// 2. Python
+				codeFileWriter = new FileWriter(pathToAutoAnalyserDir + "GeneratedCalculator.py");
+				codeFileWriter.write(pythonCode.toString());
+				codeFileWriter.close();
+				// 3. Matlab
+				codeFileWriter = new FileWriter(pathToAutoAnalyserDir + "GeneratedCalculator.m");
+				codeFileWriter.write(matlabCode.toString());
+				codeFileWriter.close();
+			} catch (IOException ioe) {
+				// We were unable to write to the files -- most likely
+				//  reason is that the jar was moved from the distribution
+				//  and cannot find the folders to write to.
+				// We still want to perform the calculation though, so 
+				//  save an error message to display later and confinue.
+				ioe.printStackTrace(System.err);
+				resultsSuffix = " (Error writing generated code files though, see console)";
+			}
 			
 			if (computeResultCheckBox.isSelected()) {
 				// Now make our own calculations here:
@@ -1357,7 +1368,7 @@ public abstract class AutoAnalyser extends JFrame
 						resultsText = String.format(
 								resultsPrefixString + "%.4f %s" + resultsSuffixStringFormatted,
 								result, units);					
-						resultsLabel.setText(resultsText);
+						resultsLabel.setText(resultsText + resultsSuffix);
 					}
 					// Write the results to the console:
 					System.out.println(resultsText);
