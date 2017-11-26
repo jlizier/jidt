@@ -39,6 +39,13 @@ See other [PublicationsUsingThisToolkit](../../wiki/PublicationsUsingThisToolkit
 
 # News
 
+_26/11/2017_ - New jar and full distribution files available for **release v1.4**; Changes for v1.4 include:
+Major expansion of functionality for AutoAnalysers: adding Launcher applet and capability to double click jar to launch, added Entropy, CMI, CTE and AIS AutoAnalysers, also added binned estimator type, added all variables/pairs analysis, added statistical significance analysis, and ensured functionality of generated Python code with Python3;
+Added GPU (cuda) capability for KSG Mutual Information calculator (proper documentation and wiki page to come), including unit tests;
+Added fast neighbour search implementations for mixed discrete-continuous KSG MI estimators;
+Expanded Gaussian estimator for multi-information (integration);
+Made all demo/data files readable by Matlab.
+
 _17/12/2016_ - New book out from J. Lizier et al., ["An Introduction to Transfer Entropy: Information Flow in Complex Systems"](http://bit.ly/te-book-2016) published by Springer, which contains various examples using JIDT (distributed in our releases)
 
 _21/10/2016_ - New jar and full distribution files available for **release v1.3.1**; Changes for v1.3.1 include:

@@ -1,6 +1,7 @@
 Java Information Dynamics Toolkit (JIDT)
 Copyright (C) 2012-2014 Joseph T. Lizier
 Copyright (C) 2014-2016 Joseph T. Lizier and Ipek Özdemir
+Copyright (C) 2017-     Joseph T. Lizier, Ipek Özdemir and Pedro Mediano
 
 Version @VERSION@ (see release notes below)
 
@@ -77,7 +78,7 @@ You can also join our email discussion group jidt-discuss at http://groups.googl
 
 Several sets of demonstration code are distributed with the toolkit:
 
- a. demos/AutoAnalyser -- a GUI tool to compute transfer entropy on a chosen data set with the toolkit, and also automatically generate code in Java, Python and Matlab to show how to do this calculation with the toolkit. See description at https://github.com/jlizier/jidt/wiki/AutoAnalyser
+ a. demos/AutoAnalyser -- a GUI tool to compute the information-theoretic measures on a chosen data set with the toolkit, and also automatically generate code in Java, Python and Matlab to show how to do this calculation with the toolkit. See description at https://github.com/jlizier/jidt/wiki/AutoAnalyser
 
  b. demos/java -- basic examples on easily using the Java toolkit -- run these from the shell scripts in this directory -- see description at https://github.com/jlizier/jidt/wiki/SimpleJavaExamples
 
@@ -132,6 +133,16 @@ Notices for this software are found in the notices/JAMA directory.
 ===============
  Release notes
 ===============
+
+v1.4 26/11/2017
+---------------
+(after 620 commits recorded by github, repository as at https://github.com/jlizier/jidt/tree/10cc5f25bf4eaddd1cd19cdff7b435243fc217ae save for this file update)
+Major expansion of functionality for AutoAnalysers: adding Launcher applet and capability to double click jar to launch, added Entropy, CMI, CTE and AIS AutoAnalysers, also added binned estimator type, added all variables/pairs analysis, added statistical significance analysis, and ensured functionality of generated Python code with Python3;
+Added GPU (cuda) capability for KSG Mutual Information calculator (proper documentation and wiki page to come), including unit tests;
+Added fast neighbour search implementations for mixed discrete-continuous KSG MI estimators;
+Expanded Gaussian estimator for multi-information (integration);
+Made all demo/data files readable by Matlab.
+
 
 v1.3.1 21/10/2016
 -----------------
