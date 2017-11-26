@@ -864,7 +864,7 @@ public abstract class AutoAnalyser extends JFrame
 			
 			// Code to read in data:
 			String loadDataComment = "0. Load/prepare the data:\n";
-			String filenameAsEscapedString = dataFile.getAbsolutePath().replaceAll("\\", "\\\\");
+			String filenameAsEscapedString = dataFile.getAbsolutePath().replace("\\", "\\\\");
 			// 1. Java
 			javaCode.append("    // " + loadDataComment);
 			javaCode.append("    String dataFile = \"" + filenameAsEscapedString + "\";\n");
@@ -902,9 +902,9 @@ public abstract class AutoAnalyser extends JFrame
 			// 2. Python
 			pythonCode.append("# " + loadDataComment);
 			if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
-				pythonCode.append("dataRaw = readIntsFile.readIntsFile(\"" + filenameAsEscapedString + "\")\n");
+				pythonCode.append("dataRaw = readIntsFile.readIntsFile(\"" + dataFile.getAbsolutePath() + "\")\n");
 			} else {
-				pythonCode.append("dataRaw = readFloatsFile.readFloatsFile(\"" + filenameAsEscapedString + "\")\n");
+				pythonCode.append("dataRaw = readFloatsFile.readFloatsFile(\"" + dataFile.getAbsolutePath() + "\")\n");
 			}
 			pythonCode.append("# As numpy array:\n");
 			pythonCode.append("data = numpy.array(dataRaw)\n");
@@ -930,7 +930,7 @@ public abstract class AutoAnalyser extends JFrame
 			}
 			// 3. Matlab
 			matlabCode.append("% " + loadDataComment);
-			matlabCode.append("data = load('" + filenameAsEscapedString + "');\n");
+			matlabCode.append("data = load('" + dataFile.getAbsolutePath() + "');\n");
 			if (! allCombosCheckBox.isSelected()) {
 				matlabCode.append("% Column indices start from 1 in Matlab:\n");
 				if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
