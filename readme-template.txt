@@ -136,7 +136,7 @@ Notices for this software are found in the notices/JAMA directory.
 
 v1.4 26/11/2017
 ---------------
-(after 620 commits recorded by github, repository as at https://github.com/jlizier/jidt/tree/10cc5f25bf4eaddd1cd19cdff7b435243fc217ae save for this file update)
+(after 634 commits recorded by github, repository as at https://github.com/jlizier/jidt/tree/61f4bf32768402823f91544c5cdf8c7d7eb86a53 save for this file update)
 Major expansion of functionality for AutoAnalysers: adding Launcher applet and capability to double click jar to launch, added Entropy, CMI, CTE and AIS AutoAnalysers, also added binned estimator type, added all variables/pairs analysis, added statistical significance analysis, and ensured functionality of generated Python code with Python3;
 Added GPU (cuda) capability for KSG Mutual Information calculator (proper documentation and wiki page to come), including unit tests;
 Added fast neighbour search implementations for mixed discrete-continuous KSG MI estimators;
