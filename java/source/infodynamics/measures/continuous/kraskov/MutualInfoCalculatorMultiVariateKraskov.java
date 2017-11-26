@@ -324,6 +324,8 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
       return Double.toString(noiseLevel);
     } else if (propertyName.equalsIgnoreCase(PROP_NUM_THREADS)) {
       return Integer.toString(numThreads);
+    } else if (propertyName.equalsIgnoreCase(PROP_USE_GPU)) {
+        return Boolean.toString(useGPU);
     } else {
       // try the superclass:
       return super.getProperty(propertyName);
