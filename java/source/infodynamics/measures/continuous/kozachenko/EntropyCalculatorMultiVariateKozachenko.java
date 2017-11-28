@@ -19,6 +19,8 @@
 package infodynamics.measures.continuous.kozachenko;
 
 import java.util.Random;
+import java.util.Iterator;
+import java.util.Vector;
 
 import infodynamics.measures.continuous.EntropyCalculator;
 import infodynamics.measures.continuous.EntropyCalculatorMultiVariate;
@@ -88,6 +90,11 @@ public class EntropyCalculatorMultiVariateKozachenko
 	 *  observations yet
 	 */
 	private boolean isComputed;
+  /**
+	 * Storage for observations supplied via {@link #addObservations(double[][])}
+	 * type calls
+	 */
+	protected Vector<double[][]> vectorOfObservations;
 	/**
 	 * Whether to report debug messages or not
 	 */
@@ -138,7 +145,7 @@ public class EntropyCalculatorMultiVariateKozachenko
 		isComputed = false;
 		lastLocalEntropy = null;
 	}
-	
+
 	@Override
 	public void setProperty(String propertyName, String propertyValue)
 			throws Exception {
@@ -176,12 +183,31 @@ public class EntropyCalculatorMultiVariateKozachenko
 		}
 	}
 
-	@Override
-	public void setObservations(double[][] observations) {
-		rawData = observations;
-		totalObservations = observations.length;
+	public void startAddObservations() {
 		isComputed = false;
+    totalObservations = 0;
 		lastLocalEntropy = null;
+    rawData = null;
+		vectorOfObservations = new Vector<double[][]>();
+	}
+
+	public void finaliseAddObservations() {
+
+		rawData = new double[totalObservations][dimensions];
+		
+		// Construct the joint vectors from the given observations
+		//  (removing redundant data which is outside any timeDiff)
+		int startObservation = 0;
+		for (double[][] obs : vectorOfObservations) {
+			// Copy the data from these given observations into our master array
+			MatrixUtils.arrayCopy(obs, 0, 0,
+					rawData, startObservation, 0,
+					obs.length, dimensions);
+			startObservation += obs.length;
+		}
+
+		// We don't need to keep the vector of observation sets anymore:
+		vectorOfObservations = null;
 
     if (addNoise) {
       Random random = new Random();
@@ -194,6 +220,20 @@ public class EntropyCalculatorMultiVariateKozachenko
     }
 	}
 
+	@Override
+  public void setObservations(double[][] observations) {
+    startAddObservations();
+    addObservations(observations);
+    finaliseAddObservations();
+  }
+
+  public void setObservations(double[][] observations1, double[][] observations2)
+      throws Exception {
+    startAddObservations();
+    addObservations(observations1, observations2);
+    finaliseAddObservations();
+  }
+
 	/*
 	 * (non-Javadoc)
 	 * @see infodynamics.measures.continuous.EntropyCalculator#setObservations(double[])
@@ -202,9 +242,24 @@ public class EntropyCalculatorMultiVariateKozachenko
 	 *  EntropyCalculator interface.
 	 */
 	@Override
-	public void setObservations(double[] observations) {
+  public void setObservations(double[] observations) {
+    startAddObservations();
+    addObservations(observations);
+    finaliseAddObservations();
+  }
+
+  public void addObservations(double[][] observations) {
+		if (vectorOfObservations == null) {
+			// startAddObservations was not called first
+			throw new RuntimeException("User did not call startAddObservations before addObservations");
+		}
+    vectorOfObservations.add(observations);
+    totalObservations += observations.length;
+  }
+
+	public void addObservations(double[] observations) {
 		rawData = MatrixUtils.reshape(observations, observations.length, 1);
-		setObservations(rawData);
+		addObservations(rawData);
 	}
 	
 	/**
@@ -217,9 +272,9 @@ public class EntropyCalculatorMultiVariateKozachenko
 	 * @param data1 first few variables in the joint data
 	 * @param data2 the other variables in the joint data
 	 * @throws Exception When the length of the two arrays of observations do not match.
-	 * @see #setObservations(double[][])
+	 * @see #addObservations(double[][])
 	 */
-	public void setObservations(double[][] data1,
+	public void addObservations(double[][] data1,
 			double[][] data2) throws Exception {
 		int timeSteps = data1.length;
 		if ((data1 == null) || (data2 == null)) {
@@ -237,7 +292,7 @@ public class EntropyCalculatorMultiVariateKozachenko
 			System.arraycopy(data2[t], 0, data[t], data1Variables, data2Variables);
 		}
 		// Now defer to the normal setObservations method
-		setObservations(data);
+		addObservations(data);
 	}
 
 	/**
