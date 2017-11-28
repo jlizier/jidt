@@ -304,7 +304,7 @@ public class EntropyCalculatorMultiVariateKozachenko
 			return lastAverage;
 		}
 		double sdTermHere = sdTerm(totalObservations, dimensions);
-		double emConstHere = eulerMacheroniTerm(totalObservations);
+		double emConstHere = eulerMascheroniTerm(totalObservations);
 		double[] minDistance = EuclideanUtils.computeMinEuclideanDistances(rawData);
 		double entropy = 0.0;
 		if (debug) {
@@ -344,7 +344,7 @@ public class EntropyCalculatorMultiVariateKozachenko
 		}
 
 		double sdTermHere = sdTerm(totalObservations, dimensions);
-		double emConstHere = eulerMacheroniTerm(totalObservations);
+		double emConstHere = eulerMascheroniTerm(totalObservations);
 		double constantToAddIn = sdTermHere + emConstHere;
 		
 		double[] minDistance = EuclideanUtils.computeMinEuclideanDistances(rawData);
@@ -394,7 +394,7 @@ public class EntropyCalculatorMultiVariateKozachenko
 	 * 
 	 * @return
 	 */
-	public double eulerMacheroniTerm(int N) {
+	public double eulerMascheroniTerm(int N) {
 		// Using natural units
 		// return EULER_MASCHERONI_CONSTANT / Math.log(2);
 		try {
