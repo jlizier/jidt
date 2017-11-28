@@ -1375,7 +1375,7 @@ public abstract class AutoAnalyser extends JFrame
 					System.out.println(resultsText);
 				}
 	
-				if ((allCombosCheckBox.isSelected()) && 
+				if ((!allCombosCheckBox.isSelected()) && 
 						!(selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE) ||
 						 (selectedCalcType.equalsIgnoreCase(CALC_TYPE_BINNED)))) {
 					// Read the current property values back out (in case of 
