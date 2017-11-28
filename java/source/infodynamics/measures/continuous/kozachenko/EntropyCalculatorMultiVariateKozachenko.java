@@ -62,13 +62,36 @@ import infodynamics.utils.MatrixUtils;
 public class EntropyCalculatorMultiVariateKozachenko  
 	implements EntropyCalculator, EntropyCalculatorMultiVariate {
 
-	protected boolean debug = false;
-	private int totalObservations;
+	/**
+	 * Total number of observations supplied.
+	 */
+	private int totalObservations = 0;
+	/**
+	 * Number of dimensions of our multivariate data set
+	 */
 	private int dimensions = 1;
+	/**
+	 * The set of observations, retained in case the user wants to retrieve the local
+	 *  entropy values of these.
+	 */
 	protected double[][] rawData;
+	/**
+	 * Store the last computed average H
+	 */
 	private double lastAverage = 0.0;
+	/**
+	 * Store the last computed local H
+	 */
 	private double[] lastLocalEntropy;
+	/**
+	 * Track whether we've computed the average for the supplied
+	 *  observations yet
+	 */
 	private boolean isComputed;
+	/**
+	 * Whether to report debug messages or not
+	 */
+	protected boolean debug = false;
 
   /**
    * Property name for whether to normalise the incoming data to 
@@ -89,7 +112,9 @@ public class EntropyCalculatorMultiVariateKozachenko
    * Amount of random Gaussian noise to add to the incoming data
    */
   protected double noiseLevel = (double) 1e-8;
-	
+  /**
+   * Stored pre-computed value of the Euler-Mascheroni constant
+   */
 	public static final double EULER_MASCHERONI_CONSTANT = 0.5772156;
 	
 	/**
@@ -130,7 +155,7 @@ public class EntropyCalculatorMultiVariateKozachenko
         noiseLevel = Double.parseDouble(propertyValue);
       }
 		} else {
-			// No property was set
+			// No property was set, and no superclass to call.
 			propertySet = false;
 		}
 		if (debug && propertySet) {
@@ -146,7 +171,7 @@ public class EntropyCalculatorMultiVariateKozachenko
     } else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
       return Double.toString(noiseLevel);
 		} else {
-			// No property was set, and no superclass to call:
+			// No property was set, and no superclass to call.
 			return null;
 		}
 	}
