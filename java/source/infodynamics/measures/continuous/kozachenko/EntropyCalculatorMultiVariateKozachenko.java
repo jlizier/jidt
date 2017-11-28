@@ -18,6 +18,8 @@
 
 package infodynamics.measures.continuous.kozachenko;
 
+import java.util.Random;
+
 import infodynamics.measures.continuous.EntropyCalculator;
 import infodynamics.measures.continuous.EntropyCalculatorMultiVariate;
 import infodynamics.utils.EuclideanUtils;
@@ -67,6 +69,26 @@ public class EntropyCalculatorMultiVariateKozachenko
 	private double lastAverage = 0.0;
 	private double[] lastLocalEntropy;
 	private boolean isComputed;
+
+  /**
+   * Property name for whether to normalise the incoming data to 
+   * mean 0, standard deviation 1 (default true)
+   */
+  public static final String PROP_NORMALISE = "NORMALISE";
+  /**
+   * Property name for an amount of random Gaussian noise to be
+   *  added to the data (default is 1e-8, matching the MILCA toolkit).
+   */
+  public static final String PROP_ADD_NOISE = "NOISE_LEVEL_TO_ADD";
+
+  /**
+   * Whether to add an amount of random noise to the incoming data
+   */
+  protected boolean addNoise = true;
+  /**
+   * Amount of random Gaussian noise to add to the incoming data
+   */
+  protected double noiseLevel = (double) 1e-8;
 	
 	public static final double EULER_MASCHERONI_CONSTANT = 0.5772156;
 	
@@ -98,6 +120,15 @@ public class EntropyCalculatorMultiVariateKozachenko
 		boolean propertySet = true;
 		if (propertyName.equalsIgnoreCase(NUM_DIMENSIONS_PROP_NAME)) {
 			dimensions = Integer.parseInt(propertyValue);
+    } else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
+      if (propertyValue.equals("0") ||
+          propertyValue.equalsIgnoreCase("false")) {
+        addNoise = false;
+        noiseLevel = 0;
+      } else {
+        addNoise = true;
+        noiseLevel = Double.parseDouble(propertyValue);
+      }
 		} else {
 			// No property was set
 			propertySet = false;
@@ -112,6 +143,8 @@ public class EntropyCalculatorMultiVariateKozachenko
 	public String getProperty(String propertyName) throws Exception {
 		if (propertyName.equalsIgnoreCase(NUM_DIMENSIONS_PROP_NAME)) {
 			return Integer.toString(dimensions);
+    } else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
+      return Double.toString(noiseLevel);
 		} else {
 			// No property was set, and no superclass to call:
 			return null;
@@ -124,6 +157,16 @@ public class EntropyCalculatorMultiVariateKozachenko
 		totalObservations = observations.length;
 		isComputed = false;
 		lastLocalEntropy = null;
+
+    if (addNoise) {
+      Random random = new Random();
+      // Add Gaussian noise of std dev noiseLevel to the data
+      for (int r = 0; r < totalObservations; r++) {
+        for (int c = 0; c < dimensions; c++) {
+          rawData[r][c] += random.nextGaussian()*noiseLevel;
+        }
+      }
+    }
 	}
 
 	/*
