@@ -8,22 +8,6 @@
 #include "ctimer.h"
 
 
-/**
- * Make random permutation of perm[].
- *
- * @param perm preallocated and prefilled integer array to be shuffled
- * @param n number of elements in perm
- */
-void randperm(int perm[], int n) {
-  // Random permutation the order
-  for (int i = 0; i < n; i++) {
-   int j, t;
-   j = rand() % (n-i) + i;
-   t = perm[j]; perm[j] = perm[i]; perm[i] = t; // Swap i and j
-  }
-}
-
-
 jidt_error_t MIKraskov_C(int N, float *source, int dimx, float *dest, int dimy,
     int k, int thelier, int nb_surrogates, int returnLocals, int useMaxNorm,
     int isAlgorithm1, float *result) {

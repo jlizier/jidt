@@ -4,6 +4,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+typedef enum { JIDT_SUCCESS, JIDT_ERROR } jidt_error_t;
+
 int allocateDeviceMemory(int signalLength, int kth, int dimx, int dimy,
     float **source, float **dest, float **distances, int **indexes,
     float **radii, int **nx, int **ny, float **digammas, float *pointset);
@@ -53,6 +55,8 @@ int d_cudaSumDigammas(float *sumDigammas, int *d_nx, int *d_ny,
 void device_reset(void);
 
 void gpuWarmUp(void);
+
+void randperm(int perm[], int n);
 #ifdef __cplusplus
 }
 #endif

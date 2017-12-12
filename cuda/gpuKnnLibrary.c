@@ -594,6 +594,21 @@ void device_reset(void) {
 void gpuWarmUp(void) {
   cudaSetDevice(0);
 }
+
+/**
+ * Make random permutation of perm[].
+ *
+ * @param perm preallocated and prefilled integer array to be shuffled
+ * @param n number of elements in perm
+ */
+void randperm(int perm[], int n) {
+  // Random permutation the order
+  for (int i = 0; i < n; i++) {
+   int j, t;
+   j = rand() % (n-i) + i;
+   t = perm[j]; perm[j] = perm[i]; perm[i] = t; // Swap i and j
+  }
+}
 #ifdef __cplusplus
 }
 #endif
