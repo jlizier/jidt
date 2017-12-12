@@ -29,6 +29,8 @@ import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.NearestNeighbourSearcher;
 import infodynamics.utils.UnivariateNearestNeighbourSearcher;
+import infodynamics.utils.EmpiricalMeasurementDistribution;
+import infodynamics.utils.NativeUtils;
 
 /**
  * <p>Computes the differential conditional mutual information of two multivariate
@@ -132,6 +134,17 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	 *  that all available processors should be used. 
 	 */
 	public static final String USE_ALL_THREADS = "USE_ALL";
+  /**
+   * Property name for the flag to enable or disable the GPU module.
+   */
+  public static final String PROP_USE_GPU = "USE_GPU";
+  /**
+   * Property name for the path to JIDT GPU library.
+   *
+   * Path must be full and contain the library filename.
+   * Example: /home/johndoe/myfolder/libKraskov.so
+   */
+  public static final String PROP_GPU_LIBRARY_PATH = "GPU_LIBRARY_PATH";
 
 	/**
 	 * Whether to add an amount of random noise to the incoming data
@@ -159,6 +172,18 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	 *  this instance is implementing
 	 */
 	protected boolean isAlgorithm1 = false;
+  /**
+   * Whether to enable the GPU module
+   */
+  protected boolean useGPU = false;
+  /**
+   * Path to JIDT GPU library
+   */
+  protected String gpuLibraryPath = "";
+  /**
+   * Check whether C native code has been loaded
+   */
+  protected boolean cudaLibraryLoaded = false;
 
 	/**
 	 * protected k-d tree data structure (for fast nearest neighbour searches)
@@ -280,6 +305,10 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 			} else { // otherwise the user has passed in an integer:
 				numThreads = Integer.parseInt(propertyValue);
 			}
+    } else if (propertyName.equalsIgnoreCase(PROP_USE_GPU)) {
+      useGPU = Boolean.parseBoolean(propertyValue);
+    } else if (propertyName.equalsIgnoreCase(PROP_GPU_LIBRARY_PATH)) {
+      gpuLibraryPath = propertyValue;
 		} else {
 			// Assume this is a property for the common parent class
 			super.setProperty(propertyName, propertyValue);
@@ -298,6 +327,10 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 			return Double.toString(noiseLevel);
 		} else if (propertyName.equalsIgnoreCase(PROP_NUM_THREADS)) {
 			return Integer.toString(numThreads);
+    } else if (propertyName.equalsIgnoreCase(PROP_USE_GPU)) {
+        return Boolean.toString(useGPU);
+    } else if (propertyName.equalsIgnoreCase(PROP_GPU_LIBRARY_PATH)) {
+        return gpuLibraryPath;
 		} else {
 			// try the superclass:
 			return super.getProperty(propertyName);
@@ -477,108 +510,73 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 		
 		double[] returnValues = null;
 		
-		// We need to construct the k-d trees for use by the child
-		//  classes. We check each tree for existence separately
-		//  some can be used across original and surrogate data
-		// TODO can parallelise these -- best done within the kdTree --
-		//  though it's unclear if there's much point given that
-		//  the tree construction itself afterwards can't really be well parallelised.
-		if (kdTreeJoint == null) {
-			kdTreeJoint = new KdTree(
-					new int[] {dimensionsVar1, dimensionsVar2, dimensionsCond},
-					new double[][][] {var1Observations, var2Observations, condObservations});
-			kdTreeJoint.setNormType(normType);
-		}
-		if (dimensionsVar1 > 1) {
-			if (kdTreeVar1Conditional == null) {
-				kdTreeVar1Conditional = new KdTree(
-						new int[] {dimensionsVar1, dimensionsCond},
-						new double[][][] {var1Observations, condObservations});
-				kdTreeVar1Conditional.setNormType(normType);
-			} 
-		} else { // Univariate variable 1, so we'll search its space alone as this is faster
-			if (uniNNSearcherVar1 == null) {
-				uniNNSearcherVar1 = new UnivariateNearestNeighbourSearcher(var1Observations);
-			}
-		}
-		if (dimensionsVar2 > 1) {
-			if (kdTreeVar2Conditional == null) {
-				kdTreeVar2Conditional = new KdTree(
-						new int[] {dimensionsVar2, dimensionsCond},
-						new double[][][] {var2Observations, condObservations});
-				kdTreeVar2Conditional.setNormType(normType);
-			}
-		} else { // Univariate variable 2, so we'll search its space alone as this is faster
-			if (uniNNSearcherVar2 == null) {
-				uniNNSearcherVar2 = new UnivariateNearestNeighbourSearcher(var2Observations);
-			}
-		}
-		if ((nnSearcherConditional == null) && (dimensionsCond > 0)) {
-			nnSearcherConditional = NearestNeighbourSearcher.create(condObservations);
-			nnSearcherConditional.setNormType(normType);
-		}
+    // How many time points are we averaging over?
+    int numTimePointsToComputeFor = (newObservations == null) ?
+        N : newObservations[0].length;
+    
+    if (useGPU) {
+      returnValues = gpuComputeFromObservations(0, N, returnLocals);
+    } else if (numThreads == 1) {
+      // Single-threaded implementation:
+      ensureKdTreesConstructed();
 
-		// How many time points are we averaging over?
-		int numTimePointsToComputeFor = (newObservations == null) ?
-				N : newObservations[0].length;
-		
-		if (numThreads == 1) {
-			// Single-threaded implementation:
-			if (newObservations == null) {
-				returnValues = partialComputeFromObservations(0, numTimePointsToComputeFor, returnLocals);
-			} else {
-				returnValues = partialComputeFromNewObservations(0, numTimePointsToComputeFor,
-						newObservations[0], newObservations[1], newObservations[2], returnLocals);
-			}
-		} else {
-			// We're going multithreaded:
-			if (returnLocals) {
-				// We're computing local conditional MI
-				returnValues = new double[numTimePointsToComputeFor];
-			} else {
-				// We're computing average conditional MI
-				returnValues = new double[CondMiKraskovThreadRunner.RETURN_ARRAY_LENGTH];
-			}
-			
-			// Distribute the observations to the threads for the parallel processing
-			int lTimesteps = numTimePointsToComputeFor / numThreads; // each thread gets the same amount of data
-			int res = numTimePointsToComputeFor % numThreads; // the first thread gets the residual data
-			if (debug) {
-				System.out.printf("Computing Kraskov conditional MI with %d threads (%d timesteps each, plus %d residual)\n",
-						numThreads, lTimesteps, res);
-			}
-			Thread[] tCalculators = new Thread[numThreads];
-			CondMiKraskovThreadRunner[] runners = new CondMiKraskovThreadRunner[numThreads];
-			for (int t = 0; t < numThreads; t++) {
-				int startTime = (t == 0) ? 0 : lTimesteps * t + res;
-				int numTimesteps = (t == 0) ? lTimesteps + res : lTimesteps;
-				if (debug) {
-					System.out.println(t + ".Thread: from " + startTime +
-							" to " + (startTime + numTimesteps)); // Trace Message
-				}
-				runners[t] = new CondMiKraskovThreadRunner(this, startTime, numTimesteps, newObservations, returnLocals);
-				tCalculators[t] = new Thread(runners[t]);
-				tCalculators[t].start();
-			}
-			
-			// Here, we should wait for the termination of the all threads
-			//  and collect their results
-			for (int t = 0; t < numThreads; t++) {
-				if (tCalculators[t] != null) { // TODO Ipek: can you comment on why we're checking for null here?
-					tCalculators[t].join(); 
-				}
-				// Now we add in the data from this completed thread:
-				if (returnLocals) {
-					// We're computing local MI; copy these local values
-					//  into the full array of locals
-					System.arraycopy(runners[t].getReturnValues(), 0, 
-							returnValues, runners[t].myStartTimePoint, runners[t].numberOfTimePoints);
-				} else {
-					// We're computing the average MI, keep the running sums of digammas and counts
-					MatrixUtils.addInPlace(returnValues, runners[t].getReturnValues());
-				}
-			}
-		}
+      if (newObservations == null) {
+        returnValues = partialComputeFromObservations(0, numTimePointsToComputeFor, returnLocals);
+      } else {
+        returnValues = partialComputeFromNewObservations(0, numTimePointsToComputeFor,
+            newObservations[0], newObservations[1], newObservations[2], returnLocals);
+      }
+    } else {
+      // We're going multithreaded:
+      ensureKdTreesConstructed();
+
+      if (returnLocals) {
+        // We're computing local conditional MI
+        returnValues = new double[numTimePointsToComputeFor];
+      } else {
+        // We're computing average conditional MI
+        returnValues = new double[CondMiKraskovThreadRunner.RETURN_ARRAY_LENGTH];
+      }
+      
+      // Distribute the observations to the threads for the parallel processing
+      int lTimesteps = numTimePointsToComputeFor / numThreads; // each thread gets the same amount of data
+      int res = numTimePointsToComputeFor % numThreads; // the first thread gets the residual data
+      if (debug) {
+        System.out.printf("Computing Kraskov conditional MI with %d threads (%d timesteps each, plus %d residual)\n",
+            numThreads, lTimesteps, res);
+      }
+      Thread[] tCalculators = new Thread[numThreads];
+      CondMiKraskovThreadRunner[] runners = new CondMiKraskovThreadRunner[numThreads];
+      for (int t = 0; t < numThreads; t++) {
+        int startTime = (t == 0) ? 0 : lTimesteps * t + res;
+        int numTimesteps = (t == 0) ? lTimesteps + res : lTimesteps;
+        if (debug) {
+          System.out.println(t + ".Thread: from " + startTime +
+              " to " + (startTime + numTimesteps)); // Trace Message
+        }
+        runners[t] = new CondMiKraskovThreadRunner(this, startTime, numTimesteps, newObservations, returnLocals);
+        tCalculators[t] = new Thread(runners[t]);
+        tCalculators[t].start();
+      }
+      
+      // Here, we should wait for the termination of the all threads
+      //  and collect their results
+      for (int t = 0; t < numThreads; t++) {
+        if (tCalculators[t] != null) { // TODO Ipek: can you comment on why we're checking for null here?
+          tCalculators[t].join(); 
+        }
+        // Now we add in the data from this completed thread:
+        if (returnLocals) {
+          // We're computing local MI; copy these local values
+          //  into the full array of locals
+          System.arraycopy(runners[t].getReturnValues(), 0, 
+              returnValues, runners[t].myStartTimePoint, runners[t].numberOfTimePoints);
+        } else {
+          // We're computing the average MI, keep the running sums of digammas and counts
+          MatrixUtils.addInPlace(returnValues, runners[t].getReturnValues());
+        }
+      }
+    }
 		
 		// Finalise the results:
 		if (returnLocals) {
@@ -661,6 +659,193 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	 */
 	protected abstract double[] partialComputeFromObservations(
 			int startTimePoint, int numTimePoints, boolean returnLocals) throws Exception;
+
+  /**
+   * Protected method to be used internally for GPU implementations.
+   * This method serves the same purpose as partialComputeFromObservations,
+   *   but for GPU computation. Each algorithm must override this method
+   *   and implement a GPU routine to calculate all values in a single call
+   *   to the GPU code.
+   */
+  protected double[] gpuComputeFromObservations(int startTimePoint,
+      int numTimePoints, boolean returnLocals, int nb_surrogates,
+      int[][] newOrderings) throws Exception {
+
+    if (debug) {
+      System.out.println("Start GPU calculation");
+    }
+
+    ensureCudaLibraryLoaded();
+
+    boolean useMaxNorm;
+
+    if ( normType == EuclideanUtils.NORM_MAX_NORM) {
+      useMaxNorm = true;
+    } else if ( normType == EuclideanUtils.NORM_EUCLIDEAN || normType == EuclideanUtils.NORM_EUCLIDEAN_SQUARED) {
+      useMaxNorm = false;
+    } else {
+      throw new Exception("Only max and square norms are implemented. Abort.");
+    }
+
+    double[] res;
+
+    try {
+      if (debug) {
+        System.out.printf("Calling GPU calculation with returnLocals=%b and nb_surrogates=%d\n", returnLocals, nb_surrogates);
+      }
+      res = CMIKraskov(totalObservations, var1Observations, dimensionsVar1,
+          var2Observations, dimensionsVar2, condObservations, dimensionsCond,
+          k, dynCorrExclTime, returnLocals, useMaxNorm,
+          isAlgorithm1, nb_surrogates, null!=newOrderings, newOrderings);
+      if (debug) {
+        System.out.println("GPU calculation finished successfully. Returning results");
+      }
+    } catch (Throwable e) {
+      System.out.println("WARNING. Error in GPU code. Reverting back to CPU.");
+      e.printStackTrace();
+      res = partialComputeFromObservations(0, totalObservations, returnLocals);
+    }
+
+    return res;
+  }
+
+  /**
+   * FIXME
+   */
+  protected double[] gpuComputeFromObservations(int startTimePoint,
+      int numTimePoints, boolean returnLocals) throws Exception {
+    return gpuComputeFromObservations(startTimePoint, numTimePoints, returnLocals, 0, null);
+  }
+
+  /**
+   * FIXME
+   */
+  protected double[] gpuComputeFromObservations(int startTimePoint,
+      int numTimePoints, boolean returnLocals, int[][] newOrderings) throws Exception {
+    return gpuComputeFromObservations(startTimePoint, numTimePoints,
+        returnLocals, newOrderings.length, newOrderings);
+  }
+
+  /**
+   * Native method to calculate MI in GPU.
+   */
+  private native double[] CMIKraskov(
+      int N, double[][] source, int dimx, double[][] dest, int dimy,
+      double[][] cond, int dimz,
+      int k, int theiler, boolean returnLocals, boolean useMaxNorm,
+      boolean isAlgorithm1, int nb_surrogates, boolean orderingsGiven,
+      int[][] newOrderings);
+
+  /**
+   * Internal method to ensure that the Cuda native library has been correctly
+   * loaded.
+   *
+   * @throws Exception if library not found or unable to load
+   */
+  protected void ensureCudaLibraryLoaded() throws Exception {
+
+    if (!cudaLibraryLoaded) {
+
+      try {
+        if (gpuLibraryPath.length() < 1) {
+          NativeUtils.loadLibraryFromJar("/cuda/libKraskov.so");
+        } else {
+          System.load(gpuLibraryPath);
+        }
+      } catch (Throwable e) {
+        String errmsg = "GPU library not found. To compile GPU code set the enablegpu flag to true in build.xml";
+        if (gpuLibraryPath.length() > 0) {
+          errmsg += "\nGPU library was not found in the path provided. Provide full path including library file name.";
+          errmsg += "\nExample: /home/johndoe/myfolder/libKraskov.so";
+        }
+        throw new Exception(errmsg);
+      }
+
+      cudaLibraryLoaded = true;
+
+    }
+  }
+
+  /**
+   * Internal method to ensure that the Kd-tree data structures to represent the
+   * observational data have been constructed (should be called prior to attempting
+   * to use these data structures)
+   */
+  protected void ensureKdTreesConstructed() throws Exception {
+
+    // We need to construct the k-d trees for use by the child
+    //  classes. We check each tree for existence separately
+    //  some can be used across original and surrogate data
+    // TODO can parallelise these -- best done within the kdTree --
+    //  though it's unclear if there's much point given that
+    //  the tree construction itself afterwards can't really be well parallelised.
+    if (kdTreeJoint == null) {
+      kdTreeJoint = new KdTree(
+          new int[] {dimensionsVar1, dimensionsVar2, dimensionsCond},
+          new double[][][] {var1Observations, var2Observations, condObservations});
+      kdTreeJoint.setNormType(normType);
+    }
+    if (dimensionsVar1 > 1) {
+      if (kdTreeVar1Conditional == null) {
+        kdTreeVar1Conditional = new KdTree(
+            new int[] {dimensionsVar1, dimensionsCond},
+            new double[][][] {var1Observations, condObservations});
+        kdTreeVar1Conditional.setNormType(normType);
+      } 
+    } else { // Univariate variable 1, so we'll search its space alone as this is faster
+      if (uniNNSearcherVar1 == null) {
+        uniNNSearcherVar1 = new UnivariateNearestNeighbourSearcher(var1Observations);
+      }
+    }
+    if (dimensionsVar2 > 1) {
+      if (kdTreeVar2Conditional == null) {
+        kdTreeVar2Conditional = new KdTree(
+            new int[] {dimensionsVar2, dimensionsCond},
+            new double[][][] {var2Observations, condObservations});
+        kdTreeVar2Conditional.setNormType(normType);
+      }
+    } else { // Univariate variable 2, so we'll search its space alone as this is faster
+      if (uniNNSearcherVar2 == null) {
+        uniNNSearcherVar2 = new UnivariateNearestNeighbourSearcher(var2Observations);
+      }
+    }
+    if ((nnSearcherConditional == null) && (dimensionsCond > 0)) {
+      nnSearcherConditional = NearestNeighbourSearcher.create(condObservations);
+      nnSearcherConditional.setNormType(normType);
+    }
+  }
+
+  /**
+   * {@inheritDoc} 
+   */
+  @Override
+  public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck)
+      throws Exception {
+    if (useGPU) {
+      double[] res = gpuComputeFromObservations(0, totalObservations, false, numPermutationsToCheck, null);
+      return new EmpiricalMeasurementDistribution(
+          MatrixUtils.select(res, 1, res.length - 1), res[0]);
+    } else {
+      return super.computeSignificance(numPermutationsToCheck);
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings)
+      throws Exception {
+    if (useGPU) {
+      double[] res = gpuComputeFromObservations(0, totalObservations, false, newOrderings.length, newOrderings);
+      return new EmpiricalMeasurementDistribution(
+          MatrixUtils.select(res, 1, res.length - 1), res[0]);
+    } else {
+      return super.computeSignificance(newOrderings);
+    }
+  }
+  
+
 
 	/**
 	 * Protected method to be used internally for threaded implementations.
