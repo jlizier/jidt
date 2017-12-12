@@ -93,7 +93,7 @@ $(BIN)/libgpuKnnLibrary.a: $(BIN)/gpuKnnLibrary.o
 
 ## Compile host code
 #-------------------
-c_objects = $(addprefix $(BIN)/,digamma.o gpuMILibrary.o kraskovCuda.o)
+c_objects = $(addprefix $(BIN)/,digamma.o gpuMILibrary.o gpuCMILibrary.o kraskovCuda.o)
 
 $(BIN)/%.o:	%.c
 	${GCC} ${INCLUDES} ${CCFLAGS} -x c -std=c99 -fPIC -c $< -o $@
