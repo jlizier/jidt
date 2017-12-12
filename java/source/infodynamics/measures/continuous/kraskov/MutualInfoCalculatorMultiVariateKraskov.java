@@ -492,16 +492,18 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
     
     double[] returnValues = null;
     
-    ensureKdTreesConstructed();
-
     if (useGPU) {
       returnValues = gpuComputeFromObservations(0, N, returnLocals);
     } else if (numThreads == 1) {
       // Single-threaded implementation:
+      ensureKdTreesConstructed();
+
       returnValues = partialComputeFromObservations(0, N, returnLocals);
       
     } else {
       // We're going multithreaded:
+      ensureKdTreesConstructed();
+
       if (returnLocals) {
         // We're computing local MI
         returnValues = new double[N];
