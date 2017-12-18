@@ -727,7 +727,7 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
   }
 
   /**
-   * Native method to calculate MI in GPU.
+   * Native method to calculate CMI in GPU.
    */
   private native double[] CMIKraskov(
       int N, double[][] source, int dimx, double[][] dest, int dimy,
