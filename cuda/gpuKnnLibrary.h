@@ -56,6 +56,8 @@ int d_parallelDigammas(float *digammas, float *d_digammas, int *d_nx,
 int d_parallelDigammasCMI(float *digammas, float *d_digammas, int *d_nx,
     int *d_ny, int *d_nz, int signalLength);
 
+int cudaBlockReduce(float *sumDigammas, float *d_digammas, int trialLength, int nchunks);
+
 int d_cudaSumDigammas(float *sumDigammas, int *d_nx, int *d_ny,
     float *d_digammas, int trialLength, int nchunks);
 
