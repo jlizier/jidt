@@ -905,13 +905,10 @@ CASE("Test that sample and identity reordering have same MI")
   int **reorderings = &order_p;
   jidt_error_t err;
 
-  printf("====================================\n");
   err = MIKraskovWithReorderings(N, source, dimx, dest, dimy, k, thelier,
       1, returnLocals, useMaxNorm, isAlgorithm1, result, reorderingsGiven, reorderings);
 
   EXPECT(err == JIDT_SUCCESS);
-
-  printf("Test results: %f\t%f\n", result[0], result[1]);
   EXPECT(result[0] == approx(result[1]));
 
 },
@@ -937,13 +934,10 @@ CASE("Test that sample and identity reordering have same CMI")
   int **reorderings = &order_p;
   jidt_error_t err;
 
-  printf("====================================\n");
   err = CMIKraskovWithReorderings(N, source, dimx, dest, dimy, cond, dimz, k, thelier,
       1, returnLocals, useMaxNorm, isAlgorithm1, result, reorderingsGiven, reorderings);
 
   EXPECT(err == JIDT_SUCCESS);
-
-  printf("Test results: %f\t%f\n", result[0], result[1]);
   EXPECT(result[0] == approx(result[1]));
 
 },
@@ -982,7 +976,6 @@ CASE("Test identity reordering with more than one dimension")
   int **reorderings = &order_p;
   jidt_error_t err;
 
-  printf("====================================\n");
   err = MIKraskovWithReorderings(N, source, dimx, dest, dimy, k, thelier,
       0, returnLocals, useMaxNorm, isAlgorithm1, result1, reorderingsGiven, reorderings);
 
@@ -992,8 +985,6 @@ CASE("Test identity reordering with more than one dimension")
       1, returnLocals, useMaxNorm, isAlgorithm1, result2, reorderingsGiven, reorderings);
 
   EXPECT(err == JIDT_SUCCESS);
-
-  printf("Test results: %f\t%f\n", result2[0], result2[1]);
   EXPECT(result2[0] == approx(result2[1]));
 
 },
@@ -1023,15 +1014,12 @@ CASE("Test identity reordering with larger dataset")
   float result[2];
 
   jidt_error_t err;
-  printf("====================================\n");
   err = MIKraskovWithReorderings(N, source, dimx, dest, dimy, k, thelier,
       1, returnLocals, useMaxNorm, isAlgorithm1, result, reorderingsGiven, reorderings);
 
   free(source); free(dest); free(order);
 
   EXPECT(err == JIDT_SUCCESS);
-
-  printf("Test results: %f\t%f\n", result[0], result[1]);
   EXPECT(result[0] == approx(result[1]));
 
 },
@@ -1073,13 +1061,10 @@ CASE("Test non-identity reordering in 2D")
   float result[2];
 
   jidt_error_t err;
-  printf("====================================\n");
   err = MIKraskovWithReorderings(N, source, dimx, dest, dimy, k, thelier,
       1, returnLocals, useMaxNorm, isAlgorithm1, result, reorderingsGiven, reorderings);
 
   EXPECT(err == JIDT_SUCCESS);
-
-  printf("Test results: %f\t%f\n", result[0], result[1]);
   EXPECT(result[0] != approx(result[1]));
 
 },
@@ -1105,15 +1090,12 @@ CASE("Test random surrogates in 2D")
   float result[3];
 
   jidt_error_t err;
-  printf("====================================\n");
   err = MIKraskov_C(N, source, dimx, dest, dimy, k, thelier,
       2, returnLocals, useMaxNorm, isAlgorithm1, result);
 
   free(source); free(dest);
 
   EXPECT(err == JIDT_SUCCESS);
-
-  printf("Test results: %f\t%f\n", result[0], result[1]);
   EXPECT(result[0] != result[1]);
   EXPECT(result[0] != result[2]);
   EXPECT(result[1] != result[2]);
@@ -1152,19 +1134,17 @@ CASE("Test that the first result of calculation with surrogates is the same as w
   float result2[2];
 
   jidt_error_t err;
-  printf("====================================\n");
   err = MIKraskov_C(N, source, dimx, dest, dimy, k, thelier,
       0, returnLocals, useMaxNorm, isAlgorithm1, result1);
+
   EXPECT(err == JIDT_SUCCESS);
 
   float MI1 = cpuDigamma(k) + cpuDigamma(N) - result1[0]/((double) N);
 
-  printf("====================================\n");
   err = MIKraskov_C(N, source, dimx, dest, dimy, k, thelier,
       1, returnLocals, useMaxNorm, isAlgorithm1, result2);
-  EXPECT(err == JIDT_SUCCESS);
 
-  printf("No surrogates: %f, with 1 surrogate: %f, %f\n", MI1, result2[0], result2[1]);
+  EXPECT(err == JIDT_SUCCESS);
   EXPECT(MI1 == approx(result2[0]));
   EXPECT(result2[0] != result2[1]);
 },
@@ -1210,19 +1190,17 @@ CASE("Test that the first result of calculation with surrogates is the same as w
   float result2[2];
 
   jidt_error_t err;
-  printf("====================================\n");
   err = CMIKraskov_C(N, source, dimx, dest, dimy, cond, dimz, k, thelier,
       0, returnLocals, useMaxNorm, isAlgorithm1, result1);
+
   EXPECT(err == JIDT_SUCCESS);
 
   float CMI1 = cpuDigamma(k) + result1[0]/((double) N);
 
-  printf("====================================\n");
   err = CMIKraskov_C(N, source, dimx, dest, dimy, cond, dimz, k, thelier,
       1, returnLocals, useMaxNorm, isAlgorithm1, result2);
-  EXPECT(err == JIDT_SUCCESS);
 
-  printf("No surrogates: %f, with 1 surrogate: %f, %f\n", CMI1, result2[0], result2[1]);
+  EXPECT(err == JIDT_SUCCESS);
   EXPECT(CMI1 == approx(result2[0]));
   EXPECT(result2[0] != result2[1]);
 },
