@@ -18,6 +18,10 @@
 
 package infodynamics.measures.continuous.kozachenko;
 
+import java.util.Random;
+import java.util.Iterator;
+import java.util.Vector;
+
 import infodynamics.measures.continuous.EntropyCalculator;
 import infodynamics.measures.continuous.EntropyCalculatorMultiVariate;
 import infodynamics.utils.EuclideanUtils;
@@ -60,14 +64,64 @@ import infodynamics.utils.MatrixUtils;
 public class EntropyCalculatorMultiVariateKozachenko  
 	implements EntropyCalculator, EntropyCalculatorMultiVariate {
 
-	protected boolean debug = false;
-	private int totalObservations;
+	/**
+	 * Total number of observations supplied.
+	 */
+	private int totalObservations = 0;
+	/**
+	 * Number of dimensions of our multivariate data set
+	 */
 	private int dimensions = 1;
+	/**
+	 * The set of observations, retained in case the user wants to retrieve the local
+	 *  entropy values of these.
+	 */
 	protected double[][] rawData;
+	/**
+	 * Store the last computed average H
+	 */
 	private double lastAverage = 0.0;
+	/**
+	 * Store the last computed local H
+	 */
 	private double[] lastLocalEntropy;
+	/**
+	 * Track whether we've computed the average for the supplied
+	 *  observations yet
+	 */
 	private boolean isComputed;
-	
+  /**
+	 * Storage for observations supplied via {@link #addObservations(double[][])}
+	 * type calls
+	 */
+	protected Vector<double[][]> vectorOfObservations;
+	/**
+	 * Whether to report debug messages or not
+	 */
+	protected boolean debug = false;
+
+  /**
+   * Property name for whether to normalise the incoming data to 
+   * mean 0, standard deviation 1 (default true)
+   */
+  public static final String PROP_NORMALISE = "NORMALISE";
+  /**
+   * Property name for an amount of random Gaussian noise to be
+   *  added to the data (default is 1e-8, matching the MILCA toolkit).
+   */
+  public static final String PROP_ADD_NOISE = "NOISE_LEVEL_TO_ADD";
+
+  /**
+   * Whether to add an amount of random noise to the incoming data
+   */
+  protected boolean addNoise = true;
+  /**
+   * Amount of random Gaussian noise to add to the incoming data
+   */
+  protected double noiseLevel = (double) 1e-8;
+  /**
+   * Stored pre-computed value of the Euler-Mascheroni constant
+   */
 	public static final double EULER_MASCHERONI_CONSTANT = 0.5772156;
 	
 	/**
@@ -91,15 +145,24 @@ public class EntropyCalculatorMultiVariateKozachenko
 		isComputed = false;
 		lastLocalEntropy = null;
 	}
-	
+
 	@Override
 	public void setProperty(String propertyName, String propertyValue)
 			throws Exception {
 		boolean propertySet = true;
 		if (propertyName.equalsIgnoreCase(NUM_DIMENSIONS_PROP_NAME)) {
 			dimensions = Integer.parseInt(propertyValue);
+    } else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
+      if (propertyValue.equals("0") ||
+          propertyValue.equalsIgnoreCase("false")) {
+        addNoise = false;
+        noiseLevel = 0;
+      } else {
+        addNoise = true;
+        noiseLevel = Double.parseDouble(propertyValue);
+      }
 		} else {
-			// No property was set
+			// No property was set, and no superclass to call.
 			propertySet = false;
 		}
 		if (debug && propertySet) {
@@ -112,19 +175,64 @@ public class EntropyCalculatorMultiVariateKozachenko
 	public String getProperty(String propertyName) throws Exception {
 		if (propertyName.equalsIgnoreCase(NUM_DIMENSIONS_PROP_NAME)) {
 			return Integer.toString(dimensions);
+    } else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
+      return Double.toString(noiseLevel);
 		} else {
-			// No property was set, and no superclass to call:
+			// No property was set, and no superclass to call.
 			return null;
 		}
 	}
 
-	@Override
-	public void setObservations(double[][] observations) {
-		rawData = observations;
-		totalObservations = observations.length;
+	public void startAddObservations() {
 		isComputed = false;
+    totalObservations = 0;
 		lastLocalEntropy = null;
+    rawData = null;
+		vectorOfObservations = new Vector<double[][]>();
 	}
+
+	public void finaliseAddObservations() {
+
+		rawData = new double[totalObservations][dimensions];
+		
+		// Construct the joint vectors from the given observations
+		//  (removing redundant data which is outside any timeDiff)
+		int startObservation = 0;
+		for (double[][] obs : vectorOfObservations) {
+			// Copy the data from these given observations into our master array
+			MatrixUtils.arrayCopy(obs, 0, 0,
+					rawData, startObservation, 0,
+					obs.length, dimensions);
+			startObservation += obs.length;
+		}
+
+		// We don't need to keep the vector of observation sets anymore:
+		vectorOfObservations = null;
+
+    if (addNoise) {
+      Random random = new Random();
+      // Add Gaussian noise of std dev noiseLevel to the data
+      for (int r = 0; r < totalObservations; r++) {
+        for (int c = 0; c < dimensions; c++) {
+          rawData[r][c] += random.nextGaussian()*noiseLevel;
+        }
+      }
+    }
+	}
+
+	@Override
+  public void setObservations(double[][] observations) {
+    startAddObservations();
+    addObservations(observations);
+    finaliseAddObservations();
+  }
+
+  public void setObservations(double[][] observations1, double[][] observations2)
+      throws Exception {
+    startAddObservations();
+    addObservations(observations1, observations2);
+    finaliseAddObservations();
+  }
 
 	/*
 	 * (non-Javadoc)
@@ -134,9 +242,24 @@ public class EntropyCalculatorMultiVariateKozachenko
 	 *  EntropyCalculator interface.
 	 */
 	@Override
-	public void setObservations(double[] observations) {
+  public void setObservations(double[] observations) {
+    startAddObservations();
+    addObservations(observations);
+    finaliseAddObservations();
+  }
+
+  public void addObservations(double[][] observations) {
+		if (vectorOfObservations == null) {
+			// startAddObservations was not called first
+			throw new RuntimeException("User did not call startAddObservations before addObservations");
+		}
+    vectorOfObservations.add(observations);
+    totalObservations += observations.length;
+  }
+
+	public void addObservations(double[] observations) {
 		rawData = MatrixUtils.reshape(observations, observations.length, 1);
-		setObservations(rawData);
+		addObservations(rawData);
 	}
 	
 	/**
@@ -149,9 +272,9 @@ public class EntropyCalculatorMultiVariateKozachenko
 	 * @param data1 first few variables in the joint data
 	 * @param data2 the other variables in the joint data
 	 * @throws Exception When the length of the two arrays of observations do not match.
-	 * @see #setObservations(double[][])
+	 * @see #addObservations(double[][])
 	 */
-	public void setObservations(double[][] data1,
+	public void addObservations(double[][] data1,
 			double[][] data2) throws Exception {
 		int timeSteps = data1.length;
 		if ((data1 == null) || (data2 == null)) {
@@ -169,7 +292,7 @@ public class EntropyCalculatorMultiVariateKozachenko
 			System.arraycopy(data2[t], 0, data[t], data1Variables, data2Variables);
 		}
 		// Now defer to the normal setObservations method
-		setObservations(data);
+		addObservations(data);
 	}
 
 	/**
@@ -181,7 +304,7 @@ public class EntropyCalculatorMultiVariateKozachenko
 			return lastAverage;
 		}
 		double sdTermHere = sdTerm(totalObservations, dimensions);
-		double emConstHere = eulerMacheroniTerm(totalObservations);
+		double emConstHere = eulerMascheroniTerm(totalObservations);
 		double[] minDistance = EuclideanUtils.computeMinEuclideanDistances(rawData);
 		double entropy = 0.0;
 		if (debug) {
@@ -221,7 +344,7 @@ public class EntropyCalculatorMultiVariateKozachenko
 		}
 
 		double sdTermHere = sdTerm(totalObservations, dimensions);
-		double emConstHere = eulerMacheroniTerm(totalObservations);
+		double emConstHere = eulerMascheroniTerm(totalObservations);
 		double constantToAddIn = sdTermHere + emConstHere;
 		
 		double[] minDistance = EuclideanUtils.computeMinEuclideanDistances(rawData);
@@ -271,7 +394,7 @@ public class EntropyCalculatorMultiVariateKozachenko
 	 * 
 	 * @return
 	 */
-	public double eulerMacheroniTerm(int N) {
+	public double eulerMascheroniTerm(int N) {
 		// Using natural units
 		// return EULER_MASCHERONI_CONSTANT / Math.log(2);
 		try {
