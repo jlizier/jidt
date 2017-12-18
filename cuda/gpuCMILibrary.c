@@ -27,12 +27,13 @@ jidt_error_t CMIKraskovWithReorderings(int N, float *source, int dimx,
 
   // Allocate more space if surrogates are requested
   int nchunks = nb_surrogates + 1;
-  int dims = dimx + dimy;
+  int dims = dimx + dimy + dimz;
   float *pointset = (float *) malloc(N * dims * nchunks * sizeof(float));
 
   if (nb_surrogates == 0) {
-    memcpy(                 pointset, source, N*dimx*sizeof(float));
-    memcpy(pointset + nchunks*N*dimx,   dest, N*dimy*sizeof(float));
+    memcpy(                pointset, source, N*dimx*sizeof(float));
+    memcpy(       pointset + N*dimx,   cond, N*dimz*sizeof(float));
+    memcpy(pointset + N*(dimx+dimz),   dest, N*dimy*sizeof(float));
   }
 
   if (nb_surrogates > 0) {
@@ -42,8 +43,12 @@ jidt_error_t CMIKraskovWithReorderings(int N, float *source, int dimx,
          pointset[j*N*nchunks+i] = source[N*j+i];
        }
 
+       for (int j = 0; j < dimz; j++) {
+         pointset[nchunks*N*dimx + j*N*nchunks + i] = cond[N*j+i];
+       }
+
        for (int j = 0; j < dimy; j++) {
-         pointset[nchunks*N*dimx + j*N*nchunks + i] = dest[N*j+i];
+         pointset[nchunks*N*(dimx+dimz) + j*N*nchunks + i] = dest[N*j+i];
        }
      }
 
@@ -69,8 +74,12 @@ jidt_error_t CMIKraskovWithReorderings(int N, float *source, int dimx,
           pointset[(s+1)*N + N*j*nchunks + i] = source[N*j + order[i]];
         }
 
+        for (int j = 0; j < dimz; j++) {
+          pointset[nchunks*N*dimx + (s+1)*N + N*j*nchunks + i] = cond[N*j + i];
+        }
+
         for (int j = 0; j < dimy; j++) {
-          pointset[nchunks*N*dimx + (s+1)*N + N*j*nchunks + i] = dest[N*j + i];
+          pointset[nchunks*N*(dimx+dimz) + (s+1)*N + N*j*nchunks + i] = dest[N*j + i];
         }
       }
     }
@@ -97,7 +106,7 @@ jidt_error_t CMIKraskovByPointsetChunks(int signalLength, float *source, int dim
   int trialLength = signalLength/((float) nchunks);
 
   float *d_source, *d_dest, *d_cond, *d_distances, *d_radii, *d_digammas;
-  int *d_nx, *d_ny, *d_indexes;
+  int *d_nx, *d_ny, *d_nz, *d_indexes;
 
   {
   CPerfTimer pt = startTimer("GPU_warmup");
@@ -107,10 +116,10 @@ jidt_error_t CMIKraskovByPointsetChunks(int signalLength, float *source, int dim
 
   // 1. Allocate space in GPU and transfer memory
   // ======================
-  allocateDeviceMemory(signalLength, k, dimx, dimy, &d_source, &d_dest, &d_distances,
-      &d_indexes, &d_radii, &d_nx, &d_ny, &d_digammas, pointset);
+  allocateDeviceMemoryCMI(signalLength, k, dimx, dimy, dimz, &d_source, &d_dest, &d_cond,
+      &d_distances, &d_indexes, &d_radii, &d_nx, &d_ny, &d_nz, &d_digammas, pointset);
 
-  // 2. Find nearest neighbours
+  // 2. Find nearest neighbours in joint space
   // ======================
   {
   CPerfTimer pt = startTimer("kNN_full");
@@ -119,12 +128,13 @@ jidt_error_t CMIKraskovByPointsetChunks(int signalLength, float *source, int dim
   stopTimer(pt);
   }
 
-  // 4. Count points strictly within R in the X-space
+  // 4. Count points strictly within R in the XZ-, YZ- and Z-spaces
   // ======================
   {
   CPerfTimer pt = startTimer("RS_full");
-  d_cudaFindRSAll(d_nx, d_source, d_source, d_radii, thelier, nchunks, dimx, signalLength, useMaxNorm);
-  d_cudaFindRSAll(d_ny, d_dest, d_dest, d_radii, thelier, nchunks, dimy, signalLength, useMaxNorm);
+  d_cudaFindRSAll(d_nx, d_source, d_source, d_radii, thelier, nchunks, dimx + dimz, signalLength, useMaxNorm);
+  d_cudaFindRSAll(d_ny, d_cond, d_cond, d_radii, thelier, nchunks, dimy + dimz, signalLength, useMaxNorm);
+  d_cudaFindRSAll(d_nz, d_cond, d_cond, d_radii, thelier, nchunks, dimz, signalLength, useMaxNorm);
   stopTimer(pt);
   }
 
@@ -134,28 +144,31 @@ jidt_error_t CMIKraskovByPointsetChunks(int signalLength, float *source, int dim
   CPerfTimer pt = startTimer("Digammas_full");
   if (returnLocals) {
     float digammaK = cpuDigamma(k);
-    float digammaN = cpuDigamma(trialLength);
     float digammas[trialLength];
-    d_parallelDigammas(digammas, d_digammas, d_nx, d_ny, signalLength);
+    d_parallelDigammasCMI(digammas, d_digammas, d_nx, d_ny, d_nz, signalLength);
     for (int i = 0; i < trialLength; i++) {
-      result[i] = digammaK + digammaN - digammas[i];
+      result[i] = digammaK - digammas[i];
     }
 
   } else {
 
     float digammaK = cpuDigamma(k);
-    float digammaN = cpuDigamma(trialLength);
     float sumDigammas[nchunks];
-    d_cudaSumDigammas(sumDigammas, d_nx, d_ny, d_digammas, trialLength, nchunks);
+    d_cudaSumDigammasCMI(sumDigammas, d_nx, d_ny, d_nz, d_digammas, trialLength, nchunks);
 
     if (nchunks > 1) {
       for (int ii = 0; ii < nchunks; ii++) {
-        result[ii] = digammaK + digammaN - sumDigammas[ii]/((float) trialLength);
+        result[ii] = digammaK - sumDigammas[ii]/((float) trialLength);
       }
     } else {
-      result[0] = sumDigammas[0];
+      // Sign changed to comply with the returnValues processing in the Java
+      // KSG CMI calc, which is different from the one in the MI calc.
+      result[0] = -1 * sumDigammas[0];
       result[1] = -1;
       result[2] = -1;
+      result[3] = -1;
+      result[4] = -1;
+      result[5] = -1;
     }
 
   }
