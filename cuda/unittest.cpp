@@ -5,6 +5,7 @@
 
 #include "gpuKnnLibrary.h"
 #include "gpuMILibrary.h"
+#include "gpuCMILibrary.h"
 #include "digamma.h"
 
 using lest::approx;
@@ -606,6 +607,46 @@ CASE("Test correct pointset arrangement without reorderings")
   EXPECT(result1[2] == approx(result2[2]));
 },
 
+CASE("Test correct pointset arrangement without reorderings in CMI")
+{
+  int N = 10;
+  int dimx = 1;
+  int dimy = 1;
+  int dimz = 1;
+  int k = 2;
+  int thelier = 0;
+  int returnLocals = 0;
+  int useMaxNorm = 1;
+  int isAlgorithm1 = 1;
+
+  float source[10] = {0.4, 1, -4,  1,   1, 0.2,  98,  12, 1.2, 1.3};
+  float dest[10]   = { -3, 1,  3, -2, 2.1, 8.5, 4.2, 100,  12,   0};
+  float cond[10]   = { -1, 4,  3, -8, 0.3, 2.1, 3.2, 111,  32,   7};
+
+  float pointset[30] = {0.4, 1, -4,  1,   1, 0.2,  98,  12, 1.2, 1.3,
+                         -1, 4,  3, -8, 0.3, 2.1, 3.2, 111,  32,   7,
+                         -3, 1,  3, -2, 2.1, 8.5, 4.2, 100,  12,   0};
+
+  float result1[6];
+  float result2[6];
+  jidt_error_t err;
+
+  err = CMIKraskov_C(N, source, dimx, dest, dimy, cond, dimz, k, thelier,
+      0, returnLocals, useMaxNorm, isAlgorithm1, result1);
+  EXPECT(err == JIDT_SUCCESS);
+
+  err = CMIKraskovByPointsetChunks(N, source, dimx, dest, dimy, cond, dimz, k, thelier,
+      1, returnLocals, useMaxNorm, isAlgorithm1, result2, pointset);
+  EXPECT(err == JIDT_SUCCESS);
+
+  EXPECT(result1[0] == approx(result2[0]));
+  EXPECT(result1[1] == approx(result2[1]));
+  EXPECT(result1[2] == approx(result2[2]));
+  EXPECT(result1[3] == approx(result2[3]));
+  EXPECT(result1[4] == approx(result2[4]));
+  EXPECT(result1[5] == approx(result2[5]));
+},
+
 CASE("Test correct pointset arrangement in more than one dimension")
 {
   int N = 5;
@@ -654,6 +695,67 @@ CASE("Test correct pointset arrangement in more than one dimension")
   EXPECT(result1[2] == approx(result2[2]));
 },
 
+CASE("Test correct pointset arrangement in more than one dimension for CMI")
+{
+  int N = 5;
+  int dimx = 2;
+  int dimy = 2;
+  int dimz = 2;
+  int k = 2;
+  int thelier = 0;
+  int returnLocals = 0;
+  int useMaxNorm = 1;
+  int isAlgorithm1 = 1;
+
+  // Source points:  X      Y
+  //               0.4    0.2
+  //                 1     98
+  //                -4     12
+  //                 1    1.2
+  //                 1    1.3
+  //
+  // Dest points:    X      Y
+  //                -3    8.5
+  //                 1    4.2
+  //                 3    100
+  //                -2     12
+  //               2.1      0
+  //
+  // Cond points:    X      Y
+  //                -1    2.1
+  //                 4    3.2
+  //                 3    111
+  //                -8     32
+  //               0.3      7
+
+  float source[10] = {0.4, 1, -4,  1,   1, 0.2,  98,  12, 1.2, 1.3};
+  float dest[10]   = { -3, 1,  3, -2, 2.1, 8.5, 4.2, 100,  12,   0};
+  float cond[10]   = { -1, 4,  3, -8, 0.3, 2.1, 3.2, 111,  32,   7};
+
+  float pointset[30] = {0.4, 1, -4,  1,   1, 0.2,  98,  12, 1.2, 1.3,
+                         -1, 4,  3, -8, 0.3, 2.1, 3.2, 111,  32,   7,
+                         -3, 1,  3, -2, 2.1, 8.5, 4.2, 100,  12,   0};
+
+  float result1[6];
+  float result2[6];
+  jidt_error_t err;
+
+  err = CMIKraskov_C(N, source, dimx, dest, dimy, cond, dimz, k, thelier,
+      0, returnLocals, useMaxNorm, isAlgorithm1, result1);
+  EXPECT(err == JIDT_SUCCESS);
+
+  err = CMIKraskovByPointsetChunks(N, source, dimx, dest, dimy, cond, dimz, k, thelier,
+      1, returnLocals, useMaxNorm, isAlgorithm1, result2, pointset);
+  EXPECT(err == JIDT_SUCCESS);
+
+  EXPECT(result1[0] == approx(result2[0]));
+  EXPECT(result1[1] == approx(result2[1]));
+  EXPECT(result1[2] == approx(result2[2]));
+  EXPECT(result1[3] == approx(result2[3]));
+  EXPECT(result1[4] == approx(result2[4]));
+  EXPECT(result1[5] == approx(result2[5]));
+},
+
 CASE("Test that same sample in repeated chunks gives same result")
 {
   int N = 5;
@@ -687,6 +789,46 @@ CASE("Test that same sample in repeated chunks gives same result")
 
   EXPECT(err == JIDT_SUCCESS);
   EXPECT(result2[0] == approx(MI1));
+  EXPECT(result2[0] == approx(result2[1]));
+
+},
+
+CASE("Test that same sample in repeated chunks gives same result in CMI")
+{
+  int N = 5;
+  int dimx = 1;
+  int dimy = 1;
+  int dimz = 1;
+
+  // Sample source and dest data
+  float source[5] = {0.4, 1, -4,  1,   1};
+  float dest[5]   = { -3, 1,  3, -2, 2.1};
+  float cond[5]   = { -1, 4,  3, -8, 0.3};
+
+  // Pointset with source and dest repeated twice
+  float double_pointset[30] = {0.4, 1, -4,  1,   1, 0.4, 1, -4,  1,   1,
+                                -1, 4,  3, -8, 0.3,  -1, 4,  3, -8, 0.3,
+                                -3, 1,  3, -2, 2.1,  -3, 1,  3, -2, 2.1};
+
+  int k = 2;
+  int thelier = 0;
+  int returnLocals = 0;
+  int useMaxNorm = 1;
+  int isAlgorithm1 = 1;
+  float result1[3];
+  float result2[2];
+  jidt_error_t err;
+
+  err = CMIKraskov_C(N, source, dimx, dest, dimy, cond, dimz, k, thelier,
+      0, returnLocals, useMaxNorm, isAlgorithm1, result1);
+
+  err = CMIKraskovByPointsetChunks(N*2, source, dimx, dest, dimy, cond, dimz, k, thelier,
+      2, returnLocals, useMaxNorm, isAlgorithm1, result2, double_pointset);
+
+  float CMI1 = cpuDigamma(k) + result1[0]/((double) N);
+
+  EXPECT(err == JIDT_SUCCESS);
+  EXPECT(result2[0] == approx(CMI1));
   EXPECT(result2[0] == approx(result2[1]));
 
 },
@@ -765,6 +907,38 @@ CASE("Test that sample and identity reordering have same MI")
 
   printf("====================================\n");
   err = MIKraskovWithReorderings(N, source, dimx, dest, dimy, k, thelier,
+      1, returnLocals, useMaxNorm, isAlgorithm1, result, reorderingsGiven, reorderings);
+
+  EXPECT(err == JIDT_SUCCESS);
+
+  printf("Test results: %f\t%f\n", result[0], result[1]);
+  EXPECT(result[0] == approx(result[1]));
+
+},
+
+CASE("Test that sample and identity reordering have same CMI")
+{
+  int N = 5;
+  int dimx = 1;
+  int dimy = 1;
+  int dimz = 1;
+  float source[5] = {0.4, 1, -4,  1,   1};
+  float dest[5]   = { -3, 1,  3, -2, 2.1};
+  float cond[5]   = { -1, 4,  3, -8, 0.3};
+  int k = 2;
+  int thelier = 0;
+  int returnLocals = 0;
+  int useMaxNorm = 1;
+  int isAlgorithm1 = 1;
+  float result[2];
+  int reorderingsGiven = 1;
+  int order[5] = {0, 1, 2, 3, 4};
+  int *order_p = order;
+  int **reorderings = &order_p;
+  jidt_error_t err;
+
+  printf("====================================\n");
+  err = CMIKraskovWithReorderings(N, source, dimx, dest, dimy, cond, dimz, k, thelier,
       1, returnLocals, useMaxNorm, isAlgorithm1, result, reorderingsGiven, reorderings);
 
   EXPECT(err == JIDT_SUCCESS);
@@ -992,6 +1166,64 @@ CASE("Test that the first result of calculation with surrogates is the same as w
 
   printf("No surrogates: %f, with 1 surrogate: %f, %f\n", MI1, result2[0], result2[1]);
   EXPECT(MI1 == approx(result2[0]));
+  EXPECT(result2[0] != result2[1]);
+},
+
+CASE("Test that the first result of calculation with surrogates is the same as without in CMI")
+{
+  int thelier = 0;
+  int useMaxNorm = 1;
+  int N = 10;
+  int dimx = 1;
+  int dimy = 1;
+  int dimz = 1;
+  int k = 2;
+  int isAlgorithm1 = 1;
+  int returnLocals = 0;
+
+  // Source points:  X      Y    Z
+  //               0.4    0.2    0
+  //                 1     98   13
+  //                -4     12    7
+  //                 1    1.2   -1
+  //                 1    1.3    0
+  //
+  // Dest points:    X      Y
+  //                -3    8.5
+  //                 1    4.2
+  //                 3    100
+  //                -2     13
+  //                2.1     0
+  //
+  // Cond points:    X      Y
+  //                -1    2.1
+  //                 4    3.2
+  //                 3    111
+  //                -8     32
+  //               0.3      7
+
+  float source[15] = {0.4, 1, -4,  1,   1, 0.2,  98,  12, 1.2, 1.3, 0, 13, 7, -1, 0};
+  float dest[10]   = { -3, 1,  3, -2, 2.1, 8.5, 4.2, 100,  13,   0};
+  float cond[10]   = { -1, 4,  3, -8, 0.3, 2.1, 3.2, 111,  32,   7};
+
+  float result1[6];
+  float result2[2];
+
+  jidt_error_t err;
+  printf("====================================\n");
+  err = CMIKraskov_C(N, source, dimx, dest, dimy, cond, dimz, k, thelier,
+      0, returnLocals, useMaxNorm, isAlgorithm1, result1);
+  EXPECT(err == JIDT_SUCCESS);
+
+  float CMI1 = cpuDigamma(k) + result1[0]/((double) N);
+
+  printf("====================================\n");
+  err = CMIKraskov_C(N, source, dimx, dest, dimy, cond, dimz, k, thelier,
+      1, returnLocals, useMaxNorm, isAlgorithm1, result2);
+  EXPECT(err == JIDT_SUCCESS);
+
+  printf("No surrogates: %f, with 1 surrogate: %f, %f\n", CMI1, result2[0], result2[1]);
+  EXPECT(CMI1 == approx(result2[0]));
   EXPECT(result2[0] != result2[1]);
 },
 
