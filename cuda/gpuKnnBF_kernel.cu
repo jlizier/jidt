@@ -469,6 +469,26 @@ __global__ void gpuDigammas(float *g_digammas, int *g_nx, int *g_ny, int signall
 }
 
 
+__global__ void gpuDigammasCMI(float *g_digammas, int *g_nx, int *g_ny, int *g_nz, int signallength) {
+  const unsigned int i = threadIdx.x + blockDim.x*blockIdx.x;
+
+  if(i < signallength){
+    // Fetch n and put it in thread memory
+    double dgX = (double) g_nx[i];
+    double dgY = (double) g_ny[i];
+    double dgZ = (double) g_nz[i];
+
+    // In-place digamma calculation
+    digammaXp1(&dgX);
+    digammaXp1(&dgY);
+    digammaXp1(&dgZ);
+
+    // Copy back to global memory
+    g_digammas[i] = (float) (dgX + dgY - dgZ);
+  }
+  return;
+}
+
 
 
 

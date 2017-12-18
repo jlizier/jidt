@@ -10,6 +10,10 @@ int allocateDeviceMemory(int signalLength, int kth, int dimx, int dimy,
     float **source, float **dest, float **distances, int **indexes,
     float **radii, int **nx, int **ny, float **digammas, float *pointset);
 
+int allocateDeviceMemoryCMI(int signalLength, int k, int dimx, int dimy, int dimz,
+    float **source, float **dest, float **cond, float **distances, int **indexes,
+    float **radii, int **nx, int **ny, int **nz, float **digammas, float *pointset);
+
 int freeDeviceMemory(float *d_pointset);
 
 int cudaFindKnn(int* h_bf_indexes, float* h_bf_distances, float* h_pointset,
@@ -49,7 +53,13 @@ int d_cudaFindRSAll(int* d_bf_npointsrange, float* d_bf_pointset, float* d_bf_qu
 int d_parallelDigammas(float *digammas, float *d_digammas, int *d_nx,
     int *d_ny, int signalLength);
 
+int d_parallelDigammasCMI(float *digammas, float *d_digammas, int *d_nx,
+    int *d_ny, int *d_nz, int signalLength);
+
 int d_cudaSumDigammas(float *sumDigammas, int *d_nx, int *d_ny,
+    float *d_digammas, int trialLength, int nchunks);
+
+int d_cudaSumDigammasCMI(float *sumDigammas, int *d_nx, int *d_ny, int *d_nz,
     float *d_digammas, int trialLength, int nchunks);
 
 void device_reset(void);
