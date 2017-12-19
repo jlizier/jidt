@@ -10,9 +10,11 @@
 
 jidt_error_t CMIKraskov_C(int N, float *source, int dimx, float *dest, int dimy,
     float *cond, int dimz, int k, int thelier, int nb_surrogates,
-    int returnLocals, int useMaxNorm, int isAlgorithm1, float *result) {
+    int returnLocals, int useMaxNorm, int isAlgorithm1, float *result,
+    int variableToReorder) {
   return CMIKraskovWithReorderings(N, source, dimx, dest, dimy, cond, dimz,
-      k, thelier, nb_surrogates, returnLocals, useMaxNorm, isAlgorithm1, result, 0, NULL);
+      k, thelier, nb_surrogates, returnLocals, useMaxNorm, isAlgorithm1, result,
+      0, NULL, variableToReorder);
 }
 
 /**
@@ -21,7 +23,8 @@ jidt_error_t CMIKraskov_C(int N, float *source, int dimx, float *dest, int dimy,
 jidt_error_t CMIKraskovWithReorderings(int N, float *source, int dimx,
     float *dest, int dimy, float *cond, int dimz, int k, int thelier,
     int nb_surrogates, int returnLocals, int useMaxNorm,
-    int isAlgorithm1, float *result, int reorderingsGiven, int **reorderings) {
+    int isAlgorithm1, float *result, int reorderingsGiven, int **reorderings,
+    int variableToReorder) {
 
   CPerfTimer pt = startTimer("Rearranging pointset");
 
@@ -70,12 +73,24 @@ jidt_error_t CMIKraskovWithReorderings(int N, float *source, int dimx,
       }
 
       for (int i = 0; i < N; i++) {
-        for (int j = 0; j < dimx; j++) {
-          pointset[(s+1)*N + N*j*nchunks + i] = source[N*j + order[i]];
-        }
+        if (variableToReorder == 1) {
+          for (int j = 0; j < dimx; j++) {
+            pointset[(s+1)*N + N*j*nchunks + i] = source[N*j + order[i]];
+          }
 
-        for (int j = 0; j < dimz; j++) {
-          pointset[nchunks*N*dimx + (s+1)*N + N*j*nchunks + i] = cond[N*j + i];
+          for (int j = 0; j < dimz; j++) {
+            pointset[nchunks*N*dimx + (s+1)*N + N*j*nchunks + i] = cond[N*j + i];
+          }
+
+        } else {
+          for (int j = 0; j < dimx; j++) {
+            pointset[(s+1)*N + N*j*nchunks + i] = source[N*j + i];
+          }
+
+          for (int j = 0; j < dimz; j++) {
+            pointset[nchunks*N*dimx + (s+1)*N + N*j*nchunks + i] = cond[N*j + order[i]];
+          }
+
         }
 
         for (int j = 0; j < dimy; j++) {

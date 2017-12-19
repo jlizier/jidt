@@ -200,7 +200,7 @@ JNIEXPORT jdoubleArray JNICALL
 /*
  * Class:     infodynamics_measures_continuous_kraskov_ConditionalMutualInfoCalculatorMultiVariateKraskov
  * Method:    CMIKraskov
- * Signature: (I[DI[DI[DIIIZZZIZ[I)[D
+ * Signature: (I[DI[DI[DIIIZZZIZ[II)[D
  */
 JNIEXPORT jdoubleArray JNICALL
   Java_infodynamics_measures_continuous_kraskov_ConditionalMutualInfoCalculatorMultiVariateKraskov_CMIKraskov(
@@ -210,7 +210,8 @@ JNIEXPORT jdoubleArray JNICALL
    jobjectArray j_condArray,   jint j_dimz,
    jint j_k, jint j_theiler, jboolean j_returnLocals,
    jboolean j_useMaxNorm, jboolean j_isAlgorithm1, jint j_nbSurrogates,
-   jboolean j_reorderingsGiven, jobjectArray j_orderings) {
+   jboolean j_reorderingsGiven, jobjectArray j_orderings,
+   jint j_variableToReorder) {
 
   // Check that incoming data has correct size
   // =====================
@@ -247,6 +248,7 @@ JNIEXPORT jdoubleArray JNICALL
   int isAlgorithm1 = j_isAlgorithm1 ? 1 : 0;
   int nb_surrogates = j_nbSurrogates;
   int reorderingsGiven = j_reorderingsGiven ? 1 : 0;
+  int variableToReorder = j_variableToReorder;
    
   CPerfTimer pt = startTimer("Java array copy");
 
@@ -334,13 +336,13 @@ JNIEXPORT jdoubleArray JNICALL
   if (!reorderingsGiven) {
     ret = CMIKraskov_C(N, source, dimx, dest, dimy, cond, dimz,
                       k, theiler, nb_surrogates, returnLocals, useMaxNorm,
-                      isAlgorithm1, result);
+                      isAlgorithm1, result, variableToReorder);
 
   } else {
     ret = CMIKraskovWithReorderings(N, source, dimx, dest, dimy, cond, dimz, k, theiler,
                                    nb_surrogates, returnLocals, useMaxNorm,
                                    isAlgorithm1, result, reorderingsGiven,
-                                   reorderings);
+                                   reorderings, variableToReorder);
   }
 
   if (JIDT_ERROR == ret) {

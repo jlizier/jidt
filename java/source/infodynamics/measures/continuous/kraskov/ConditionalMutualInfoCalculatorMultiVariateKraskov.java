@@ -669,7 +669,7 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
    */
   protected double[] gpuComputeFromObservations(int startTimePoint,
       int numTimePoints, boolean returnLocals, int nb_surrogates,
-      int[][] newOrderings) throws Exception {
+      int[][] newOrderings, int variableToReorder) throws Exception {
 
     if (debug) {
       System.out.println("Start GPU calculation");
@@ -695,8 +695,8 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
       }
       res = CMIKraskov(totalObservations, var1Observations, dimensionsVar1,
           var2Observations, dimensionsVar2, condObservations, dimensionsCond,
-          k, dynCorrExclTime, returnLocals, useMaxNorm,
-          isAlgorithm1, nb_surrogates, null!=newOrderings, newOrderings);
+          k, dynCorrExclTime, returnLocals, useMaxNorm, isAlgorithm1,
+          nb_surrogates, null!=newOrderings, newOrderings, variableToReorder);
       if (debug) {
         System.out.println("GPU calculation finished successfully. Returning results");
       }
@@ -725,7 +725,7 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
       double[][] cond, int dimz,
       int k, int theiler, boolean returnLocals, boolean useMaxNorm,
       boolean isAlgorithm1, int nb_surrogates, boolean orderingsGiven,
-      int[][] newOrderings);
+      int[][] newOrderings, int variableToReorder);
 
   /**
    * Internal method to ensure that the Cuda native library has been correctly
@@ -807,17 +807,17 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
   }
 
   /**
-   * {@inheritDoc} 
+   * {@inheritDoc}
    */
   @Override
-  public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck)
-      throws Exception {
+  public EmpiricalMeasurementDistribution computeSignificance(
+      int variableToReorder, int numPermutationsToCheck) throws Exception {
     if (useGPU) {
-      double[] res = gpuComputeFromObservations(0, totalObservations, false, numPermutationsToCheck, null);
+      double[] res = gpuComputeFromObservations(0, totalObservations, false, numPermutationsToCheck, null, variableToReorder);
       return new EmpiricalMeasurementDistribution(
           MatrixUtils.select(res, 1, res.length - 1), res[0]);
     } else {
-      return super.computeSignificance(numPermutationsToCheck);
+      return super.computeSignificance(variableToReorder, numPermutationsToCheck);
     }
   }
 
@@ -825,14 +825,14 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
    * {@inheritDoc}
    */
   @Override
-  public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings)
-      throws Exception {
+  public EmpiricalMeasurementDistribution computeSignificance(
+      int variableToReorder, int[][] newOrderings) throws Exception {
     if (useGPU) {
-      double[] res = gpuComputeFromObservations(0, totalObservations, false, newOrderings.length, newOrderings);
+      double[] res = gpuComputeFromObservations(0, totalObservations, false, newOrderings.length, newOrderings, variableToReorder);
       return new EmpiricalMeasurementDistribution(
           MatrixUtils.select(res, 1, res.length - 1), res[0]);
     } else {
-      return super.computeSignificance(newOrderings);
+      return super.computeSignificance(variableToReorder, newOrderings);
     }
   }
   
