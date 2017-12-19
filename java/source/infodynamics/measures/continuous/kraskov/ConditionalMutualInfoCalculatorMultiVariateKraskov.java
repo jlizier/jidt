@@ -714,16 +714,7 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
    */
   protected double[] gpuComputeFromObservations(int startTimePoint,
       int numTimePoints, boolean returnLocals) throws Exception {
-    return gpuComputeFromObservations(startTimePoint, numTimePoints, returnLocals, 0, null);
-  }
-
-  /**
-   * FIXME
-   */
-  protected double[] gpuComputeFromObservations(int startTimePoint,
-      int numTimePoints, boolean returnLocals, int[][] newOrderings) throws Exception {
-    return gpuComputeFromObservations(startTimePoint, numTimePoints,
-        returnLocals, newOrderings.length, newOrderings);
+    return gpuComputeFromObservations(startTimePoint, numTimePoints, returnLocals, 0, null, -1);
   }
 
   /**
