@@ -224,6 +224,21 @@ public class GPUCondMutualInfoTester extends TestCase {
     assertEquals(gpu_dist.actualValue,     gpu_dist.distribution[0], 0.00001);
     assertEquals(cpu_dist.actualValue,     gpu_dist.distribution[0], 0.00001);
     assertEquals(gpu_dist.actualValue,     cpu_dist.distribution[0], 0.00001);
+
+    // Smoke test for reordering with different variables
+    cmiCalc.setProperty("USE_GPU", "true");
+    cmiCalc.initialise(1,1,1);
+    cmiCalc.setObservations(MatrixUtils.selectColumn(data, 0),
+                            MatrixUtils.selectColumn(data, 1),
+                            MatrixUtils.selectColumn(data, 2));
+    gpu_dist = cmiCalc.computeSignificance(1, 10);
+
+    cmiCalc.initialise(1,1,1);
+    cmiCalc.setObservations(MatrixUtils.selectColumn(data, 0),
+                            MatrixUtils.selectColumn(data, 1),
+                            MatrixUtils.selectColumn(data, 2));
+    gpu_dist = cmiCalc.computeSignificance(2, 10);
+
   }
 
   /**
