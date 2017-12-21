@@ -21,7 +21,6 @@ package infodynamics.measures.continuous.kraskov;
 import java.util.Calendar;
 import java.util.PriorityQueue;
 import java.util.Random;
-import java.io.File;
 
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.measures.continuous.MutualInfoMultiVariateCommon;
@@ -326,6 +325,8 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
       return Integer.toString(numThreads);
     } else if (propertyName.equalsIgnoreCase(PROP_USE_GPU)) {
         return Boolean.toString(useGPU);
+    } else if (propertyName.equalsIgnoreCase(PROP_GPU_LIBRARY_PATH)) {
+        return gpuLibraryPath;
     } else {
       // try the superclass:
       return super.getProperty(propertyName);
@@ -491,16 +492,18 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
     
     double[] returnValues = null;
     
-    ensureKdTreesConstructed();
-
     if (useGPU) {
       returnValues = gpuComputeFromObservations(0, N, returnLocals);
     } else if (numThreads == 1) {
       // Single-threaded implementation:
+      ensureKdTreesConstructed();
+
       returnValues = partialComputeFromObservations(0, N, returnLocals);
       
     } else {
       // We're going multithreaded:
+      ensureKdTreesConstructed();
+
       if (returnLocals) {
         // We're computing local MI
         returnValues = new double[N];

@@ -274,7 +274,7 @@ public class GPUMutualInfoTester extends TestCase {
 
     MutualInfoCalculatorMultiVariateKraskov miCalc = 
       new MutualInfoCalculatorMultiVariateKraskov1();
-    miCalc.setDebug(true);
+    // miCalc.setDebug(true);
 
     boolean gpuLoaded = true;
     try {

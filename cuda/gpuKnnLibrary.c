@@ -58,6 +58,57 @@ int allocateDeviceMemory(int signalLength, int k, int dimx, int dimy,
 }
 
 /**
+ * Allocate all necessary memory for the whole CMI calculation in a single call
+ * to cudaMalloc, and point the pointers to the right place.
+ *
+ * @param signalLength total number of samples given, including surrogates
+ * @param k nunmber of neighbours to find
+ * @param dimx dimension of source points
+ * @param dimy dimension of dest points
+ * @param dimz dimension of cond points
+ * @param source,dest,cond,distances,indexes,radii,nx,ny,nz,digammas device pointers
+ * @param pointset pointer to the data array in host memory
+ *
+ * @return error code
+ */
+int allocateDeviceMemoryCMI(int signalLength, int k, int dimx, int dimy, int dimz,
+    float **source, float **dest, float **cond, float **distances, int **indexes,
+    float **radii, int **nx, int **ny, int **nz, float **digammas, float *pointset) {
+
+  float *d_pointset;
+  int dims = dimx + dimy + dimz;
+  size_t mempointset = signalLength * dims * sizeof(float);
+  size_t memdistances = signalLength * k * sizeof(float);
+  size_t memindexes = signalLength * k * sizeof(int);
+  size_t memcounts = 3 * signalLength * sizeof(int);
+  size_t memdigammas = signalLength * sizeof(float);
+  size_t memtotal = mempointset + memdistances + memindexes + memcounts + memdigammas;
+
+  checkCudaErrors( cudaMalloc((void **) &d_pointset, memtotal) );
+
+  cudaError_t error = cudaGetLastError();
+  if(error!=cudaSuccess){
+    fprintf(stderr,"%s",cudaGetErrorString(error));
+    return 0;
+  }
+
+  checkCudaErrors( cudaMemcpy(d_pointset, pointset, mempointset, cudaMemcpyHostToDevice) );
+
+  *source = d_pointset;
+  *cond = *source + signalLength*dimx;
+  *dest = *cond + signalLength*dimz;
+  *distances = *dest + signalLength*dimy;
+  *radii = *distances + (k-1)*signalLength;
+  *indexes = (int *) (*distances + k*signalLength);
+  *nx = *indexes + signalLength;
+  *ny = *nx + signalLength;
+  *nz = *ny + signalLength;
+  *digammas = (float *) (*nz + signalLength);
+
+  return 1;
+}
+
+/**
  * Free all the memory used in GPU (if allocated using allocateDeviceMemory.
  *
  * @param d_pointset pointer to the start of the allocated memory block
@@ -480,6 +531,26 @@ int d_parallelDigammas(float *digammas, float *d_digammas, int *d_nx,
 }
 
 
+int d_parallelDigammasCMI(float *digammas, float *d_digammas, int *d_nx,
+    int *d_ny, int *d_nz, int signalLength) {
+
+  // Kernel parameters
+  dim3 threads(1,1,1);
+  dim3 grid(1,1,1);
+  threads.x = 512;
+  grid.x = (signalLength-1)/threads.x + 1;
+
+  // Launch kernel
+  gpuDigammasCMI<<<grid.x, threads.x>>>(d_digammas, d_nx, d_ny, d_nz, signalLength);
+  checkCudaErrors( cudaDeviceSynchronize() );
+
+  checkCudaErrors( cudaMemcpy(digammas, d_digammas, signalLength * sizeof(float), cudaMemcpyDeviceToHost) );
+  checkCudaErrors( cudaDeviceSynchronize() );
+
+  return 1;
+}
+
+
 int parallelDigammas(float *digammas, int *nx, int *ny, int signalLength) {
 
   int *d_nx, *d_ny;
@@ -513,23 +584,11 @@ int parallelDigammas(float *digammas, int *nx, int *ny, int signalLength) {
   return 1;
 }
 
-int d_cudaSumDigammas(float *sumDigammas, int *d_nx, int *d_ny,
-    float *d_digammas, int trialLength, int nchunks) {
+
+int cudaBlockReduce(float *sumDigammas, float *d_digammas, int trialLength, int nchunks) {
 
   float *d_sumDigammas;
-  int signalLength = trialLength * nchunks;
-
-  // Kernel parameters
-  dim3 threads(1,1,1);
-  dim3 grid(1,1,1);
-  threads.x = 512;
-  grid.x = (signalLength-1)/threads.x + 1;
   checkCudaErrors( cudaMalloc((void **) &d_sumDigammas, nchunks * sizeof(int)) );
-
-  // Launch kernel to calculate (digamma(nx+1) + digamma(ny+1)), and leave
-  // results in GPU
-  gpuDigammas<<<grid.x, threads.x>>>(d_digammas, d_nx, d_ny, signalLength);
-  checkCudaErrors( cudaDeviceSynchronize() );
 
   int offset_size = nchunks + 1;
   int offsets[offset_size];
@@ -558,6 +617,46 @@ int d_cudaSumDigammas(float *sumDigammas, int *d_nx, int *d_ny,
   checkCudaErrors( cudaFree(d_sumDigammas) );
 
   return 1;
+
+}
+
+int d_cudaSumDigammas(float *sumDigammas, int *d_nx, int *d_ny,
+    float *d_digammas, int trialLength, int nchunks) {
+
+  int signalLength = trialLength * nchunks;
+
+  // Kernel parameters
+  dim3 threads(1,1,1);
+  dim3 grid(1,1,1);
+  threads.x = 512;
+  grid.x = (signalLength-1)/threads.x + 1;
+
+  // Launch kernel to calculate (digamma(nx+1) + digamma(ny+1)), and leave
+  // results in GPU
+  gpuDigammas<<<grid.x, threads.x>>>(d_digammas, d_nx, d_ny, signalLength);
+  checkCudaErrors( cudaDeviceSynchronize() );
+
+  return cudaBlockReduce(sumDigammas, d_digammas, trialLength, nchunks);
+
+}
+
+int d_cudaSumDigammasCMI(float *sumDigammas, int *d_nx, int *d_ny, int *d_nz,
+    float *d_digammas, int trialLength, int nchunks) {
+
+  int signalLength = trialLength * nchunks;
+
+  // Kernel parameters
+  dim3 threads(1,1,1);
+  dim3 grid(1,1,1);
+  threads.x = 512;
+  grid.x = (signalLength-1)/threads.x + 1;
+
+  // Launch kernel to calculate (digamma(nx+1) + digamma(ny+1)), and leave
+  // results in GPU
+  gpuDigammasCMI<<<grid.x, threads.x>>>(d_digammas, d_nx, d_ny, d_nz, signalLength);
+  checkCudaErrors( cudaDeviceSynchronize() );
+
+  return cudaBlockReduce(sumDigammas, d_digammas, trialLength, nchunks);
 }
 
 /**
@@ -593,6 +692,21 @@ void device_reset(void) {
 
 void gpuWarmUp(void) {
   cudaSetDevice(0);
+}
+
+/**
+ * Make random permutation of perm[].
+ *
+ * @param perm preallocated and prefilled integer array to be shuffled
+ * @param n number of elements in perm
+ */
+void randperm(int perm[], int n) {
+  // Random permutation the order
+  for (int i = 0; i < n; i++) {
+   int j, t;
+   j = rand() % (n-i) + i;
+   t = perm[j]; perm[j] = perm[i]; perm[i] = t; // Swap i and j
+  }
 }
 #ifdef __cplusplus
 }
