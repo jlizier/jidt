@@ -157,6 +157,7 @@ public class AutoAnalyserCTE extends AutoAnalyser
 				ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_DYN_CORR_EXCL_TIME,
 				ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE,
 				ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS,
+				ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_USE_GPU,
 				ConditionalTransferEntropyCalculatorKraskov.PROP_KRASKOV_ALG_NUM
 		};
 		kraskovPropertiesFieldNames = new String[] {
@@ -166,6 +167,7 @@ public class AutoAnalyserCTE extends AutoAnalyser
 				"ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_DYN_CORR_EXCL_TIME",
 				"ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE",
 				"ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS",
+				"ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_USE_GPU",
 				"PROP_KRASKOV_ALG_NUM"
 		};
 		kraskovPropertyDescriptions = new String[] {
@@ -180,6 +182,7 @@ public class AutoAnalyserCTE extends AutoAnalyser
 						"\"MAX_NORM\" (default), otherwise \"EUCLIDEAN\" or \"EUCLIDEAN_SQUARED\" (both equivalent here)",
 				"Number of parallel threads to use <br/>in computation: an integer > 0 or \"USE_ALL\" " +
 						"(default, to indicate to use all available processors)",
+				"Whether to enable the GPU module (number of threads then has no bearing); boolean, default false",
 				"Which KSG algorithm to use (1 or 2)",
 		};
 		

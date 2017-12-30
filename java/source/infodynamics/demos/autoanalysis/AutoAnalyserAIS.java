@@ -157,6 +157,7 @@ public class AutoAnalyserAIS extends AutoAnalyser {
 				MutualInfoCalculatorMultiVariateKraskov.PROP_DYN_CORR_EXCL_TIME,
 				MutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE,
 				MutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS,
+				MutualInfoCalculatorMultiVariateKraskov.PROP_USE_GPU,
 				ActiveInfoStorageCalculatorKraskov.PROP_AUTO_EMBED_METHOD,
 				ActiveInfoStorageCalculatorKraskov.PROP_K_SEARCH_MAX,
 				ActiveInfoStorageCalculatorKraskov.PROP_TAU_SEARCH_MAX,
@@ -169,6 +170,7 @@ public class AutoAnalyserAIS extends AutoAnalyser {
 				"MutualInfoCalculatorMultiVariateKraskov.PROP_DYN_CORR_EXCL_TIME",
 				"MutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE",
 				"MutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS",
+				"MutualInfoCalculatorMultiVariateKraskov.PROP_USE_GPU",
 				"PROP_AUTO_EMBED_METHOD",
 				"PROP_K_SEARCH_MAX",
 				"PROP_TAU_SEARCH_MAX",
@@ -186,6 +188,7 @@ public class AutoAnalyserAIS extends AutoAnalyser {
 						"\"MAX_NORM\" (default), otherwise \"EUCLIDEAN\" or \"EUCLIDEAN_SQUARED\" (both equivalent here)",
 				"Number of parallel threads to use <br/>in computation: an integer > 0 or \"USE_ALL\" " +
 						"(default, to indicate to use all available processors)",
+				"Whether to enable the GPU module (number of threads then has no bearing); boolean, default false",
 				"Method to automatically determine embedding length (k_HISTORY)<br/> and delay (k_TAU) for " +
 						"the samples. Default is \"" + ActiveInfoStorageCalculatorKraskov.AUTO_EMBED_METHOD_NONE +
 						"\" meaning values are set manually; other values include: <br/>  -- \"" + ActiveInfoStorageCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ +

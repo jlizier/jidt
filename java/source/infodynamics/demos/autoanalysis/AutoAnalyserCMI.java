@@ -135,6 +135,7 @@ public class AutoAnalyserCMI extends AutoAnalyser
 				ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_DYN_CORR_EXCL_TIME,
 				ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE,
 				ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS,
+				ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_USE_GPU,
 		};
 		kraskovPropertiesFieldNames = new String[] {
 				"ConditionalMutualInfoMultiVariateCommon.PROP_NORMALISE",
@@ -143,6 +144,7 @@ public class AutoAnalyserCMI extends AutoAnalyser
 				"ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_DYN_CORR_EXCL_TIME",
 				"ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE",
 				"ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS",
+				"ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_USE_GPU"
 		};
 		kraskovPropertyDescriptions = new String[] {
 				"(boolean) whether to normalise <br/>each incoming time-series to mean 0, standard deviation 1, or not (recommended)",
@@ -156,6 +158,7 @@ public class AutoAnalyserCMI extends AutoAnalyser
 						"\"MAX_NORM\" (default), otherwise \"EUCLIDEAN\" or \"EUCLIDEAN_SQUARED\" (both equivalent here)",
 				"Number of parallel threads to use <br/>in computation: an integer > 0 or \"USE_ALL\" " +
 						"(default, to indicate to use all available processors)",
+				"Whether to enable the GPU module (number of threads then has no bearing); boolean, default false"
 		};
 		
 	}

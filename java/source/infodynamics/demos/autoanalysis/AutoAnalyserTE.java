@@ -168,6 +168,7 @@ public class AutoAnalyserTE extends AutoAnalyserChannelCalculator
 				ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_DYN_CORR_EXCL_TIME,
 				ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE,
 				ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS,
+				ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_USE_GPU,
 				TransferEntropyCalculatorKraskov.PROP_KRASKOV_ALG_NUM,
 				TransferEntropyCalculatorKraskov.PROP_AUTO_EMBED_METHOD,
 				TransferEntropyCalculatorKraskov.PROP_K_SEARCH_MAX,
@@ -185,6 +186,7 @@ public class AutoAnalyserTE extends AutoAnalyserChannelCalculator
 				"ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_DYN_CORR_EXCL_TIME",
 				"ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE",
 				"ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS",
+				"ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_USE_GPU",
 				"PROP_KRASKOV_ALG_NUM",
 				"PROP_AUTO_EMBED_METHOD",
 				"PROP_K_SEARCH_MAX",
@@ -207,6 +209,7 @@ public class AutoAnalyserTE extends AutoAnalyserChannelCalculator
 						"\"MAX_NORM\" (default), otherwise \"EUCLIDEAN\" or \"EUCLIDEAN_SQUARED\" (both equivalent here)",
 				"Number of parallel threads to use <br/>in computation: an integer > 0 or \"USE_ALL\" " +
 						"(default, to indicate to use all available processors)",
+				"Whether to enable the GPU module (number of threads then has no bearing); boolean, default false",
 				"Which KSG algorithm to use (1 or 2)",
 				"Method to automatically determine embedding lengths (k_HISTORY,l_HISTORY)<br/> and delays (k_TAU, l_TAU) for " +
 						"destination and potentially source time-series. Default is \"" + TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_NONE +
