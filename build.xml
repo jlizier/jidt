@@ -308,7 +308,8 @@
 			<zipfileset dir="demos" includes="**/*.*,**/*" excludes="clojure/deploy,clojure/deploy/*.*,python/*.pyc" prefix="demos"/>
 			<zipfileset dir="javadocs" includes="**/*.*,**/*" prefix="javadocs"/>
 			<zipfileset dir="notices" includes="**/*.*,**/*" prefix="notices"/>
-			<zipfileset dir="tutorial" prefix="tutorial"/>
+			<zipfileset dir="course" prefix="course"/>
+			<zipfileset dir="tutorial" prefix="tutorial"/> <!-- Get rid of this when tutorial is subsumed in course... -->
 			<zipfileset dir="web" includes="JIDT-logo.png" prefix="" erroronmissingdir="false"/> <!-- This file is missing in zip dist versions -->
 		</zip>
 	</target>
