@@ -269,4 +269,46 @@ public class MutualInfoMultiVariateWithDiscreteKraskovTester extends TestCase {
     // assertTrue(Math.abs(res5 - res1) > 0.001);
 
   }
+
+  public void testUnivariateOverloadings() throws Exception {
+    MutualInfoCalculatorMultiVariateWithDiscreteKraskov miCalc =
+        new MutualInfoCalculatorMultiVariateWithDiscreteKraskov();
+
+    // Generate data sets
+    RandomGenerator rg = new RandomGenerator();
+    double[][] contDataMatrix = rg.generateRandomData(100, 2);
+    double[] contDataVector   = rg.generateRandomData(100);
+    int[] discData = rg.generateRandomInts(100, 2);
+
+    // Check that no exception is thrown for ok data:
+    boolean caughtException = false;
+    try {
+      miCalc.initialise(1, 2);
+      miCalc.setObservations(contDataVector, discData);
+    } catch (Exception e) {
+      caughtException = true;
+    }
+    assertFalse(caughtException);
+
+    // Check that exception is thrown when dimensions do not match
+    caughtException = false;
+    try {
+      miCalc.initialise(1, 2);
+      miCalc.setObservations(contDataMatrix, discData);
+    } catch (Exception e) {
+      caughtException = true;
+    }
+    assertTrue(caughtException);
+
+    caughtException = false;
+    try {
+      miCalc.initialise(2, 2);
+      miCalc.setObservations(contDataVector, discData);
+    } catch (Exception e) {
+      caughtException = true;
+    }
+    assertTrue(caughtException);
+
+
+  }
 }
