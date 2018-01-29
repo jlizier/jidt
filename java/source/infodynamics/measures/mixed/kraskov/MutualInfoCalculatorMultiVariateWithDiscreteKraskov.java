@@ -317,6 +317,13 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
     }
 	}
 
+	public void addObservations(double[] continuousObservations,
+      int[] discreteObservations) throws Exception {
+    double[][] observationsMatrix = new double[continuousObservations.length][1];
+    MatrixUtils.copyIntoColumn(observationsMatrix, 0, continuousObservations);
+    addObservations(observationsMatrix, discreteObservations);
+  }
+
 	public void addObservations(double[][] source, double[][] destination, int startTime, int numTimeSteps) throws Exception {
 		throw new RuntimeException("Not implemented yet");
 	}
@@ -443,6 +450,14 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteKraskov implements Mutu
     addObservations(continuousObservations, discreteObservations);
     finaliseAddObservations();
 	}
+
+	public void setObservations(double[] continuousObservations,
+      int[] discreteObservations) throws Exception {
+    double[][] observationsMatrix = new double[continuousObservations.length][1];
+    MatrixUtils.copyIntoColumn(observationsMatrix, 0, continuousObservations);
+    setObservations(observationsMatrix, discreteObservations);
+  }
+
 
   /**
    * Internal method to ensure that the Kd-tree data structures to represent the
