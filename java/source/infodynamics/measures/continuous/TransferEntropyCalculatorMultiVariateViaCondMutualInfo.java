@@ -222,23 +222,9 @@ public class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
  					MatrixUtils.selectColumn(destination, 0));
  			return;
  		}
- 		if (source.length < startTimeForFirstDestEmbedding + 2) {
- 			// There are no observations to add here, the time series is too short
- 			throw new Exception("Not enough observations to set here given k, k_tau, l, l_tau and delay parameters");
- 		}
- 		double[][] currentDestPastVectors = 
- 				MatrixUtils.makeDelayEmbeddingVector(destination, k, k_tau,
- 						startTimeForFirstDestEmbedding,
- 						destination.length - startTimeForFirstDestEmbedding - 1);
- 		double[][] currentDestNextVectors =
- 				MatrixUtils.makeDelayEmbeddingVector(destination, 1,
- 						startTimeForFirstDestEmbedding + 1,
- 						destination.length - startTimeForFirstDestEmbedding - 1);
- 		double[][] currentSourcePastVectors = 
- 				MatrixUtils.makeDelayEmbeddingVector(source, l, l_tau,
- 						startTimeForFirstDestEmbedding + 1 - delay,
- 						source.length - startTimeForFirstDestEmbedding - 1);
- 		condMiCalc.setObservations(currentSourcePastVectors, currentDestNextVectors, currentDestPastVectors);
+    startAddObservations();
+    addObservations(source, destination);
+    finaliseAddObservations();
  	}
  
  	@Override
