@@ -481,8 +481,8 @@ public class TransferEntropyMultiVariateTester
 		assertEquals(resultSingle, resultEnsemble, 0.00001);
 	}
 
-  public void testAutoEmbedding() throws Exception {
-    System.out.println("Start autoembedding test.");
+  public void testAutoEmbeddingAIS() throws Exception {
+    System.out.println("Start AIS autoembedding test.");
     // Generate multivariate data
 		RandomGenerator rg = new RandomGenerator();
 		double[][] source = rg.generateNormalData(5000, 2, 0, 1);
@@ -509,8 +509,8 @@ public class TransferEntropyMultiVariateTester
     teCalc.setDebug(true);
 
     // Run optimisation
-		teCalc.initialise();
-		teCalc.setObservations(MatrixUtils.selectColumn(source,0), MatrixUtils.selectColumn(target, 0));
+		teCalc.initialise(2, 2);
+		teCalc.setObservations(source, target);
 		int optimisedK = Integer.parseInt(teCalc.getProperty(TransferEntropyCalculatorMultiVariate.K_PROP_NAME));
 		int optimisedL = Integer.parseInt(teCalc.getProperty(TransferEntropyCalculatorMultiVariateKraskov.L_PROP_NAME));
 
