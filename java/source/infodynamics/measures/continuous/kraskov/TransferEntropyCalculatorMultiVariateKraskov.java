@@ -122,7 +122,7 @@ public class TransferEntropyCalculatorMultiVariateKraskov
 	 * Property name for specifying which (if any) auto-embedding method to use.
 	 * Valid values include {@link #AUTO_EMBED_METHOD_RAGWITZ}, {@link #AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY},
 	 * {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS}, {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS_DEST_ONLY} 
-	 *  and {@link #AUTO_EMBED_METHOD_NONE}.
+	 * {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE}, and {@link #AUTO_EMBED_METHOD_NONE}.
 	 * Defaults to {@link #AUTO_EMBED_METHOD_NONE}
 	 */
 	public static final String PROP_AUTO_EMBED_METHOD = "AUTO_EMBED_METHOD";
