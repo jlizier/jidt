@@ -8,7 +8,7 @@ JIDT includes implementations:
  * principally for the measures **transfer entropy**, **mutual information**, and their conditional variants, as well as **active information storage**, entropy, etc;
  * for both _discrete_ and _continuous_-valued data;
  * using various types of estimators (e.g. _Kraskov-Stögbauer-Grassberger estimators_, _box-kernel estimation_, _linear-Gaussian_),
-as described in full at ImplementedMeasures.
+as described in full at [ImplementedMeasures](../../wiki/ImplementedMeasures).
 
 JIDT is distributed under the [GNU GPL v3 license](http://www.gnu.org/licenses/gpl.html) (or later).
 
