@@ -19,6 +19,7 @@
 package infodynamics.measures.continuous.kraskov;
 
 import java.util.Hashtable;
+import java.util.Iterator;
 
 import infodynamics.measures.continuous.ActiveInfoStorageCalculator;
 import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariate;
@@ -125,8 +126,8 @@ public class TransferEntropyCalculatorKraskov
 	/**
 	 * Property name for specifying which (if any) auto-embedding method to use.
 	 * Valid values include {@link #AUTO_EMBED_METHOD_RAGWITZ}, {@link #AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY},
-	 * {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS}, {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS_DEST_ONLY} 
-	 *  and {@link #AUTO_EMBED_METHOD_NONE}.
+	 * {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS}, {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS_DEST_ONLY},
+	 * {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE} and {@link #AUTO_EMBED_METHOD_NONE}.
 	 * Defaults to {@link #AUTO_EMBED_METHOD_NONE}
 	 */
 	public static final String PROP_AUTO_EMBED_METHOD = "AUTO_EMBED_METHOD";
@@ -153,6 +154,13 @@ public class TransferEntropyCalculatorKraskov
 	 *  AIS, for both source and destination time series
 	 */
 	public static final String AUTO_EMBED_METHOD_MAX_CORR_AIS = "MAX_CORR_AIS";
+	/**
+	 * Valid value for the property {@link #PROP_AUTO_EMBED_METHOD} indicating that
+	 *  the automatic embedding should be done by maximising the bias corrected
+	 *  AIS for the target and subsequently maximising the TE over source embeddings,
+	 *  given a fixed source-target delay.
+	 */
+	public static final String AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE = "MAX_CORR_AIS_AND_TE";
 	/**
 	 * Valid value for the property {@link #PROP_AUTO_EMBED_METHOD} indicating that
 	 *  the automatic embedding should be done by maximising the bias corrected
@@ -288,10 +296,11 @@ public class TransferEntropyCalculatorKraskov
 	 * 		of the Ragwitz criteria for both source and destination (searching up to {@link #PROP_K_SEARCH_MAX} and 
 	 * 		{@link #PROP_TAU_SEARCH_MAX}), and {@link #AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY} for use
 	 * 		of the Ragwitz criteria for the destination only;
-	 * 		{@link AUTO_EMBED_METHOD_MAX_CORR_AIS} for use of the max bias corrected AIS criteria
+	 * 		{@link #AUTO_EMBED_METHOD_MAX_CORR_AIS} for use of the max bias corrected AIS criteria
 	 * 		for both source and destination (searching up to {@link #PROP_K_SEARCH_MAX} and 
-	 * 		{@link #PROP_TAU_SEARCH_MAX}) and {@link AUTO_EMBED_METHOD_MAX_CORR_AIS_DEST_ONLY} for use of
-	 * 		this criteria for the destination only. 
+	 * 		{@link #PROP_TAU_SEARCH_MAX}), {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS_DEST_ONLY} for use of
+	 * 		this criteria for the destination only and {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE} for
+	 * 		use of this criteria for the target, plus the max bias corrected TE for source embeddings.
 	 * 		Use of any value other than {@link #AUTO_EMBED_METHOD_NONE}
 	 * 		will lead to previous settings for embedding lengths and delays (via e.g. {@link #initialise(int, int)} or
 	 * 		auto-embedding during previous calculations) for the destination and perhaps source to
@@ -392,7 +401,8 @@ public class TransferEntropyCalculatorKraskov
 		if (autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_RAGWITZ) ||
 				autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY) ||
 				autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_MAX_CORR_AIS) ||
-				autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_MAX_CORR_AIS_DEST_ONLY)) {
+				autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_MAX_CORR_AIS_DEST_ONLY) ||
+        autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE)) {
 		
 			// Use a Kraskov AIS calculator to embed both time-series individually:
 			ActiveInfoStorageCalculatorKraskov aisCalc = new ActiveInfoStorageCalculatorKraskov();
@@ -457,6 +467,65 @@ public class TransferEntropyCalculatorKraskov
 					System.out.printf("Embedding parameters for source set to l=%d,l_tau=%d\n",
 						l, l_tau);
 				}
+
+			} else if (autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE)) {
+				if (debug) {
+					System.out.println("Starting embedding of source:");
+				}
+
+        // Instantiate a new calculator to optimize the embedding parameters
+        TransferEntropyCalculatorKraskov teEmbeddingCalc =
+            new TransferEntropyCalculatorKraskov();
+
+        // Set all properties of the current calculator except embedding method
+        for (String key : props.keySet()) {
+          teEmbeddingCalc.setProperty(key, props.get(key));
+        }
+        teEmbeddingCalc.setProperty(PROP_AUTO_EMBED_METHOD, AUTO_EMBED_METHOD_NONE);
+
+        double bestTE = Double.NEGATIVE_INFINITY;
+        int l_candidate_best = 1;
+        int l_tau_candidate_best = 1;
+
+        // Iterate over all possible embeddings
+        for (int l_candidate = 1; l_candidate <= k_search_max; l_candidate++) {
+          for (int l_tau_candidate = 1; l_tau_candidate <= tau_search_max; l_tau_candidate++) {
+
+            teEmbeddingCalc.initialise(k, k_tau, l_candidate, l_tau_candidate, delay);
+            teEmbeddingCalc.startAddObservations();
+
+            Iterator<double[]> destIterator = vectorOfDestinationTimeSeries.iterator();
+            for (double[] source : vectorOfSourceTimeSeries) {
+              double[] dest = destIterator.next();
+              teEmbeddingCalc.addObservations(source, dest);
+            }
+            teEmbeddingCalc.finaliseAddObservations();
+            double thisTE = teEmbeddingCalc.computeAverageLocalOfObservations();
+
+            if (debug) {
+              System.out.printf("TE for l=%d, l_tau=%d is %.3f\n",
+                  l_candidate, l_tau_candidate, thisTE);
+            }
+
+            if (thisTE > bestTE) {
+              // This parameter setting is the best so far:
+              bestTE = thisTE;
+              l_candidate_best = l_candidate;
+              l_tau_candidate_best = l_tau_candidate;
+            }
+            if (l_candidate == 1) {
+              // tau is irrelevant, so no point testing other values
+              break;
+            }
+          }
+        }
+        l = l_candidate_best;
+        l_tau = l_tau_candidate_best;
+				if (debug) {
+					System.out.printf("Embedding parameters for source set to l=%d,l_tau=%d\n",
+						l, l_tau);
+				}
+
 			}
 	
 			// Now that embedding parameters are finalised:
