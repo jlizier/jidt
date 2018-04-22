@@ -152,7 +152,8 @@ public class TransferEntropyCalculatorMultiVariateKraskov
 	/**
 	 * Valid value for the property {@link #PROP_AUTO_EMBED_METHOD} indicating that
 	 *  the automatic embedding should be done by maximising the bias corrected
-	 *  AIS for the source and the TE for the destination.
+	 *  AIS for the target and subsequently maximising the TE over source embeddings,
+	 *  given a fixed source-target delay.
 	 */
 	public static final String AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE = "MAX_CORR_AIS_AND_TE";
 	/**
