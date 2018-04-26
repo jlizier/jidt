@@ -28,6 +28,7 @@ import infodynamics.utils.FirstIndexComparatorDouble;
 import infodynamics.utils.KdTree;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
+import infodynamics.utils.NearestNeighbourSearcher;
 import infodynamics.utils.NeighbourNodeData;
 import infodynamics.utils.UnivariateNearestNeighbourSearcher;
 
@@ -509,4 +510,122 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 		}		
 	}
 
+	/**
+	 * Mirrors {@link #partialComputeFromObservations(int, int, boolean)}
+	 * in implementing the guts of each Kraskov algorithm;
+	 * however this is not intended to be used in a computation per se but for debugging
+	 * purposes where the caller specifically wants to examine the neighbour counts
+	 * for each data point (which is what is returned)
+	 * 
+	 * @param startTimePoint
+	 * @param numTimePoints
+	 * @return an array of arrays of neighbour counts for each sample (first index), where
+	 *  the array of neighbour counts is:
+	 *  first n_xz for variable 1 or x with the conditional (index 0),
+	 *  then  n_yz for variable 2 or y with the conditional (index 1),
+	 *  then  n_z for the conditional (index 2)
+	 * @throws Exception
+	 */
+	protected int[][] partialNeighbourCountFromObservations(int startTimePoint,
+			int numTimePoints) throws Exception {
+		
+		double startTime = Calendar.getInstance().getTimeInMillis();
+
+		ensureKdTreesConstructed();
+		
+		int[][] neighbourCounts = new int[numTimePoints][3];
+
+		// Arrays used for fast searching on conditionals with a marginal:
+		boolean[] isWithinRForConditionals = new boolean[totalObservations];
+		int[] indicesWithinRForConditionals = new int[totalObservations+1];
+
+		for (int t = startTimePoint; t < startTimePoint + numTimePoints; t++) {
+			// Compute eps for this time step by
+			//  finding the kth closest neighbour for point t:
+			PriorityQueue<NeighbourNodeData> nnPQ =
+					kdTreeJoint.findKNearestNeighbours(k, t, dynCorrExclTime);
+			// First element in the PQ is the kth NN,
+			//  and epsilon = kthNnData.distance
+			NeighbourNodeData kthNnData = nnPQ.poll();
+
+			// Identify the points satisfying the conditional criteria, then use
+			//  the knowledge of which points made this cut to speed up the searching
+			//  in the conditional-marginal spaces:
+			// 1. Identify the n_z points within the conditional boundaries:
+			if (dimensionsCond > 0) {
+				nnSearcherConditional.findPointsWithinR(t, kthNnData.distance, dynCorrExclTime,
+					false, isWithinRForConditionals, indicesWithinRForConditionals);
+			}
+			// 2. Then compute n_xz and n_yz harnessing our knowledge of
+			//  which points qualified for the conditional already:
+			// Don't need to supply dynCorrExclTime in most of the following, because only 
+			//  points outside of it have been included in isWithinRForConditionals
+			int n_xz;
+			if (dimensionsCond == 0) {
+				// We're really only counting whether the x space qualifies
+				if (dimensionsVar1 > 1) {
+					n_xz = kdTreeVar1Conditional.countPointsStrictlyWithinR(
+						t, kthNnData.distance, dynCorrExclTime);
+				} else {
+					n_xz = uniNNSearcherVar1.countPointsWithinR(t, kthNnData.distance,
+							dynCorrExclTime, false);
+				}
+			} else {
+				if (dimensionsVar1 > 1) {
+					n_xz = kdTreeVar1Conditional.countPointsWithinR(t, kthNnData.distance,
+							false, 1, isWithinRForConditionals);
+				} else { // Generally faster to search only the marginal space if it is univariate 
+					n_xz = uniNNSearcherVar1.countPointsWithinR(t, kthNnData.distance,
+							false, isWithinRForConditionals);
+				}
+			}
+			int n_yz;
+			if (dimensionsCond == 0) {
+				// We're really only counting whether the y space qualifies
+				if (dimensionsVar2 > 1) {
+					n_yz = kdTreeVar2Conditional.countPointsStrictlyWithinR(
+						t, kthNnData.distance, dynCorrExclTime);
+				} else {
+					n_yz = uniNNSearcherVar2.countPointsWithinR(t, kthNnData.distance,
+							dynCorrExclTime, false);
+				}
+			} else {
+				if (dimensionsVar2 > 1) {
+					n_yz = kdTreeVar2Conditional.countPointsWithinR(t, kthNnData.distance,
+							false, 1, isWithinRForConditionals);
+				} else { // Generally faster to search only the marginal space if it is univariate
+					n_yz = uniNNSearcherVar2.countPointsWithinR(t, kthNnData.distance,
+							false, isWithinRForConditionals);
+				}
+			}
+			// 3. Finally, reset our boolean array for its next use while we count n_z:
+			int n_z;
+			if (dimensionsCond == 0) {
+				n_z = totalObservations - 1; // - 1 to remove the point itself.
+				// Note: This doesn't respect the dynamic correlation exclusion, but 
+				//  does align with a mutual information calculation here (to give the digamma(N) term).
+				// No need to reset the boolean array
+			} else { 
+				for (n_z = 0; indicesWithinRForConditionals[n_z] != -1; n_z++) {
+					isWithinRForConditionals[indicesWithinRForConditionals[n_z]] = false;
+				}
+			}
+
+			neighbourCounts[t - startTimePoint][0] = n_xz;
+			neighbourCounts[t - startTimePoint][1] = n_yz;
+			neighbourCounts[t - startTimePoint][2] = n_z;
+
+		}
+		
+		if (debug) {
+			Calendar rightNow2 = Calendar.getInstance();
+			long endTime = rightNow2.getTimeInMillis();
+			System.out.println("Subset " + startTimePoint + ":" +
+					(startTimePoint + numTimePoints) + " Calculation time: " +
+					((endTime - startTime)/1000.0) + " sec" );
+		}
+
+		return neighbourCounts;
+	}
+	
 }
