@@ -526,7 +526,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 	 *  then  n_z for the conditional (index 2)
 	 * @throws Exception
 	 */
-	protected int[][] partialNeighbourCountFromObservations(int startTimePoint,
+	public int[][] partialNeighbourCountFromObservations(int startTimePoint,
 			int numTimePoints) throws Exception {
 		
 		double startTime = Calendar.getInstance().getTimeInMillis();
