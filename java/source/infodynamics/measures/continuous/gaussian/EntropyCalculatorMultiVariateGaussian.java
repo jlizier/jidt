@@ -131,6 +131,19 @@ public class EntropyCalculatorMultiVariateGaussian
 	}
 
 	/**
+	 * @throws Exception where the observations do not match the expected number of 
+	 *  dimensions, or covariance matrix is not positive definite (reflecting 
+	 *  redundant variables in the observations)
+	 */
+	@Override
+	public void setObservations(double[] observations) throws Exception {
+		if (dimensions != 1) {
+			throw new Exception(String.format("Cannot set univariate observations when expected dimension = %d", dimensions));
+		}
+		setObservations(MatrixUtils.reshape(observations, observations.length, 1));
+	}
+
+	/**
 	 * <p>Set the covariance of the distribution for which we will compute the
 	 *  entropy.</p>
 	 * 
@@ -242,8 +255,10 @@ public class EntropyCalculatorMultiVariateGaussian
 	}
 
 	/**
+	 * @see <a href="http://en.wikipedia.org/wiki/Multivariate_normal_distribution">Multivariate normal distribution on Wikipedia</a>
 	 * @return an array of local values in nats (NOT bits).
 	 */
+	@Override
 	public double[] computeLocalUsingPreviousObservations(double[][] states)
 			throws Exception {
 		if (means == null) {
@@ -268,7 +283,6 @@ public class EntropyCalculatorMultiVariateGaussian
 		double[][] invCovariance = MatrixUtils.solveViaCholeskyResult(L,
 				MatrixUtils.identityMatrix(L.length));
 		
-		// If we have a time delay, slide the local values
 		double[] localValues = new double[states.length];
 		for (int t = 0; t < states.length; t++) {
 			double[] deviationsFromMean =
@@ -297,6 +311,7 @@ public class EntropyCalculatorMultiVariateGaussian
 	 * {@link #setCovarianceAndMeans(double[][], double[])} were used previously instead
 	 * of {@link #setObservations(double[][])}
 	 */
+	@Override
 	public double[] computeLocalOfPreviousObservations() throws Exception {
 		if (observations == null) {
 			throw new Exception("Cannot compute local values since no observations were supplied");

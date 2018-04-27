@@ -19,6 +19,7 @@
 package infodynamics.measures.continuous.kernel;
 
 import infodynamics.measures.continuous.EntropyCalculatorMultiVariate;
+import infodynamics.utils.MatrixUtils;
 
 /**
  * <p>Computes the differential entropy of a given set of observations
@@ -141,6 +142,18 @@ public class EntropyCalculatorMultiVariateKernel implements EntropyCalculatorMul
 		this.observations = observations;
 	}
 
+	/**
+	 * @throws Exception where the observations do not match the expected number of 
+	 *  dimensions
+	 */
+	@Override
+	public void setObservations(double[] observations) throws Exception {
+		if (dimensions != 1) {
+			throw new Exception(String.format("Cannot set univariate observations when expected dimension = %d", dimensions));
+		}
+		setObservations(MatrixUtils.reshape(observations, observations.length, 1));
+	}
+
 	@Override
 	public double computeAverageLocalOfObservations() {
 		double entropy = 0.0;
@@ -183,13 +196,13 @@ public class EntropyCalculatorMultiVariateKernel implements EntropyCalculatorMul
 		for (int b = 0; b < states.length; b++) {
 			double prob = mvke.getProbability(states[b]);
 			double cont = -Math.log(prob);
-			localEntropy[b] = cont;
+			localEntropy[b] = cont / Math.log(2.0);
 			entropy += cont;
 			if (debug) {
 				System.out.println(b + ": " + prob + " -> " + (cont/Math.log(2.0)) + " -> sum: " + (entropy/Math.log(2.0)));
 			}
 		}
-		entropy /= (double) totalObservations / Math.log(2.0);
+		entropy = entropy / (double) totalObservations / Math.log(2.0); // Don't use /= as I'm not sure of the order of operations it applies.
 		if (isPreviousObservations) {
 			lastEntropy = entropy; 
 		}

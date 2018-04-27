@@ -56,7 +56,20 @@ public interface EntropyCalculator extends InfoMeasureCalculatorContinuous {
 	 *  observations that are used (they are not accumulated). 
 	 * 
 	 * @param observations array of (univariate) samples
+	 * @throws Exception 
 	 */
-	public void setObservations(double observations[]);
+	public void setObservations(double observations[]) throws Exception;
+	
+	/**
+	 * Compute the local entropy values for each of the
+	 * previously-supplied samples.
+	 * 
+	 * <p>PDFs are computed using all of the previously supplied
+	 * observations.</p>
+	 * 
+	 * @return the array of local entropy values corresponding to each
+	 *  previously supplied observation.
+	 */
+	public double[] computeLocalOfPreviousObservations() throws Exception;
 	
 }

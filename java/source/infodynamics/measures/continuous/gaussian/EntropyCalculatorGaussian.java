@@ -60,9 +60,10 @@ public class EntropyCalculatorGaussian implements EntropyCalculator {
 	protected boolean debug;
 	
 	/**
-	 * Total number of observations supplied.
+	 * The set of observations, retained in case the user wants to retrieve the local
+	 *  entropy values of these
 	 */
-	protected int totalObservations;
+	protected double[] observations;
 	
 	/**
 	 * Store the last computed average Entropy
@@ -78,13 +79,14 @@ public class EntropyCalculatorGaussian implements EntropyCalculator {
 	
 	@Override
 	public void initialise() {
-		// Nothing to do
+		observations = null;
+		variance = 0;
 	}
 
 	public void setObservations(double[] observations) {
 		variance = MatrixUtils.stdDev(observations);
 		variance *= variance;
-		totalObservations = observations.length;
+		this.observations = observations;
 	}
 
 	/**
@@ -94,8 +96,12 @@ public class EntropyCalculatorGaussian implements EntropyCalculator {
 	 * 
 	 * @param variance the variance of the univariate distribution.
 	 */
-	public void setVariance(double variance) {
+	public void setVariance(double variance) throws Exception {
 		this.variance = variance;
+		if (variance < 0) {
+			throw new Exception("Cannot have negative variance");
+		}
+		observations = null;
 	}
 	
 	/**
@@ -118,6 +124,41 @@ public class EntropyCalculatorGaussian implements EntropyCalculator {
 		return lastAverage;
 	}
 
+	/**
+	 * @throws Exception if {@link #setVariance(double)} was used previously instead
+	 * of {@link #setObservations(double[][])}
+	 */
+	public double[] computeLocalOfPreviousObservations() throws Exception {
+		if (observations == null) {
+			throw new Exception("Cannot compute local values since no observations were supplied");
+		}
+		
+		// Check that the variance was non-zero:
+		if (variance == 0) {
+			throw new Exception("variance is not positive - cannot compute local entropies");
+		}
+		// Now we are clear to take the variance inverse
+		double invVariance = 1.0 / variance;
+		double mean = MatrixUtils.mean(observations);
+		
+		double[] localValues = new double[observations.length];
+		for (int t = 0; t < observations.length; t++) {
+			double deviationFromMean = observations[t] - mean;
+			// Computing PDF
+			// (see the PDF defined at the wikipedia page referenced in the method header)
+			double jointExpArg = deviationFromMean * deviationFromMean * invVariance;
+			double pJoint = Math.exp(-0.5 * jointExpArg) /
+					Math.sqrt(2.0 * Math.PI * variance);
+			localValues[t] = - Math.log(pJoint);
+		}
+		
+		// Don't set average if this was the previously supplied observations,
+		//  since it won't be the same as what would have been computed 
+		//  analytically.
+		
+		return localValues;
+	}
+	
 	@Override
 	public void setDebug(boolean debug) {
 		this.debug = debug;
@@ -144,7 +185,12 @@ public class EntropyCalculatorGaussian implements EntropyCalculator {
 
 	@Override
 	public int getNumObservations() throws Exception {
-		return totalObservations;
+		if (observations == null) {
+			throw new Exception("Cannot return number of observations because either " +
+					"this calculator has not had observations supplied or " +
+					"the user supplied the variance instead of observations");
+		}
+		return observations.length;
 	}
 
 	@Override

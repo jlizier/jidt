@@ -132,8 +132,8 @@ public class EntropyCalculatorKernel implements EntropyCalculator {
 		double entropy = 0.0;
 		for (int t = 0; t < observations.length; t++) {
 			double prob = svke.getProbability(observations[t]);
-			double cont = Math.log(prob);
-			entropy -= cont;
+			double cont = -Math.log(prob);
+			entropy += cont;
 			if (debug) {
 				System.out.println(t + ": p(" + observations[t] + ")= " +
 						prob + " -> " + (cont/Math.log(2.0)) + " -> sum: " +
@@ -144,6 +144,25 @@ public class EntropyCalculatorKernel implements EntropyCalculator {
 		return lastAverage;
 	}
 	
+	@Override
+	public double[] computeLocalOfPreviousObservations() throws Exception {
+		double[] localEntropies = new double[observations.length];
+		double entropy = 0.0;
+		for (int t = 0; t < observations.length; t++) {
+			double prob = svke.getProbability(observations[t]);
+			double cont = -Math.log(prob);
+			localEntropies[t] = cont / Math.log(2.0);
+			entropy += cont;
+			if (debug) {
+				System.out.println(t + ": p(" + observations[t] + ")= " +
+						prob + " -> " + (cont/Math.log(2.0)) + " -> sum: " +
+						(entropy/Math.log(2.0)));
+			}
+		}
+		lastAverage = entropy / (double) totalObservations / Math.log(2.0);
+		return localEntropies;
+	}
+
 	@Override
 	public void setDebug(boolean debug) {
 		this.debug = debug;

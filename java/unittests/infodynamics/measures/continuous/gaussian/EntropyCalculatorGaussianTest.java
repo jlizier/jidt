@@ -24,7 +24,7 @@ import junit.framework.TestCase;
 
 public class EntropyCalculatorGaussianTest extends TestCase {
 
-	public void testVarianceSetting() {
+	public void testVarianceSetting() throws Exception {
 		EntropyCalculatorGaussian entcalc = new EntropyCalculatorGaussian();
 		entcalc.initialise();
 		double variance = 3.45567;
@@ -43,12 +43,27 @@ public class EntropyCalculatorGaussianTest extends TestCase {
 		assertEquals(variance, entcalc.variance);
 	}
 	
-	public void testEntropyCalculation() {
+	public void testEntropyCalculation() throws Exception {
 		EntropyCalculatorGaussian entcalc = new EntropyCalculatorGaussian();
 		entcalc.initialise();
 		double variance = 3.45567;
 		entcalc.setVariance(variance);
 		double expectedEntropy = 0.5 * Math.log(2.0*Math.PI*Math.E*variance);
 		assertEquals(expectedEntropy, entcalc.computeAverageLocalOfObservations());
+	}
+	
+	public void testLocalEntropiesAverage() throws Exception {
+		RandomGenerator rg = new RandomGenerator();
+		double[] data = rg.generateNormalData(100, 0, 1);
+		EntropyCalculatorGaussian entcalc = new EntropyCalculatorGaussian();
+		entcalc.initialise();
+		entcalc.setObservations(data);
+		double entropy = entcalc.computeAverageLocalOfObservations();
+		double[] localEntropies = entcalc.computeLocalOfPreviousObservations();
+		double avgLocal = MatrixUtils.mean(localEntropies);
+		// There are many sources of numerical noise in the combination of so many
+		//  local entropy calculations here (in comparison to the average calculation
+		//  which only comes from the variance), so we need to leave a wide tolerance
+		assertEquals(entropy, avgLocal, 0.02);
 	}
 }

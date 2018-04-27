@@ -55,7 +55,7 @@ Theory' (John Wiley & Sons, New York, 1991).</li>
  * <a href="http://lizier.me/joseph/">www</a>)
  */
 public interface EntropyCalculatorMultiVariate 
-	extends InfoMeasureCalculatorContinuous {
+	extends EntropyCalculator {
 
 	/**
 	 * Property name for the number of dimensions
@@ -82,6 +82,7 @@ public interface EntropyCalculatorMultiVariate
 	 * @param propertyValue value of the property
 	 * @throws Exception for invalid property values
 	 */
+	@Override
 	public void setProperty(String propertyName, String propertyValue) throws Exception;
 	
 	/**
@@ -122,16 +123,4 @@ public interface EntropyCalculatorMultiVariate
 	 */
 	public double[] computeLocalUsingPreviousObservations(double newObservations[][]) throws Exception;
 
-	/**
-	 * Compute the local entropy values for each of the
-	 * previously-supplied samples.
-	 * 
-	 * <p>PDFs are computed using all of the previously supplied
-	 * observations.</p>
-	 * 
-	 * @return the array of local entropy values corresponding to each
-	 *  previously supplied observation.
-	 */
-	public double[] computeLocalOfPreviousObservations() throws Exception;
-	
 }

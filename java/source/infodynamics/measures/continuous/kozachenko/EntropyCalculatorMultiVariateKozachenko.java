@@ -19,10 +19,8 @@
 package infodynamics.measures.continuous.kozachenko;
 
 import java.util.Random;
-import java.util.Iterator;
 import java.util.Vector;
 
-import infodynamics.measures.continuous.EntropyCalculator;
 import infodynamics.measures.continuous.EntropyCalculatorMultiVariate;
 import infodynamics.utils.EuclideanUtils;
 import infodynamics.utils.MathsUtils;
@@ -62,7 +60,7 @@ import infodynamics.utils.MatrixUtils;
  * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class EntropyCalculatorMultiVariateKozachenko  
-	implements EntropyCalculator, EntropyCalculatorMultiVariate {
+	implements EntropyCalculatorMultiVariate {
 
 	/**
 	 * Total number of observations supplied.
