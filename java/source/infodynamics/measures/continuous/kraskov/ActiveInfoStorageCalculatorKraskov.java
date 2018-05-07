@@ -326,52 +326,57 @@ public class ActiveInfoStorageCalculatorKraskov
 			
 			for (int k_candidate = 1; k_candidate <= k_search_max; k_candidate++) {
 				for (int tau_candidate = 1; tau_candidate <= tau_search_max; tau_candidate++) {
-					// Use our internal MI calculator in case it has any particular 
-					//  properties we need to have been set already
-					miCalc.initialise(k_candidate, 1);
-					miCalc.startAddObservations();
-					// Send all of the observations through:
-					for (double[] observations : vectorOfObservationTimeSeries) {
-						double[][] currentDestPastVectors = 
-								MatrixUtils.makeDelayEmbeddingVector(observations, k_candidate,
-										tau_candidate, (k_candidate-1)*tau_candidate,
-										observations.length - (k_candidate-1)*tau_candidate - 1);
-						double[][] currentDestNextVectors =
-								MatrixUtils.makeDelayEmbeddingVector(observations, 1,
-										(k_candidate-1)*tau_candidate + 1,
-										observations.length - (k_candidate-1)*tau_candidate - 1);
-						miCalc.addObservations(currentDestPastVectors, currentDestNextVectors);
-					}
-					miCalc.finaliseAddObservations();
-					// Now grab the prediction errors of the next value from the required number of
-					// nearest neighbours of the previous state: (array is of only one term)
-					double[] predictionError;
-					if (ragwitz_num_nns_set) {
-						predictionError = 
-							((MutualInfoCalculatorMultiVariateKraskov) miCalc).
-								computePredictionErrorsFromObservations(false, ragwitz_num_nns);
-					} else {
-						predictionError = 
+					try {
+						// Use our internal MI calculator in case it has any particular 
+						//  properties we need to have been set already
+						miCalc.initialise(k_candidate, 1);
+						miCalc.startAddObservations();
+						// Send all of the observations through:
+						for (double[] observations : vectorOfObservationTimeSeries) {
+							double[][] currentDestPastVectors = 
+									MatrixUtils.makeDelayEmbeddingVector(observations, k_candidate,
+											tau_candidate, (k_candidate-1)*tau_candidate,
+											observations.length - (k_candidate-1)*tau_candidate - 1);
+							double[][] currentDestNextVectors =
+									MatrixUtils.makeDelayEmbeddingVector(observations, 1,
+											(k_candidate-1)*tau_candidate + 1,
+											observations.length - (k_candidate-1)*tau_candidate - 1);
+							miCalc.addObservations(currentDestPastVectors, currentDestNextVectors);
+						}
+						miCalc.finaliseAddObservations();
+						// Now grab the prediction errors of the next value from the required number of
+						// nearest neighbours of the previous state: (array is of only one term)
+						double[] predictionError;
+						if (ragwitz_num_nns_set) {
+							predictionError = 
 								((MutualInfoCalculatorMultiVariateKraskov) miCalc).
-									computePredictionErrorsFromObservations(false);
-					}
-					if (debug) {
-						System.out.printf("Embedding prediction error (dim=%d) for k=%d,tau=%d is %.3f\n",
-								predictionError.length, k_candidate, tau_candidate,
-								predictionError[0] / (double) miCalc.getNumObservations());
-					}
-					if ((predictionError[0] / (double) miCalc.getNumObservations())
-							< bestPredictionError) {
-						// This parameter setting is the best so far:
-						// (Note division by number of observations to normalise
-						//  for less observations for larger k and tau)
-						bestPredictionError = predictionError[0] / (double) miCalc.getNumObservations();
-						k_candidate_best = k_candidate;
-						tau_candidate_best = tau_candidate;
-					}
-					if (k_candidate == 1) {
-						// tau is irrelevant, so no point testing other values
-						break;
+									computePredictionErrorsFromObservations(false, ragwitz_num_nns);
+						} else {
+							predictionError = 
+									((MutualInfoCalculatorMultiVariateKraskov) miCalc).
+										computePredictionErrorsFromObservations(false);
+						}
+						if (debug) {
+							System.out.printf("Embedding prediction error (dim=%d) for k=%d,tau=%d is %.3f\n",
+									predictionError.length, k_candidate, tau_candidate,
+									predictionError[0] / (double) miCalc.getNumObservations());
+						}
+						if ((predictionError[0] / (double) miCalc.getNumObservations())
+								< bestPredictionError) {
+							// This parameter setting is the best so far:
+							// (Note division by number of observations to normalise
+							//  for less observations for larger k and tau)
+							bestPredictionError = predictionError[0] / (double) miCalc.getNumObservations();
+							k_candidate_best = k_candidate;
+							tau_candidate_best = tau_candidate;
+						}
+						if (k_candidate == 1) {
+							// tau is irrelevant, so no point testing other values
+							break;
+						}
+					} catch (Exception ex) {
+						throw new Exception("Exception encountered in attempting auto-embedding, evaluating candidates k=" + k_candidate +
+								", tau=" + tau_candidate, ex);
 					}
 				}
 			}
@@ -384,38 +389,43 @@ public class ActiveInfoStorageCalculatorKraskov
 			
 			for (int k_candidate = 1; k_candidate <= k_search_max; k_candidate++) {
 				for (int tau_candidate = 1; tau_candidate <= tau_search_max; tau_candidate++) {
-					// Use our internal MI calculator in case it has any particular 
-					//  properties we need to have been set already
-					miCalc.initialise(k_candidate, 1);
-					miCalc.startAddObservations();
-					// Send all of the observations through:
-					for (double[] observations : vectorOfObservationTimeSeries) {
-						double[][] currentDestPastVectors = 
-								MatrixUtils.makeDelayEmbeddingVector(observations, k_candidate,
-										tau_candidate, (k_candidate-1)*tau_candidate,
-										observations.length - (k_candidate-1)*tau_candidate - 1);
-						double[][] currentDestNextVectors =
-								MatrixUtils.makeDelayEmbeddingVector(observations, 1,
-										(k_candidate-1)*tau_candidate + 1,
-										observations.length - (k_candidate-1)*tau_candidate - 1);
-						miCalc.addObservations(currentDestPastVectors, currentDestNextVectors);
-					}
-					miCalc.finaliseAddObservations();
-					// Now grab the AIS estimate here -- it's already bias corrected for 
-					double thisAIS = miCalc.computeAverageLocalOfObservations();
-					if (debug) {
-						System.out.printf("AIS for k=%d,tau=%d is %.3f\n",
-								k_candidate, tau_candidate, thisAIS);
-					}
-					if (thisAIS > bestAIS) {
-						// This parameter setting is the best so far:
-						bestAIS = thisAIS;
-						k_candidate_best = k_candidate;
-						tau_candidate_best = tau_candidate;
-					}
-					if (k_candidate == 1) {
-						// tau is irrelevant, so no point testing other values
-						break;
+					try {
+						// Use our internal MI calculator in case it has any particular 
+						//  properties we need to have been set already
+						miCalc.initialise(k_candidate, 1);
+						miCalc.startAddObservations();
+						// Send all of the observations through:
+						for (double[] observations : vectorOfObservationTimeSeries) {
+							double[][] currentDestPastVectors = 
+									MatrixUtils.makeDelayEmbeddingVector(observations, k_candidate,
+											tau_candidate, (k_candidate-1)*tau_candidate,
+											observations.length - (k_candidate-1)*tau_candidate - 1);
+							double[][] currentDestNextVectors =
+									MatrixUtils.makeDelayEmbeddingVector(observations, 1,
+											(k_candidate-1)*tau_candidate + 1,
+											observations.length - (k_candidate-1)*tau_candidate - 1);
+							miCalc.addObservations(currentDestPastVectors, currentDestNextVectors);
+						}
+						miCalc.finaliseAddObservations();
+						// Now grab the AIS estimate here -- it's already bias corrected for 
+						double thisAIS = miCalc.computeAverageLocalOfObservations();
+						if (debug) {
+							System.out.printf("AIS for k=%d,tau=%d is %.3f\n",
+									k_candidate, tau_candidate, thisAIS);
+						}
+						if (thisAIS > bestAIS) {
+							// This parameter setting is the best so far:
+							bestAIS = thisAIS;
+							k_candidate_best = k_candidate;
+							tau_candidate_best = tau_candidate;
+						}
+						if (k_candidate == 1) {
+							// tau is irrelevant, so no point testing other values
+							break;
+						}
+					} catch (Exception ex) {
+						throw new Exception("Exception encountered in attempting auto-embedding, evaluating candidates k=" + k_candidate +
+								", tau=" + tau_candidate, ex);
 					}
 				}
 			}
