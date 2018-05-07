@@ -716,33 +716,35 @@ public abstract class AutoAnalyser extends JFrame
 		
 		int[] singleCalcColumns = new int[numVariables];
 		Vector<int[]> variableCombinations = new Vector<int[]>();
-		if (computeResultCheckBox.isSelected()) {
-			// Only need variableCombinations filled out if we're computing
-			try {
+		try {
+			if (!allCombosCheckBox.isSelected()) {
+				// we're doing a single combination
+				for (int i = 0; i < numVariables; i++) {
+					singleCalcColumns[i] = Integer.parseInt(variableColTextFields[i].getText());
+					if ((singleCalcColumns[i] < 0) || (singleCalcColumns[i] >= dataColumns)) {
+						JOptionPane.showMessageDialog(this,
+								String.format("%s column must be between 0 and %d for this data set",
+										variableColNumLabels[i], dataColumns-1));
+						resultsLabel.setText(" ");
+						return;
+					}
+				}
+			}
+			if (computeResultCheckBox.isSelected()) {
+				// Only need variableCombinations filled out if we're computing
 				if (allCombosCheckBox.isSelected()) {
 					// We're doing all combinations
 					fillOutAllCombinations(variableCombinations);
 				} else {
-					// we're doing a single combination
-					for (int i = 0; i < numVariables; i++) {
-						singleCalcColumns[i] = Integer.parseInt(variableColTextFields[i].getText());
-						if ((singleCalcColumns[i] < 0) || (singleCalcColumns[i] >= dataColumns)) {
-							JOptionPane.showMessageDialog(this,
-									String.format("%s column must be between 0 and %d for this data set",
-											variableColNumLabels[i], dataColumns-1));
-							resultsLabel.setText(" ");
-							return;
-						}
-					}
 					variableCombinations.add(singleCalcColumns);
 				}
-			} catch (Exception e) {
-				// Catches number format exception, and column number out of bounds
-				JOptionPane.showMessageDialog(this,
-						e.getMessage());
-				resultsLabel.setText("Cannot parse a column number from input: " + e.getMessage());
-				return;
 			}
+		} catch (Exception e) {
+			// Catches number format exception, and column number out of bounds
+			JOptionPane.showMessageDialog(this,
+					e.getMessage());
+			resultsLabel.setText("Cannot parse a column number from input: " + e.getMessage());
+			return;
 		}
 
 		// Generate headers:
