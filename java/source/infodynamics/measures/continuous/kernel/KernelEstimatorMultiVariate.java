@@ -596,6 +596,7 @@ public class KernelEstimatorMultiVariate implements Cloneable {
 		}
 		int multiDimBin = 0;
 		int[] multiDimBinArray = null;
+		IntArray intArrayMultiDimBin = null;
 		if (usingIntegerIndexBins) {
 			multiDimBin = getMultiDimBinIndex(observation);
 			count = observations[multiDimBin].size();
@@ -612,7 +613,7 @@ public class KernelEstimatorMultiVariate implements Cloneable {
 			}
 		} else {
 			multiDimBinArray = getMultiDimBinArray(observation);
-			IntArray intArrayMultiDimBin = new IntArray(multiDimBinArray);
+			intArrayMultiDimBin = new IntArray(multiDimBinArray);
 			Vector<TimeStampedObservation> observationsInThisBin =
 				(Vector<TimeStampedObservation>) observationsByHash.get(intArrayMultiDimBin);
 			// Shouldn't need to check (observationsInThisBin != null) here since 
@@ -678,7 +679,7 @@ public class KernelEstimatorMultiVariate implements Cloneable {
 					}
 				} else {
 					Vector<TimeStampedObservation> observationsInThisBin =
-						(Vector<TimeStampedObservation>) observationsByHash.get(multiDimBinArray);
+						(Vector<TimeStampedObservation>) observationsByHash.get(intArrayMultiDimBin);
 					if (observationsInThisBin != null) {
 						for (int i = 0; i < observationsInThisBin.size(); i++) {
 							TimeStampedObservation tso = (TimeStampedObservation) observationsInThisBin.elementAt(i);
