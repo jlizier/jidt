@@ -18,6 +18,7 @@
 
 package infodynamics.measures.continuous;
 
+import infodynamics.measures.continuous.kraskov.MutualInfoCalculatorMultiVariateKraskov;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.RandomGenerator;
@@ -495,13 +496,22 @@ public abstract class MutualInfoMultiVariateCommon implements
 		if (newOrdering == null) {
 			return computeAverageLocalOfObservations();
 		}
+		if (!miComputed) {
+			computeAverageLocalOfObservations();
+		}
 		
 		// Take a clone of the object to compute the MI of the surrogates:
 		// (this is a shallow copy, it doesn't make new copies of all
 		//  the arrays)
 		MutualInfoMultiVariateCommon miSurrogateCalculator =
 				(MutualInfoMultiVariateCommon) this.clone();
-		
+		// Turn off normalisation here since the data will already have been normalised 
+		//  with the first run of the calculator. Normalising again can cause complication if
+		//  the original data had no standard deviation (normalising again now would inflate 
+		//  the small added noise values to the standard scale, and bring a range of CMI values
+		//  instead of just the zeros that we should otherwise get).
+		miSurrogateCalculator.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_NORMALISE, "false");
+
 		// Generate a new re-ordered source data
 		double[][] shuffledSourceData =
 				MatrixUtils.extractSelectedTimePointsReusingArrays(

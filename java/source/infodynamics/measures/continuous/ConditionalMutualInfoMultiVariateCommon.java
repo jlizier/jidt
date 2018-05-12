@@ -434,7 +434,7 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		//  we may be randomising the other variable:
 		// (Not necessary to check for distinct random perturbations)
 		int[][] newOrderings = rg.generateRandomPerturbations(
-				var1Observations.length, numPermutationsToCheck);
+				totalObservations, numPermutationsToCheck);
 		return computeSignificance(variableToReorder, newOrderings);
 	}
 
@@ -471,7 +471,13 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		//  the arrays - child classes should override this)
 		ConditionalMutualInfoMultiVariateCommon miSurrogateCalculator =
 				(ConditionalMutualInfoMultiVariateCommon) this.clone();
-		
+		// Turn off normalisation here since the data will already have been normalised 
+		//  with the first run of the calculator. Normalising again can cause complication if
+		//  the original data had no standard deviation (normalising again now would inflate 
+		//  the small added noise values to the standard scale, and bring a range of CMI values
+		//  instead of just the zeros that we should otherwise get).
+		miSurrogateCalculator.setProperty(PROP_NORMALISE, "false");
+
 		double[] surrogateMeasurements = new double[numPermutationsToCheck];
 		
 		// Now compute the MI for each set of shuffled data:
