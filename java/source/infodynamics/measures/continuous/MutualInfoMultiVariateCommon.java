@@ -505,12 +505,13 @@ public abstract class MutualInfoMultiVariateCommon implements
 		//  the arrays)
 		MutualInfoMultiVariateCommon miSurrogateCalculator =
 				(MutualInfoMultiVariateCommon) this.clone();
-		// Turn off normalisation here since the data will already have been normalised 
-		//  with the first run of the calculator. Normalising again can cause complication if
+		// Turn off normalisation and adding noise here since the data will already have been normalised 
+		//  and noise added with the first run of the calculator. Normalising again can cause complication if
 		//  the original data had no standard deviation (normalising again now would inflate 
 		//  the small added noise values to the standard scale, and bring a range of CMI values
 		//  instead of just the zeros that we should otherwise get).
 		miSurrogateCalculator.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_NORMALISE, "false");
+		miSurrogateCalculator.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "0");
 
 		// Generate a new re-ordered source data
 		double[][] shuffledSourceData =

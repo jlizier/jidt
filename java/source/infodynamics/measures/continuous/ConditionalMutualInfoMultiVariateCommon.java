@@ -18,6 +18,7 @@
 
 package infodynamics.measures.continuous;
 
+import infodynamics.measures.continuous.kraskov.ConditionalMutualInfoCalculatorMultiVariateKraskov;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.RandomGenerator;
@@ -471,12 +472,13 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		//  the arrays - child classes should override this)
 		ConditionalMutualInfoMultiVariateCommon miSurrogateCalculator =
 				(ConditionalMutualInfoMultiVariateCommon) this.clone();
-		// Turn off normalisation here since the data will already have been normalised 
-		//  with the first run of the calculator. Normalising again can cause complication if
+		// Turn off normalisation and adding noise here since the data will already have been normalised 
+		//  and noise added with the first run of the calculator. Normalising again can cause complication if
 		//  the original data had no standard deviation (normalising again now would inflate 
 		//  the small added noise values to the standard scale, and bring a range of CMI values
 		//  instead of just the zeros that we should otherwise get).
 		miSurrogateCalculator.setProperty(PROP_NORMALISE, "false");
+		miSurrogateCalculator.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "0");
 
 		double[] surrogateMeasurements = new double[numPermutationsToCheck];
 		
