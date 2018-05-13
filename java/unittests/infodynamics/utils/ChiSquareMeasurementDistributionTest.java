@@ -49,4 +49,36 @@ public class ChiSquareMeasurementDistributionTest extends TestCase {
 			}
 		}
 	}
+	
+	public void testAnalyticMeanAndStd() {
+		int numValues = 2000;
+		double[] actualValues = new double[] {0.000001, 0.000002};
+		int[] numObs = new int[] {100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000};
+		int[] degFreedom = new int[] {1, 2, 3, 5, 10, 20};
+		for (int a = 0; a < actualValues.length; a++) {
+			for (int d = 0; d < degFreedom.length; d++) {
+				for (int n = 0; n < numObs.length; n++) {
+					ChiSquareMeasurementDistribution csmDist = new ChiSquareMeasurementDistribution(actualValues[a], numObs[n], degFreedom[d]);
+					// System.out.printf("N=%d, degFree=%d, measuredValue=%.6f\n", numObs[n], degFreedom[d], actualValues[a]);
+					// Compute the mean of the null measurement distribution analytically and semi-empirically:
+					double meanOfDist = 0.0, meanSqrs = 0.0;
+					for (int i = 0; i < numValues; i++) {
+						double contribution = csmDist.computeEstimateForGivenPValue((1.0*i+0.5)/(double)numValues);
+						meanOfDist += contribution;
+						meanSqrs += contribution * contribution;
+					}
+					meanOfDist /= numValues;
+					// Check that we get the same mean value if we call the analytic method:
+					assertEquals(meanOfDist, csmDist.getMeanOfDistribution(), 0.00001);
+					meanSqrs /= numValues;
+					double std = Math.sqrt(meanSqrs - meanOfDist*meanOfDist);
+					// check that we get the same std deviation if we call the analytic method:
+					// This one has a little more numerical error in the empirical one, so we test it
+					//  to less decimal places.
+					assertEquals(std, csmDist.getStdOfDistribution(), 0.0001);
+				}
+			}
+		}
+		
+	}
 }

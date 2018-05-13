@@ -77,4 +77,22 @@ public class ChiSquareMeasurementDistribution extends
 		// Could also call the following, but this doesn't re-use our objects:
 		// return MathsUtils.chiSquareInv(1 - pValue, degreesOfFreedom);
 	}
+	
+	/**
+	 * Compute the mean of the measurement distribution
+	 * 
+	 * @return the mean
+	 */
+	public double getMeanOfDistribution() {
+		return chi2dist.getNumericalMean() / (2.0*((double)numObservations));
+	}
+	
+	/**
+	 * Compute the standard deviation of the measurement distribution
+	 * 
+	 * @return the standard deviation
+	 */
+	public double getStdOfDistribution() {
+		return Math.sqrt(chi2dist.getNumericalVariance()) / (2.0*((double)numObservations));
+	}
 }
