@@ -68,6 +68,15 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 			AnalyticNullDistributionComputer, Cloneable {
 
 	/**
+	 * Property name for whether analytically-determined bias
+	 *  is to be corrected out of estimated provided by the calculator.
+	 */
+	public static final String PROP_BIAS_CORRECTION = "BIAS_CORRECTION";
+	/**
+	 * Whether to analytically bias correct the returned values 
+	 */
+	protected boolean biasCorrection = false;
+	/**
 	 * Cached Cholesky decomposition of the covariance matrix
 	 * of the most recently supplied observations.
 	 * Is a matrix [C_11, C_12, C_1c; C_21, C_22, C_2c; C_c1, C_c2, C_cc],
@@ -158,15 +167,76 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 		var2IndicesInCovariance = null;
 	}
 
+	/**
+	 * Sets properties for the Gaussian CMI calculator.
+	 *  New property values are not guaranteed to take effect until the next call
+	 *  to an initialise method. 
+	 *  
+	 * <p>Valid property names, and what their
+	 * values should represent, include:</p>
+	 * <ul>
+	 *  <li>{@link #PROP_BIAS_CORRECTION} -- if set to "true", then the analytically determined bias
+	 *      (as the mean of the surrogate distribution) will be subtracted from all
+	 *      calculated values.
+	 *      Default is "false".
+	 *  <li>any valid properties for {@link ConditionalMutualInfoMultiVariateCommon#setProperty(String, String)},
+	 *  	except for {@link ConditionalMutualInfoMultiVariateCommon#PROP_NORMALISE}
+	 *  	which is simply ignored here (the value would not change the functionality in any case)</li>
+	 * </ul>
+	 * 
+	 * <p>Unknown property values are ignored.</p>
+	 * 
+	 * @param propertyName name of the property
+	 * @param propertyValue value of the property
+	 * @throws Exception for invalid property values
+	 */
 	@Override
 	public void setProperty(String propertyName, String propertyValue) {
-		if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
+		boolean propertySet = true;
+		if (propertyName.equalsIgnoreCase(PROP_BIAS_CORRECTION)) {
+			biasCorrection = Boolean.parseBoolean(propertyValue);
+		} else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
 			// We do not allow the user to alter this property away from false,
 			//  otherwise we would need to alter the functionality of the 
 			//  local calculations, etc.
-			return;
+			// So we don't set it, nor allow the superclass the opportunity.
+			if (debug) {
+				System.out.printf("Property %s cannot be set for the Gaussian calculator\n", PROP_NORMALISE);
+			}
+			propertySet = false;
+		} else {
+			// No property was set here
+			propertySet = false;
+			// try the superclass:
+			super.setProperty(propertyName, propertyValue);
 		}
-		super.setProperty(propertyName, propertyValue);
+		if (debug && propertySet) {
+			System.out.println(this.getClass().getSimpleName() + ": Set property " + propertyName +
+					" to " + propertyValue);
+		}
+	}
+
+	/**
+	 * Get property values for the calculator.
+	 * 
+	 * <p>Valid property names, and what their
+	 * values should represent, are the same as those for
+	 * {@link #setProperty(String, String)}</p>
+	 * 
+	 * <p>Unknown property values are responded to with a null return value.</p>
+	 * 
+	 * @param propertyName name of the property
+	 * @return current value of the property
+	 * @throws Exception for invalid property values
+	 */
+	public String getProperty(String propertyName) {
+	
+		if (propertyName.equalsIgnoreCase(PROP_BIAS_CORRECTION)) {
+			return Boolean.toString(biasCorrection);
+		} else {
+			// try the superclass:
+			return super.getProperty(propertyName);
+		}
 	}
 
 	@Override
@@ -472,6 +542,10 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 			}
 		}
 		
+		if (biasCorrection) {
+			ChiSquareMeasurementDistribution analyticMeasDist = computeSignificance();
+			lastAverage -= analyticMeasDist.getMeanOfDistribution();
+		}
 		condMiComputed = true;
 		return lastAverage;
 	}
@@ -692,6 +766,10 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 		double[] localValues = new double[lengthOfReturnArray];
 		int[] var2IndicesSelected = MatrixUtils.subtract(var2IndicesInCovariance, dimensionsVar1);
 		int[] condIndicesSelected = MatrixUtils.subtract(condIndicesInCovariance, dimensionsVar1 + dimensionsVar2);
+
+		// And in case we need this for bias correction:
+		ChiSquareMeasurementDistribution analyticMeasDist = computeSignificance();
+
 		for (int t = 0; t < newVar2Obs.length; t++) {
 			
 			double[] var1DeviationsFromMean =
@@ -759,7 +837,15 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 				localValues[t] = Math.log(adjustedPJoint /
 						(adjustedPVar1Cond * adjustedPVar2Cond));
 			}
-				
+
+			if (biasCorrection) {
+				// Remove the average bias from every local estimate.
+				// Note that we do the same thing even if these are new observations,
+				//  because the variances have been computed from the same
+				//  number of samples.
+				localValues[t] -= analyticMeasDist.getMeanOfDistribution();
+			}
+
 		}
 		
 		// if (isPreviousObservations) {

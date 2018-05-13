@@ -62,6 +62,15 @@ public class MutualInfoCalculatorMultiVariateGaussian
 			AnalyticNullDistributionComputer, Cloneable {
 
 	/**
+	 * Property name for whether analytically-determined bias
+	 *  is to be corrected out of estimated provided by the calculator.
+	 */
+    public static final String PROP_BIAS_CORRECTION = "BIAS_CORRECTION";
+    /**
+     * Whether to analytically bias correct the returned values 
+     */
+	protected boolean biasCorrection = false;
+	/**
 	 * Cached Cholesky decomposition of the covariance matrix
 	 * of the most recently supplied observations.
 	 * Is a matrix [C_ss, C_sd; C_ds, C_dd], where C_ss is the covariance
@@ -116,6 +125,67 @@ public class MutualInfoCalculatorMultiVariateGaussian
 		detCovariance = 0;
 		detSourceCovariance = 0;
 		detDestCovariance = 0;
+	}
+
+	/**
+	 * Sets properties for the Gaussian MI calculator.
+	 *  New property values are not guaranteed to take effect until the next call
+	 *  to an initialise method. 
+	 *  
+	 * <p>Valid property names, and what their
+	 * values should represent, include:</p>
+	 * <ul>
+	 *  <li>{@link #PROP_BIAS_CORRECTION} -- if set to "true", then the analytically determined bias
+	 *      (as the mean of the surrogate distribution) will be subtracted from all
+	 *      calculated values.
+	 *      Default is "false".
+	 *  <li>any valid properties for {@link MutualInfoMultiVariateCommon#setProperty(String, String)}.</li>
+	 * </ul>
+	 * 
+	 * <p>Unknown property values are ignored.</p>
+	 * 
+	 * @param propertyName name of the property
+	 * @param propertyValue value of the property
+	 * @throws Exception for invalid property values
+	 */
+	public void setProperty(String propertyName, String propertyValue) throws Exception {
+		boolean propertySet = true;
+		if (propertyName.equalsIgnoreCase(PROP_BIAS_CORRECTION)) {
+			biasCorrection = Boolean.parseBoolean(propertyValue);
+		} else {
+			// No property was set here
+			propertySet = false;
+			// try the superclass:
+			super.setProperty(propertyName, propertyValue);
+		}
+		if (debug && propertySet) {
+			System.out.println(this.getClass().getSimpleName() + ": Set property " + propertyName +
+					" to " + propertyValue);
+		}
+	}
+
+	/**
+	 * Get property values for the calculator.
+	 * 
+	 * <p>Valid property names, and what their
+	 * values should represent, are the same as those for
+	 * {@link #setProperty(String, String)}</p>
+	 * 
+	 * <p>Unknown property values are responded to with a null return value.</p>
+	 * 
+	 * @param propertyName name of the property
+	 * @return current value of the property
+	 * @throws Exception for invalid property values
+	 */
+	public String getProperty(String propertyName)
+		throws Exception {
+	
+		if (propertyName.equalsIgnoreCase(PROP_BIAS_CORRECTION)) {
+			return Boolean.toString(biasCorrection);
+		} else {
+			// try the superclass:
+			return super.getProperty(propertyName);
+		}
 	}
 
 	/**
@@ -282,6 +352,10 @@ public class MutualInfoCalculatorMultiVariateGaussian
 		lastAverage = 0.5 * Math.log(Math.abs(
 				detSourceCovariance * detDestCovariance /
 						detCovariance));
+		if (biasCorrection) {
+			ChiSquareMeasurementDistribution analyticMeasDist = computeSignificance();
+			lastAverage -= analyticMeasDist.getMeanOfDistribution();
+		}
 		miComputed = true;
 		return lastAverage;
 	}
@@ -468,6 +542,10 @@ public class MutualInfoCalculatorMultiVariateGaussian
 			lengthOfReturnArray = newDestObs.length + timeDiff;
 			offset = timeDiff;
 		}
+		
+		// In case we need this for bias correction:
+		ChiSquareMeasurementDistribution analyticMeasDist = computeSignificance();
+		
 		// If we have a time delay, slide the local values
 		double[] localValues = new double[lengthOfReturnArray];
 		for (int t = offset; t < newDestObs.length; t++) {
@@ -508,7 +586,15 @@ public class MutualInfoCalculatorMultiVariateGaussian
 			// Returning results in nats:
 			double localValue = Math.log(adjustedPJoint /
 					(adjustedPSource * adjustedPDest));
-			localValues[t] = localValue;			
+			localValues[t] = localValue;
+			
+			if (biasCorrection) {
+				// Remove the average bias from every local estimate.
+				// Note that we do the same thing even if these are new observations,
+				//  because the variances have been computed from the same
+				//  number of samples.
+				localValues[t] -= analyticMeasDist.getMeanOfDistribution();
+			}
 		}
 		
 		// if (isPreviousObservations) {
