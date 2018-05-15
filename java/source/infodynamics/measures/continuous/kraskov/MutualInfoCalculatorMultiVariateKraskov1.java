@@ -122,6 +122,19 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 		}
 	}
 
+	/**
+	 * Mirrors {@link #partialComputePredictionErrorFromObservations(int, int, int, boolean)}
+	 * in implementing the guts of each Kraskov algorithm;
+	 * however this is not intended to be used in a computation per se but for debugging
+	 * purposes where the caller specifically wants to examine the neighbour counts
+	 * for each data point (which is what is returned)
+	 * 
+	 * @param startTimePoint
+	 * @param numTimePoints
+	 * @return an array of arrays of neighbour counts for each sample (first index), where
+	 *  the array of neighbour counts is for variable 1 or x (index 0) then variable 2 or y (index 1)
+	 * @throws Exception
+	 */
 	public int[][] partialNeighbourCountFromObservations(
 			int startTimePoint, int numTimePoints) throws Exception {
 		
