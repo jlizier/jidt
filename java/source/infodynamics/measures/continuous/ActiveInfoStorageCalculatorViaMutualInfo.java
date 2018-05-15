@@ -281,35 +281,40 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 
 	/**
 	 * Protected method to internally parse and submit observations through
-	 *  to the underlying MI calculator once any internal parameter settings
-	 *  have been finalised (in the case of automatically determining the embedding
-	 *  parameters) 
+	 *  to the supplied MI calculator with the given embedding parameters
 	 * 
+	 * @param miCalc_in_use MI calculator to supply 
+	 * @param k_in_use k embedding dimension to use
+	 * @param tau_in_use tau embedding delay to use
 	 * @param observations time series of observations
 	 * @throws Exception
 	 */
-	protected void addObservationsAfterParamsDetermined(double[] observations) throws Exception {
-		if (observations.length - (k-1)*tau - 1 <= 0) {
+	protected void addObservationsWithGivenParams(MutualInfoCalculatorMultiVariate miCalc_in_use,
+			int k_in_use, int tau_in_use, double[] observations) throws Exception {
+		if (observations.length - (k_in_use-1)*tau_in_use - 1 <= 0) {
 			// There are no observations to add here
 			// Don't throw an exception, do nothing since more observations
 			//  can be added later.
 			return;
 		}
 		double[][] currentDestPastVectors = 
-				MatrixUtils.makeDelayEmbeddingVector(observations, k, tau, (k-1)*tau, observations.length - (k-1)*tau - 1);
+				MatrixUtils.makeDelayEmbeddingVector(observations, k_in_use, tau_in_use,
+						(k_in_use-1)*tau_in_use, observations.length - (k_in_use-1)*tau_in_use - 1);
 		double[][] currentDestNextVectors =
-				MatrixUtils.makeDelayEmbeddingVector(observations, 1, (k-1)*tau + 1, observations.length - (k-1)*tau - 1);
-		miCalc.addObservations(currentDestPastVectors, currentDestNextVectors);
+				MatrixUtils.makeDelayEmbeddingVector(observations, 1, (k_in_use-1)*tau_in_use + 1,
+						observations.length - (k_in_use-1)*tau_in_use - 1);
+		miCalc_in_use.addObservations(currentDestPastVectors, currentDestNextVectors);
 	}
 	
 	/**
 	 * Protected method to internally parse and submit observations through
-	 *  to the underlying MI calculator once any internal parameter settings
-	 *  have been finalised (in the case of automatically determining the embedding
-	 *  parameters).
+	 *  to the supplied MI calculator with the given embedding parameters.
 	 * This is done given a time-series of booleans indicating whether each entry
 	 *  is valid
 	 * 
+	 * @param miCalc_in_use MI calculator to supply 
+	 * @param k_in_use k embedding dimension to use
+	 * @param tau_in_use tau embedding delay to use
 	 * @param observations time series of observations
 	 * @param valid a time series (with indices the same as observations) indicating
 	 *  whether the entry in observations at that index is valid; we only take vectors
@@ -317,7 +322,8 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	 *  (even between points in the embedded k-vector with embedding delays) are valid.
 	 * @throws Exception
 	 */
-	protected void addObservationsAfterParamsDetermined(double[] observations, boolean[] valid) throws Exception {
+	protected void addObservationsWithGivenParams(MutualInfoCalculatorMultiVariate miCalc_in_use,
+			int k_in_use, int tau_in_use, double[] observations, boolean[] valid) throws Exception {
 		
 		// compute the start and end times using our determined embedding parameters:
 		Vector<int[]> startAndEndTimePairs = computeStartAndEndTimePairs(valid);
@@ -325,7 +331,8 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 		for (int[] timePair : startAndEndTimePairs) {
 			int startTime = timePair[0];
 			int endTime = timePair[1];
-			addObservationsAfterParamsDetermined(MatrixUtils.select(observations, startTime, endTime - startTime + 1));
+			addObservationsWithGivenParams(miCalc_in_use, k_in_use, tau_in_use,
+					MatrixUtils.select(observations, startTime, endTime - startTime + 1));
 		}
 	}
 	
@@ -359,27 +366,48 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 		// Auto embed if required
 		preFinaliseAddObservations();
 		
+		prepareMICalculator(miCalc, k, tau);
+		
+		vectorOfObservationTimeSeries = null; // No longer required
+		vectorOfValidityOfObservations = null;
+	}
+
+	/**
+	 * Prepare the given pre-instantiated (and properties supplied)
+	 *  Mutual information calculator with this data set,
+	 *  using the embedding parameters supplied.
+	 * This may be used in the final calculation, or by the auto-embedding 
+	 *  procedures, hence the use of method arguments rather than
+	 *  using the member variables directly.
+	 * 
+	 * @param miCalc_in_use MI calculator to supply 
+	 * @param k_in_use k embedding dimension to use
+	 * @param tau_in_use tau embedding delay to use
+	 * @throws Exception
+	 */
+	protected void prepareMICalculator(MutualInfoCalculatorMultiVariate miCalc_in_use,
+			int k_in_use, int tau_in_use) throws Exception {
+		
 		// Initialise the MI calculator, including any auto-embedding length
-		miCalc.initialise(k, 1);
-		miCalc.startAddObservations();
+		miCalc_in_use.initialise(k_in_use, 1);
+		miCalc_in_use.startAddObservations();
 		// Send all of the observations through:
 		Iterator<boolean[]> validityIterator = vectorOfValidityOfObservations.iterator();
 		for (double[] observations : vectorOfObservationTimeSeries) {
 			boolean[] validity = validityIterator.next();
 			if (validity == null) {
 				// Add the whole time-series
-				addObservationsAfterParamsDetermined(observations);
+				addObservationsWithGivenParams(miCalc_in_use, k_in_use,
+						tau_in_use, observations);
 			} else {
-				addObservationsAfterParamsDetermined(observations, validity);
+				addObservationsWithGivenParams(miCalc_in_use, k_in_use,
+						tau_in_use, observations, validity);
 			}
 		}
-		vectorOfObservationTimeSeries = null; // No longer required
-		vectorOfValidityOfObservations = null;
-		
 		// TODO do we need to throw an exception if there are no observations to add?
-		miCalc.finaliseAddObservations();
+		miCalc_in_use.finaliseAddObservations();
 	}
-
+	
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#setObservations(double[], boolean[])
 	 */
