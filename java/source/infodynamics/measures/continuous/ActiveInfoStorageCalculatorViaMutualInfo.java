@@ -441,7 +441,7 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 			int k_in_use, int tau_in_use, double[] observations, boolean[] valid) throws Exception {
 		
 		// compute the start and end times using our determined embedding parameters:
-		Vector<int[]> startAndEndTimePairs = computeStartAndEndTimePairs(valid);
+		Vector<int[]> startAndEndTimePairs = computeStartAndEndTimePairs(k_in_use, tau_in_use, valid);
 		
 		for (int[] timePair : startAndEndTimePairs) {
 			int startTime = timePair[0];
@@ -672,6 +672,9 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	 * <p>This method is made public so it can be used if one wants to compute the number of
 	 *  observations prior to making a call to {@link #setObservations(double[], boolean[])}.</p>
 	 * 
+	 * <p>Functions as per {@link #computeStartAndEndTimePairs(int, int, boolean[])}
+	 * with k and tau set to the property values of this calculator.</p>
+	 * 
 	 * @param valid a time series (with indices the same as observations)
 	 *  indicating whether the entry in observations at that index is valid; 
 	 *  we only take vectors as samples to add to the observation set where
@@ -681,6 +684,27 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	 *  of observations (as defined by <code>valid</code>).
 	 */
 	public Vector<int[]> computeStartAndEndTimePairs(boolean[] valid) {
+		return computeStartAndEndTimePairs(k, tau, valid);
+	}
+
+	/**
+	 * Compute a vector of start and end pairs of time points, between which we have
+	 *  valid series of observations.
+	 * 
+	 * <p>This method is made public so it can be used if one wants to compute the number of
+	 *  observations prior to making a call to {@link #setObservations(double[], boolean[])}.</p>
+	 * 
+	 * @param k_in_use the k embedding dimension parameter to use here
+	 * @param tau_in_use the tau embedding delay parameter to use here
+	 * @param valid a time series (with indices the same as observations)
+	 *  indicating whether the entry in observations at that index is valid; 
+	 *  we only take vectors as samples to add to the observation set where
+	 *  all points in the time series (even between points in 
+	 *  the embedded k-vector with embedding delays) are valid.
+	 * @return a vector for start and end time pairs of valid series
+	 *  of observations (as defined by <code>valid</code>).
+	 */
+	public Vector<int[]> computeStartAndEndTimePairs(int k_in_use, int tau_in_use, boolean[] valid) {
 		// Scan along the data avoiding invalid values
 		int startTime = 0;
 		int endTime = 0;
@@ -691,7 +715,7 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 				// Precondition: startTime holds a candidate start time
 				if (valid[t]) {
 					// This point is OK at the destination
-					if (t - startTime < (k-1)*tau+1) {
+					if (t - startTime < (k_in_use-1)*tau_in_use+1) {
 						// We're still checking the past history only, so
 						continue;
 					} else {
