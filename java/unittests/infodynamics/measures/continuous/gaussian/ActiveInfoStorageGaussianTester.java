@@ -18,6 +18,7 @@
 
 package infodynamics.measures.continuous.gaussian;
 
+import infodynamics.measures.continuous.ActiveInfoStorageCalculatorViaMutualInfo;
 import infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov;
 import infodynamics.utils.RandomGenerator;
 import junit.framework.TestCase;
@@ -41,9 +42,10 @@ public class ActiveInfoStorageGaussianTester extends TestCase {
 					new ActiveInfoStorageCalculatorGaussian();
 		aisCalc.setProperty("k", "4");
 		// Can't search larger than the max we expect because fluctuations can make the selection larger
-		aisCalc.setProperty(aisCalc.PROP_K_SEARCH_MAX, "3");
-		aisCalc.setProperty(aisCalc.PROP_TAU_SEARCH_MAX, "1");
-		aisCalc.setProperty(aisCalc.PROP_AUTO_EMBED_METHOD, aisCalc.AUTO_EMBED_METHOD_MAX_CORR_AIS);
+		aisCalc.setProperty(ActiveInfoStorageCalculatorViaMutualInfo.PROP_K_SEARCH_MAX, "3");
+		aisCalc.setProperty(ActiveInfoStorageCalculatorViaMutualInfo.PROP_TAU_SEARCH_MAX, "1");
+		aisCalc.setProperty(ActiveInfoStorageCalculatorViaMutualInfo.PROP_AUTO_EMBED_METHOD,
+				ActiveInfoStorageCalculatorViaMutualInfo.AUTO_EMBED_METHOD_MAX_CORR_AIS);
 		aisCalc.setDebug(true);
 		
 		// Run optimisation
