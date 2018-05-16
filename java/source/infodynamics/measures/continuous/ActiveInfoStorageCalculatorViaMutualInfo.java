@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.Vector;
 
 import infodynamics.measures.continuous.kraskov.ActiveInfoStorageCalculatorKraskov;
+import infodynamics.measures.continuous.kraskov.ActiveInfoStorageCalculatorMultiVariateKraskov;
 import infodynamics.measures.continuous.kraskov.MutualInfoCalculatorMultiVariateKraskov;
 import infodynamics.measures.continuous.kraskov.MutualInfoCalculatorMultiVariateKraskov1;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
@@ -496,7 +497,8 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 					try {
 						// Use a KSG MI calculator, which can do Ragwitz fairly easily.
 						MutualInfoCalculatorMultiVariateKraskov miCalcKraskov;
-						if (this instanceof ActiveInfoStorageCalculatorKraskov) {
+						if ((this instanceof ActiveInfoStorageCalculatorKraskov) || 
+							(this instanceof ActiveInfoStorageCalculatorMultiVariateKraskov)) {
 							// Use our internal MI calculator in case it has any particular 
 							//  properties we need to have been set already
 							miCalcKraskov = (MutualInfoCalculatorMultiVariateKraskov) miCalc;

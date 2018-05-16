@@ -20,7 +20,10 @@ package infodynamics.measures.continuous.kernel;
 
 import infodynamics.measures.continuous.ActiveInfoStorageCalculatorMultiVariate;
 import infodynamics.measures.continuous.ActiveInfoStorageCalculatorMultiVariateViaMutualInfo;
+import infodynamics.measures.continuous.ActiveInfoStorageCalculatorViaMutualInfo;
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
+import infodynamics.measures.continuous.kraskov.MutualInfoCalculatorMultiVariateKraskov;
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 
 /**
  * An Active Information Storage (AIS) calculator for multivariate time-series
@@ -72,6 +75,19 @@ public class ActiveInfoStorageCalculatorMultiVariateKernel
 	public static final String MI_CALCULATOR_KERNEL = MutualInfoCalculatorMultiVariateKernel.class.getName();
 		
 	/**
+	 * Property name for the number of surrogates to use in computing the bias correction
+	 *  if required for the {@link ActiveInfoStorageCalculatorViaMutualInfo#AUTO_EMBED_METHOD_MAX_CORR_AIS}
+	 *  auto embedding method. Defaults to 20.
+	 */
+	public static final String PROP_MAX_CORR_AIS_NUM_SURROGATES = "AUTO_EMBED_MAX_CORR_AIS_SURROGATES";
+	/**
+	 * Internal variable for storing the number of surrogates to use for the
+	 * auto-embedding {@link ActiveInfoStorageCalculatorViaMutualInfo#AUTO_EMBED_METHOD_MAX_CORR_AIS}
+	 * method.
+	 */
+	protected int auto_embed_num_surrogates = 20;
+	
+	/**
 	 * Creates a new instance of the box-kernel estimator for AIS
 	 * 
 	 * @throws ClassNotFoundException 
@@ -116,5 +132,63 @@ public class ActiveInfoStorageCalculatorMultiVariateKernel
 		// Set the property before the calculator is initialised by the super class
 		miCalc.setProperty(MutualInfoCalculatorMultiVariateKernel.KERNEL_WIDTH_PROP_NAME, Double.toString(epsilon));
 		super.initialise(dimensions, k, tau);
+	}
+
+	/**
+	 * Sets properties for the AIS multivariate kernel calculator.
+	 *  New property values are not guaranteed to take effect until the next call
+	 *  to an initialise method. 
+	 *  
+	 * <p>Valid property names, and what their
+	 * values should represent, include:</p>
+	 * <ul>
+	 * 		<li>{@link #PROP_MAX_CORR_AIS_NUM_SURROGATES} -- number of surrogates to use
+	 * 		to compute the bias correction		
+	 * 		in the auto-embedding if the property {@link #PROP_AUTO_EMBED_METHOD}
+	 * 		has been set to {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS}. Defaults to 20</li>
+	 * 		<li>Any properties accepted by {@link super#setProperty(String, String)}</li>
+	 * 		<li>Or properties accepted by the underlying
+	 * 		{@link MutualInfoCalculatorMultiVariateKraskov#setProperty(String, String)} implementation.</li>
+	 * </ul>
+	 * 
+	 * @param propertyName name of the property
+	 * @param propertyValue value of the property.
+	 * @throws Exception if there is a problem with the supplied value).
+	 */
+	@Override
+	public void setProperty(String propertyName, String propertyValue)
+			throws Exception {
+		boolean propertySet = true;
+		if (propertyName.equalsIgnoreCase(PROP_MAX_CORR_AIS_NUM_SURROGATES)) {
+			auto_embed_num_surrogates = Integer.parseInt(propertyValue);
+		} else {
+			propertySet = false;
+			// Assume it was a property for the parent class or underlying MI calculator
+			super.setProperty(propertyName, propertyValue);
+		}
+		if (debug && propertySet) {
+			System.out.println(this.getClass().getSimpleName() + ": Set property " + propertyName +
+					" to " + propertyValue);
+		}
+	}
+
+	@Override
+	public String getProperty(String propertyName)
+			throws Exception {
+		
+		if (propertyName.equalsIgnoreCase(PROP_MAX_CORR_AIS_NUM_SURROGATES)) {
+			return Integer.toString(auto_embed_num_surrogates);
+		} else {
+			// Assume it was a property for the parent class or underlying MI calculator
+			return super.getProperty(propertyName);
+		}
+	}
+
+
+	@Override
+	protected double computeAdditionalBiasToRemove() throws Exception {
+		EmpiricalMeasurementDistribution measDist =
+					miCalc.computeSignificance(auto_embed_num_surrogates);
+		return measDist.getMeanOfDistribution();
 	}
 }
