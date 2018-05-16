@@ -128,7 +128,7 @@ public class ActiveInfoStorageCalculatorKernel
 	
 
 	/**
-	 * Sets properties for the AIS calculator.
+	 * Sets properties for the AIS kernel calculator.
 	 *  New property values are not guaranteed to take effect until the next call
 	 *  to an initialise method. 
 	 *  
@@ -148,6 +148,7 @@ public class ActiveInfoStorageCalculatorKernel
 	 * @param propertyValue value of the property.
 	 * @throws Exception if there is a problem with the supplied value).
 	 */
+	@Override
 	public void setProperty(String propertyName, String propertyValue)
 			throws Exception {
 		boolean propertySet = true;
