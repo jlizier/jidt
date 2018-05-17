@@ -402,7 +402,7 @@ public class TransferEntropyCalculatorKraskov
 				autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY) ||
 				autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_MAX_CORR_AIS) ||
 				autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_MAX_CORR_AIS_DEST_ONLY) ||
-        autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE)) {
+				autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE)) {
 		
 			// Use a Kraskov AIS calculator to embed both time-series individually:
 			ActiveInfoStorageCalculatorKraskov aisCalc = new ActiveInfoStorageCalculatorKraskov();
@@ -473,54 +473,54 @@ public class TransferEntropyCalculatorKraskov
 					System.out.println("Starting embedding of source:");
 				}
 
-        // Instantiate a new calculator to optimize the embedding parameters
-        TransferEntropyCalculatorKraskov teEmbeddingCalc =
-            new TransferEntropyCalculatorKraskov();
+				// Instantiate a new calculator to optimize the embedding parameters
+				TransferEntropyCalculatorKraskov teEmbeddingCalc =
+						new TransferEntropyCalculatorKraskov();
 
-        // Set all properties of the current calculator except embedding method
-        for (String key : props.keySet()) {
-          teEmbeddingCalc.setProperty(key, props.get(key));
-        }
-        teEmbeddingCalc.setProperty(PROP_AUTO_EMBED_METHOD, AUTO_EMBED_METHOD_NONE);
+				// Set all properties of the current calculator except embedding method
+				for (String key : props.keySet()) {
+					teEmbeddingCalc.setProperty(key, props.get(key));
+				}
+				teEmbeddingCalc.setProperty(PROP_AUTO_EMBED_METHOD, AUTO_EMBED_METHOD_NONE);
 
-        double bestTE = Double.NEGATIVE_INFINITY;
-        int l_candidate_best = 1;
-        int l_tau_candidate_best = 1;
+				double bestTE = Double.NEGATIVE_INFINITY;
+				int l_candidate_best = 1;
+				int l_tau_candidate_best = 1;
 
-        // Iterate over all possible embeddings
-        for (int l_candidate = 1; l_candidate <= k_search_max; l_candidate++) {
-          for (int l_tau_candidate = 1; l_tau_candidate <= tau_search_max; l_tau_candidate++) {
+				// Iterate over all possible embeddings
+				for (int l_candidate = 1; l_candidate <= k_search_max; l_candidate++) {
+					for (int l_tau_candidate = 1; l_tau_candidate <= tau_search_max; l_tau_candidate++) {
 
-            teEmbeddingCalc.initialise(k, k_tau, l_candidate, l_tau_candidate, delay);
-            teEmbeddingCalc.startAddObservations();
+						teEmbeddingCalc.initialise(k, k_tau, l_candidate, l_tau_candidate, delay);
+						teEmbeddingCalc.startAddObservations();
 
-            Iterator<double[]> destIterator = vectorOfDestinationTimeSeries.iterator();
-            for (double[] source : vectorOfSourceTimeSeries) {
-              double[] dest = destIterator.next();
-              teEmbeddingCalc.addObservations(source, dest);
-            }
-            teEmbeddingCalc.finaliseAddObservations();
-            double thisTE = teEmbeddingCalc.computeAverageLocalOfObservations();
+						Iterator<double[]> destIterator = vectorOfDestinationTimeSeries.iterator();
+						for (double[] source : vectorOfSourceTimeSeries) {
+							double[] dest = destIterator.next();
+							teEmbeddingCalc.addObservations(source, dest);
+						}
+						teEmbeddingCalc.finaliseAddObservations();
+						double thisTE = teEmbeddingCalc.computeAverageLocalOfObservations();
 
-            if (debug) {
-              System.out.printf("TE for l=%d, l_tau=%d is %.3f\n",
-                  l_candidate, l_tau_candidate, thisTE);
-            }
+						if (debug) {
+							System.out.printf("TE for l=%d, l_tau=%d is %.3f\n",
+									l_candidate, l_tau_candidate, thisTE);
+						}
 
-            if (thisTE > bestTE) {
-              // This parameter setting is the best so far:
-              bestTE = thisTE;
-              l_candidate_best = l_candidate;
-              l_tau_candidate_best = l_tau_candidate;
-            }
-            if (l_candidate == 1) {
-              // tau is irrelevant, so no point testing other values
-              break;
-            }
-          }
-        }
-        l = l_candidate_best;
-        l_tau = l_tau_candidate_best;
+						if (thisTE > bestTE) {
+							// This parameter setting is the best so far:
+							bestTE = thisTE;
+							l_candidate_best = l_candidate;
+							l_tau_candidate_best = l_tau_candidate;
+						}
+						if (l_candidate == 1) {
+							// tau is irrelevant, so no point testing other values
+							break;
+						}
+					}
+				}
+				l = l_candidate_best;
+				l_tau = l_tau_candidate_best;
 				if (debug) {
 					System.out.printf("Embedding parameters for source set to l=%d,l_tau=%d\n",
 						l, l_tau);
