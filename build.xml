@@ -52,7 +52,7 @@
 		     ignore the warning, and I don't want to bother installing Java 7 just to compile
 		     like this. I'll endeavour not to use JDK 8 libraries so as not to cause
 		     any issues here ... -->
-		<javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false" target="1.6" source="1.6">
+		<javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false" target="1.6" source="1.6" encoding="UTF8">
 			<classpath refid="apache-classpath"/>
 		</javac>
 
