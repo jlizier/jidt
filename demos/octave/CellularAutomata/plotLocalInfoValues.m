@@ -176,7 +176,11 @@ function h = plotLocalInfoValues(localResults, plotOptions)
 		bluemap = prepareColourmap(mainSignVectorLength, true, scalingMainComponent, scalingScdryComponent, gammaPower);
 		colormap(bluemap);
 		% Now, plot the local values with the pre-prepared colormap
-		h = imagesc(localResultsToPlot, [0, maxLocal]);
+		if (maxLocal == 0)
+			h = imagesc(localResultsToPlot, [0, 1]);
+		else
+			h = imagesc(localResultsToPlot, [0, maxLocal]);
+		end
 	end
 	axis([0.5 (plotOptions.plotCols+0.5) 0.5 (plotOptions.plotRows+0.5)]);
 	colorbar
