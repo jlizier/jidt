@@ -292,6 +292,9 @@ public class ActiveInfoStorageCalculatorMultiVariateViaMutualInfo
   public void addObservations(double[][] observations) throws Exception {
 
 	  if (dimensions == 1) {
+		  if ((observations.length > 0) && (observations[0].length != dimensions)) {
+			  throw new Exception("Observations with dimension > 1 supplied when calculator only initialised for dimension 1");
+		  }
 		  addObservations(MatrixUtils.selectColumn(observations, 0));
 	  } else {		  
 		// Store these observations in our vector for now
@@ -342,6 +345,9 @@ public class ActiveInfoStorageCalculatorMultiVariateViaMutualInfo
 		}
 
     if (dimensions == 1) {
+		  if ((observations.length > 0) && (observations[0].length != dimensions)) {
+			  throw new Exception("Observations with dimension > 1 supplied when calculator only initialised for dimension 1");
+		  }
     	super.addObservations(MatrixUtils.selectColumn(observations, 0), startTime, numTimeSteps);
     } else {
     	addObservations(MatrixUtils.selectRows(observations, startTime, numTimeSteps));
@@ -364,6 +370,9 @@ public class ActiveInfoStorageCalculatorMultiVariateViaMutualInfo
 		throws Exception {
 		
 	    if (dimensions == 1) {
+			  if ((observations.length > 0) && (observations[0].length != dimensions)) {
+				  throw new Exception("Observations with dimension > 1 supplied when calculator only initialised for dimension 1");
+			  }
 	    	super.addObservations(MatrixUtils.selectColumn(observations, 0), valid);
 	    } else {
 			// Add these observations and the indication of their validity
