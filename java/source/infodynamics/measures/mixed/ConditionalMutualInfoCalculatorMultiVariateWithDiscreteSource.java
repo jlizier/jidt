@@ -55,8 +55,32 @@ public interface ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSource {
 	public void addObservations(double[][] continuousObservations,
 			int[] discreteObservations, double[][] conditionedObservations) throws Exception;
 
+	/**
+	 * Method to add observations. Can only be called when the continuous observations and
+	 *  the conditionals were both set to have dimension 1 in {@link #initialise(int, int, int)}
+	 * 
+	 * @param continuousObservations
+	 * @param discreteObservations
+	 * @param conditionedObservations
+	 * @throws Exception
+	 */
+	public void addObservations(double[] continuousObservations,
+			int[] discreteObservations, double[] conditionedObservations) throws Exception;
+
 	public void setObservations(double[][] continuousObservations,
 			int[] discreteObservations, double[][] conditionedObservations) throws Exception;
+
+	/**
+	 * Method to set observations. Can only be called when the continuous observations and
+	 *  the conditionals were both set to have dimension 1 in {@link #initialise(int, int, int)}
+	 * 
+	 * @param continuousObservations
+	 * @param discreteObservations
+	 * @param conditionedObservations
+	 * @throws Exception
+	 */
+	public void setObservations(double[] continuousObservations,
+			int[] discreteObservations, double[] conditionedObservations) throws Exception;
 
 	public double computeAverageLocalOfObservations() throws Exception;
 

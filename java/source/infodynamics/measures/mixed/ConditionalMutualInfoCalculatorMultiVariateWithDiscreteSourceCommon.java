@@ -131,6 +131,13 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSou
 		throw new RuntimeException("Not implemented yet");
 	}
 	
+	@Override
+	public void addObservations(double[] continuousObservations,
+			int[] discreteObservations, double[] conditionedObservations)
+			throws Exception {
+		throw new RuntimeException("Not implemented yet");
+	}
+
 	public void setObservations(double[][] continuousObservations,
 			int[] discreteObservations, double[][] conditionedObservations)
 			throws Exception {
@@ -156,6 +163,20 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSou
 		
 	}
 
+	@Override
+	public void setObservations(double[] continuousObservations,
+			int[] discreteObservations, double[] conditionedObservations)
+			throws Exception {
+		if ((dimensionsContinuous != 1) || (dimensionsConditional != 1)) {
+			throw new Exception("setObservations(double[], int[], double[]) can only be called when both the continuous observations and conditional observations were initialised to have dimension 1");
+		}
+		double[][] contObservationsMatrix = new double[continuousObservations.length][1];
+		MatrixUtils.copyIntoColumn(contObservationsMatrix, 0, continuousObservations);
+		double[][] condObservationsMatrix = new double[conditionedObservations.length][1];
+		MatrixUtils.copyIntoColumn(condObservationsMatrix, 0, conditionedObservations);
+		setObservations(contObservationsMatrix, discreteObservations, condObservationsMatrix);
+	}
+	
 	/**
 	 * Compute the significance of the mutual information of the previously supplied observations.
 	 * We destroy the p(x,d|z) correlations, while retaining the p(x|z) marginals, to check how
