@@ -155,6 +155,12 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSou
 		if (conditionedObservations[0].length == 0) {
 			throw new Exception("Computing MI with a null set of conditioned data");
 		}
+		if (continuousObservations[0].length != dimensionsContinuous) {
+			throw new Exception("The continuous observations do not have the expected number of variables (" + dimensionsContinuous + ")");
+		}
+		if (conditionedObservations[0].length != dimensionsConditional) {
+			throw new Exception("The conditional observations do not have the expected number of variables (" + dimensionsConditional + ")");
+		}
 		continuousDataX = continuousObservations;
 		discreteData = discreteObservations;
 		conditionedDataZ = conditionedObservations;
@@ -167,9 +173,6 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteSou
 	public void setObservations(double[] continuousObservations,
 			int[] discreteObservations, double[] conditionedObservations)
 			throws Exception {
-		if ((dimensionsContinuous != 1) || (dimensionsConditional != 1)) {
-			throw new Exception("setObservations(double[], int[], double[]) can only be called when both the continuous observations and conditional observations were initialised to have dimension 1");
-		}
 		double[][] contObservationsMatrix = new double[continuousObservations.length][1];
 		MatrixUtils.copyIntoColumn(contObservationsMatrix, 0, continuousObservations);
 		double[][] condObservationsMatrix = new double[conditionedObservations.length][1];
