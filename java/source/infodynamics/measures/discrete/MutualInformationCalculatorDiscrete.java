@@ -66,10 +66,16 @@ Theory' (John Wiley & Sons, New York, 1991).</li>
 public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDiscrete 
 	implements ChannelCalculatorDiscrete, AnalyticNullDistributionComputer {
 
-	private int timeDiff = 0;
-	private int[][]	jointCount = null; // Count for (i[t-timeDiff], j[t]) tuples
-	private int[] iCount = null; // Count for i[t-timeDiff]		
-	private int[] jCount = null; // Count for j[t]
+	/**
+	 * Store the number of symbols for each variable
+	 */
+	protected int base1;
+	protected int base2;
+
+	protected int timeDiff = 0;
+	protected int[][]	jointCount = null; // Count for (i[t-timeDiff], j[t]) tuples
+	protected int[] iCount = null; // Count for i[t-timeDiff]
+	protected int[] jCount = null; // Count for j[t]
 
 	protected boolean miComputed = false;
 	
@@ -77,32 +83,39 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 	 * Construct a new MI calculator with default time difference of 0
 	 *  between the variables
 	 * 
-	 * @param base number of symbols for each variable.
+	 * @param base number of symbols for each variable. (same for each)
 	 *        E.g. binary variables are in base-2.
 	 * @throws Exception
 	 */
 	public MutualInformationCalculatorDiscrete(int base) throws Exception {
-		this(base, 0);
+		this(base, base, 0);
 	}
 	
 	/**
 	 * Create a new mutual information calculator
 	 * 
-	 * @param base number of symbols for each variable.
+	 * @param base1 number of symbols for first variable.
 	 *        E.g. binary variables are in base-2.
+	 * @param base2 number of symbols for second variable.
 	 * @param timeDiff number of time steps across which to compute
 	 *   MI for given time series
 	 * @throws Exception when timeDiff < 0
 	 */
-	public MutualInformationCalculatorDiscrete(int base, int timeDiff) throws Exception {
-		super(base);
+	public MutualInformationCalculatorDiscrete(int base1, int base2, int timeDiff) throws Exception {
+		// Create super object, just with first base
+		super(base1);
+		
+		// Store the bases
+		this.base1 = base1;
+		this.base2 = base2;
+
 		if (timeDiff < 0) {
 			throw new Exception("timeDiff must be >= 0");
 		}
 		this.timeDiff = timeDiff;
-		jointCount = new int[base][base];
-		iCount = new int[base];
-		jCount = new int[base];
+		jointCount = new int[base1][base2];
+		iCount = new int[base1];
+		jCount = new int[base2];
 	}
 
 	@Override
@@ -176,10 +189,10 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 		if (debug) {
 			System.out.println("i\tj\tp_i\tp_j\tp_joint\tlocal");
 		}
-		for (int i = 0; i < base; i++) {
+		for (int i = 0; i < base1; i++) {
 			// compute p_i
 			double probi = (double) iCount[i] / (double) observations;
-			for (int j = 0; j < base; j++) {
+			for (int j = 0; j < base2; j++) {
 				// compute p_j
 				double probj = (double) jCount[j] / (double) observations;
 				// compute p(veci=i, vecj=j)
@@ -230,21 +243,23 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 		
 		// Reconstruct the values of the first and second variables (not necessarily in order)
 		int[] iValues = new int[observations];
-		int[] jValues = new int[observations];
 		int t_i = 0;
-		int t_j = 0;
-		for (int iVal = 0; iVal < base; iVal++) {
+		for (int iVal = 0; iVal < base1; iVal++) {
 			int numberOfSamplesI = iCount[iVal];
 			MatrixUtils.fill(iValues, iVal, t_i, numberOfSamplesI);
 			t_i += numberOfSamplesI;
-			int numberOfSamplesJ = jCount[iVal];
-			MatrixUtils.fill(jValues, iVal, t_j, numberOfSamplesJ);
+		}
+		int[] jValues = new int[observations];
+		int t_j = 0;
+		for (int jVal = 0; jVal < base2; jVal++) {
+			int numberOfSamplesJ = jCount[jVal];
+			MatrixUtils.fill(jValues, jVal, t_j, numberOfSamplesJ);
 			t_j += numberOfSamplesJ;
 		}
 		
 		MutualInformationCalculatorDiscrete mi2;
 		try {
-			mi2 = new MutualInformationCalculatorDiscrete(base, timeDiff);
+			mi2 = new MutualInformationCalculatorDiscrete(base1, base2, timeDiff);
 		} catch (Exception e) {
 			// The only possible exception is if timeDiff < 0, which 
 			// it cannot be. Shut down the JVM
@@ -286,7 +301,7 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 		}
 		return new ChiSquareMeasurementDistribution(average,
 				observations,
-				(base - 1) * (base - 1));
+				(base1 - 1) * (base2 - 1));
 	}
 	
 	/**

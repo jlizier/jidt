@@ -92,7 +92,7 @@ public class MutualInfoCalculatorMultiVariateWithDiscreteSymbolic implements
 		
 		// Make the base the maximum of the number of combinations of orderings of the
 		//  continuous variables and the discrete base.
-		miCalc = new MutualInformationCalculatorDiscrete(baseToUse,0);
+		miCalc = new MutualInformationCalculatorDiscrete(baseToUse);
 		miCalc.initialise();
 	}
 

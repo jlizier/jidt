@@ -213,9 +213,9 @@ public class AutoAnalyserMI extends AutoAnalyserChannelCalculator
 		}
 		
 		return new DiscreteCalcAndArguments(
-				new MutualInformationCalculatorDiscrete(base, timeDiff),
+				new MutualInformationCalculatorDiscrete(base, base, timeDiff),
 				base,
-				base + ", " + timeDiff);
+				base + ", " + base + ", " + timeDiff);
 	}
 
 	/**
