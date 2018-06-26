@@ -52,12 +52,15 @@ public class AutoAnalyserEntropy extends AutoAnalyser {
 	protected String[] gaussianProperties;
 	protected String[] gaussianPropertiesFieldNames;
 	protected String[] gaussianPropertyDescriptions;
+	protected String[][] gaussianPropertyValueChoices;
 	protected String[] kernelProperties;
 	protected String[] kernelPropertiesFieldNames;
 	protected String[] kernelPropertyDescriptions;
+	protected String[][] kernelPropertyValueChoices;
 	protected String[] klProperties;
 	protected String[] klPropertiesFieldNames;
 	protected String[] klPropertyDescriptions;
+	protected String[][] klPropertyValueChoices;
 
 	public AutoAnalyserEntropy() {
 		super();
@@ -100,6 +103,9 @@ public class AutoAnalyserEntropy extends AutoAnalyser {
 		discretePropertyDescriptions = new String[] {
 				"Number of discrete states available for each variable (i.e. 2 for binary)"
 		};
+		discretePropertyValueChoices = new String[][] {
+				null
+		};
 		
 		// Continuous:
 		abstractContinuousClass = EntropyCalculator.class;
@@ -113,12 +119,17 @@ public class AutoAnalyserEntropy extends AutoAnalyser {
 		commonContPropertyDescriptions = new String[] {
 				// None
 		};
+		commonContPropertyValueChoices = new String[][] {
+				// None
+		};
 		// Gaussian properties:
 		gaussianProperties = new String[] {
 		};
 		gaussianPropertiesFieldNames = new String[] {
 		};
 		gaussianPropertyDescriptions = new String[] {
+		};
+		gaussianPropertyValueChoices = new String[][] {	
 		};
 		// Kernel:
 		kernelProperties = new String[] {
@@ -134,7 +145,11 @@ public class AutoAnalyserEntropy extends AutoAnalyser {
 						EntropyCalculatorKernel.NORMALISE_PROP_NAME +
 						" is set, then this is a number of standard deviations; " +
 						"otherwise it is an absolute value.",
-				"(boolean) whether to normalise <br/>the incoming time-series to mean 0, standard deviation 1, or not  (recommended)",
+				"(boolean) whether to normalise <br/>the incoming time-series to mean 0, standard deviation 1, or not (default true, recommended)",
+		};
+		kernelPropertyValueChoices = new String[][] {
+				null,
+				{"true", "false"}
 		};
 		// KSG (Kraskov):
 		klProperties = new String[] {
@@ -144,6 +159,8 @@ public class AutoAnalyserEntropy extends AutoAnalyser {
 		klPropertiesFieldNames = new String[] {
 		};
 		klPropertyDescriptions = new String[] {
+		};
+		klPropertyValueChoices = new String[][] {
 		};
 	}
 
@@ -251,14 +268,17 @@ public class AutoAnalyserEntropy extends AutoAnalyser {
 				calcProperties.classSpecificPropertyNames = gaussianProperties;
 				calcProperties.classSpecificPropertiesFieldNames = gaussianPropertiesFieldNames;
 				calcProperties.classSpecificPropertyDescriptions = gaussianPropertyDescriptions;
+				calcProperties.classSpecificPropertyValueChoices = gaussianPropertyValueChoices;
 			} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_KOZ_LEO)) {
 				calcProperties.classSpecificPropertyNames = klProperties;
 				calcProperties.classSpecificPropertiesFieldNames = klPropertiesFieldNames;
 				calcProperties.classSpecificPropertyDescriptions = klPropertyDescriptions;
+				calcProperties.classSpecificPropertyValueChoices = klPropertyValueChoices;
 			} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_KERNEL)) {
 				calcProperties.classSpecificPropertyNames = kernelProperties;
 				calcProperties.classSpecificPropertiesFieldNames = kernelPropertiesFieldNames;
 				calcProperties.classSpecificPropertyDescriptions = kernelPropertyDescriptions;
+				calcProperties.classSpecificPropertyValueChoices = kernelPropertyValueChoices;
 			} else {
 				calcProperties = null;
 				throw new Exception("No recognised calculator selected: " +

@@ -57,9 +57,11 @@ public class AutoAnalyserCTE extends AutoAnalyser
 	protected String[] gaussianProperties;
 	protected String[] gaussianPropertiesFieldNames;
 	protected String[] gaussianPropertyDescriptions;
+	protected String[][] gaussianPropertyValueChoices;
 	protected String[] kraskovProperties;
 	protected String[] kraskovPropertiesFieldNames;
 	protected String[] kraskovPropertyDescriptions;
+	protected String[][] kraskovPropertyValueChoices;
 
 	public AutoAnalyserCTE() {
 		super();
@@ -108,6 +110,10 @@ public class AutoAnalyserCTE extends AutoAnalyser
 				"Can be set individually for each variable -- see code.",
 				"Destination history embedding length (k_HISTORY)",
 		};
+		discretePropertyValueChoices = new String[][] {
+				null,
+				null
+		};
 		
 		// Continuous:
 		abstractContinuousClass = ConditionalTransferEntropyCalculator.class;
@@ -142,12 +148,24 @@ public class AutoAnalyserCTE extends AutoAnalyser
 				"Conditional history embeding delay",
 				"Delay from conditional to destination (in time steps)"
 		};
+		commonContPropertyValueChoices = new String[][] {
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null,
+				null
+		};
 		// Gaussian properties:
 		gaussianProperties = new String[] {
 		};
 		gaussianPropertiesFieldNames = new String[] {
 		};
 		gaussianPropertyDescriptions = new String[] {
+		};
+		gaussianPropertyValueChoices = new String[][] {	
 		};
 		// KSG (Kraskov):
 		kraskovProperties = new String[] {
@@ -185,7 +203,16 @@ public class AutoAnalyserCTE extends AutoAnalyser
 				"Whether to enable the GPU module (number of threads then has no bearing); boolean, default false",
 				"Which KSG algorithm to use (1 or 2)",
 		};
-		
+		kraskovPropertyValueChoices = new String[][] {
+				{"true", "false"},
+				null,
+				null,
+				null,
+				{"MAX_NORM", "EUCLIDEAN", "EUCLIDEAN_SQUARED"},
+				null,
+				{"true", "false"},
+				{"1", "2"}
+		};
 	}
 
 	@Override
@@ -338,11 +365,13 @@ public class AutoAnalyserCTE extends AutoAnalyser
 				calcProperties.classSpecificPropertyNames = gaussianProperties;
 				calcProperties.classSpecificPropertiesFieldNames = gaussianPropertiesFieldNames;
 				calcProperties.classSpecificPropertyDescriptions = gaussianPropertyDescriptions;
+				calcProperties.classSpecificPropertyValueChoices = gaussianPropertyValueChoices;
 			} else if (selectedCalcType.startsWith(CALC_TYPE_KRASKOV)) {
 				// The if statement will work for both MI Kraskov calculators
 				calcProperties.classSpecificPropertyNames = kraskovProperties;
 				calcProperties.classSpecificPropertiesFieldNames = kraskovPropertiesFieldNames;
 				calcProperties.classSpecificPropertyDescriptions = kraskovPropertyDescriptions;
+				calcProperties.classSpecificPropertyValueChoices = kraskovPropertyValueChoices;
 			} else {
 				calcProperties = null;
 				throw new Exception("No recognised calculator selected: " +

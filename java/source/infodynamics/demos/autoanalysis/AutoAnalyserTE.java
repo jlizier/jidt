@@ -104,7 +104,15 @@ public class AutoAnalyserTE extends AutoAnalyserChannelCalculator
 				"Source history embeding delay (l_TAU)",
 				"Delay from source to destination (in time steps)",
 		};
-		
+		discretePropertyValueChoices = new String[][] {
+				null,
+				null,
+				null,
+				null,
+				null,
+				null
+		};
+
 		// Continuous:
 		abstractContinuousClass = TransferEntropyCalculator.class;
 		// Common properties for all continuous calcs:
@@ -116,6 +124,9 @@ public class AutoAnalyserTE extends AutoAnalyserChannelCalculator
 		};
 		commonContPropertyDescriptions = new String[] {
 				"Destination history embedding length (k_HISTORY)"
+		};
+		commonContPropertyValueChoices = new String[][] {
+				null
 		};
 		// Gaussian properties:
 		gaussianProperties = new String[] {
@@ -136,6 +147,12 @@ public class AutoAnalyserTE extends AutoAnalyserChannelCalculator
 				"Source history embeding delay (l_TAU)",
 				"Delay from source to destination (in time steps)"
 		};
+		gaussianPropertyValueChoices = new String[][] {	
+				null,
+				null,
+				null,
+				null,
+		};
 		// Kernel:
 		kernelProperties = new String[] {
 				TransferEntropyCalculatorKernel.KERNEL_WIDTH_PROP_NAME,
@@ -154,7 +171,12 @@ public class AutoAnalyserTE extends AutoAnalyserChannelCalculator
 						"otherwise it is an absolute value.",
 				"Dynamic correlation exclusion time or <br/>Theiler window (see Kantz and Schreiber); " +
 						"0 (default) means no dynamic exclusion window",
-				"(boolean) whether to normalise <br/>each incoming time-series to mean 0, standard deviation 1, or not  (recommended)",
+				"(boolean) whether to normalise <br/>each incoming time-series to mean 0, standard deviation 1, or not  (default true, recommended)",
+		};
+		kernelPropertyValueChoices = new String[][] {
+				null,
+				null,
+				{"true", "false"}
 		};
 		// KSG (Kraskov):
 		kraskovProperties = new String[] {
@@ -198,7 +220,7 @@ public class AutoAnalyserTE extends AutoAnalyserChannelCalculator
 				"Source history embedding length (l)",
 				"Source history embeding delay (l_TAU)",
 				"Delay from source to destination (in time steps)",
-				"(boolean) whether to normalise <br/>each incoming time-series to mean 0, standard deviation 1, or not (recommended)",
+				"(boolean) whether to normalise <br/>each incoming time-series to mean 0, standard deviation 1, or not (default true, recommended)",
 				"Number of k nearest neighbours to use <br/>in the full joint kernel space in the KSG algorithm",
 				"Standard deviation for an amount <br/>of random Gaussian noise to add to each variable, " +
 						"to avoid having neighbourhoods with artificially large counts. <br/>" +
@@ -225,7 +247,28 @@ public class AutoAnalyserTE extends AutoAnalyserChannelCalculator
 				"Max. embedding delay to search to <br/>if auto embedding (as determined by " + TransferEntropyCalculatorKraskov.PROP_AUTO_EMBED_METHOD + ")",
 				"Number of k nearest neighbours for <br/>Ragwitz auto embedding (if used; defaults to match property \"k\")"
 		};
-		
+		kraskovPropertyValueChoices = new String[][] {
+				null,
+				null,
+				null,
+				null,
+				{"true", "false"},
+				null,
+				null,
+				null,
+				{"MAX_NORM", "EUCLIDEAN", "EUCLIDEAN_SQUARED"},
+				null,
+				{"true", "false"},
+				{"1", "2"},
+				{TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_NONE,
+					TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ,
+					TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY,
+					TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_MAX_CORR_AIS,
+					TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_MAX_CORR_AIS_DEST_ONLY},
+				null,
+				null,
+				null,
+		};
 	}
 
 	/**

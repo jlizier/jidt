@@ -56,9 +56,11 @@ public class AutoAnalyserCMI extends AutoAnalyser
 	protected String[] gaussianProperties;
 	protected String[] gaussianPropertiesFieldNames;
 	protected String[] gaussianPropertyDescriptions;
+	protected String[][] gaussianPropertyValueChoices;
 	protected String[] kraskovProperties;
 	protected String[] kraskovPropertiesFieldNames;
 	protected String[] kraskovPropertyDescriptions;
+	protected String[][] kraskovPropertyValueChoices;
 
 	protected static final String CALC_TYPE_KRASKOV_ALG1 = CALC_TYPE_KRASKOV + " alg. 1";
 	protected static final String CALC_TYPE_KRASKOV_ALG2 = CALC_TYPE_KRASKOV + " alg. 2";
@@ -107,6 +109,9 @@ public class AutoAnalyserCMI extends AutoAnalyser
 				"Number of discrete states available for each variable (i.e. 2 for binary).<br/>" +
 				"Can be set individually for each variable -- see code."
 		};
+		discretePropertyValueChoices = new String[][] {
+				null
+		};
 		
 		// Continuous:
 		abstractContinuousClass = ConditionalMutualInfoCalculatorMultiVariate.class;
@@ -120,12 +125,17 @@ public class AutoAnalyserCMI extends AutoAnalyser
 		commonContPropertyDescriptions = new String[] {
 				// None
 		};
+		commonContPropertyValueChoices = new String[][] {
+				// None
+		};
 		// Gaussian properties:
 		gaussianProperties = new String[] {
 		};
 		gaussianPropertiesFieldNames = new String[] {
 		};
 		gaussianPropertyDescriptions = new String[] {
+		};
+		gaussianPropertyValueChoices = new String[][] {	
 		};
 		// KSG (Kraskov):
 		kraskovProperties = new String[] {
@@ -160,7 +170,15 @@ public class AutoAnalyserCMI extends AutoAnalyser
 						"(default, to indicate to use all available processors)",
 				"Whether to enable the GPU module (number of threads then has no bearing); boolean, default false"
 		};
-		
+		kraskovPropertyValueChoices = new String[][] {
+				{"true", "false"},
+				null,
+				null,
+				null,
+				{"MAX_NORM", "EUCLIDEAN", "EUCLIDEAN_SQUARED"},
+				null,
+				{"true", "false"}
+		};
 	}
 
 	@Override
@@ -313,11 +331,13 @@ public class AutoAnalyserCMI extends AutoAnalyser
 				calcProperties.classSpecificPropertyNames = gaussianProperties;
 				calcProperties.classSpecificPropertiesFieldNames = gaussianPropertiesFieldNames;
 				calcProperties.classSpecificPropertyDescriptions = gaussianPropertyDescriptions;
+				calcProperties.classSpecificPropertyValueChoices = gaussianPropertyValueChoices;
 			} else if (selectedCalcType.startsWith(CALC_TYPE_KRASKOV)) {
 				// The if statement will work for both MI Kraskov calculators
 				calcProperties.classSpecificPropertyNames = kraskovProperties;
 				calcProperties.classSpecificPropertiesFieldNames = kraskovPropertiesFieldNames;
 				calcProperties.classSpecificPropertyDescriptions = kraskovPropertyDescriptions;
+				calcProperties.classSpecificPropertyValueChoices = kraskovPropertyValueChoices;
 			} else {
 				calcProperties = null;
 				throw new Exception("No recognised calculator selected: " +

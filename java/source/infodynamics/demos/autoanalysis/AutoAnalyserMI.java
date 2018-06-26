@@ -92,6 +92,10 @@ public class AutoAnalyserMI extends AutoAnalyserChannelCalculator
 				"Number of discrete states available for each variable (i.e. 2 for binary)",
 				"Time-lag from source to dest to consider MI across; must be >= 0 (0 for standard MI)",
 		};
+		discretePropertyValueChoices = new String[][] {
+				null,
+				null
+		};
 		
 		// Continuous:
 		abstractContinuousClass = MutualInfoCalculatorMultiVariate.class;
@@ -105,12 +109,17 @@ public class AutoAnalyserMI extends AutoAnalyserChannelCalculator
 		commonContPropertyDescriptions = new String[] {
 				"Time-lag from source to dest to consider MI across; must be >= 0 (0 for standard MI)"
 		};
+		commonContPropertyValueChoices = new String[][] {
+				null
+		};
 		// Gaussian properties:
 		gaussianProperties = new String[] {
 		};
 		gaussianPropertiesFieldNames = new String[] {
 		};
 		gaussianPropertyDescriptions = new String[] {
+		};
+		gaussianPropertyValueChoices = new String[][] {	
 		};
 		// Kernel:
 		kernelProperties = new String[] {
@@ -131,6 +140,11 @@ public class AutoAnalyserMI extends AutoAnalyserChannelCalculator
 				"Dynamic correlation exclusion time or <br/>Theiler window (see Kantz and Schreiber); " +
 						"0 (default) means no dynamic exclusion window",
 				"(boolean) whether to normalise <br/>each incoming time-series to mean 0, standard deviation 1, or not  (recommended)",
+		};
+		kernelPropertyValueChoices = new String[][] {
+				null,
+				null,
+				{"true", "false"}
 		};
 		// KSG (Kraskov):
 		kraskovProperties = new String[] {
@@ -165,7 +179,15 @@ public class AutoAnalyserMI extends AutoAnalyserChannelCalculator
 						"(default, to indicate to use all available processors)",
 				"Whether to enable the GPU module (number of threads then has no bearing); boolean, default false"
 		};
-		
+		kraskovPropertyValueChoices = new String[][] {
+				{"true", "false"},
+				null,
+				null,
+				null,
+				{"MAX_NORM", "EUCLIDEAN", "EUCLIDEAN_SQUARED"},
+				null,
+				{"true", "false"},
+		};
 	}
 
 	/**

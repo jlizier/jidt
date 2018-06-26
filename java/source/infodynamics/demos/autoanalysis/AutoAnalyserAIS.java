@@ -55,12 +55,15 @@ public class AutoAnalyserAIS extends AutoAnalyser {
 	protected String[] gaussianProperties;
 	protected String[] gaussianPropertiesFieldNames;
 	protected String[] gaussianPropertyDescriptions;
+	protected String[][] gaussianPropertyValueChoices;
 	protected String[] kernelProperties;
 	protected String[] kernelPropertiesFieldNames;
 	protected String[] kernelPropertyDescriptions;
+	protected String[][] kernelPropertyValueChoices;
 	protected String[] kraskovProperties;
 	protected String[] kraskovPropertiesFieldNames;
 	protected String[] kraskovPropertyDescriptions;
+	protected String[][] kraskovPropertyValueChoices;
 
 	public AutoAnalyserAIS() {
 		super();
@@ -106,6 +109,10 @@ public class AutoAnalyserAIS extends AutoAnalyser {
 				"Number of discrete states available for each variable (i.e. 2 for binary)",
 				"History embedding length (k_HISTORY)"
 		};
+		discretePropertyValueChoices = new String[][] {
+				null,
+				null
+		};
 		
 		// Continuous:
 		abstractContinuousClass = ActiveInfoStorageCalculator.class;
@@ -122,12 +129,18 @@ public class AutoAnalyserAIS extends AutoAnalyser {
 				"History embedding length (k_HISTORY)",
 				"History embedding delay (k_TAU)"
 		};
+		commonContPropertyValueChoices = new String[][] {
+				null,
+				null
+		};
 		// Gaussian properties:
 		gaussianProperties = new String[] {
 		};
 		gaussianPropertiesFieldNames = new String[] {
 		};
 		gaussianPropertyDescriptions = new String[] {
+		};
+		gaussianPropertyValueChoices = new String[][] {	
 		};
 		// Kernel:
 		kernelProperties = new String[] {
@@ -147,7 +160,12 @@ public class AutoAnalyserAIS extends AutoAnalyser {
 						"otherwise it is an absolute value.",
 				"Dynamic correlation exclusion time or <br/>Theiler window (see Kantz and Schreiber); " +
 						"0 (default) means no dynamic exclusion window",
-				"(boolean) whether to normalise <br/>each incoming time-series to mean 0, standard deviation 1, or not  (recommended)",
+				"(boolean) whether to normalise <br/>each incoming time-series to mean 0, standard deviation 1, or not  (default true, recommended)",
+		};
+		kernelPropertyValueChoices = new String[][] {
+				null,
+				null,
+				{"true", "false"}
 		};
 		// KSG (Kraskov):
 		kraskovProperties = new String[] {
@@ -200,6 +218,20 @@ public class AutoAnalyserAIS extends AutoAnalyser {
 				"Max. embedding length to search to <br/>if auto embedding (as determined by " + ActiveInfoStorageCalculatorKraskov.PROP_AUTO_EMBED_METHOD + ")",
 				"Max. embedding delay to search to <br/>if auto embedding (as determined by " + ActiveInfoStorageCalculatorKraskov.PROP_AUTO_EMBED_METHOD + ")",
 				"Number of k nearest neighbours for <br/>Ragwitz auto embedding (if used; defaults to match property \"k\")"
+		};
+		kraskovPropertyValueChoices = new String[][] {
+				{"true", "false"},
+				null,
+				null,
+				null,
+				{"MAX_NORM", "EUCLIDEAN", "EUCLIDEAN_SQUARED"},
+				null,
+				{"true", "false"},
+				{ActiveInfoStorageCalculatorKraskov.AUTO_EMBED_METHOD_NONE, ActiveInfoStorageCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ,
+					ActiveInfoStorageCalculatorKraskov.AUTO_EMBED_METHOD_MAX_CORR_AIS},
+				null,
+				null,
+				null,
 		};
 	}
 
@@ -307,14 +339,17 @@ public class AutoAnalyserAIS extends AutoAnalyser {
 				calcProperties.classSpecificPropertyNames = gaussianProperties;
 				calcProperties.classSpecificPropertiesFieldNames = gaussianPropertiesFieldNames;
 				calcProperties.classSpecificPropertyDescriptions = gaussianPropertyDescriptions;
+				calcProperties.classSpecificPropertyValueChoices = gaussianPropertyValueChoices;
 			} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_KRASKOV)) {
 				calcProperties.classSpecificPropertyNames = kraskovProperties;
 				calcProperties.classSpecificPropertiesFieldNames = kraskovPropertiesFieldNames;
 				calcProperties.classSpecificPropertyDescriptions = kraskovPropertyDescriptions;
+				calcProperties.classSpecificPropertyValueChoices = kraskovPropertyValueChoices;
 			} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_KERNEL)) {
 				calcProperties.classSpecificPropertyNames = kernelProperties;
 				calcProperties.classSpecificPropertiesFieldNames = kernelPropertiesFieldNames;
 				calcProperties.classSpecificPropertyDescriptions = kernelPropertyDescriptions;
+				calcProperties.classSpecificPropertyValueChoices = kernelPropertyValueChoices;
 			} else {
 				calcProperties = null;
 				throw new Exception("No recognised calculator selected: " +

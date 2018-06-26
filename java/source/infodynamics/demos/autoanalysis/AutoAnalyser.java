@@ -28,6 +28,7 @@ import infodynamics.utils.EmpiricalNullDistributionComputer;
 import infodynamics.utils.MatrixUtils;
 
 import javax.swing.BorderFactory;
+import javax.swing.DefaultCellEditor;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -49,6 +50,7 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
@@ -108,11 +110,13 @@ public abstract class AutoAnalyser extends JFrame
 	protected String[] discreteProperties; // Children to initialise
 	protected String[] discretePropertyDefaultValues; // Children to initialise
 	protected String[] discretePropertyDescriptions; // Children to initialise
+	protected String[][] discretePropertyValueChoices; // Children to initialise
 	
 	// Common property names for all continuous calculators:
 	protected String[] commonContPropertyNames;
 	protected String[] commonContPropertiesFieldNames;
 	protected String[] commonContPropertyDescriptions;
+	protected String[][] commonContPropertyValueChoices;
 	// Children can define properties for specific continuous
 	//  calculators
 
@@ -179,6 +183,8 @@ public abstract class AutoAnalyser extends JFrame
 	protected int numPermutationsToCheck = 100;
 	// Table for the properties
 	protected JTable propertiesTable;
+	// Default editor for the property values
+	protected TableCellEditor propertiesDefaultEditor;	
 	// Table model (local class) for the table
 	protected PropertiesTableModel propertiesTableModel;
 	// Names of the properties
@@ -187,6 +193,8 @@ public abstract class AutoAnalyser extends JFrame
 	protected Vector<String> propertyFieldNames;
 	// Descriptions of the fields for the properties
 	protected Vector<String> propertyDescriptions;
+	// Lists of drop-down options for the properties
+	protected Vector<String[]> propertyValueChoices;
 	// Values of the properties
 	protected HashMap<String,String> propertyValues;
 	// CheckBox for "Compute result?"
@@ -213,7 +221,7 @@ public abstract class AutoAnalyser extends JFrame
 	protected String pathToAutoAnalyserDir = "";
 	// Main JIDT git/distribution folder, inferred from pathToAutoAnalyserDir
 	protected String jidtFolder = "";
-	
+
 	public class TextAreaWithImage extends JTextArea {
 
 	    /**
@@ -294,7 +302,7 @@ public abstract class AutoAnalyser extends JFrame
 		Image watermarkImage = (new ImageIcon(pathToAutoAnalyserDir + "JIDT-logo-watermark.png")).getImage();
 		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setSize(1100,670);
+		setSize(1100,680);
 		setTitle(appletTitle);
 		// Centre in the middle of the screen
 		setLocationRelativeTo(null);
@@ -366,13 +374,17 @@ public abstract class AutoAnalyser extends JFrame
 		putCalcPropertiesInTable();
 		propertiesTableModel = new PropertiesTableModel();
 		propertiesTable = new TableWithToolTip(propertiesTableModel);
+		// Get the default editor for the properties values:
+		propertiesDefaultEditor = propertiesTable.getDefaultEditor(
+									propertiesTable.getColumnClass(1));
+		System.out.println("Default properties editor is " + propertiesDefaultEditor.getClass().getName());
 		// Make sure any properties are saved when the compute button is clicked
 		propertiesTable.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
 		Font headerFont = propertiesTable.getTableHeader().getFont();
 		propertiesTable.getTableHeader().setFont(headerFont.deriveFont(Font.BOLD));
 		TableColumn valueColumn = propertiesTable.getColumn("Property value");
-		valueColumn.setMinWidth(130);
-		valueColumn.setMaxWidth(130);
+		valueColumn.setMinWidth(170);
+		valueColumn.setMaxWidth(170);
 		JScrollPane propsTableScrollPane = new JScrollPane(propertiesTable);
 		// Set up for ~18 rows maximum (the +6 is exact to fit all props
 		//  for Kraskov TE in without scrollbar)
@@ -383,7 +395,7 @@ public abstract class AutoAnalyser extends JFrame
 		propsTableScrollPane.setMinimumSize(
 			new Dimension(d.width,rowHeight*17+6));
 		System.out.println("Row height was " + rowHeight);
-		
+				
 		// Checkbox for compute result
 		computeResultCheckBox = new JCheckBox("Compute result?");
 		computeResultCheckBox.setToolTipText("Compute result or only generate code?");
@@ -418,7 +430,7 @@ public abstract class AutoAnalyser extends JFrame
         javaAreaScrollPane.setHorizontalScrollBarPolicy(
         		JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         int codeTextAreaWidth = 560;
-        int codeTextAreaHeight = 480;
+        int codeTextAreaHeight = 530;
         Dimension codeTextAreaDimension = 
         		new Dimension(codeTextAreaWidth, codeTextAreaHeight);
         javaAreaScrollPane.setPreferredSize(codeTextAreaDimension);
@@ -653,8 +665,8 @@ public abstract class AutoAnalyser extends JFrame
 	}
 	
 	protected void loadData(boolean isInts) {
-		ArrayFileReader afr = new ArrayFileReader(dataFile);
 		try {
+			ArrayFileReader afr = new ArrayFileReader(dataFile);
 			if (isInts) {
 				dataDiscrete = afr.getInt2DMatrix();
 				dataRows = dataDiscrete.length;
@@ -1558,6 +1570,70 @@ public abstract class AutoAnalyser extends JFrame
 			}
         }
         */
+		
+		/**
+		 * Use this method to set combo box options for editing cells
+		 */
+		@Override
+		public TableCellEditor getCellEditor(int row, int column) {
+			if ((propertyValueChoices.get(row) != null) && (column == 1)) {
+				// We need to construct a combo box for the selection for this property:
+				try {
+					JComboBox<String> paramChoiceComboBox = new JComboBox<String>();
+					// Set font to not bold and one size less than the default (to fit better)
+					Font font = paramChoiceComboBox.getFont();
+					paramChoiceComboBox.setFont(font.deriveFont(Font.PLAIN, font.getSize()-1));
+					String[] choices = propertyValueChoices.get(row);
+					for (int c = 0; c < choices.length; c++) {
+						paramChoiceComboBox.addItem(choices[c]);
+					}
+					return new DefaultCellEditor(paramChoiceComboBox);
+				} catch (Exception e) {
+					e.printStackTrace();
+					// But now allow this to be handled by the default cell editor
+				}
+			}
+			// I think the following would do the default behaviour:
+			// return this.getDefaultEditor(this.getColumnClass(column));
+			// however it should be safer to just allow the parent to handle:
+			return super.getCellEditor(row, column);
+		}
+
+		/**
+		 * This method allows us to keep a combo box visible when
+		 *  the property value is no longer selected.
+		 *  Adapted from answer at https://stackoverflow.com/questions/30744524/how-to-make-the-jcombobox-dropdown-always-visible-in-a-jtable
+		 */
+		@Override
+		public TableCellRenderer getCellRenderer(int row, int column) {
+			if ((propertyValueChoices.get(row) != null) && (column == 1)) {
+				try {
+					return new TableCellRenderer() {
+						JComboBox<String> box = new JComboBox<String>();
+						int defaultFontSize = box.getFont().getSize();
+	
+						@Override
+						public Component getTableCellRendererComponent(JTable table,
+								Object value, boolean isSelected, boolean hasFocus, int row,
+								int column) {
+							// Set font to not bold and one size less than the default (to fit better)
+							Font font = box.getFont();
+							box.setFont(font.deriveFont(Font.PLAIN, defaultFontSize-1));
+							// Now empty all items out and just put the value we currently have.
+							//  (This is only for displaying, the editor will override with available values if 
+							//   user wants to edit).
+							box.removeAllItems();
+							box.addItem(value.toString());
+							return box;
+						}
+					};
+				} catch (Exception e) {
+					e.printStackTrace();
+					// But now allow this to be handled by the default cell renderer
+				}
+			}
+			return super.getCellRenderer(row, column);
+		}
 	}
 	
 	protected class PropertiesTableModel extends AbstractTableModel {
@@ -1645,6 +1721,8 @@ public abstract class AutoAnalyser extends JFrame
 					calcProperties.classSpecificPropertiesFieldNames;
 		String[] classSpecificPropertyDescriptions =
 					calcProperties.classSpecificPropertyDescriptions;
+		String[][] classSpecificPropertyValueChoices =
+					calcProperties.classSpecificPropertyValueChoices;
 		calcClass = calcProperties.calcClass;
 		Object calc = calcProperties.calc;
 		
@@ -1652,6 +1730,7 @@ public abstract class AutoAnalyser extends JFrame
 		propertyNames = new Vector<String>();
 		propertyFieldNames = new Vector<String>();
 		propertyDescriptions = new Vector<String>();
+		propertyValueChoices = new Vector<String[]>();
 		
 		if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE) ||
 				selectedCalcType.equalsIgnoreCase(CALC_TYPE_BINNED)) {
@@ -1662,10 +1741,12 @@ public abstract class AutoAnalyser extends JFrame
 			for (String propName : discreteProperties) {
 				String propertyDescription = discretePropertyDescriptions[i];
 				String defaultPropertyValue = discretePropertyDefaultValues[i];
+				String[] propertyValueChoiceSet = discretePropertyValueChoices[i];
 				i++;
 				propertyNames.add(propName);
 				propertyDescriptions.add(propertyDescription);
 				propertyValues.put(propName, defaultPropertyValue);
+				propertyValueChoices.add(propertyValueChoiceSet);
 				System.out.println("Adding property name " + propName);
 			}
 		} else {
@@ -1674,6 +1755,7 @@ public abstract class AutoAnalyser extends JFrame
 			for (String fieldName : commonContPropertiesFieldNames) {
 				String propName = commonContPropertyNames[i];
 				String propertyDescription = commonContPropertyDescriptions[i];
+				String[] propertyValueChoiceSet = commonContPropertyValueChoices[i];
 				i++;
 				System.out.println("Adding property name " + 
 						abstractContinuousClass.getSimpleName() + "." + fieldName +
@@ -1681,6 +1763,7 @@ public abstract class AutoAnalyser extends JFrame
 				propertyFieldNames.add(abstractContinuousClass.getSimpleName() + "." + fieldName);
 				propertyNames.add(propName);
 				propertyDescriptions.add(propertyDescription);
+				propertyValueChoices.add(propertyValueChoiceSet);
 			}
 			
 			// Then for the specific estimator types
@@ -1688,9 +1771,11 @@ public abstract class AutoAnalyser extends JFrame
 			for (String fieldName : classSpecificPropertiesFieldNames) {
 				String propName = classSpecificPropertyNames[i];
 				String propertyDescription = classSpecificPropertyDescriptions[i];
+				String[] propertyValueChoiceSet = classSpecificPropertyValueChoices[i];
 				i++;
 				propertyNames.add(propName);
 				propertyDescriptions.add(propertyDescription);
+				propertyValueChoices.add(propertyValueChoiceSet);
 				if (fieldName.contains(".")) {
 					System.out.println("Adding property name " + fieldName +
 							" = \"" + propName + "\"");
@@ -1736,6 +1821,7 @@ public abstract class AutoAnalyser extends JFrame
 		String[] classSpecificPropertyNames;
 		String[] classSpecificPropertiesFieldNames;
 		String[] classSpecificPropertyDescriptions;
+		String[][] classSpecificPropertyValueChoices;
 	}
 	
 	/**
@@ -1758,6 +1844,7 @@ public abstract class AutoAnalyser extends JFrame
 			calcProperties.classSpecificPropertyNames = discreteProperties;
 			calcProperties.classSpecificPropertiesFieldNames = null; // Not used
 			calcProperties.classSpecificPropertyDescriptions = discretePropertyDescriptions;
+			calcProperties.classSpecificPropertyValueChoices = discretePropertyValueChoices;
 			// TODO Later can add binning method to the properties for 
 			//  binned calculator here.
 			return calcProperties;

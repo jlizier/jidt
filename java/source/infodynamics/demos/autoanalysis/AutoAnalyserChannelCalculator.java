@@ -47,13 +47,16 @@ public abstract class AutoAnalyserChannelCalculator extends AutoAnalyser {
 	protected String[] gaussianProperties;
 	protected String[] gaussianPropertiesFieldNames;
 	protected String[] gaussianPropertyDescriptions;
+	protected String[][] gaussianPropertyValueChoices;
 	protected String[] kernelProperties;
 	protected String[] kernelPropertiesFieldNames;
 	protected String[] kernelPropertyDescriptions;
+	protected String[][] kernelPropertyValueChoices;
 	protected String[] kraskovProperties;
 	protected String[] kraskovPropertiesFieldNames;
 	protected String[] kraskovPropertyDescriptions;
-	
+	protected String[][] kraskovPropertyValueChoices;
+
 	
 	public AutoAnalyserChannelCalculator() {
 		super();
@@ -207,15 +210,18 @@ public abstract class AutoAnalyserChannelCalculator extends AutoAnalyser {
 				calcProperties.classSpecificPropertyNames = gaussianProperties;
 				calcProperties.classSpecificPropertiesFieldNames = gaussianPropertiesFieldNames;
 				calcProperties.classSpecificPropertyDescriptions = gaussianPropertyDescriptions;
+				calcProperties.classSpecificPropertyValueChoices = gaussianPropertyValueChoices;
 			} else if (selectedCalcType.startsWith(CALC_TYPE_KRASKOV)) {
 				// The if statement will work for both MI Kraskov calculators
 				calcProperties.classSpecificPropertyNames = kraskovProperties;
 				calcProperties.classSpecificPropertiesFieldNames = kraskovPropertiesFieldNames;
 				calcProperties.classSpecificPropertyDescriptions = kraskovPropertyDescriptions;
+				calcProperties.classSpecificPropertyValueChoices = kraskovPropertyValueChoices;
 			} else if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_KERNEL)) {
 				calcProperties.classSpecificPropertyNames = kernelProperties;
 				calcProperties.classSpecificPropertiesFieldNames = kernelPropertiesFieldNames;
 				calcProperties.classSpecificPropertyDescriptions = kernelPropertyDescriptions;
+				calcProperties.classSpecificPropertyValueChoices = kernelPropertyValueChoices;
 			} else {
 				calcProperties = null;
 				throw new Exception("No recognised calculator selected: " +
