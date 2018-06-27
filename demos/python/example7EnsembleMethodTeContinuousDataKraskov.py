@@ -24,9 +24,12 @@
 from jpype import *
 import random
 import math
+import os
 
-# Change location of jar to match yours:
-jarLocation = "../../infodynamics.jar"
+# Change location of jar to match yours (we assume script is called from demos/python):
+jarLocation = os.path.join(os.getcwd(), "..", "..", "infodynamics.jar");
+if (not(os.path.isfile(jarLocation))):
+	exit("infodynamics.jar not found (expected at " + os.path.abspath(jarLocation) + ") - are you running from demos/python?")
 # Start the JVM (add the "-Xmx" option with say 1024M if you get crashes due to not enough memory space)
 startJVM(getDefaultJVMPath(), "-ea", "-Djava.class.path=" + jarLocation)
 
