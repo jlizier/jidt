@@ -67,6 +67,7 @@ function octaveMatrix = javaMatrixToOctave(javaMatrix, startRow, startCol, numRo
 	else
 		% Else we're in matlab, in which case the native java type can be handled, so return it directly:
 		octaveMatrix = javaMatrix;
+		return;
 	end
 
 	% Else, we encountered an error in the octave resizing, so fall through to element by element conversion:
