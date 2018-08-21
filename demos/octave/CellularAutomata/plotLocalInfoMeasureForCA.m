@@ -45,6 +45,7 @@
 %    - measureParams.j - we measure information transfer across j cells to the right per time step
 % - options - a stucture containing a range of other options, i.e.:
 %    - plotOptions - structure as defined for the plotLocalInfoValues function
+%    - plotOptions.figNum - figure number to plot the info value profile in
 %    - seed - state for the random number generator used to set the initial condition of the CA (use this
 %       for reproducibility of plots, or to produce profiles for several different measures of the same CA raw states).
 %       We set rand('state', options.seed) if options.seed is supplied, and restore the previous seed afterwards.
@@ -107,7 +108,11 @@ function [caStates, localValues] = plotLocalInfoMeasureForCA(neighbourhood, base
 		printDriver = options.saveImagesFormat;
 		fontSize = 13;
 	end
-	figNum = 2;
+	if (not(isfield(options.plotOptions, 'figNum')))
+		figNum = 2;
+	else
+		figNum = options.plotOptions.figNum;
+	end
 	toc
 	% The offsets of the parents (see runCA for how this is computed, especially for even neighbourhood):
 	fullSetOfParents = ceil(-neighbourhood / 2) : ceil(-neighbourhood / 2) + (neighbourhood-1);
