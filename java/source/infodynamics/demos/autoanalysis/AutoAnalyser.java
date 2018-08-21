@@ -1542,9 +1542,22 @@ public abstract class AutoAnalyser extends JFrame
 				if (vColIndex == 0) {
 					JComponent jc = (JComponent)c;
 					try {
-						jc.setToolTipText("<html>" + propertyFieldNames.get(rowIndex) + ": " + propertyDescriptions.get(rowIndex) + "</html>");
+						String toolTipText;
+						String selectedCalcType = (String)
+								calcTypeComboBox.getSelectedItem();
+						if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE) ||
+								selectedCalcType.equalsIgnoreCase(CALC_TYPE_BINNED)) {
+							toolTipText = "<html>" + propertyNames.get(rowIndex) + ": " +
+									propertyDescriptions.get(rowIndex) + "</html>";
+						} else {
+							toolTipText = "<html>" + propertyFieldNames.get(rowIndex) + ": " +
+									propertyDescriptions.get(rowIndex) + "</html>";
+						}
+						jc.setToolTipText(toolTipText);
 					} catch (ArrayIndexOutOfBoundsException aioobe) {
 						// Catch if the row number was outside our array of descriptions (e.g. empty row)
+						System.out.println("prepareRenderer: Row number " + rowIndex +
+								" was outside our array of names/fieldnames/descriptions");
 					}
 				}
 			}
