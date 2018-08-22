@@ -114,12 +114,18 @@ public class AutoAnalyserMI extends AutoAnalyserChannelCalculator
 		};
 		// Gaussian properties:
 		gaussianProperties = new String[] {
+				MutualInfoCalculatorMultiVariateGaussian.PROP_BIAS_CORRECTION
 		};
 		gaussianPropertiesFieldNames = new String[] {
+				"PROP_BIAS_CORRECTION"
 		};
 		gaussianPropertyDescriptions = new String[] {
+				"Whether the analytically determined bias (as the mean of the<br/>" +
+						"surrogate distribution) will be subtracted from all" +
+						"calculated values. Default is false."
 		};
-		gaussianPropertyValueChoices = new String[][] {	
+		gaussianPropertyValueChoices = new String[][] {
+				{"true", "false"}
 		};
 		// Kernel:
 		kernelProperties = new String[] {
