@@ -19,6 +19,7 @@
 package infodynamics.demos.autoanalysis;
 
 import infodynamics.measures.continuous.ActiveInfoStorageCalculator;
+import infodynamics.measures.continuous.ActiveInfoStorageCalculatorViaMutualInfo;
 import infodynamics.measures.continuous.InfoMeasureCalculatorContinuous;
 import infodynamics.measures.continuous.gaussian.ActiveInfoStorageCalculatorGaussian;
 import infodynamics.measures.continuous.kernel.ActiveInfoStorageCalculatorKernel;
@@ -119,19 +120,40 @@ public class AutoAnalyserAIS extends AutoAnalyser {
 		// Common properties for all continuous calcs:
 		commonContPropertyNames = new String[] {
 				ActiveInfoStorageCalculator.K_PROP_NAME,
-				ActiveInfoStorageCalculator.TAU_PROP_NAME
+				ActiveInfoStorageCalculator.TAU_PROP_NAME,
+				ActiveInfoStorageCalculatorViaMutualInfo.PROP_AUTO_EMBED_METHOD,
+				ActiveInfoStorageCalculatorViaMutualInfo.PROP_K_SEARCH_MAX,
+				ActiveInfoStorageCalculatorViaMutualInfo.PROP_TAU_SEARCH_MAX,
 		};
 		commonContPropertiesFieldNames = new String[] {
 				"K_PROP_NAME",
-				"TAU_PROP_NAME"
+				"TAU_PROP_NAME",
+				"ActiveInfoStorageCalculatorViaMutualInfo.PROP_AUTO_EMBED_METHOD",
+				"ActiveInfoStorageCalculatorViaMutualInfo.PROP_K_SEARCH_MAX",
+				"ActiveInfoStorageCalculatorViaMutualInfo.PROP_TAU_SEARCH_MAX",
 		};
 		commonContPropertyDescriptions = new String[] {
 				"History embedding length (k_HISTORY)",
-				"History embedding delay (k_TAU)"
+				"History embedding delay (k_TAU)",
+				"Method to automatically determine embedding length (k_HISTORY)<br/> and delay (k_TAU) for " +
+						"the samples. Default is \"" + ActiveInfoStorageCalculatorKraskov.AUTO_EMBED_METHOD_NONE +
+						"\" meaning values are set manually; other values include: <br/>  -- \"" + ActiveInfoStorageCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ +
+						"\" for use of the Ragwitz criteria for both source and destination (searching up to \"" + ActiveInfoStorageCalculatorKraskov.PROP_K_SEARCH_MAX +
+						"\" and \"" + ActiveInfoStorageCalculatorKraskov.PROP_TAU_SEARCH_MAX + "\"); <br/>  -- \"" + ActiveInfoStorageCalculatorKraskov.AUTO_EMBED_METHOD_MAX_CORR_AIS +
+						"\" for maximising the (bias corrected) Active Info Storage (searching up to \"" + ActiveInfoStorageCalculatorKraskov.PROP_K_SEARCH_MAX +
+						"\" and \"" + ActiveInfoStorageCalculatorKraskov.PROP_TAU_SEARCH_MAX + "\"); <br/>Use of values other than \"" + ActiveInfoStorageCalculatorKraskov.AUTO_EMBED_METHOD_NONE +
+						"\" leads to any previous settings for embedding lengths and delays to be overwritten after observations are supplied",
+				"Max. embedding length to search to <br/>if auto embedding (as determined by " + ActiveInfoStorageCalculatorKraskov.PROP_AUTO_EMBED_METHOD + ")",
+				"Max. embedding delay to search to <br/>if auto embedding (as determined by " + ActiveInfoStorageCalculatorKraskov.PROP_AUTO_EMBED_METHOD + ")",
 		};
 		commonContPropertyValueChoices = new String[][] {
 				null,
-				null
+				null,
+				{ActiveInfoStorageCalculatorViaMutualInfo.AUTO_EMBED_METHOD_NONE,
+					ActiveInfoStorageCalculatorViaMutualInfo.AUTO_EMBED_METHOD_RAGWITZ,
+					ActiveInfoStorageCalculatorViaMutualInfo.AUTO_EMBED_METHOD_MAX_CORR_AIS},
+				null,
+				null,
 		};
 		// Gaussian properties:
 		gaussianProperties = new String[] {
@@ -176,9 +198,6 @@ public class AutoAnalyserAIS extends AutoAnalyser {
 				MutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE,
 				MutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS,
 				MutualInfoCalculatorMultiVariateKraskov.PROP_USE_GPU,
-				ActiveInfoStorageCalculatorKraskov.PROP_AUTO_EMBED_METHOD,
-				ActiveInfoStorageCalculatorKraskov.PROP_K_SEARCH_MAX,
-				ActiveInfoStorageCalculatorKraskov.PROP_TAU_SEARCH_MAX,
 				ActiveInfoStorageCalculatorKraskov.PROP_RAGWITZ_NUM_NNS,
 		};
 		kraskovPropertiesFieldNames = new String[] {
@@ -189,9 +208,6 @@ public class AutoAnalyserAIS extends AutoAnalyser {
 				"MutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE",
 				"MutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS",
 				"MutualInfoCalculatorMultiVariateKraskov.PROP_USE_GPU",
-				"PROP_AUTO_EMBED_METHOD",
-				"PROP_K_SEARCH_MAX",
-				"PROP_TAU_SEARCH_MAX",
 				"PROP_RAGWITZ_NUM_NNS"				
 		};
 		kraskovPropertyDescriptions = new String[] {
@@ -207,16 +223,6 @@ public class AutoAnalyserAIS extends AutoAnalyser {
 				"Number of parallel threads to use <br/>in computation: an integer > 0 or \"USE_ALL\" " +
 						"(default, to indicate to use all available processors)",
 				"Whether to enable the GPU module (number of threads then has no bearing); boolean, default false",
-				"Method to automatically determine embedding length (k_HISTORY)<br/> and delay (k_TAU) for " +
-						"the samples. Default is \"" + ActiveInfoStorageCalculatorKraskov.AUTO_EMBED_METHOD_NONE +
-						"\" meaning values are set manually; other values include: <br/>  -- \"" + ActiveInfoStorageCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ +
-						"\" for use of the Ragwitz criteria for both source and destination (searching up to \"" + ActiveInfoStorageCalculatorKraskov.PROP_K_SEARCH_MAX +
-						"\" and \"" + ActiveInfoStorageCalculatorKraskov.PROP_TAU_SEARCH_MAX + "\"); <br/>  -- \"" + ActiveInfoStorageCalculatorKraskov.AUTO_EMBED_METHOD_MAX_CORR_AIS +
-						"\" for maximising the (bias corrected) Active Info Storage (searching up to \"" + ActiveInfoStorageCalculatorKraskov.PROP_K_SEARCH_MAX +
-						"\" and \"" + ActiveInfoStorageCalculatorKraskov.PROP_TAU_SEARCH_MAX + "\"); <br/>Use of values other than \"" + ActiveInfoStorageCalculatorKraskov.AUTO_EMBED_METHOD_NONE +
-						"\" leads to any previous settings for embedding lengths and delays to be overwritten after observations are supplied",
-				"Max. embedding length to search to <br/>if auto embedding (as determined by " + ActiveInfoStorageCalculatorKraskov.PROP_AUTO_EMBED_METHOD + ")",
-				"Max. embedding delay to search to <br/>if auto embedding (as determined by " + ActiveInfoStorageCalculatorKraskov.PROP_AUTO_EMBED_METHOD + ")",
 				"Number of k nearest neighbours for <br/>Ragwitz auto embedding (if used; defaults to match property \"k\")"
 		};
 		kraskovPropertyValueChoices = new String[][] {
@@ -227,10 +233,6 @@ public class AutoAnalyserAIS extends AutoAnalyser {
 				{"MAX_NORM", "EUCLIDEAN", "EUCLIDEAN_SQUARED"},
 				null,
 				{"true", "false"},
-				{ActiveInfoStorageCalculatorKraskov.AUTO_EMBED_METHOD_NONE, ActiveInfoStorageCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ,
-					ActiveInfoStorageCalculatorKraskov.AUTO_EMBED_METHOD_MAX_CORR_AIS},
-				null,
-				null,
 				null,
 		};
 	}
