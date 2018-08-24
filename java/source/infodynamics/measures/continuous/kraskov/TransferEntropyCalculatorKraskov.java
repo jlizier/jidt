@@ -251,6 +251,25 @@ public class TransferEntropyCalculatorKraskov
 		props = new Hashtable<String,String>();
 	}
 
+	/**
+	 * Creates a new instance of the Kraskov-Grassberger style transfer entropy calculator,
+	 *  with the CMI Kraskov calculator using the given Kraskov algorithm number
+	 * 
+	 * @param calculatorName fully qualified name of the underlying MI class.
+	 *    Must be {@link #COND_MI_CALCULATOR_KRASKOV1} or {@link #COND_MI_CALCULATOR_KRASKOV2}
+	 * @throws ClassNotFoundException 
+	 * @throws IllegalAccessException 
+	 * @throws InstantiationException 
+	 *
+	 */
+	public TransferEntropyCalculatorKraskov(int algorithm) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+		super((algorithm == 1) ? COND_MI_CALCULATOR_KRASKOV1 : COND_MI_CALCULATOR_KRASKOV2);
+		if ((algorithm != 1) && (algorithm != 2)) {
+			throw new ClassNotFoundException("Algorithm must be 1 or 2");
+		}
+		props = new Hashtable<String,String>();
+	}
+
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.TransferEntropyCalculatorViaCondMutualInfo#initialise(int, int, int, int, int)
 	 */
@@ -320,8 +339,6 @@ public class TransferEntropyCalculatorKraskov
 	 * 		<li>Or properties accepted by the underlying
 	 * 		{@link ConditionalMutualInfoCalculatorMultiVariateKraskov#setProperty(String, String)} implementation.</li>
 	 * </ul>
-	 * <p>One should set {@link ConditionalMutualInfoCalculatorMultiVariateKraskov#PROP_K} here, the number
-	 *  of neighbouring points one should count up to in determining the joint kernel size.</p> 
 	 * <p><b>Note:</b> further properties may be defined by child classes.</p>
 	 * 
 	 * <p>Unknown property values are ignored.</p>
