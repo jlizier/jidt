@@ -198,6 +198,7 @@ public class AutoAnalyserAIS extends AutoAnalyser {
 				MutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE,
 				MutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS,
 				MutualInfoCalculatorMultiVariateKraskov.PROP_USE_GPU,
+				ActiveInfoStorageCalculatorKraskov.PROP_KRASKOV_ALG_NUM,
 				ActiveInfoStorageCalculatorKraskov.PROP_RAGWITZ_NUM_NNS,
 		};
 		kraskovPropertiesFieldNames = new String[] {
@@ -208,7 +209,8 @@ public class AutoAnalyserAIS extends AutoAnalyser {
 				"MutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE",
 				"MutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS",
 				"MutualInfoCalculatorMultiVariateKraskov.PROP_USE_GPU",
-				"PROP_RAGWITZ_NUM_NNS"				
+				"PROP_KRASKOV_ALG_NUM",
+				"PROP_RAGWITZ_NUM_NNS"
 		};
 		kraskovPropertyDescriptions = new String[] {
 				"(boolean) whether to normalise <br/>each incoming time-series to mean 0, standard deviation 1, or not (recommended)",
@@ -223,6 +225,7 @@ public class AutoAnalyserAIS extends AutoAnalyser {
 				"Number of parallel threads to use <br/>in computation: an integer > 0 or \"USE_ALL\" " +
 						"(default, to indicate to use all available processors)",
 				"Whether to enable the GPU module (number of threads then has no bearing); boolean, default false",
+				"Which KSG algorithm to use (1 or 2)",
 				"Number of k nearest neighbours for <br/>Ragwitz auto embedding (if used; defaults to match property \"k\")"
 		};
 		kraskovPropertyValueChoices = new String[][] {
@@ -233,6 +236,7 @@ public class AutoAnalyserAIS extends AutoAnalyser {
 				{"MAX_NORM", "EUCLIDEAN", "EUCLIDEAN_SQUARED"},
 				null,
 				{"true", "false"},
+				{"1", "2"},
 				null,
 		};
 	}
