@@ -91,6 +91,10 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 		this(base, base, 0);
 	}
 	
+	// TODO Bring in a MutualInformationCalculatorDiscrete(int base1, int base2) constructor
+	//  but don't do this yet since it will override the previous MutualInformationCalculatorDiscrete(int base, int timeDiff)
+	//  constructor present up until v1.4 and that may lead to errors.
+	
 	/**
 	 * Create a new mutual information calculator
 	 * 
@@ -113,9 +117,16 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 			throw new Exception("timeDiff must be >= 0");
 		}
 		this.timeDiff = timeDiff;
-		jointCount = new int[base1][base2];
-		iCount = new int[base1];
-		jCount = new int[base2];
+		try {
+			jointCount = new int[base1][base2];
+			iCount = new int[base1];
+			jCount = new int[base2];
+		} catch (OutOfMemoryError e) {
+			// Allow any Exceptions to be thrown, but catch and wrap
+			//  Error as an Exception
+			throw new Exception("Requested memory for the MI bases (" +
+					base1 + ", " + base2 + ") is too large for the JVM at this time", e);
+		}
 	}
 
 	@Override
