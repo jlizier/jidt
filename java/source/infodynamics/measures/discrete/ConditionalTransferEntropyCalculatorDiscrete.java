@@ -185,6 +185,15 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 		base_power_k = MathsUtils.power(base, k);
 		base_power_num_others = MathsUtils.power(base_others, numOtherInfoContributors);
 
+		// Relaxing this assumption so we can use this calculation as
+		//  a time-lagged conditional MI at will:
+		//if (k < 1) {
+		//	throw new RuntimeException("History k " + history + " is not >= 1 a ContextOfPastMeasureCalculator");
+		//}
+
+		// Which time step do we start taking observations from?
+		// Normally this is k (to allow k previous time steps)
+		//  but if k==0 (becoming a lagged MI), it's 1.
 		startObservationTime = Math.max(k, 1);
 
 		// check that we can convert the base tuple into an integer ok
@@ -196,10 +205,18 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 		}
 
 		// Create storage for counts of observations
-		sourceDestPastOthersCount = new int[base][base][base_power_k][base_power_num_others];
-		sourcePastOthersCount = new int[base][base_power_k][base_power_num_others];
-		destPastOthersCount = new int [base][base_power_k][base_power_num_others];
-		pastOthersCount = new int[base_power_k][base_power_num_others];
+		try {
+			sourceDestPastOthersCount = new int[base][base][base_power_k][base_power_num_others];
+			sourcePastOthersCount = new int[base][base_power_k][base_power_num_others];
+			destPastOthersCount = new int [base][base_power_k][base_power_num_others];
+			pastOthersCount = new int[base_power_k][base_power_num_others];
+		} catch (OutOfMemoryError e) {
+			// Allow any Exceptions to be thrown, but catch and wrap
+			//  Error as a RuntimeException
+			throw new RuntimeException("Requested memory for the base " +
+					base + ", k=" + k + " num of others " + numOtherInfoContributors +
+					" with base " + base_others + ") is too large for the JVM at this time", e);
+		}
 		
 		// Create constants for tracking prevValues
 		maxShiftedValue = new int[base];
@@ -223,44 +240,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 	public ConditionalTransferEntropyCalculatorDiscrete
 		(int base, int history, int numOtherInfoContributors) {
 
-		super(base);
-		
-		k = history;
-		base_others = base; // If unspecified, the base of the conditional variables is the same as src and tgt
-		this.numOtherInfoContributors = numOtherInfoContributors;
-		base_power_k = MathsUtils.power(base, k);
-		base_power_num_others = MathsUtils.power(base, numOtherInfoContributors);
-		
-		// Relaxing this assumption so we can use this calculation as
-		//  a time-lagged conditional MI at will:
-		//if (k < 1) {
-		//	throw new RuntimeException("History k " + history + " is not >= 1 a ContextOfPastMeasureCalculator");
-		//}
-		
-		// Which time step do we start taking observations from?
-		// Normally this is k (to allow k previous time steps)
-		//  but if k==0 (becoming a lagged MI), it's 1.
-		startObservationTime = Math.max(k, 1);
-
-		// check that we can convert the base tuple into an integer ok
-		if (k > Math.log(Integer.MAX_VALUE) / log_base) {
-			throw new RuntimeException("Base and history combination too large");
-		}
-		if (numOtherInfoContributors < 1) {
-			throw new RuntimeException("Number of other info contributors < 1 for CompleteTECalculator");
-		}
-		
-		// Create storage for counts of observations
-		sourceDestPastOthersCount = new int[base][base][base_power_k][base_power_num_others];
-		sourcePastOthersCount = new int[base][base_power_k][base_power_num_others];
-		destPastOthersCount = new int [base][base_power_k][base_power_num_others];
-		pastOthersCount = new int[base_power_k][base_power_num_others];
-		
-		// Create constants for tracking prevValues
-		maxShiftedValue = new int[base];
-		for (int v = 0; v < base; v++) {
-			maxShiftedValue[v] = v * MathsUtils.power(base, k-1);
-		}
+		this(base, history, numOtherInfoContributors, base);
 	}
 
 	@Override

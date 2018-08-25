@@ -123,8 +123,8 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 			jCount = new int[base2];
 		} catch (OutOfMemoryError e) {
 			// Allow any Exceptions to be thrown, but catch and wrap
-			//  Error as an Exception
-			throw new Exception("Requested memory for the MI bases (" +
+			//  Error as a RuntimeException
+			throw new RuntimeException("Requested memory for the MI bases (" +
 					base1 + ", " + base2 + ") is too large for the JVM at this time", e);
 		}
 	}

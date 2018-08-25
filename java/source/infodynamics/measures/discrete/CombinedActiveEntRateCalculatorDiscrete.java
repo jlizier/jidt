@@ -100,9 +100,16 @@ public class CombinedActiveEntRateCalculatorDiscrete {
 		
 		if (changedSizes) {
 			// Create storage for counts of observations
-			jointCount = new int[base][MathsUtils.power(base, history)];
-			prevCount = new int[MathsUtils.power(base, history)];
-			nextCount = new int[base];
+			try {
+				jointCount = new int[base][MathsUtils.power(base, history)];
+				prevCount = new int[MathsUtils.power(base, history)];
+				nextCount = new int[base];
+			} catch (OutOfMemoryError e) {
+				// Allow any Exceptions to be thrown, but catch and wrap
+				//  Error as a Runtimexception
+				throw new RuntimeException("Requested memory for the base " +
+						base + " and k=" + history + " is too large for the JVM at this time", e);
+			}
 		} else {
 			// Just set counts to zeros without recreating the space
 			MatrixUtils.fill(jointCount, 0);

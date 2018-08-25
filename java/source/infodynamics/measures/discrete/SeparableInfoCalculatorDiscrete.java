@@ -179,9 +179,17 @@ public class SeparableInfoCalculatorDiscrete extends ContextOfPastMeasureCalcula
 		}
 		if (!dontCreateObsStorage) {
 			// Create storage for extra counts of observations
-			sourceNumValueNextPastCount = new int[numInfoContributors][base][base][base_power_k];
-			sourcesNextPastCount = new int[base_power_sources][base][base_power_k];
-			sourceNumValuePastCount = new int[numInfoContributors][base][base_power_k];
+			try {
+				sourceNumValueNextPastCount = new int[numInfoContributors][base][base][base_power_k];
+				sourcesNextPastCount = new int[base_power_sources][base][base_power_k];
+				sourceNumValuePastCount = new int[numInfoContributors][base][base_power_k];
+			} catch (OutOfMemoryError e) {
+				// Allow any Exceptions to be thrown, but catch and wrap
+				//  Error as a RuntimeException
+				throw new RuntimeException("Requested memory for the base " +
+						base + " with k=" + k + " and " + numInfoContributors +
+						" sources is too large for the JVM at this time", e);
+			}
 		}
 	}
 

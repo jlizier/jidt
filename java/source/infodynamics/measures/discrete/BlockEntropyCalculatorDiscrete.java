@@ -106,7 +106,14 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 		// Create storage for counts of observations.
 		// We're recreating stateCount, which was created in super()
 		//  however the super() didn't create it for blocksize > 1
-		stateCount = new int[MathsUtils.power(base, blocksize)];
+		try {
+			stateCount = new int[MathsUtils.power(base, blocksize)];
+		} catch (OutOfMemoryError e) {
+			// Allow any Exceptions to be thrown, but catch and wrap
+			//  Error as a Runtimexception
+			throw new RuntimeException("Requested memory for the base " +
+					base + " and k=" + blocksize+ " is too large for the JVM at this time", e);
+		}
 
 		// Create constants for tracking stateValues
 		maxShiftedValue = new int[base];

@@ -80,8 +80,16 @@ public class MultiInformationCalculatorDiscrete extends InfoMeasureCalculatorDis
 		super(base);
 		this.numVars = numVars;
 		jointStates = MathsUtils.power(base, numVars);
-		jointCount = new int[jointStates];
-		marginalCounts = new int[numVars][base];
+		try {
+			jointCount = new int[jointStates];
+			marginalCounts = new int[numVars][base];
+		} catch (OutOfMemoryError e) {
+			// Allow any Exceptions to be thrown, but catch and wrap
+			//  Error as a RuntimeException
+			throw new RuntimeException("Requested memory for the base " +
+					base + " with " + numVars +
+					" variables is too large for the JVM at this time", e);
+		}
 	}
 
 	@Override

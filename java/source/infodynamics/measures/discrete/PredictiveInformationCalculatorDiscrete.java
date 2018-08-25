@@ -135,9 +135,17 @@ public class PredictiveInformationCalculatorDiscrete {
 		}
 
 		// Create storage for counts of observations
-		jointCount = new int[base_power_k][base_power_k];
-		prevCount = new int[base_power_k];
-		nextCount = new int[base_power_k];
+		try {
+			jointCount = new int[base_power_k][base_power_k];
+			prevCount = new int[base_power_k];
+			nextCount = new int[base_power_k];
+		} catch (OutOfMemoryError e) {
+			// Allow any Exceptions to be thrown, but catch and wrap
+			//  Error as a RuntimeException
+			throw new RuntimeException("Requested memory for the base " +
+					numDiscreteValues + " with k=" + blockLength +
+					") is too large for the JVM at this time", e);
+		}
 
 		// Create constants for tracking prevValues and nextValues
 		maxShiftedValue = new int[numDiscreteValues];

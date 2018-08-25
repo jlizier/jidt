@@ -117,10 +117,18 @@ public class ConditionalMutualInformationCalculatorDiscrete
 		this.condBase = condBase;
 		
 		// Create storage for extra counts of observations
-		firstSecondCondCount = new int[base1][base2][condBase];
-		firstCondCount = new int[base1][condBase];		
-		secondCondCount = new int[base2][condBase];
-		condCount = new int[condBase];
+		try {
+			firstSecondCondCount = new int[base1][base2][condBase];
+			firstCondCount = new int[base1][condBase];
+			secondCondCount = new int[base2][condBase];
+			condCount = new int[condBase];
+		} catch (OutOfMemoryError e) {
+			// Allow any Exceptions to be thrown, but catch and wrap
+			//  Error as an Exception
+			throw new RuntimeException("Requested memory for the MI bases (" +
+					base1 + ", " + base2 + ", " + condBase +
+					") is too large for the JVM at this time", e);
+		}
 	}
 
 	@Override

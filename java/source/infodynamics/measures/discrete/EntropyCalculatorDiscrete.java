@@ -94,7 +94,15 @@ public class EntropyCalculatorDiscrete extends InfoMeasureCalculatorDiscrete
 		super(base);
 		
 		// Create storage for counts of observations
-		stateCount = new int[base];
+		try {
+			stateCount = new int[base];
+		} catch (OutOfMemoryError e) {
+			// Allow any Exceptions to be thrown, but catch and wrap
+			//  Error as a RuntimeException
+			throw new RuntimeException("Requested memory for the base (" +
+					base + ") is too large for the JVM at this time", e);
+		}
+
 	}
 	
 	@Override

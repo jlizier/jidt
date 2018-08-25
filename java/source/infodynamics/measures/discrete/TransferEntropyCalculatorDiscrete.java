@@ -244,8 +244,16 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 		}
 
 		// Create storage for extra counts of observations
-		sourceNextPastCount = new int[base_power_l][base][base_power_k];
-		sourcePastCount = new int[base_power_l][base_power_k];
+		try {
+			sourceNextPastCount = new int[base_power_l][base][base_power_k];
+			sourcePastCount = new int[base_power_l][base_power_k];
+		} catch (OutOfMemoryError e) {
+			// Allow any Exceptions to be thrown, but catch and wrap
+			//  Error as a RuntimeException
+			throw new RuntimeException("Requested memory for the base " +
+					base + ", k=" + k + ", l=" + sourceHistoryEmbedLength +
+					" is too large for the JVM at this time", e);
+		}
 		
 		// Which time step do we start taking observations from?
 		// These two integers represent the earliest next time step, in the cases where the destination

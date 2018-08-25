@@ -114,9 +114,16 @@ public abstract class ContextOfPastMeasureCalculatorDiscrete extends
 		noObservationStorage = dontCreateObsStorage;
 		if (!dontCreateObsStorage) {
 			// Create storage for counts of observations
-			nextPastCount = new int[base][base_power_k];
-			pastCount = new int[base_power_k];
-			nextCount = new int[base];
+			try {
+				nextPastCount = new int[base][base_power_k];
+				pastCount = new int[base_power_k];
+				nextCount = new int[base];
+			} catch (OutOfMemoryError e) {
+				// Allow any Exceptions to be thrown, but catch and wrap
+				//  Error as a RuntimeException
+				throw new RuntimeException("Requested memory for the base " +
+						base + " and k=" + k + " is too large for the JVM at this time", e);
+			}
 		}
 	}
 	
