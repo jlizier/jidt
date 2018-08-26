@@ -25,6 +25,8 @@ import infodynamics.utils.commonsmath3.distribution.ChiSquaredDistribution;
  * some null hypothesis of a relationship between the variables, where the
  * distribution of <b>a function of</b> those information-theoretic measurements
  * is a Chi Square distribution.
+ * Can represent an analytic distribution of raw estimates or bias corrected
+ * estimates.
  *
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
@@ -50,6 +52,33 @@ public class ChiSquareMeasurementDistribution extends
 	protected ChiSquaredDistribution chi2dist;
 	
 	/**
+	 * Tracks whether we will return a bias-corrected distribution or not
+	 */
+	protected boolean isBiasCorrected;
+	
+	/**
+	 * Stores the mean of the uncorrected distribution, useful for bias correction externally
+	 */
+	protected double meanOfUncorrectedDistribution;
+	
+	/**
+	 * Construct the distribution.
+	 * Note: the Chi squared distribution is technically
+	 * of 2*numObservations*(the info theoretic estimate), not
+	 * of the info theoretic measurement itself.
+	 * This constructor assumes that we are not seeking a bias-corrected distribution.
+	 * 
+	 * @param actualValue actual observed information-theoretic value
+	 * @param numObservations the number of observations that the information theoretic estimate
+	 * 	is computed from
+	 * @param degreesOfFreedom degrees of freedom for the distribution
+	 */
+	public ChiSquareMeasurementDistribution(double actualValue, 
+			int numObservations, int degreesOfFreedom) {
+		this(actualValue, numObservations, degreesOfFreedom, false);
+	}
+	
+	/**
 	 * Construct the distribution.
 	 * Note: the Chi squared distribution is technically
 	 * of 2*numObservations*(the info theoretic estimate), not
@@ -59,21 +88,39 @@ public class ChiSquareMeasurementDistribution extends
 	 * @param numObservations the number of observations that the information theoretic estimate
 	 * 	is computed from
 	 * @param degreesOfFreedom degrees of freedom for the distribution
+	 * @param isBiasCorrected whether to bias correct the distribution or not (and indeed
+	 *   whether the actualValue is bias corrected)
 	 */
 	public ChiSquareMeasurementDistribution(double actualValue, 
-			int numObservations, int degreesOfFreedom) {
-		super(actualValue, 1 - MathsUtils.chiSquareCdf(2.0*((double)numObservations)*actualValue, degreesOfFreedom));
+			int numObservations, int degreesOfFreedom, boolean isBiasCorrected) {
+		// Make a dummy initialisation until we can properly get the uncorrected distribution ready:
+		super(0, 0);
 		this.numObservations = numObservations;
 		this.degreesOfFreedom = degreesOfFreedom;
-		chi2dist = new ChiSquaredDistribution(degreesOfFreedom);
+		chi2dist = new ChiSquaredDistribution(degreesOfFreedom); // Uncorrected distribution
+		meanOfUncorrectedDistribution = chi2dist.getNumericalMean() / (2.0*((double)numObservations));
+		this.isBiasCorrected = isBiasCorrected;
+		this.actualValue = actualValue; // will be bias corrected, if we are bias correcting
+		// Now we can properly compute the p-value of this potentially bias corrected actual value
+		this.pValue = computePValueForGivenEstimate(actualValue);
 	}
-	
+
 	public double computePValueForGivenEstimate(double estimate) {
-		return 1 - MathsUtils.chiSquareCdf(2.0*((double)numObservations)*estimate, degreesOfFreedom);
+		if (isBiasCorrected) {
+			// estimate is biasCorrected, so we need to add back into it the meanOfUncorrectedDistribution
+			return 1 - MathsUtils.chiSquareCdf(2.0*((double)numObservations)*(estimate + meanOfUncorrectedDistribution), degreesOfFreedom);
+		} else {
+			return 1 - MathsUtils.chiSquareCdf(2.0*((double)numObservations)*estimate, degreesOfFreedom);
+		}
 	}
-	
+
 	public double computeEstimateForGivenPValue(double pValue) {
-		return chi2dist.inverseCumulativeProbability(1 - pValue) / (2.0*((double)numObservations));
+		double uncorrectedEstimate = chi2dist.inverseCumulativeProbability(1 - pValue) / (2.0*((double)numObservations));
+		if (isBiasCorrected) {
+			return uncorrectedEstimate - meanOfUncorrectedDistribution;
+		} else {
+			return uncorrectedEstimate;
+		}
 		// Could also call the following, but this doesn't re-use our objects:
 		// return MathsUtils.chiSquareInv(1 - pValue, degreesOfFreedom);
 	}
@@ -84,9 +131,21 @@ public class ChiSquareMeasurementDistribution extends
 	 * @return the mean
 	 */
 	public double getMeanOfDistribution() {
-		return chi2dist.getNumericalMean() / (2.0*((double)numObservations));
+		if (isBiasCorrected) {
+			return 0;
+		} else {
+			return meanOfUncorrectedDistribution;
+		}
 	}
 	
+	/**
+	 * 
+	 * @return mean of uncorrected distribution
+	 */
+	public double getMeanOfUncorrectedDistribution() {
+		return meanOfUncorrectedDistribution;
+	}
+
 	/**
 	 * Compute the standard deviation of the measurement distribution
 	 * 

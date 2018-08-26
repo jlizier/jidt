@@ -81,4 +81,30 @@ public class ChiSquareMeasurementDistributionTest extends TestCase {
 		}
 		
 	}
+	
+	public void testBiasCorrection() {
+		double[] actualValues = new double[] {0.000001, 0.000002, 0.000005, 0.00001, 0.00002, 0.00005,
+					0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5};
+		int[] numObs = new int[] {100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000};
+		int[] degFreedom = new int[] {1, 2, 3, 5, 10, 20};
+		for (int a = 0; a < actualValues.length; a++) {
+			for (int d = 0; d < degFreedom.length; d++) {
+				for (int n = 0; n < numObs.length; n++) {
+					// Uncorrected, just to get mean:
+					ChiSquareMeasurementDistribution csmDist = new ChiSquareMeasurementDistribution(actualValues[a], numObs[n], degFreedom[d]);
+					double meanOfUncorrected = csmDist.getMeanOfDistribution();
+					// Now use corrected:
+					ChiSquareMeasurementDistribution csmDistCorr = new ChiSquareMeasurementDistribution(actualValues[a] - meanOfUncorrected, numObs[n], degFreedom[d], true);
+					assertEquals(csmDist.pValue, csmDistCorr.pValue, 0.0000001);
+					// Check that we get the same p value if we stick this estimate in afterwards:
+					assertEquals(csmDistCorr.pValue, csmDistCorr.computePValueForGivenEstimate(actualValues[a] - meanOfUncorrected), 0.000001);
+					// Check that if we ask for an inverse on this pValue we get the same estimate back:
+					// Can easily get rounding errors here when the pValue approaches 1 or 0, so we won't test these for now:
+					if ((csmDist.pValue < 0.99) && (csmDist.pValue > 0.000001)) {
+						assertEquals(actualValues[a] - meanOfUncorrected, csmDistCorr.computeEstimateForGivenPValue(csmDistCorr.pValue), 0.000001);
+					}
+				}
+			}
+		}
+	}
 }
