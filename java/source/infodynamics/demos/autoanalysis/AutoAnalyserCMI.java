@@ -130,12 +130,18 @@ public class AutoAnalyserCMI extends AutoAnalyser
 		};
 		// Gaussian properties:
 		gaussianProperties = new String[] {
+				ConditionalMutualInfoCalculatorMultiVariateGaussian.PROP_BIAS_CORRECTION,
 		};
 		gaussianPropertiesFieldNames = new String[] {
+				"PROP_BIAS_CORRECTION"
 		};
 		gaussianPropertyDescriptions = new String[] {
+				"Whether the analytically determined bias (as the mean of the<br/>" +
+						"surrogate distribution) will be subtracted from all" +
+						"calculated values. Default is false."
 		};
-		gaussianPropertyValueChoices = new String[][] {	
+		gaussianPropertyValueChoices = new String[][] {
+				{"true", "false"}
 		};
 		// KSG (Kraskov):
 		kraskovProperties = new String[] {

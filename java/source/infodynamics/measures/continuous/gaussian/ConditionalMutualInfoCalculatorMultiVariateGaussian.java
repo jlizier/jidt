@@ -543,8 +543,12 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 		}
 		
 		if (biasCorrection) {
-			ChiSquareMeasurementDistribution analyticMeasDist = computeSignificance();
-			lastAverage -= analyticMeasDist.getMeanOfDistribution();
+			// Need to play a slight trick here so that computeSignificance()
+			//  thinks the average has already been computed, otherwise
+			//  we will get an infinite loop where it calls this method again, and so on:
+			
+			ChiSquareMeasurementDistribution analyticMeasDist = computeSignificance(true);
+			lastAverage -= analyticMeasDist.getMeanOfUncorrectedDistribution();
 		}
 		condMiComputed = true;
 		return lastAverage;
@@ -592,9 +596,26 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 	 */
 	@Override
 	public ChiSquareMeasurementDistribution computeSignificance() throws Exception {
-		if (!condMiComputed) {
-			computeAverageLocalOfObservations();
+		return computeSignificance(false);
+	}
+
+	/**
+	 * As per {@link #computeSignificance()} except allows the caller
+	 *  to request that the averge is not first computed (if we don't have
+	 *  it already). This is required internally to avoid infinite looping
+	 *  between computeAverage and computeSignificance
+	 * 
+	 * @param skipComputingThisAverage
+	 * @return
+	 * @throws Exception
+	 */
+	protected ChiSquareMeasurementDistribution computeSignificance(boolean skipComputingThisAverage) throws Exception {
+		double averageToUse = 0;
+		if (!condMiComputed && !skipComputingThisAverage) {
+			averageToUse = computeAverageLocalOfObservations();
 		}
+		// else use 0 for now in the distribution
+		
 		// Number of extra parameters in the model incorporating the
 		//  extra variable is independent of the number of variables
 		//  in the conditional:
@@ -602,11 +623,12 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 		// return new ChiSquareMeasurementDistribution(2.0*((double)totalObservations)*lastAverage,
 		//		dimensionsVar1 * dimensionsVar2);
 		// Taking the subsets into account:
-		return new ChiSquareMeasurementDistribution(lastAverage,
+		return new ChiSquareMeasurementDistribution(averageToUse,
 				totalObservations,
-				var1IndicesInCovariance.length * var2IndicesInCovariance.length);
+				var1IndicesInCovariance.length * var2IndicesInCovariance.length,
+				biasCorrection);
 	}
-	
+
 	/**
 	 * @throws Exception if user passed in covariance matrix rather than observations
 	 */
@@ -768,7 +790,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 		int[] condIndicesSelected = MatrixUtils.subtract(condIndicesInCovariance, dimensionsVar1 + dimensionsVar2);
 
 		// And in case we need this for bias correction:
-		ChiSquareMeasurementDistribution analyticMeasDist = computeSignificance();
+		ChiSquareMeasurementDistribution analyticMeasDist = computeSignificance(true);
 
 		for (int t = 0; t < newVar2Obs.length; t++) {
 			
@@ -843,7 +865,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 				// Note that we do the same thing even if these are new observations,
 				//  because the variances have been computed from the same
 				//  number of samples.
-				localValues[t] -= analyticMeasDist.getMeanOfDistribution();
+				localValues[t] -= analyticMeasDist.getMeanOfUncorrectedDistribution();
 			}
 
 		}
