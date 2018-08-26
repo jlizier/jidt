@@ -94,11 +94,9 @@ public abstract class ContextOfPastMeasureCalculatorDiscrete extends
 		k = history;
 		base_power_k = MathsUtils.power(base, k);
 		
-		// Relax the requirement that k >= 1, so that we can 
-		//  eliminate considering the history at will ...
-		//if (k < 1) {
-		//	throw new RuntimeException("History k " + history + " is not >= 1 a ContextOfPastMeasureCalculator");
-		//}
+		if (k < 0) {
+			throw new RuntimeException("History k " + history + " is not >= 0 for a ContextOfPastMeasureCalculator");
+		}
 		
 		// Check that we can convert the history value into an integer ok: 
 		if (k > Math.log(Integer.MAX_VALUE) / log_base) {
