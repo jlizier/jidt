@@ -20,7 +20,9 @@ package infodynamics.measures.continuous.gaussian;
 
 import infodynamics.measures.continuous.ConditionalMutualInfoMultiVariateAbstractTester;
 import infodynamics.utils.ArrayFileReader;
+import infodynamics.utils.ChiSquareMeasurementDistribution;
 import infodynamics.utils.MatrixUtils;
+import infodynamics.utils.RandomGenerator;
 
 public class ConditionalMutualInfoMultiVariateTester extends
 		ConditionalMutualInfoMultiVariateAbstractTester {
@@ -157,4 +159,36 @@ public class ConditionalMutualInfoMultiVariateTester extends
 				condMi, 0.0000000001);
 	}
 	
+	public void testBiasCorrectionDoesNotChangeAnalyticPValue() throws Exception {
+		ConditionalMutualInfoCalculatorMultiVariateGaussian cmiCalc =
+				new ConditionalMutualInfoCalculatorMultiVariateGaussian();
+		
+		int dimensions = 2;
+		int timeSteps = 100;
+		// generate some random data
+		RandomGenerator rg = new RandomGenerator();
+		double[][] sourceData = rg.generateNormalData(timeSteps, dimensions,
+				0, 1);
+		double[][] destData = rg.generateNormalData(timeSteps, dimensions,
+				0, 1);
+		double[][] condData = rg.generateNormalData(timeSteps, dimensions,
+				0, 1);
+		
+		cmiCalc.setProperty(MutualInfoCalculatorMultiVariateGaussian.PROP_BIAS_CORRECTION, "false");
+		cmiCalc.initialise(dimensions, dimensions, dimensions);
+		cmiCalc.setObservations(sourceData, destData, condData);
+		double avNotBiasCorrected = cmiCalc.computeAverageLocalOfObservations();
+		ChiSquareMeasurementDistribution distroNotBiasCorrected = cmiCalc.computeSignificance();
+		assertEquals(avNotBiasCorrected, distroNotBiasCorrected.actualValue, 0.0000001);
+		
+		// Now run again with bias correction:
+		cmiCalc.setProperty(MutualInfoCalculatorMultiVariateGaussian.PROP_BIAS_CORRECTION, "true");
+		cmiCalc.initialise(dimensions, dimensions, dimensions);
+		cmiCalc.setObservations(sourceData, destData, condData);
+		double avBiasCorrected = cmiCalc.computeAverageLocalOfObservations();
+		ChiSquareMeasurementDistribution distroBiasCorrected = cmiCalc.computeSignificance();
+		assertEquals(avBiasCorrected, distroBiasCorrected.actualValue, 0.0000001);
+		// And now check that the pValues are unchanged whether we bias correct or not:
+		assertEquals(distroNotBiasCorrected.pValue, distroBiasCorrected.pValue);
+	}
 }

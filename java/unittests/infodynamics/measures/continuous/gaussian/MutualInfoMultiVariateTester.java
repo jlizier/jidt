@@ -19,6 +19,7 @@
 package infodynamics.measures.continuous.gaussian;
 
 import junit.framework.TestCase;
+import infodynamics.utils.ChiSquareMeasurementDistribution;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.MatrixUtilsTest;
@@ -146,5 +147,36 @@ public class MutualInfoMultiVariateTester extends TestCase {
 			double averageCheck1 = miCalc.computeAverageLocalOfObservations();
 			assertEquals(mi, averageCheck1);
 		}
+	}
+	
+	public void testBiasCorrectionDoesNotChangeAnalyticPValue() throws Exception {
+		MutualInfoCalculatorMultiVariateGaussian miCalc =
+				new MutualInfoCalculatorMultiVariateGaussian();
+		
+		int dimensions = 2;
+		int timeSteps = 100;
+		// generate some random data
+		RandomGenerator rg = new RandomGenerator();
+		double[][] sourceData = rg.generateNormalData(timeSteps, dimensions,
+				0, 1);
+		double[][] destData = rg.generateNormalData(timeSteps, dimensions,
+				0, 1);
+		
+		miCalc.setProperty(MutualInfoCalculatorMultiVariateGaussian.PROP_BIAS_CORRECTION, "false");
+		miCalc.initialise(dimensions, dimensions);
+		miCalc.setObservations(sourceData, destData);
+		double avNotBiasCorrected = miCalc.computeAverageLocalOfObservations();
+		ChiSquareMeasurementDistribution distroNotBiasCorrected = miCalc.computeSignificance();
+		assertEquals(avNotBiasCorrected, distroNotBiasCorrected.actualValue, 0.0000001);
+		
+		// Now run again with bias correction:
+		miCalc.setProperty(MutualInfoCalculatorMultiVariateGaussian.PROP_BIAS_CORRECTION, "true");
+		miCalc.initialise(dimensions, dimensions);
+		miCalc.setObservations(sourceData, destData);
+		double avBiasCorrected = miCalc.computeAverageLocalOfObservations();
+		ChiSquareMeasurementDistribution distroBiasCorrected = miCalc.computeSignificance();
+		assertEquals(avBiasCorrected, distroBiasCorrected.actualValue, 0.0000001);
+		// And now check that the pValues are unchanged whether we bias correct or not:
+		assertEquals(distroNotBiasCorrected.pValue, distroBiasCorrected.pValue);
 	}
 }

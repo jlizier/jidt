@@ -601,18 +601,23 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 
 	/**
 	 * As per {@link #computeSignificance()} except allows the caller
-	 *  to request that the averge is not first computed (if we don't have
+	 *  to request that the average is not first computed (if we don't have
 	 *  it already). This is required internally to avoid infinite looping
-	 *  between computeAverage and computeSignificance
+	 *  between computeAverage and computeSignificance, when we just want 
+	 *  the null distribution and don't need to have the pValue
 	 * 
 	 * @param skipComputingThisAverage
 	 * @return
 	 * @throws Exception
 	 */
 	protected ChiSquareMeasurementDistribution computeSignificance(boolean skipComputingThisAverage) throws Exception {
-		double averageToUse = 0;
-		if (!condMiComputed && !skipComputingThisAverage) {
-			averageToUse = computeAverageLocalOfObservations();
+		double averageToUse = lastAverage;
+		if (!condMiComputed) {
+			if (skipComputingThisAverage) {
+				averageToUse = 0; // Caller only wants the distribution
+			} else {
+				averageToUse = computeAverageLocalOfObservations();
+			}
 		}
 		// else use 0 for now in the distribution
 		

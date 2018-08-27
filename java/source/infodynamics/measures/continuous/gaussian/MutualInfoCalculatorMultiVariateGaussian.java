@@ -70,6 +70,7 @@ public class MutualInfoCalculatorMultiVariateGaussian
      * Whether to analytically bias correct the returned values 
      */
 	protected boolean biasCorrection = false;
+	
 	/**
 	 * Cached Cholesky decomposition of the covariance matrix
 	 * of the most recently supplied observations.
@@ -353,8 +354,8 @@ public class MutualInfoCalculatorMultiVariateGaussian
 				detSourceCovariance * detDestCovariance /
 						detCovariance));
 		if (biasCorrection) {
-			ChiSquareMeasurementDistribution analyticMeasDist = computeSignificance();
-			lastAverage -= analyticMeasDist.getMeanOfDistribution();
+			ChiSquareMeasurementDistribution analyticMeasDist = computeSignificance(true);
+			lastAverage -= analyticMeasDist.getMeanOfUncorrectedDistribution();
 		}
 		miComputed = true;
 		return lastAverage;
@@ -415,12 +416,37 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	 *    toolkit for studying the dynamics of complex systems', 2014."
 	 * @throws Exception
 	 */
-	public ChiSquareMeasurementDistribution computeSignificance() {
-		return new ChiSquareMeasurementDistribution(lastAverage,
-				totalObservations,
-				dimensionsSource * dimensionsDest);
+	public ChiSquareMeasurementDistribution computeSignificance() throws Exception {
+		return computeSignificance(false);
 	}
-	
+
+	/**
+	 * As per {@link #computeSignificance()} except allows the caller
+	 *  to request that the average is not first computed (if we don't have
+	 *  it already). This is required internally to avoid infinite looping
+	 *  between computeAverage and computeSignificance, when we just want 
+	 *  the null distribution and don't need to have the pValue
+	 * 
+	 * @param skipComputingThisAverage
+	 * @return
+	 * @throws Exception
+	 */
+	protected ChiSquareMeasurementDistribution computeSignificance(boolean skipComputingThisAverage) throws Exception {
+		double averageToUse = lastAverage;
+		if (!miComputed) {
+			if (skipComputingThisAverage) {
+				averageToUse = 0; // Caller only wants the distribution
+			} else {
+				averageToUse = computeAverageLocalOfObservations();
+			}
+		}
+		// else use 0 for now in the distribution
+		return new ChiSquareMeasurementDistribution(averageToUse,
+				totalObservations,
+				dimensionsSource * dimensionsDest,
+				biasCorrection);
+	}
+
 	/**
 	 * @throws Exception where the user did not set observations 
 	 * but set covariance matrices instead.
