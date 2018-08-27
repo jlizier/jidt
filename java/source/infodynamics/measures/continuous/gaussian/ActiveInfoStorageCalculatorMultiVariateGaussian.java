@@ -119,7 +119,7 @@ public class ActiveInfoStorageCalculatorMultiVariateGaussian
 	 *    toolkit for studying the dynamics of complex systems', 2014."
 	 * @throws Exception
 	 */
-	public ChiSquareMeasurementDistribution computeSignificance() {
+	public ChiSquareMeasurementDistribution computeSignificance() throws Exception {
 		return ((MutualInfoCalculatorMultiVariateGaussian) miCalc).computeSignificance();
 	}
 }
