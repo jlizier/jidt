@@ -20,6 +20,7 @@ package infodynamics.demos.autoanalysis;
 
 import infodynamics.measures.continuous.ConditionalMutualInfoMultiVariateCommon;
 import infodynamics.measures.continuous.TransferEntropyCalculator;
+import infodynamics.measures.continuous.gaussian.ConditionalMutualInfoCalculatorMultiVariateGaussian;
 import infodynamics.measures.continuous.gaussian.TransferEntropyCalculatorGaussian;
 import infodynamics.measures.continuous.kernel.TransferEntropyCalculatorKernel;
 import infodynamics.measures.continuous.kraskov.ConditionalMutualInfoCalculatorMultiVariateKraskov;
@@ -134,24 +135,30 @@ public class AutoAnalyserTE extends AutoAnalyserChannelCalculator
 				TransferEntropyCalculator.L_PROP_NAME, // Not common to Kernel
 				TransferEntropyCalculator.L_TAU_PROP_NAME, // Not common to Kernel
 				TransferEntropyCalculator.DELAY_PROP_NAME, // Not common to Kernel
+				ConditionalMutualInfoCalculatorMultiVariateGaussian.PROP_BIAS_CORRECTION,
 		};
 		gaussianPropertiesFieldNames = new String[] {
 				"TransferEntropyCalculator.K_TAU_PROP_NAME", // Not common to Kernel
 				"TransferEntropyCalculator.L_PROP_NAME", // Not common to Kernel
 				"TransferEntropyCalculator.L_TAU_PROP_NAME", // Not common to Kernel
 				"TransferEntropyCalculator.DELAY_PROP_NAME", // Not common to Kernel
+				"ConditionalMutualInfoCalculatorMultiVariateGaussian.PROP_BIAS_CORRECTION",
 		};
 		gaussianPropertyDescriptions = new String[] {
 				"Destination history embedding delay (k_TAU)",
 				"Source history embedding length (l_HISTORY)",
 				"Source history embeding delay (l_TAU)",
-				"Delay from source to destination (in time steps)"
+				"Delay from source to destination (in time steps)",
+				"Whether the analytically determined bias (as the mean of the<br/>" +
+						"surrogate distribution) will be subtracted from all" +
+						"calculated values. Default is false."
 		};
 		gaussianPropertyValueChoices = new String[][] {	
 				null,
 				null,
 				null,
 				null,
+				{"true", "false"},
 		};
 		// Kernel:
 		kernelProperties = new String[] {

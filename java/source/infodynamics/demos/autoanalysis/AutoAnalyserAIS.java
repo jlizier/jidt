@@ -22,6 +22,7 @@ import infodynamics.measures.continuous.ActiveInfoStorageCalculator;
 import infodynamics.measures.continuous.ActiveInfoStorageCalculatorViaMutualInfo;
 import infodynamics.measures.continuous.InfoMeasureCalculatorContinuous;
 import infodynamics.measures.continuous.gaussian.ActiveInfoStorageCalculatorGaussian;
+import infodynamics.measures.continuous.gaussian.MutualInfoCalculatorMultiVariateGaussian;
 import infodynamics.measures.continuous.kernel.ActiveInfoStorageCalculatorKernel;
 import infodynamics.measures.continuous.kernel.MutualInfoCalculatorMultiVariateKernel;
 import infodynamics.measures.continuous.kraskov.ActiveInfoStorageCalculatorKraskov;
@@ -157,12 +158,18 @@ public class AutoAnalyserAIS extends AutoAnalyser {
 		};
 		// Gaussian properties:
 		gaussianProperties = new String[] {
+				MutualInfoCalculatorMultiVariateGaussian.PROP_BIAS_CORRECTION
 		};
 		gaussianPropertiesFieldNames = new String[] {
+				"MutualInfoCalculatorMultiVariateGaussian.PROP_BIAS_CORRECTION"
 		};
 		gaussianPropertyDescriptions = new String[] {
+				"Whether the analytically determined bias (as the mean of the<br/>" +
+						"surrogate distribution) will be subtracted from all" +
+						"calculated values. Default is false."
 		};
 		gaussianPropertyValueChoices = new String[][] {	
+				{"true", "false"}
 		};
 		// Kernel:
 		kernelProperties = new String[] {
@@ -171,9 +178,9 @@ public class AutoAnalyserAIS extends AutoAnalyser {
 				MutualInfoCalculatorMultiVariateKernel.NORMALISE_PROP_NAME,			
 		};
 		kernelPropertiesFieldNames = new String[] {
-				"KERNEL_WIDTH_PROP_NAME",
-				"DYN_CORR_EXCL_TIME_NAME",
-				"NORMALISE_PROP_NAME"			
+				"MutualInfoCalculatorMultiVariateKernel.KERNEL_WIDTH_PROP_NAME",
+				"MutualInfoCalculatorMultiVariateKernel.DYN_CORR_EXCL_TIME_NAME",
+				"MutualInfoCalculatorMultiVariateKernel.NORMALISE_PROP_NAME"			
 		};
 		kernelPropertyDescriptions = new String[] {
 				"Kernel width to be used in the calculation. <br/>If the property " +

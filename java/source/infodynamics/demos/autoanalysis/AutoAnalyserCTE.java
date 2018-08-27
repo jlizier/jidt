@@ -21,6 +21,7 @@ package infodynamics.demos.autoanalysis;
 import infodynamics.measures.continuous.ConditionalMutualInfoMultiVariateCommon;
 import infodynamics.measures.continuous.ConditionalTransferEntropyCalculator;
 import infodynamics.measures.continuous.InfoMeasureCalculatorContinuous;
+import infodynamics.measures.continuous.gaussian.ConditionalMutualInfoCalculatorMultiVariateGaussian;
 import infodynamics.measures.continuous.gaussian.ConditionalTransferEntropyCalculatorGaussian;
 import infodynamics.measures.continuous.kraskov.ConditionalMutualInfoCalculatorMultiVariateKraskov;
 import infodynamics.measures.continuous.kraskov.ConditionalTransferEntropyCalculatorKraskov;
@@ -160,12 +161,18 @@ public class AutoAnalyserCTE extends AutoAnalyser
 		};
 		// Gaussian properties:
 		gaussianProperties = new String[] {
+				ConditionalMutualInfoCalculatorMultiVariateGaussian.PROP_BIAS_CORRECTION,
 		};
 		gaussianPropertiesFieldNames = new String[] {
+				"ConditionalMutualInfoCalculatorMultiVariateGaussian.PROP_BIAS_CORRECTION",
 		};
 		gaussianPropertyDescriptions = new String[] {
+				"Whether the analytically determined bias (as the mean of the<br/>" +
+						"surrogate distribution) will be subtracted from all" +
+						"calculated values. Default is false."
 		};
 		gaussianPropertyValueChoices = new String[][] {	
+				{"true", "false"},
 		};
 		// KSG (Kraskov):
 		kraskovProperties = new String[] {
