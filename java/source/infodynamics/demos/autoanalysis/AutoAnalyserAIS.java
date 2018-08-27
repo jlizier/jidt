@@ -24,6 +24,7 @@ import infodynamics.measures.continuous.InfoMeasureCalculatorContinuous;
 import infodynamics.measures.continuous.gaussian.ActiveInfoStorageCalculatorGaussian;
 import infodynamics.measures.continuous.gaussian.MutualInfoCalculatorMultiVariateGaussian;
 import infodynamics.measures.continuous.kernel.ActiveInfoStorageCalculatorKernel;
+import infodynamics.measures.continuous.kernel.ActiveInfoStorageCalculatorMultiVariateKernel;
 import infodynamics.measures.continuous.kernel.MutualInfoCalculatorMultiVariateKernel;
 import infodynamics.measures.continuous.kraskov.ActiveInfoStorageCalculatorKraskov;
 import infodynamics.measures.continuous.kraskov.MutualInfoCalculatorMultiVariateKraskov;
@@ -158,29 +159,37 @@ public class AutoAnalyserAIS extends AutoAnalyser {
 		};
 		// Gaussian properties:
 		gaussianProperties = new String[] {
-				MutualInfoCalculatorMultiVariateGaussian.PROP_BIAS_CORRECTION
+				MutualInfoCalculatorMultiVariateGaussian.PROP_BIAS_CORRECTION,
+				ActiveInfoStorageCalculatorGaussian.PROP_MAX_CORR_AIS_NUM_SURROGATES
 		};
 		gaussianPropertiesFieldNames = new String[] {
-				"MutualInfoCalculatorMultiVariateGaussian.PROP_BIAS_CORRECTION"
+				"MutualInfoCalculatorMultiVariateGaussian.PROP_BIAS_CORRECTION",
+				"ActiveInfoStorageCalculatorGaussian.PROP_MAX_CORR_AIS_NUM_SURROGATES"
 		};
 		gaussianPropertyDescriptions = new String[] {
 				"Whether the analytically determined bias (as the mean of the<br/>" +
 						"surrogate distribution) will be subtracted from all" +
-						"calculated values. Default is false."
+						"calculated values. Default is false.",
+				"Number of surrogates to use in computing the bias correction<br/>if required for " +
+						ActiveInfoStorageCalculatorKraskov.AUTO_EMBED_METHOD_MAX_CORR_AIS + " auto-embedding method.<br/>" +
+						"(default is 0, meaning to use analytic method -- recommended)"
 		};
 		gaussianPropertyValueChoices = new String[][] {	
-				{"true", "false"}
+				{"true", "false"},
+				null
 		};
 		// Kernel:
 		kernelProperties = new String[] {
 				MutualInfoCalculatorMultiVariateKernel.KERNEL_WIDTH_PROP_NAME,
 				MutualInfoCalculatorMultiVariateKernel.DYN_CORR_EXCL_TIME_NAME,
-				MutualInfoCalculatorMultiVariateKernel.NORMALISE_PROP_NAME,			
+				MutualInfoCalculatorMultiVariateKernel.NORMALISE_PROP_NAME,
+				ActiveInfoStorageCalculatorMultiVariateKernel.PROP_MAX_CORR_AIS_NUM_SURROGATES
 		};
 		kernelPropertiesFieldNames = new String[] {
 				"MutualInfoCalculatorMultiVariateKernel.KERNEL_WIDTH_PROP_NAME",
 				"MutualInfoCalculatorMultiVariateKernel.DYN_CORR_EXCL_TIME_NAME",
-				"MutualInfoCalculatorMultiVariateKernel.NORMALISE_PROP_NAME"			
+				"MutualInfoCalculatorMultiVariateKernel.NORMALISE_PROP_NAME",
+				"ActiveInfoStorageCalculatorMultiVariateKernel.PROP_MAX_CORR_AIS_NUM_SURROGATES"
 		};
 		kernelPropertyDescriptions = new String[] {
 				"Kernel width to be used in the calculation. <br/>If the property " +
@@ -190,11 +199,15 @@ public class AutoAnalyserAIS extends AutoAnalyser {
 				"Dynamic correlation exclusion time or <br/>Theiler window (see Kantz and Schreiber); " +
 						"0 (default) means no dynamic exclusion window",
 				"(boolean) whether to normalise <br/>each incoming time-series to mean 0, standard deviation 1, or not  (default true, recommended)",
+				"Number of surrogates to use in computing the bias correction<br/>if required for " +
+						ActiveInfoStorageCalculatorKraskov.AUTO_EMBED_METHOD_MAX_CORR_AIS + " auto-embedding method.<br/>" +
+						"(default is 20)"
 		};
 		kernelPropertyValueChoices = new String[][] {
 				null,
 				null,
-				{"true", "false"}
+				{"true", "false"},
+				null
 		};
 		// KSG (Kraskov):
 		kraskovProperties = new String[] {
