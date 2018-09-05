@@ -350,7 +350,7 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 	 * @param var2 new states of variable 2. Should be same length as var1
 	 * @return array of local mutual information values for each
 	 *  observation of (var1, var2). Note - if timeDiff > 0, then the
-	 *  return length will be var1.length - timeDiff. 
+	 *  return length will be var1.length - timeDiff (in line with continuous estimators). 
 	 */
 	public double[] computeLocalFromPreviousObservations(int[] var1, int[] var2) throws Exception{
 		
@@ -371,12 +371,12 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 			//  and we've got two counts on the bottom
 			//  but one count on the top:
 			logTerm *= (double) observations;
-			localMI[r] = Math.log(logTerm) / log_2;
-			average += localMI[r];
-			if (localMI[r] > max) {
-				max = localMI[r];
-			} else if (localMI[r] < min) {
-				min = localMI[r];
+			localMI[r - timeDiff] = Math.log(logTerm) / log_2;
+			average += localMI[r - timeDiff];
+			if (localMI[r - timeDiff] > max) {
+				max = localMI[r - timeDiff];
+			} else if (localMI[r - timeDiff] < min) {
+				min = localMI[r - timeDiff];
 			}
 		}
 		average = average/(double) observations;
