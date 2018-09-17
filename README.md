@@ -122,3 +122,9 @@ _19/11/2012_ - New jar and full distribution files available for v0.1.2, includi
 _31/10/2012_ - Jar and full distribution files available for v0.1.1 (first distribution)
 
 _7/5/2012_ - JIDT project created and code uploaded
+
+# Acknowledgements
+
+This project has been supported by funding through:
+* Australian Research Council Discovery Early Career Researcher Award (DECRA) "Relating function of complex networks to structure using information theory", J.T. Lizier, 2016-19 DE160100630
+* Universities Australia - Deutscher Akademischer Austauschdienst (German Academic Exchange Service) UA-DAAD Australia-Germany Joint Research Co-operation grant "Measuring neural information synthesis and its impairment", Wibral, Lizier, Priesemann, Wollstadt, Finn, 2016-17
