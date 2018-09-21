@@ -290,6 +290,7 @@ public abstract class MutualInfoMultiVariateCommon implements
 		finaliseAddObservations();
 	}
 
+	@Override
 	public void setObservations(double[] source, double[] destination,
 			boolean[] sourceValid, boolean[] destValid) throws Exception {
 

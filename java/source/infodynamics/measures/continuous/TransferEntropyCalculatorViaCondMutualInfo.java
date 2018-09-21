@@ -335,11 +335,30 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 	@Override
 	public void addObservations(double[] source, double[] destination)
 			throws Exception {
-		// Store these observations in our vector for now
+		// Store these observations in our vectors for now
 		vectorOfSourceTimeSeries.add(source);
 		vectorOfDestinationTimeSeries.add(destination);
 		vectorOfValidityOfSource.add(null); // All observations were valid
 		vectorOfValidityOfDestination.add(null); // All observations were valid
+	}
+
+	/**
+	 * Adds this set of observations to compute the PDFs from, but
+	 * only where these observations are indicated to be valid.
+	 * 
+	 * @param source time series of observations for the source variable.
+	 * @param destination time series of observations for the destination variable.
+	 * @param sourceValid array (with indices the same as source) indicating whether the source at that index is valid.
+	 * @param destValid array (with indices the same as destination) indicating whether the destination at that index is valid.
+	 * @throws Exception
+	 */
+	public void addObservations(double[] source, double[] destination,
+			boolean[] sourceValid, boolean[] destValid) throws Exception {
+		// Store these observations in our vectors for now
+		vectorOfSourceTimeSeries.add(source);
+		vectorOfDestinationTimeSeries.add(destination);
+		vectorOfValidityOfSource.add(sourceValid); // All observations were valid
+		vectorOfValidityOfDestination.add(destValid); // All observations were valid
 	}
 
 	/**
