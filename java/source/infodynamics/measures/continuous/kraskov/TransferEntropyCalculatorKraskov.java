@@ -20,6 +20,7 @@ package infodynamics.measures.continuous.kraskov;
 
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.Vector;
 
 import infodynamics.measures.continuous.ActiveInfoStorageCalculator;
 import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariate;
@@ -451,12 +452,7 @@ public class TransferEntropyCalculatorKraskov
 			if (debug) {
 				System.out.println("Starting embedding of destination:");
 			}
-			aisCalc.initialise();
-			aisCalc.startAddObservations();
-			for (double[] destination : vectorOfDestinationTimeSeries) {
-				aisCalc.addObservations(destination);
-			}
-			aisCalc.finaliseAddObservations();
+			prepareAISCalculator(aisCalc, vectorOfDestinationTimeSeries, vectorOfValidityOfDestination);
 			// Set the auto-embedding parameters for the destination:
 			k = Integer.parseInt(aisCalc.getProperty(ActiveInfoStorageCalculator.K_PROP_NAME));
 			k_tau = Integer.parseInt(aisCalc.getProperty(ActiveInfoStorageCalculator.TAU_PROP_NAME));
@@ -471,12 +467,7 @@ public class TransferEntropyCalculatorKraskov
 				if (debug) {
 					System.out.println("Starting embedding of source:");
 				}
-				aisCalc.initialise();
-				aisCalc.startAddObservations();
-				for (double[] source : vectorOfSourceTimeSeries) {
-					aisCalc.addObservations(source);
-				}
-				aisCalc.finaliseAddObservations();
+				prepareAISCalculator(aisCalc, vectorOfSourceTimeSeries, vectorOfValidityOfSource);
 				// Set the auto-embedding parameters for the source:
 				l = Integer.parseInt(aisCalc.getProperty(ActiveInfoStorageCalculator.K_PROP_NAME));
 				l_tau = Integer.parseInt(aisCalc.getProperty(ActiveInfoStorageCalculator.TAU_PROP_NAME));
@@ -490,16 +481,6 @@ public class TransferEntropyCalculatorKraskov
 					System.out.println("Starting embedding of source:");
 				}
 
-				// Instantiate a new calculator to optimize the embedding parameters
-				TransferEntropyCalculatorKraskov teEmbeddingCalc =
-						new TransferEntropyCalculatorKraskov();
-
-				// Set all properties of the current calculator except embedding method
-				for (String key : props.keySet()) {
-					teEmbeddingCalc.setProperty(key, props.get(key));
-				}
-				teEmbeddingCalc.setProperty(PROP_AUTO_EMBED_METHOD, AUTO_EMBED_METHOD_NONE);
-
 				double bestTE = Double.NEGATIVE_INFINITY;
 				int l_candidate_best = 1;
 				int l_tau_candidate_best = 1;
@@ -508,16 +489,10 @@ public class TransferEntropyCalculatorKraskov
 				for (int l_candidate = 1; l_candidate <= k_search_max; l_candidate++) {
 					for (int l_tau_candidate = 1; l_tau_candidate <= tau_search_max; l_tau_candidate++) {
 
-						teEmbeddingCalc.initialise(k, k_tau, l_candidate, l_tau_candidate, delay);
-						teEmbeddingCalc.startAddObservations();
-
-						Iterator<double[]> destIterator = vectorOfDestinationTimeSeries.iterator();
-						for (double[] source : vectorOfSourceTimeSeries) {
-							double[] dest = destIterator.next();
-							teEmbeddingCalc.addObservations(source, dest);
-						}
-						teEmbeddingCalc.finaliseAddObservations();
-						double thisTE = teEmbeddingCalc.computeAverageLocalOfObservations();
+						// Use our internal CMI calculator in case it has any particular 
+						//  properties we need to have been set already
+						prepareCMICalculator(condMiCalc, k, k_tau, l_candidate, l_tau_candidate, delay);
+						double thisTE = condMiCalc.computeAverageLocalOfObservations();
 
 						if (debug) {
 							System.out.printf("TE for l=%d, l_tau=%d is %.3f\n",
@@ -546,7 +521,36 @@ public class TransferEntropyCalculatorKraskov
 			}
 	
 			// Now that embedding parameters are finalised:
-			setStartTimeForFirstDestEmbedding();
+			startTimeForFirstDestEmbedding =
+					computeStartTimeForFirstDestEmbedding(k, k_tau, l, l_tau, delay);
 		}
+	}
+	
+	/**
+	 * Prepare the given pre-instantiated (and properties supplied)
+	 *  Active information storage calculator with the given data set,
+	 *  for a calculation of auto-embedding parameters.
+	 * 
+	 * @param aisCalc_in_use AIS calculator to supply
+	 * @param setOfTimeSeriesSamples set of times series samples for the calculation
+	 * @param setOfValidities set of time series of validity indications. Each can be a null array if all are valid
+	 * @throws Exception
+	 */
+	protected static void prepareAISCalculator(ActiveInfoStorageCalculator aisCalc,
+			Vector<double[]> setOfTimeSeriesSamples, Vector<boolean[]> setOfValidities) 
+					throws Exception {
+		
+		aisCalc.initialise();
+		aisCalc.startAddObservations();
+		Iterator<boolean[]> validityIterator = setOfValidities.iterator();
+		for (double[] timeSeries : setOfTimeSeriesSamples) {
+			boolean[] validity = validityIterator.next();
+			if (validity == null) {
+				aisCalc.addObservations(timeSeries);
+			} else {
+				aisCalc.addObservations(timeSeries, validity);
+			}
+		}
+		aisCalc.finaliseAddObservations();
 	}
 }

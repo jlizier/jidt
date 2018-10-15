@@ -19,6 +19,7 @@
 package infodynamics.measures.continuous.kraskov;
 
 import java.util.Arrays;
+import java.util.Random;
 
 import infodynamics.utils.ArrayFileReader;
 import infodynamics.utils.MatrixUtils;
@@ -675,5 +676,51 @@ public class TransferEntropyTester
 		assertEquals(correctK, optimisedK);
 		assertEquals(correctL, optimisedL);
   }
+
+  public void testAutoEmbeddingTEWithValidity() throws Exception {
+	    System.out.println("Start AIS+TE autoembedding test.");
+
+	    // Generate multivariate data (note that source time series has no memory)
+			RandomGenerator rg = new RandomGenerator();
+			double[] source = rg.generateNormalData(10000, 0, 1);
+			double[] target = rg.generateNormalData(10000, 0, 1);
+		boolean[] validity = new boolean[target.length];
+		Random random = new Random();
+		for (int t = 0; t < target.length; t++) {
+			if (random.nextDouble() < 0.05) {
+				validity[t] = false;
+			} else {
+				validity[t] = true;
+			}
+		}
+			
+
+	    for (int i=3; i < source.length; i++) {
+	      target[i] = 0.2*source[i-2] + 0.2*source[i-1] + 
+	                     0.2*target[i-2] + 0.2*target[i-1] + target[i];
+	    }
+
+	    int correctK = 2;
+	    int correctL = 2;
+
+	    // Instantiate calculator and set search bounds
+			TransferEntropyCalculatorKraskov teCalc = 
+					new TransferEntropyCalculatorKraskov();
+			teCalc.setProperty("k", "4");
+			teCalc.setProperty(teCalc.PROP_K_SEARCH_MAX, "2");
+			teCalc.setProperty(teCalc.PROP_TAU_SEARCH_MAX, "1");
+			teCalc.setProperty(teCalc.PROP_AUTO_EMBED_METHOD, teCalc.AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE);
+	    teCalc.setDebug(true);
+
+	    // Run optimisation
+			teCalc.initialise();
+			teCalc.setObservations(source, target, validity, validity);
+			int optimisedK = Integer.parseInt(teCalc.getProperty(TransferEntropyCalculatorKraskov.K_PROP_NAME));
+			int optimisedL = Integer.parseInt(teCalc.getProperty(TransferEntropyCalculatorKraskov.L_PROP_NAME));
+
+	    // Test that answer was correct
+			assertEquals(correctK, optimisedK);
+			assertEquals(correctL, optimisedL);
+	  }
 
 }

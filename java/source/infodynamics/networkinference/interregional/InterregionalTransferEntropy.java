@@ -19,6 +19,7 @@
 package infodynamics.networkinference.interregional;
 
 import infodynamics.measures.continuous.TransferEntropyCalculatorMultiVariate;
+import infodynamics.measures.continuous.TransferEntropyCalculatorViaCondMutualInfo;
 import infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorMultiVariateKraskov;
 import infodynamics.utils.ParsedProperties;
 
@@ -77,8 +78,11 @@ public class InterregionalTransferEntropy extends InterregionalChannelMeasure {
 			TransferEntropyCalculatorMultiVariateKraskov tecmvKras =
 				new TransferEntropyCalculatorMultiVariateKraskov();
 			tecmvKras.initialise(k);
-			Vector<int[]> startAndEndTimePairs = tecmvKras.computeStartAndEndTimePairs(
-					jointValidity1, jointValidity2);
+			Vector<int[]> startAndEndTimePairs =
+					TransferEntropyCalculatorViaCondMutualInfo.
+						computeStartAndEndTimePairs(
+						k, 1, 1, 1, 1,
+						jointValidity1, jointValidity2);
 			// We've found the set of start and end times for this pair
 			int obsNum = 0;
 			for (int[] timePair : startAndEndTimePairs) {
@@ -131,8 +135,11 @@ public class InterregionalTransferEntropy extends InterregionalChannelMeasure {
 			new TransferEntropyCalculatorMultiVariateKraskov();
 		
 		tecmvKras.initialise(k);
-		Vector<int[]> startAndEndTimePairs = tecmvKras.computeStartAndEndTimePairs(
-				sourceValid, destValid);
+		Vector<int[]> startAndEndTimePairs =
+				TransferEntropyCalculatorViaCondMutualInfo.
+					computeStartAndEndTimePairs(
+					k, 1, 1, 1, 1,
+					sourceValid, destValid);
 		
 		// We've found the set of start and end times for this pair
 		int numObservations = 0;

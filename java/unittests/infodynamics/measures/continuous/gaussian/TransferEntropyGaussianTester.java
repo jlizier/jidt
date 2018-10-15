@@ -21,6 +21,7 @@ package infodynamics.measures.continuous.gaussian;
 import java.util.Vector;
 
 import infodynamics.measures.continuous.TransferEntropyAbstractTester;
+import infodynamics.measures.continuous.TransferEntropyCalculatorViaCondMutualInfo;
 import infodynamics.utils.ArrayFileReader;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.RandomGenerator;
@@ -155,7 +156,10 @@ public class TransferEntropyGaussianTester extends TransferEntropyAbstractTester
 		TransferEntropyCalculatorGaussian teCalc =
 				new TransferEntropyCalculatorGaussian();
 		teCalc.initialise(k, 1, 1, 1, 1);
-		Vector<int[]> timePairs = teCalc.computeStartAndEndTimePairs(sourceValid, destValid);
+		Vector<int[]> timePairs =
+				TransferEntropyCalculatorViaCondMutualInfo.
+					computeStartAndEndTimePairs
+						(k, 1, 1, 1, 1, sourceValid, destValid);
 		// And compare to the existing 
 		Vector<int[]> expectedTimePairs = computeStartAndEndTimePairs(sourceValid, destValid, k);
 		
@@ -185,7 +189,10 @@ public class TransferEntropyGaussianTester extends TransferEntropyAbstractTester
 		TransferEntropyCalculatorGaussian teCalc =
 				new TransferEntropyCalculatorGaussian();
 		teCalc.initialise(k, 1, 1, 1, 1);
-		Vector<int[]> timePairs = teCalc.computeStartAndEndTimePairs(sourceValid, destValid);
+		Vector<int[]> timePairs =
+				TransferEntropyCalculatorViaCondMutualInfo.
+					computeStartAndEndTimePairs(
+						k, 1, 1, 1, 1, sourceValid, destValid);
 		
 		assertEquals(expected.size(), timePairs.size());				
 		for (int i = 0; i < timePairs.size(); i++) {
@@ -208,7 +215,10 @@ public class TransferEntropyGaussianTester extends TransferEntropyAbstractTester
 		TransferEntropyCalculatorGaussian teCalc =
 				new TransferEntropyCalculatorGaussian();
 		teCalc.initialise(k, 1, 1, 1, 2);
-		Vector<int[]> timePairs = teCalc.computeStartAndEndTimePairs(sourceValid, destValid);
+		Vector<int[]> timePairs =
+				TransferEntropyCalculatorViaCondMutualInfo.
+					computeStartAndEndTimePairs(
+						k, 1, 1, 1, 2, sourceValid, destValid);
 		
 		assertEquals(expected.size(), timePairs.size());				
 		for (int i = 0; i < timePairs.size(); i++) {
@@ -232,7 +242,10 @@ public class TransferEntropyGaussianTester extends TransferEntropyAbstractTester
 		TransferEntropyCalculatorGaussian teCalc =
 				new TransferEntropyCalculatorGaussian();
 		teCalc.initialise(k, 1, 1, 1, 3);
-		Vector<int[]> timePairs = teCalc.computeStartAndEndTimePairs(sourceValid, destValid);
+		Vector<int[]> timePairs =
+				TransferEntropyCalculatorViaCondMutualInfo.
+					computeStartAndEndTimePairs(
+						k, 1, 1, 1, 3, sourceValid, destValid);
 		
 		assertEquals(expected.size(), timePairs.size());				
 		for (int i = 0; i < timePairs.size(); i++) {
@@ -255,7 +268,10 @@ public class TransferEntropyGaussianTester extends TransferEntropyAbstractTester
 		TransferEntropyCalculatorGaussian teCalc =
 				new TransferEntropyCalculatorGaussian();
 		teCalc.initialise(2, 2, 2, 2, 2);
-		Vector<int[]> timePairs = teCalc.computeStartAndEndTimePairs(sourceValid, destValid);
+		Vector<int[]> timePairs =
+				TransferEntropyCalculatorViaCondMutualInfo.
+					computeStartAndEndTimePairs(
+						2, 2, 2, 2, 2, sourceValid, destValid);
 		
 		assertEquals(expected.size(), timePairs.size());				
 		for (int i = 0; i < timePairs.size(); i++) {
@@ -288,7 +304,10 @@ public class TransferEntropyGaussianTester extends TransferEntropyAbstractTester
 			TransferEntropyCalculatorGaussian teCalc =
 					new TransferEntropyCalculatorGaussian();
 			teCalc.initialise(k, 1, 1, 1, 1);
-			Vector<int[]> timePairs = teCalc.computeStartAndEndTimePairs(sourceValid, destValid);
+			Vector<int[]> timePairs =
+					TransferEntropyCalculatorViaCondMutualInfo.
+						computeStartAndEndTimePairs(
+							k, 1, 1, 1, 1, sourceValid, destValid);
 			// And compare to the existing 
 			Vector<int[]> expectedTimePairs = computeStartAndEndTimePairs(sourceValid, destValid, k);
 			

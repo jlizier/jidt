@@ -335,7 +335,8 @@ public class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
 			boolean[] sourceValid, boolean[] destValid) throws Exception {
 		
 		// Compute the start and end time pairs using our embedding parameters:
-		Vector<int[]> startAndEndTimePairs = computeStartAndEndTimePairs(sourceValid, destValid);
+		Vector<int[]> startAndEndTimePairs = computeStartAndEndTimePairs(
+				k, k_tau, l, l_tau, delay, sourceValid, destValid);
 		
 		int totalObservationsAdded = 0;
 		for (int[] timePair : startAndEndTimePairs) {
@@ -433,7 +434,8 @@ public class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
  			return;
  		}
 
- 		Vector<int[]> startAndEndTimePairs = computeStartAndEndTimePairs(sourceValid, destValid);
+ 		Vector<int[]> startAndEndTimePairs = computeStartAndEndTimePairs(
+ 				k, k_tau, l, l_tau, delay, sourceValid, destValid);
  		
  		// We've found the set of start and end times for this pair
  		startAddObservations();

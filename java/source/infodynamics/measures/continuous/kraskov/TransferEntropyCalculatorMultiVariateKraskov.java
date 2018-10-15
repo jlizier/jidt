@@ -516,7 +516,8 @@ public class TransferEntropyCalculatorMultiVariateKraskov
       }
 	
 			// Now that embedding parameters are finalised:
-			setStartTimeForFirstDestEmbedding();
+			startTimeForFirstDestEmbedding =
+					computeStartTimeForFirstDestEmbedding(k, k_tau, l, l_tau, delay);
 		}
 	}
 }
