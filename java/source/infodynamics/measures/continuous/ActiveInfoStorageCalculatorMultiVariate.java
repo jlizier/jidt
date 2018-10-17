@@ -91,6 +91,11 @@ package infodynamics.measures.continuous;
 public interface ActiveInfoStorageCalculatorMultiVariate extends ActiveInfoStorageCalculator {
 
 	/**
+	 * Property name for the number of dimensions in the multivariate data.
+	 */
+	public static final String PROP_DIMENSIONS = "DIMENSIONS";
+
+	/**
 	 * Initialise the calculator for re-use with new observations.
 	 * History length k, source and destination dimensions are
 	 * specified here; all other parameters remain unchanged. 

@@ -67,13 +67,13 @@ public class ActiveInfoStorageCalculatorMultiVariateViaMutualInfo
     // which means we implement ActiveInfoStorageCalculator
     implements ActiveInfoStorageCalculatorMultiVariate {
 
-  /**
-   * Number of dimensions of the system.
-   */
-  protected int dimensions = 1;
-  /**
-   * Time index of the first point that can be taken from any set of
-   * time-series observations. 
+	/**
+	 * Number of dimensions of the system.
+	 */
+	protected int dimensions = 1;
+	/**
+	 * Time index of the first point that can be taken from any set of
+	 * time-series observations. 
 	 */
 	protected int timeForFirstEmbedding;
 
@@ -98,7 +98,7 @@ public class ActiveInfoStorageCalculatorMultiVariateViaMutualInfo
 	 */
 	public ActiveInfoStorageCalculatorMultiVariateViaMutualInfo(String miCalculatorClassName)
 			throws InstantiationException, IllegalAccessException, ClassNotFoundException {
-    super(miCalculatorClassName);
+		super(miCalculatorClassName);
 	}
 	
 	/**
@@ -110,7 +110,7 @@ public class ActiveInfoStorageCalculatorMultiVariateViaMutualInfo
 	 */
 	protected ActiveInfoStorageCalculatorMultiVariateViaMutualInfo(Class<MutualInfoCalculatorMultiVariate> miCalcClass)
 			throws InstantiationException, IllegalAccessException {
-    super(miCalcClass);
+		super(miCalcClass);
 	}
 	
 	/**
@@ -125,6 +125,11 @@ public class ActiveInfoStorageCalculatorMultiVariateViaMutualInfo
 		super(miCalc);
 	}
 	
+	@Override
+	public void initialise() throws Exception {
+		initialise(dimensions, k, tau);
+	}
+
 	@Override
 	public void initialise(int dimensions) throws Exception {
 		initialise(dimensions, k, tau);
@@ -146,23 +151,65 @@ public class ActiveInfoStorageCalculatorMultiVariateViaMutualInfo
 	 */
 	@Override
 	public void initialise(int dimensions, int k, int tau) throws Exception {
-    this.dimensions = dimensions;
+		this.dimensions = dimensions;
 		this.k = k;
 		this.tau = tau;
 
-    timeForFirstEmbedding = tau*(k-1);
+		timeForFirstEmbedding = tau*(k-1);
 
-    // PEDRO: we can probably remove this
-    // miCalc.initialise(k*dimensions, dimensions);
+		// PEDRO: we can probably remove this
+		// miCalc.initialise(k*dimensions, dimensions);
+	}
+
+	/**
+	 * Sets properties for the AIS Multivariate calculator.
+	 *  New property values are not guaranteed to take effect until the next call
+	 *  to an initialise method. 
+	 *  
+	 * <p>Valid property names, and what their
+	 * values should represent, include:</p>
+	 * <ul>
+	 * 		<li>{@link #PROP_DIMENSIONS} -- how many multivariate dimensions the data will have.</li>
+	 * 		<li>Any properties accepted by {@link ActiveInfoStorageCalculatorViaMutualInfo#setProperty(String, String)}</li>
+	 * 		<li>Or properties accepted by the underlying
+	 * 		{@link MutualInfoCalculatorMultiVariate#setProperty(String, String)} implementation.</li>
+	 * </ul>
+	 * <p><b>Note:</b> further properties may be defined by child classes.</p>
+	 * 
+	 * <p>Unknown property values are ignored.</p>
+	 * 
+	 * @param propertyName name of the property
+	 * @param propertyValue value of the property.
+	 * @throws Exception if there is a problem with the supplied value).
+	 */
+	public void setProperty(String propertyName, String propertyValue)
+			throws Exception {
+		if (propertyName.equalsIgnoreCase(PROP_DIMENSIONS)) {
+			dimensions = Integer.parseInt(propertyValue);
+		} else {
+			// Assume it was a property for the parent class or underlying MI calculator
+			super.setProperty(propertyName, propertyValue);
+		}
+	}
+
+	@Override
+	public String getProperty(String propertyName) throws Exception {
+		if (propertyName.equalsIgnoreCase(PROP_DIMENSIONS)) {
+			return Integer.toString(dimensions);
+		} else {
+			// No property matches for this class, assume it is for the superclass of
+			//  underlying MI calculator
+			return super.getProperty(propertyName);
+		}
 	}
 
 	@Override
 	public void setObservations(double[] observations) throws Exception {
-    if (dimensions != 1) {
+		if (dimensions != 1) {
 			throw new Exception("Cannot call the univariate setObservations if you " +
 					"have initialised with dimension > 1 for either source or destination");
-    }
-    super.setObservations(observations);
+		}
+		super.setObservations(observations);
 	}
 
 	public void setObservations(double[][] observations) throws Exception {
@@ -195,7 +242,7 @@ public class ActiveInfoStorageCalculatorMultiVariateViaMutualInfo
 			vectorOfMultiVariateObservationTimeSeries = new Vector<double[][]>();
 			vectorOfValidityOfObservations = new Vector<boolean[]>();
 		}
-  }
+	}
 
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#finaliseAddObservations()
