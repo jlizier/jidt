@@ -24,6 +24,7 @@ import infodynamics.measures.continuous.TransferEntropyCalculatorMultiVariateVia
 import infodynamics.measures.continuous.TransferEntropyCalculatorViaCondMutualInfo;
 import infodynamics.utils.AnalyticNullDistributionComputer;
 import infodynamics.utils.ChiSquareMeasurementDistribution;
+import infodynamics.utils.EmpiricalMeasurementDistribution;
 
 /**
  * <p>Computes the differential transfer entropy (TE) between two multivariate
@@ -93,6 +94,20 @@ public class TransferEntropyCalculatorMultiVariateGaussian
 	public static final String COND_MI_CALCULATOR_GAUSSIAN = ConditionalMutualInfoCalculatorMultiVariateGaussian.class.getName();
 	
 	/**
+	 * Property name for the number of surrogates to use in computing the bias correction
+	 *  if required for the auto embedding method in {@link TransferEntropyCalculatorViaCondMutualInfo}.
+	 *  Defaults to 0 meaning that we use analytic bias correction rather than empirical
+	 *  surrogates. Note: This is not used for bias correction of the raw values, only for auto-embedding
+	 */
+	public static final String PROP_MAX_CORR_NUM_SURROGATES = "AUTO_EMBED_MAX_CORR_SURROGATES";
+	/**
+	 * Internal variable for storing the number of surrogates to use for the
+	 * auto-embedding in {@link TransferEntropyCalculatorViaCondMutualInfo}.
+	 * 0 mean we use analytic approaches rather than surrogates.
+	 */
+	protected int auto_embed_num_surrogates = 0;
+
+	/**
 	 * Creates a new instance of the Gaussian-estimate style transfer entropy calculator
 	 * 
 	 * @throws ClassNotFoundException 
@@ -127,6 +142,78 @@ public class TransferEntropyCalculatorMultiVariateGaussian
 	}
 
 	/**
+	 * Sets properties for the TE Gaussian MultiVariate calculator.
+	 *  New property values are not guaranteed to take effect until the next call
+	 *  to an initialise method.
+	 *
+	 * <p>Valid property names, and what their
+	 * values should represent, include:</p>
+	 * <ul>
+	 * 		<li>{@link #PROP_MAX_CORR_NUM_SURROGATES} -- number of surrogates to use
+	 * 		to compute the bias correction
+	 * 		in the auto-embedding if the property {@link #PROP_AUTO_EMBED_METHOD}
+	 * 		has been set to one of the bias-corrected maximisation methods. Defaults to 0
+	 * 		meaning that we use analytic bias correction.
+	 * 		Note: this is not used for other bias-correction, only inside auto-embedding</li>
+	 * 		<li>Any properties accepted by {@link super#setProperty(String, String)}</li>
+	 * 		<li>Or properties accepted by the underlying
+	 * 		{@link MutualInfoCalculatorMultiVariateGaussian#setProperty(String, String)} implementation.</li>
+	 * </ul>
+	 * 
+	 * @param propertyName name of the property
+	 * @param propertyValue value of the property.
+	 * @throws Exception if there is a problem with the supplied value).
+	 */
+	@Override
+	public void setProperty(String propertyName, String propertyValue)
+			throws Exception {
+		boolean propertySet = true;
+		if (propertyName.equalsIgnoreCase(PROP_MAX_CORR_NUM_SURROGATES)) {
+			auto_embed_num_surrogates = Integer.parseInt(propertyValue);
+		} else {
+			propertySet = false;
+			// Assume it was a property for the parent class or underlying MI calculator
+			super.setProperty(propertyName, propertyValue);
+		}
+		if (debug && propertySet) {
+			System.out.println(this.getClass().getSimpleName() + ": Set property " + propertyName +
+					" to " + propertyValue);
+		}
+	}
+
+	@Override
+	public String getProperty(String propertyName)
+			throws Exception {
+		
+		if (propertyName.equalsIgnoreCase(PROP_MAX_CORR_NUM_SURROGATES)) {
+			return Integer.toString(auto_embed_num_surrogates);
+		} else {
+			// Assume it was a property for the parent class or underlying MI calculator
+			return super.getProperty(propertyName);
+		}
+	}
+
+	@Override
+	protected double computeAdditionalBiasToRemove() throws Exception {
+		boolean biasCorrected = Boolean.getBoolean(getProperty(ConditionalMutualInfoCalculatorMultiVariateGaussian.PROP_BIAS_CORRECTION));
+		if (auto_embed_num_surrogates == 0) {
+			// Analytic bias correction:
+			if (!biasCorrected) {
+				ChiSquareMeasurementDistribution analyticMeasDist =
+						((ConditionalMutualInfoCalculatorMultiVariateGaussian)condMiCalc).computeSignificance();
+				return analyticMeasDist.getMeanOfDistribution();
+			} else {
+				return 0;
+			}
+		} else {
+			// Empirical bias correction with auto_embed_num_surrogates surrogates:
+			EmpiricalMeasurementDistribution measDist =
+					condMiCalc.computeSignificance(auto_embed_num_surrogates);
+			return measDist.getMeanOfDistribution();
+		}
+	}
+	
+	/**
 	 * Generate an <b>analytic</b> distribution of what the TE would look like,
 	 * under a null hypothesis that our variables had no relation
 	 * (in the context of the conditional value).
@@ -156,10 +243,4 @@ public class TransferEntropyCalculatorMultiVariateGaussian
 		return ((ConditionalMutualInfoCalculatorMultiVariateGaussian) condMiCalc).computeSignificance();
 	}
 
-	@Override
-	protected void preFinaliseAddObservations() throws Exception {
-		// TODO Remove this once auto-embedding is completed for multivariate TE.
-		//  At the moment this empty method ensures that the auto-embedding in the univariate
-		//  class does not get applied here.
-	}
 }

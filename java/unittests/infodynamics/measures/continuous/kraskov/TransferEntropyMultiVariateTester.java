@@ -485,8 +485,8 @@ public class TransferEntropyMultiVariateTester
     System.out.println("Start AIS autoembedding test.");
     // Generate multivariate data
 		RandomGenerator rg = new RandomGenerator();
-		double[][] source = rg.generateNormalData(5000, 2, 0, 1);
-		double[][] target = rg.generateNormalData(5000, 2, 0, 1);
+		double[][] source = rg.generateNormalData(10000, 2, 0, 1);
+		double[][] target = rg.generateNormalData(10000, 2, 0, 1);
 
     for (int i=3; i < source.length; i++) {
       source[i][0] = 0.2*source[i-3][0] + 0.2*source[i-2][0] + 0.2*source[i-1][0] + source[i][0];
@@ -506,7 +506,6 @@ public class TransferEntropyMultiVariateTester
 		teCalc.setProperty(teCalc.PROP_K_SEARCH_MAX, "3");
 		teCalc.setProperty(teCalc.PROP_TAU_SEARCH_MAX, "1");
 		teCalc.setProperty(teCalc.PROP_AUTO_EMBED_METHOD, teCalc.AUTO_EMBED_METHOD_MAX_CORR_AIS);
-    teCalc.setDebug(true);
 
     // Run optimisation
 		teCalc.initialise(2, 2);
@@ -524,8 +523,8 @@ public class TransferEntropyMultiVariateTester
 
     // Generate multivariate data (note that source time series has no memory)
 		RandomGenerator rg = new RandomGenerator();
-		double[][] source = rg.generateNormalData(5000, 2, 0, 1);
-		double[][] target = rg.generateNormalData(5000, 2, 0, 1);
+		double[][] source = rg.generateNormalData(10000, 2, 0, 1);
+		double[][] target = rg.generateNormalData(10000, 2, 0, 1);
 
     for (int i=3; i < source.length; i++) {
       target[i][0] = 0.2*source[i-2][0] + 0.2*source[i-1][0] + 
@@ -545,7 +544,6 @@ public class TransferEntropyMultiVariateTester
 		teCalc.setProperty(teCalc.PROP_K_SEARCH_MAX, "2");
 		teCalc.setProperty(teCalc.PROP_TAU_SEARCH_MAX, "1");
 		teCalc.setProperty(teCalc.PROP_AUTO_EMBED_METHOD, teCalc.AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE);
-    teCalc.setDebug(true);
 
     // Run optimisation
 		teCalc.initialise(2, 2);

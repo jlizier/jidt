@@ -659,10 +659,10 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 	}
 
 	/**
-	 * Hook in case child implementations need to perform any processing on the 
+	 * Hook in case this or child implementations need to perform any processing on the 
 	 *  observation time series prior to their being processed and supplied
 	 *  to the underlying MI calculator.
-	 * Primarily this is to allow the child implementation to automatically determine
+	 * Primarily this is to allow this or child implementation to automatically determine
 	 *  embedding parameters if desired.
 	 * Child implementations do not need to override this default empty implementation
 	 *  if no new functionality is required.
@@ -849,7 +849,7 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 	 *  for a calculation of auto-embedding parameters.
 	 * 
 	 * @param aisCalc_in_use AIS calculator to supply
-	 * @param setOfTimeSeriesSamples set of times series samples for the calculation
+	 * @param setOfTimeSeriesSamples set of time series samples for the calculation
 	 * @param setOfValidities set of time series of validity indications. Each can be a null array if all are valid
 	 * @throws Exception
 	 */
