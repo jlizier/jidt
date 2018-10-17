@@ -594,7 +594,7 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	
 	/**
 	 * Internal method to compute any additional bias correction in the underlying calculator
-	 * during auto-embedding in preFinaliseObservations if required.
+	 * during auto-embedding in {@link #preFinaliseAddObservations()} if required.
 	 * 
 	 * @return additional bias correction to remove (will be zero if assumed to be already bias corrected).
 	 * @throws Exception 

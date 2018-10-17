@@ -646,8 +646,8 @@ public class TransferEntropyTester
 
     // Generate multivariate data (note that source time series has no memory)
 		RandomGenerator rg = new RandomGenerator();
-		double[] source = rg.generateNormalData(5000, 0, 1);
-		double[] target = rg.generateNormalData(5000, 0, 1);
+		double[] source = rg.generateNormalData(10000, 0, 1);
+		double[] target = rg.generateNormalData(10000, 0, 1);
 
     for (int i=3; i < source.length; i++) {
       target[i] = 0.2*source[i-2] + 0.2*source[i-1] + 
@@ -682,8 +682,8 @@ public class TransferEntropyTester
 
 	    // Generate multivariate data (note that source time series has no memory)
 			RandomGenerator rg = new RandomGenerator();
-			double[] source = rg.generateNormalData(10000, 0, 1);
-			double[] target = rg.generateNormalData(10000, 0, 1);
+			double[] source = rg.generateNormalData(20000, 0, 1);
+			double[] target = rg.generateNormalData(20000, 0, 1);
 		boolean[] validity = new boolean[target.length];
 		Random random = new Random();
 		for (int t = 0; t < target.length; t++) {

@@ -155,4 +155,11 @@ public class TransferEntropyCalculatorMultiVariateGaussian
 			throws Exception {
 		return ((ConditionalMutualInfoCalculatorMultiVariateGaussian) condMiCalc).computeSignificance();
 	}
+
+	@Override
+	protected void preFinaliseAddObservations() throws Exception {
+		// TODO Remove this once auto-embedding is completed for multivariate TE.
+		//  At the moment this empty method ensures that the auto-embedding in the univariate
+		//  class does not get applied here.
+	}
 }

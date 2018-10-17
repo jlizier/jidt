@@ -18,10 +18,12 @@
 
 package infodynamics.measures.continuous.gaussian;
 
+import java.util.Random;
 import java.util.Vector;
 
 import infodynamics.measures.continuous.TransferEntropyAbstractTester;
 import infodynamics.measures.continuous.TransferEntropyCalculatorViaCondMutualInfo;
+import infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov;
 import infodynamics.utils.ArrayFileReader;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.RandomGenerator;
@@ -409,4 +411,121 @@ public class TransferEntropyGaussianTester extends TransferEntropyAbstractTester
 		}
 		return startAndEndTimePairs;
 	}
+
+	public void testAutoEmbeddingAIS() throws Exception {
+	    System.out.println("Start AIS autoembedding test.");
+	    // Generate multivariate data
+	    RandomGenerator rg = new RandomGenerator();
+	    double[] source = rg.generateNormalData(5000, 0, 1);
+	    double[] target = rg.generateNormalData(5000, 0, 1);
+
+		for (int i=3; i < source.length; i++) {
+			source[i] = 0.2*source[i-3] + 0.2*source[i-2] + 0.2*source[i-1] + source[i];
+			target[i] = 0.2*target[i-3] + 0.2*target[i-2] + 0.2*target[i-1] + target[i];
+		}
+
+		int correctK = 3;
+		int correctL = 3;
+
+		// Instantiate calculator and set search bounds
+		TransferEntropyCalculatorGaussian teCalc = 
+				new TransferEntropyCalculatorGaussian();
+		teCalc.setProperty("k", "4");
+		teCalc.setProperty(teCalc.PROP_K_SEARCH_MAX, "3");
+		teCalc.setProperty(teCalc.PROP_TAU_SEARCH_MAX, "1");
+		teCalc.setProperty(teCalc.PROP_AUTO_EMBED_METHOD, teCalc.AUTO_EMBED_METHOD_MAX_CORR_AIS);
+		teCalc.setDebug(true);
+
+		// Run optimisation
+		teCalc.initialise();
+		teCalc.setObservations(source, target);
+		int optimisedK = Integer.parseInt(teCalc.getProperty(TransferEntropyCalculatorKraskov.K_PROP_NAME));
+		int optimisedL = Integer.parseInt(teCalc.getProperty(TransferEntropyCalculatorKraskov.L_PROP_NAME));
+
+		// Test that answer was correct
+		assertEquals(correctK, optimisedK);
+		assertEquals(correctL, optimisedL);
+	}
+
+	public void testAutoEmbeddingTE() throws Exception {
+		System.out.println("Start AIS+TE autoembedding test.");
+
+		// Generate multivariate data (note that source time series has no memory)
+		RandomGenerator rg = new RandomGenerator();
+		double[] source = rg.generateNormalData(10000, 0, 1);
+		double[] target = rg.generateNormalData(10000, 0, 1);
+
+		for (int i=3; i < source.length; i++) {
+			target[i] = 0.2*source[i-2] + 0.2*source[i-1] + 
+					0.2*target[i-2] + 0.2*target[i-1] + target[i];
+		}
+
+		int correctK = 2;
+		int correctL = 2;
+
+		// Instantiate calculator and set search bounds
+		TransferEntropyCalculatorGaussian teCalc = 
+				new TransferEntropyCalculatorGaussian();
+		teCalc.setProperty("k", "4");
+		teCalc.setProperty(teCalc.PROP_K_SEARCH_MAX, "2");
+		teCalc.setProperty(teCalc.PROP_TAU_SEARCH_MAX, "1");
+		teCalc.setProperty(teCalc.PROP_AUTO_EMBED_METHOD, teCalc.AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE);
+		teCalc.setDebug(true);
+
+		// Run optimisation
+		teCalc.initialise();
+		teCalc.setObservations(source, target);
+		int optimisedK = Integer.parseInt(teCalc.getProperty(TransferEntropyCalculatorKraskov.K_PROP_NAME));
+		int optimisedL = Integer.parseInt(teCalc.getProperty(TransferEntropyCalculatorKraskov.L_PROP_NAME));
+
+		// Test that answer was correct
+		assertEquals(correctK, optimisedK);
+		assertEquals(correctL, optimisedL);
+	}
+
+	public void testAutoEmbeddingTEWithValidity() throws Exception {
+		System.out.println("Start AIS+TE autoembedding test.");
+
+		// Generate multivariate data (note that source time series has no memory)
+		RandomGenerator rg = new RandomGenerator();
+		double[] source = rg.generateNormalData(20000, 0, 1);
+		double[] target = rg.generateNormalData(20000, 0, 1);
+		boolean[] validity = new boolean[target.length];
+		Random random = new Random();
+		for (int t = 0; t < target.length; t++) {
+			if (random.nextDouble() < 0.05) {
+				validity[t] = false;
+			} else {
+				validity[t] = true;
+			}
+		}
+	
+		for (int i=3; i < source.length; i++) {
+			target[i] = 0.2*source[i-2] + 0.2*source[i-1] + 
+					0.2*target[i-2] + 0.2*target[i-1] + target[i];
+		}
+
+		int correctK = 2;
+		int correctL = 2;
+	
+		// Instantiate calculator and set search bounds
+		TransferEntropyCalculatorGaussian teCalc = 
+				new TransferEntropyCalculatorGaussian();
+		teCalc.setProperty("k", "4");
+		teCalc.setProperty(teCalc.PROP_K_SEARCH_MAX, "2");
+		teCalc.setProperty(teCalc.PROP_TAU_SEARCH_MAX, "1");
+		teCalc.setProperty(teCalc.PROP_AUTO_EMBED_METHOD, teCalc.AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE);
+		teCalc.setDebug(true);
+
+		// Run optimisation
+		teCalc.initialise();
+		teCalc.setObservations(source, target, validity, validity);
+		int optimisedK = Integer.parseInt(teCalc.getProperty(TransferEntropyCalculatorKraskov.K_PROP_NAME));
+		int optimisedL = Integer.parseInt(teCalc.getProperty(TransferEntropyCalculatorKraskov.L_PROP_NAME));
+	
+		// Test that answer was correct
+		assertEquals(correctK, optimisedK);
+		assertEquals(correctL, optimisedL);
+	}
+
 }
