@@ -236,6 +236,15 @@ public class TransferEntropyCalculatorKraskov
 	public String getProperty(String propertyName) throws Exception {
 		if (propertyName.equalsIgnoreCase(PROP_KRASKOV_ALG_NUM)) {
 			return Integer.toString(kraskovAlgorithmNumber);
+		} else if (propertyName.equalsIgnoreCase(PROP_RAGWITZ_NUM_NNS)) {
+			// Need to deal with this one here instead of in super class, 
+			//  since if it's not set especially by the user we'll default to the
+			//  kNNs used in the KSG method:
+			if (ragwitz_num_nns_set) {
+				return Integer.toString(ragwitz_num_nns);
+			} else {
+				return condMiCalc.getProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_K);
+			}
 		} else {
 			// Assume it was a property for the parent class or underlying conditional MI calculator
 			return super.getProperty(propertyName);

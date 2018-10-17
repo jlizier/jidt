@@ -20,6 +20,7 @@ package infodynamics.demos.autoanalysis;
 
 import infodynamics.measures.continuous.ConditionalMutualInfoMultiVariateCommon;
 import infodynamics.measures.continuous.TransferEntropyCalculator;
+import infodynamics.measures.continuous.TransferEntropyCalculatorViaCondMutualInfo;
 import infodynamics.measures.continuous.gaussian.ConditionalMutualInfoCalculatorMultiVariateGaussian;
 import infodynamics.measures.continuous.gaussian.TransferEntropyCalculatorGaussian;
 import infodynamics.measures.continuous.kernel.TransferEntropyCalculatorKernel;
@@ -136,6 +137,10 @@ public class AutoAnalyserTE extends AutoAnalyserChannelCalculator
 				TransferEntropyCalculator.L_TAU_PROP_NAME, // Not common to Kernel
 				TransferEntropyCalculator.DELAY_PROP_NAME, // Not common to Kernel
 				ConditionalMutualInfoCalculatorMultiVariateGaussian.PROP_BIAS_CORRECTION,
+				TransferEntropyCalculatorViaCondMutualInfo.PROP_AUTO_EMBED_METHOD,
+				TransferEntropyCalculatorViaCondMutualInfo.PROP_K_SEARCH_MAX,
+				TransferEntropyCalculatorViaCondMutualInfo.PROP_TAU_SEARCH_MAX,
+				TransferEntropyCalculatorViaCondMutualInfo.PROP_RAGWITZ_NUM_NNS
 		};
 		gaussianPropertiesFieldNames = new String[] {
 				"TransferEntropyCalculator.K_TAU_PROP_NAME", // Not common to Kernel
@@ -143,6 +148,10 @@ public class AutoAnalyserTE extends AutoAnalyserChannelCalculator
 				"TransferEntropyCalculator.L_TAU_PROP_NAME", // Not common to Kernel
 				"TransferEntropyCalculator.DELAY_PROP_NAME", // Not common to Kernel
 				"ConditionalMutualInfoCalculatorMultiVariateGaussian.PROP_BIAS_CORRECTION",
+				"TransferEntropyCalculatorViaCondMutualInfo.PROP_AUTO_EMBED_METHOD",
+				"TransferEntropyCalculatorViaCondMutualInfo.PROP_K_SEARCH_MAX",
+				"TransferEntropyCalculatorViaCondMutualInfo.PROP_TAU_SEARCH_MAX",
+				"TransferEntropyCalculatorViaCondMutualInfo.PROP_RAGWITZ_NUM_NNS"
 		};
 		gaussianPropertyDescriptions = new String[] {
 				"Destination history embedding delay (k_TAU)",
@@ -151,7 +160,22 @@ public class AutoAnalyserTE extends AutoAnalyserChannelCalculator
 				"Delay from source to destination (in time steps)",
 				"Whether the analytically determined bias (as the mean of the<br/>" +
 						"surrogate distribution) will be subtracted from all" +
-						"calculated values. Default is false."
+						"calculated values. Default is false.",
+				"Method to automatically determine embedding lengths (k_HISTORY,l_HISTORY)<br/> and delays (k_TAU, l_TAU) for " +
+						"destination and potentially source time-series. Default is \"" + TransferEntropyCalculatorViaCondMutualInfo.AUTO_EMBED_METHOD_NONE +
+						"\" meaning values are set manually; other values include: <br/>  -- \"" + TransferEntropyCalculatorViaCondMutualInfo.AUTO_EMBED_METHOD_RAGWITZ +
+						"\" for use of the Ragwitz criteria for both source and destination (searching up to \"" + TransferEntropyCalculatorViaCondMutualInfo.PROP_K_SEARCH_MAX +
+						"\" and \"" + TransferEntropyCalculatorViaCondMutualInfo.PROP_TAU_SEARCH_MAX + "\"); <br/>  -- \"" + TransferEntropyCalculatorViaCondMutualInfo.AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY +
+						"\" for use of the Ragwitz criteria for the destination only. <br/>  -- \"" + TransferEntropyCalculatorViaCondMutualInfo.AUTO_EMBED_METHOD_MAX_CORR_AIS +
+						"\" for maximising the (bias corrected) Active Info Storage for both source and destination (searching up to \"" + TransferEntropyCalculatorViaCondMutualInfo.PROP_K_SEARCH_MAX +
+						"\" and \"" + TransferEntropyCalculatorViaCondMutualInfo.PROP_TAU_SEARCH_MAX + "\"); <br/>  -- \"" + TransferEntropyCalculatorViaCondMutualInfo.AUTO_EMBED_METHOD_MAX_CORR_AIS_DEST_ONLY +
+						"\" for maximising the (bias corrected) Active Info Storage for the destination only; <br/> -- \"" + TransferEntropyCalculatorViaCondMutualInfo.AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE +
+						"\" for maximising (bias corrected) Active Info Storage for the destination first, and then selecting source embedding to maximise (bias-corrected) transfer entropy." +
+						"<br/>Use of values other than \"" + TransferEntropyCalculatorViaCondMutualInfo.AUTO_EMBED_METHOD_NONE +
+						"\" leads to any previous settings for embedding lengths and delays for the destination and perhaps source to be overwritten after observations are supplied",
+				"Max. embedding length to search to <br/>if auto embedding (as determined by " + TransferEntropyCalculatorViaCondMutualInfo.PROP_AUTO_EMBED_METHOD + ")",
+				"Max. embedding delay to search to <br/>if auto embedding (as determined by " + TransferEntropyCalculatorViaCondMutualInfo.PROP_AUTO_EMBED_METHOD + ")",
+				"Number of k nearest neighbours for <br/>Ragwitz auto embedding (if used; defaults to match property \"k\")"
 		};
 		gaussianPropertyValueChoices = new String[][] {	
 				null,
@@ -159,6 +183,15 @@ public class AutoAnalyserTE extends AutoAnalyserChannelCalculator
 				null,
 				null,
 				{"true", "false"},
+				{TransferEntropyCalculatorViaCondMutualInfo.AUTO_EMBED_METHOD_NONE,
+					TransferEntropyCalculatorViaCondMutualInfo.AUTO_EMBED_METHOD_RAGWITZ,
+					TransferEntropyCalculatorViaCondMutualInfo.AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY,
+					TransferEntropyCalculatorViaCondMutualInfo.AUTO_EMBED_METHOD_MAX_CORR_AIS,
+					TransferEntropyCalculatorViaCondMutualInfo.AUTO_EMBED_METHOD_MAX_CORR_AIS_DEST_ONLY,
+					TransferEntropyCalculatorViaCondMutualInfo.AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE},
+				null,
+				null,
+				null,
 		};
 		// Kernel:
 		kernelProperties = new String[] {
@@ -199,10 +232,10 @@ public class AutoAnalyserTE extends AutoAnalyserChannelCalculator
 				ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS,
 				ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_USE_GPU,
 				TransferEntropyCalculatorKraskov.PROP_KRASKOV_ALG_NUM,
-				TransferEntropyCalculatorKraskov.PROP_AUTO_EMBED_METHOD,
-				TransferEntropyCalculatorKraskov.PROP_K_SEARCH_MAX,
-				TransferEntropyCalculatorKraskov.PROP_TAU_SEARCH_MAX,
-				TransferEntropyCalculatorKraskov.PROP_RAGWITZ_NUM_NNS
+				TransferEntropyCalculatorViaCondMutualInfo.PROP_AUTO_EMBED_METHOD,
+				TransferEntropyCalculatorViaCondMutualInfo.PROP_K_SEARCH_MAX,
+				TransferEntropyCalculatorViaCondMutualInfo.PROP_TAU_SEARCH_MAX,
+				TransferEntropyCalculatorViaCondMutualInfo.PROP_RAGWITZ_NUM_NNS
 		};
 		kraskovPropertiesFieldNames = new String[] {
 				"TransferEntropyCalculator.K_TAU_PROP_NAME", // Not common to Kernel
@@ -217,10 +250,10 @@ public class AutoAnalyserTE extends AutoAnalyserChannelCalculator
 				"ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS",
 				"ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_USE_GPU",
 				"PROP_KRASKOV_ALG_NUM",
-				"PROP_AUTO_EMBED_METHOD",
-				"PROP_K_SEARCH_MAX",
-				"PROP_TAU_SEARCH_MAX",
-				"PROP_RAGWITZ_NUM_NNS"
+				"TransferEntropyCalculatorViaCondMutualInfo.PROP_AUTO_EMBED_METHOD",
+				"TransferEntropyCalculatorViaCondMutualInfo.PROP_K_SEARCH_MAX",
+				"TransferEntropyCalculatorViaCondMutualInfo.PROP_TAU_SEARCH_MAX",
+				"TransferEntropyCalculatorViaCondMutualInfo.PROP_RAGWITZ_NUM_NNS"
 		};
 		kraskovPropertyDescriptions = new String[] {
 				"Destination history embedding delay (k_TAU)",
@@ -241,17 +274,19 @@ public class AutoAnalyserTE extends AutoAnalyserChannelCalculator
 				"Whether to enable the GPU module (number of threads then has no bearing); boolean, default false",
 				"Which KSG algorithm to use (1 or 2)",
 				"Method to automatically determine embedding lengths (k_HISTORY,l_HISTORY)<br/> and delays (k_TAU, l_TAU) for " +
-						"destination and potentially source time-series. Default is \"" + TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_NONE +
-						"\" meaning values are set manually; other values include: <br/>  -- \"" + TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ +
-						"\" for use of the Ragwitz criteria for both source and destination (searching up to \"" + TransferEntropyCalculatorKraskov.PROP_K_SEARCH_MAX +
-						"\" and \"" + TransferEntropyCalculatorKraskov.PROP_TAU_SEARCH_MAX + "\"); <br/>  -- \"" + TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY +
-						"\" for use of the Ragwitz criteria for the destination only. <br/>  -- \"" + TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_MAX_CORR_AIS +
-						"\" for maximising the (bias corrected) Active Info Storage for both source and destination (searching up to \"" + TransferEntropyCalculatorKraskov.PROP_K_SEARCH_MAX +
-						"\" and \"" + TransferEntropyCalculatorKraskov.PROP_TAU_SEARCH_MAX + "\"); <br/>  -- \"" + TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_MAX_CORR_AIS_DEST_ONLY +
-						"\" for maximising the (bias corrected) Active Info Storage for the destination only. <br/>Use of values other than \"" + TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_NONE +
+						"destination and potentially source time-series. Default is \"" + TransferEntropyCalculatorViaCondMutualInfo.AUTO_EMBED_METHOD_NONE +
+						"\" meaning values are set manually; other values include: <br/>  -- \"" + TransferEntropyCalculatorViaCondMutualInfo.AUTO_EMBED_METHOD_RAGWITZ +
+						"\" for use of the Ragwitz criteria for both source and destination (searching up to \"" + TransferEntropyCalculatorViaCondMutualInfo.PROP_K_SEARCH_MAX +
+						"\" and \"" + TransferEntropyCalculatorViaCondMutualInfo.PROP_TAU_SEARCH_MAX + "\"); <br/>  -- \"" + TransferEntropyCalculatorViaCondMutualInfo.AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY +
+						"\" for use of the Ragwitz criteria for the destination only. <br/>  -- \"" + TransferEntropyCalculatorViaCondMutualInfo.AUTO_EMBED_METHOD_MAX_CORR_AIS +
+						"\" for maximising the (bias corrected) Active Info Storage for both source and destination (searching up to \"" + TransferEntropyCalculatorViaCondMutualInfo.PROP_K_SEARCH_MAX +
+						"\" and \"" + TransferEntropyCalculatorViaCondMutualInfo.PROP_TAU_SEARCH_MAX + "\"); <br/>  -- \"" + TransferEntropyCalculatorViaCondMutualInfo.AUTO_EMBED_METHOD_MAX_CORR_AIS_DEST_ONLY +
+						"\" for maximising the (bias corrected) Active Info Storage for the destination only; <br/> -- \"" + TransferEntropyCalculatorViaCondMutualInfo.AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE +
+						"\" for maximising (bias corrected) Active Info Storage for the destination first, and then selecting source embedding to maximise (bias-corrected) transfer entropy." +
+						"<br/>Use of values other than \"" + TransferEntropyCalculatorViaCondMutualInfo.AUTO_EMBED_METHOD_NONE +
 						"\" leads to any previous settings for embedding lengths and delays for the destination and perhaps source to be overwritten after observations are supplied",
-				"Max. embedding length to search to <br/>if auto embedding (as determined by " + TransferEntropyCalculatorKraskov.PROP_AUTO_EMBED_METHOD + ")",
-				"Max. embedding delay to search to <br/>if auto embedding (as determined by " + TransferEntropyCalculatorKraskov.PROP_AUTO_EMBED_METHOD + ")",
+				"Max. embedding length to search to <br/>if auto embedding (as determined by " + TransferEntropyCalculatorViaCondMutualInfo.PROP_AUTO_EMBED_METHOD + ")",
+				"Max. embedding delay to search to <br/>if auto embedding (as determined by " + TransferEntropyCalculatorViaCondMutualInfo.PROP_AUTO_EMBED_METHOD + ")",
 				"Number of k nearest neighbours for <br/>Ragwitz auto embedding (if used; defaults to match property \"k\")"
 		};
 		kraskovPropertyValueChoices = new String[][] {
@@ -267,11 +302,12 @@ public class AutoAnalyserTE extends AutoAnalyserChannelCalculator
 				null,
 				{"true", "false"},
 				{"1", "2"},
-				{TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_NONE,
-					TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ,
-					TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY,
-					TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_MAX_CORR_AIS,
-					TransferEntropyCalculatorKraskov.AUTO_EMBED_METHOD_MAX_CORR_AIS_DEST_ONLY},
+				{TransferEntropyCalculatorViaCondMutualInfo.AUTO_EMBED_METHOD_NONE,
+					TransferEntropyCalculatorViaCondMutualInfo.AUTO_EMBED_METHOD_RAGWITZ,
+					TransferEntropyCalculatorViaCondMutualInfo.AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY,
+					TransferEntropyCalculatorViaCondMutualInfo.AUTO_EMBED_METHOD_MAX_CORR_AIS,
+					TransferEntropyCalculatorViaCondMutualInfo.AUTO_EMBED_METHOD_MAX_CORR_AIS_DEST_ONLY,
+					TransferEntropyCalculatorViaCondMutualInfo.AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE},
 				null,
 				null,
 				null,

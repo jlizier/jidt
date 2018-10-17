@@ -189,7 +189,7 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 	/**
 	 * Valid value for the property {@link #PROP_AUTO_EMBED_METHOD} indicating that
 	 *  the automatic embedding should be done by maximising the bias corrected
-	 *  AIS for the target and subsequently maximising the TE over source embeddings,
+	 *  AIS for the target and subsequently maximising the bias-corrected TE over source embeddings,
 	 *  given a fixed source-target delay.
 	 */
 	public static final String AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE = "MAX_CORR_AIS_AND_TE";
@@ -236,7 +236,7 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 	 * Internal variable for storing the number of nearest neighbours to use for the
 	 *  auto embedding search (Ragwitz criteria)
 	 */
-	protected int ragwitz_num_nns = 1;
+	protected int ragwitz_num_nns = 4;
 	/** 
 	 * Internal variable to track whether the property {@link #PROP_RAGWITZ_NUM_NNS} has been
 	 * set yet
@@ -482,11 +482,11 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 		} else if (propertyName.equalsIgnoreCase(PROP_TAU_SEARCH_MAX)) {
 			return Integer.toString(tau_search_max);
 		} else if (propertyName.equalsIgnoreCase(PROP_RAGWITZ_NUM_NNS)) {
-			if (ragwitz_num_nns_set) {
-				return Integer.toString(ragwitz_num_nns);
-			} else {
-				return condMiCalc.getProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_K);
-			}
+			// if we're using a KSG estimator this will have been handled
+			//  by the child class. Else it doesn't matter whether it has been
+			//  explicitly set or not by the user, we'll return the
+			//  current value held here:
+			return Integer.toString(ragwitz_num_nns);
 		} else {
 			// No property matches for this class, assume it is for the underlying
 			//  conditional MI calculator
