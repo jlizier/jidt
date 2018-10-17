@@ -51,8 +51,9 @@ package infodynamics.measures.continuous;
  * 						<li>{@link #startAddObservations()}, then</li>
  * 						<li>One or more calls to {@link #addObservations(double[][])} or
  * 							{@link #addObservations(double[][], int, int)}, then</li>
- * 						<li>{@link #finaliseAddObservations()};</li>
+ * 						<li>{@link #finaliseAddObservations()}; OR</li>
  * 					</ol></li>
+ * 				<li>univariate calls as supported by {@link ActiveInfoStorageCalculator} </li>
  * 			</ul>
  * 		</li>
  * 		<li>Compute the required quantities, being one or more of:
@@ -87,10 +88,10 @@ package infodynamics.measures.continuous;
  *
  * @see ActiveInfoStorageCalculator
  */
-public interface ActiveInfoStorageCalculatorMultiVariate {
+public interface ActiveInfoStorageCalculatorMultiVariate extends ActiveInfoStorageCalculator {
 
 	/**
-   * Initialise the calculator for re-use with new observations.
+	 * Initialise the calculator for re-use with new observations.
 	 * History length k, source and destination dimensions are
 	 * specified here; all other parameters remain unchanged. 
 	 * 
@@ -101,6 +102,135 @@ public interface ActiveInfoStorageCalculatorMultiVariate {
 	 */
 	public void initialise(int dimensions, int k, int tau) throws Exception;
 
-	// TODO We seem to be missing a lot of functionality which should be defined here,
-	//  as implemented in the univariate measure. will have to go back and do this.
+	/**
+	 * <p>Sets a single set of <b>univariate</b> observations to compute the PDFs from.
+	 * Can only be called on this multivariate calculator if the dimension of the system
+	 * is 1, otherwise throws an exception</p>
+	 *  
+	 * {@inheritDoc}
+	 * 
+	 * @throws Exception if initialised dimensions were not 1
+	 */
+	@Override
+	public void setObservations(double observations[]) throws Exception;
+	
+	/**
+	 * As per {@link #setObservations(double[])} only with multivariate 
+	 *  observations
+	 * 
+	 * @param observations time-series array of (multivariate) samples,
+	 *  where the first index is time.
+	 * @throws Exception
+	 */
+	public void setObservations(double[][] observations) throws Exception;
+	
+	/**
+	 * <p>Adds a new set of <b>univariate</b> observations to compute the PDFs from.
+	 * Can only be called on this multivariate calculator if the dimension of the system
+	 * is 1, otherwise throws an exception</p>
+	 * 
+	 * {@inheritDoc}
+	 * 
+	 * @throws Exception if initialised dimensions were not 1
+	 */
+	@Override
+	public void addObservations(double[] observations) throws Exception;
+
+	/**
+	 * As per {@link #addObservations(double[])} only with multivariate 
+	 *  observations
+	 * 
+	 * @param observations time-series array of (multivariate) samples,
+	 *  where the first index is time.
+	 * @throws Exception
+	 */
+	public void addObservations(double[][] observations) throws Exception;
+	
+	/**
+	 * This method will return an exception if this class was not initialised 
+	 *  for univariate data only.
+	 *  
+	 * {@inheritDoc}
+	 * 
+	 * @throws Exception if initialised dimensions were not 1
+	 */
+	@Override
+	public void addObservations(double[] observations,
+			int startTime, int numTimeSteps) throws Exception;
+
+	/**
+	 * As per {@link #addObservations(double[], int, int)} only with multivariate 
+	 *  observations
+	 * 
+	 * @param observations time-series array of (multivariate) samples,
+	 *  where the first index is time.
+	 * @throws Exception
+	 */
+	public void addObservations(double[][] observations, int startTime,
+			int numTimeSteps) throws Exception;
+	
+	/**
+	 * This method will return an exception if this class was not initialised 
+	 *  for univariate data only.
+	 *  
+	 * {@inheritDoc}
+	 * 
+	 * @throws Exception if initialised dimensions were not 1
+	 */
+	@Override
+	public void setObservations(double[] observations,
+			boolean[] valid) throws Exception;
+
+	/**
+	 * As per {@link #setObservations(double[], boolean[])} only with multivariate 
+	 *  observations
+	 * 
+	 * @param observations time-series array of (multivariate) samples,
+	 *  where the first index is time.
+	 * @throws Exception
+	 */
+	public void setObservations(double[][] observations,
+			boolean[] valid) throws Exception;
+	
+	/**
+	 * This method will return an exception if this class was not initialised 
+	 *  for univariate data only.
+	 *  
+	 * {@inheritDoc}
+	 * 
+	 * @throws Exception if initialised dimensions were not 1
+	 */
+	@Override
+	public void addObservations(double[] observations, boolean[] valid) throws Exception;
+
+	/**
+	 * As per {@link #addObservations(double[], boolean[])} only with multivariate 
+	 *  observations
+	 * 
+	 * @param observations time-series array of (multivariate) samples,
+	 *  where the first index is time.
+	 * @throws Exception
+	 */
+	public void addObservations(double[][] observations, boolean[] valid) throws Exception;
+
+	/**
+	 * This method will return an exception if this class was not initialised 
+	 *  for univariate data only.
+	 *  
+	 * {@inheritDoc}
+	 * 
+	 * @throws Exception if initialised dimensions were not 1
+	 */
+	@Override
+	public double[] computeLocalUsingPreviousObservations(double[] newObservations) throws Exception;
+
+	/**
+	 * As per {@link #computeLocalUsingPreviousObservations(double[])} only with multivariate 
+	 *  observations
+	 * 
+	 * @param newObservations time-series array of (multivariate) samples,
+	 *  where the first index is time.
+	 * @throws Exception
+	 */
+	public double[] computeLocalUsingPreviousObservations(double[][] newObservations) throws Exception;
 }

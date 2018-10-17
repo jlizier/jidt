@@ -185,7 +185,7 @@ public interface ActiveInfoStorageCalculator extends
 	 * @param numTimeSteps number of time steps to extract starting from startTime
 	 */
 	public void addObservations(double[] observations,
-			int startTime, int numTimeSteps) throws Exception ;
+			int startTime, int numTimeSteps) throws Exception;
 
 	/**
 	 * Signal that the observations are now all added, PDFs can now be constructed.

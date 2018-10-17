@@ -156,16 +156,6 @@ public class ActiveInfoStorageCalculatorMultiVariateViaMutualInfo
     // miCalc.initialise(k*dimensions, dimensions);
 	}
 
-	/**
-	 * <p>Sets a single set of <b>univariate</b> observations to compute the PDFs from.
-	 * Can only be called on this multivariate calculator if the dimension of the system
-	 * is 1, otherwise throws an exception</p>
-	 * 
-	 * {@inheritDoc}
-	 * 
-	 * @param observations univariate observations
-	 * @throws Exception if initialised dimensions were not 1
-	 */
 	@Override
 	public void setObservations(double[] observations) throws Exception {
     if (dimensions != 1) {
@@ -175,55 +165,47 @@ public class ActiveInfoStorageCalculatorMultiVariateViaMutualInfo
     super.setObservations(observations);
 	}
 
-  /**
-	 * <p>Sets a single set of <b>multivariate</b> observations to compute the
-   * PDFs from. Cannot be called in conjunction with other methods for
-   * setting/adding observations.
-	 * 
-	 * @param observations time-series array of (multivariate) samples,
-	 *  where the first index is time.
-   */
-  public void setObservations(double[][] observations) throws Exception {
+	public void setObservations(double[][] observations) throws Exception {
 
 		startAddObservations();
 		addObservations(observations);
 		finaliseAddObservations();
 
-    // if (observations.length <= timeForFirstEmbedding + 1) {
+		// if (observations.length <= timeForFirstEmbedding + 1) {
 		// 	// There are no observations to add here, the time series is too short
 		// 	throw new Exception("Not enough observations to set here given k and tau parameters");
 		// }
-
-    // double[][] past = MatrixUtils.makeDelayEmbeddingVector(observations,
-    //     k, tau, tau*(k-1), observations.length - (k-1)*tau - 1);
-    // double[][] next = MatrixUtils.makeDelayEmbeddingVector(observations,
-    //     1, (k-1)*tau + 1, observations.length - (k-1)*tau - 1);
-
-    // miCalc.setObservations(past, next);
-  }
+		
+		// double[][] past = MatrixUtils.makeDelayEmbeddingVector(observations,
+		//     k, tau, tau*(k-1), observations.length - (k-1)*tau - 1);
+		// double[][] next = MatrixUtils.makeDelayEmbeddingVector(observations,
+		//     1, (k-1)*tau + 1, observations.length - (k-1)*tau - 1);
+		
+		// miCalc.setObservations(past, next);
+	}
 
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#startAddObservations()
 	 */
 	public void startAddObservations() {
-    if (dimensions == 1) {
-      super.startAddObservations();
-    } else {
-      miCalc.startAddObservations();
-      vectorOfMultiVariateObservationTimeSeries = new Vector<double[][]>();
-      vectorOfValidityOfObservations = new Vector<boolean[]>();
-    }
+		if (dimensions == 1) {
+			super.startAddObservations();
+		} else {
+			miCalc.startAddObservations();
+			vectorOfMultiVariateObservationTimeSeries = new Vector<double[][]>();
+			vectorOfValidityOfObservations = new Vector<boolean[]>();
+		}
   }
 
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#finaliseAddObservations()
 	 */
-  public void finaliseAddObservations() throws Exception {
-      super.finaliseAddObservations();
-      
-      vectorOfMultiVariateObservationTimeSeries = null; // No longer required
-      vectorOfValidityOfObservations = null;
-  }
+	public void finaliseAddObservations() throws Exception {
+		super.finaliseAddObservations();
+
+		vectorOfMultiVariateObservationTimeSeries = null; // No longer required
+		vectorOfValidityOfObservations = null;
+	}
 
 	/**
 	 * Prepare the given pre-instantiated (and properties supplied)
@@ -266,16 +248,6 @@ public class ActiveInfoStorageCalculatorMultiVariateViaMutualInfo
 		miCalc_in_use.finaliseAddObservations();
 	}
 
-	/**
-	 * <p>Adds a new set of <b>univariate</b> observations to compute the PDFs from.
-	 * Can only be called on this multivariate calculator if the dimension of the system
-	 * is 1, otherwise throws an exception</p>
-	 * 
-	 * {@inheritDoc}
-	 * 
-	 * @param observations univariate observations
-	 * @throws Exception if initialised dimensions were not 1
-	 */
 	@Override
 	public void addObservations(double[] observations) throws Exception {
 
@@ -286,21 +258,18 @@ public class ActiveInfoStorageCalculatorMultiVariateViaMutualInfo
     super.addObservations(observations);
 	}
 
-	/* (non-Javadoc)
-	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#addObservations(double[])
-	 */
-  public void addObservations(double[][] observations) throws Exception {
+	public void addObservations(double[][] observations) throws Exception {
 
-	  if (dimensions == 1) {
-		  if ((observations.length > 0) && (observations[0].length != dimensions)) {
-			  throw new Exception("Observations with dimension > 1 supplied when calculator only initialised for dimension 1");
-		  }
-		  addObservations(MatrixUtils.selectColumn(observations, 0));
-	  } else {		  
-		// Store these observations in our vector for now
-		vectorOfMultiVariateObservationTimeSeries.add(observations);
-		vectorOfValidityOfObservations.add(null); // All observations were valid
-	  }
+		if (dimensions == 1) {
+			if ((observations.length > 0) && (observations[0].length != dimensions)) {
+				throw new Exception("Observations with dimension > 1 supplied when calculator only initialised for dimension 1");
+			}
+			addObservations(MatrixUtils.selectColumn(observations, 0));
+		} else {		  
+			// Store these observations in our vector for now
+			vectorOfMultiVariateObservationTimeSeries.add(observations);
+			vectorOfValidityOfObservations.add(null); // All observations were valid
+		}
 
 
 		// if (observations.length <= timeForFirstEmbedding + 1) {
@@ -310,13 +279,13 @@ public class ActiveInfoStorageCalculatorMultiVariateViaMutualInfo
 		// 	return;
 		// }
 
-    // double[][] past = MatrixUtils.makeDelayEmbeddingVector(observations,
-    //     k, tau, tau*(k-1), observations.length - (k-1)*tau - 1);
-    // double[][] next = MatrixUtils.makeDelayEmbeddingVector(observations,
-    //     1, (k-1)*tau + 1, observations.length - (k-1)*tau - 1);
+		// double[][] past = MatrixUtils.makeDelayEmbeddingVector(observations,
+		//     k, tau, tau*(k-1), observations.length - (k-1)*tau - 1);
+		// double[][] next = MatrixUtils.makeDelayEmbeddingVector(observations,
+		//     1, (k-1)*tau + 1, observations.length - (k-1)*tau - 1);
 
-    // miCalc.addObservations(past, next);
-  }
+		// miCalc.addObservations(past, next);
+	}
 
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#addObservations(double[], int, int)
@@ -325,34 +294,31 @@ public class ActiveInfoStorageCalculatorMultiVariateViaMutualInfo
 	public void addObservations(double[] observations, int startTime,
 			int numTimeSteps) throws Exception {
 
-    if (dimensions != 1) {
+		if (dimensions != 1) {
 			throw new Exception("Cannot call the univariate addObservations if you " +
 					"have initialised with dimension > 1");
-    }
+		}
 
-    super.addObservations(observations, startTime, numTimeSteps);
+		super.addObservations(observations, startTime, numTimeSteps);
 	}
 
-	/* (non-Javadoc)
-	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#addObservations(double[], int, int)
-	 */
-  public void addObservations(double[][] observations, int startTime,
-      int numTimeSteps) throws Exception {
+	public void addObservations(double[][] observations, int startTime,
+			int numTimeSteps) throws Exception {
 
-    if (observations.length < startTime + numTimeSteps) {
+		if (observations.length < startTime + numTimeSteps) {
 			// There are not enough observations given the arguments here
 			throw new Exception("Not enough observations to set here given startTime and numTimeSteps parameters");
 		}
 
-    if (dimensions == 1) {
-		  if ((observations.length > 0) && (observations[0].length != dimensions)) {
-			  throw new Exception("Observations with dimension > 1 supplied when calculator only initialised for dimension 1");
-		  }
-    	super.addObservations(MatrixUtils.selectColumn(observations, 0), startTime, numTimeSteps);
-    } else {
-    	addObservations(MatrixUtils.selectRows(observations, startTime, numTimeSteps));
-    }
-  }
+		if (dimensions == 1) {
+			if ((observations.length > 0) && (observations[0].length != dimensions)) {
+				throw new Exception("Observations with dimension > 1 supplied when calculator only initialised for dimension 1");
+			}
+			super.addObservations(MatrixUtils.selectColumn(observations, 0), startTime, numTimeSteps);
+		} else {
+			addObservations(MatrixUtils.selectRows(observations, startTime, numTimeSteps));
+		}
+	}
 	
 	@Override
 	public void addObservations(double[] observations, boolean[] valid)
@@ -388,17 +354,14 @@ public class ActiveInfoStorageCalculatorMultiVariateViaMutualInfo
 	public void setObservations(double[] observations, boolean[] valid)
 			throws Exception {
 
-    if (dimensions != 1) {
+		if (dimensions != 1) {
 			throw new Exception("Cannot call the univariate addObservations if you " +
 					"have initialised with dimension > 1");
-    }
+		}
 
-    super.setObservations(observations, valid);
+		super.setObservations(observations, valid);
 	}
 
-  /**
-   * TODO: docs
-   */
 	public void setObservations(double[][] observations, boolean[] valid)
 			throws Exception {
 		startAddObservations();
@@ -487,11 +450,8 @@ public class ActiveInfoStorageCalculatorMultiVariateViaMutualInfo
 
 	}
 
-	/* (non-Javadoc)
-	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#computeLocaUsingPreviousObservations(double[])
-	 */
-  public double[] computeLocalUsingPreviousObservations(double[][] newObservations) throws Exception {
-    // TODO: perhaps throw exception if time series is too short
+	public double[] computeLocalUsingPreviousObservations(double[][] newObservations) throws Exception {
+		// TODO: perhaps throw exception if time series is too short
 		double[][] newDestPastVectors = 
 				MatrixUtils.makeDelayEmbeddingVector(newObservations, k, tau, (k-1)*tau, newObservations.length - (k-1)*tau - 1);
 		double[][] newDestNextVectors =
@@ -501,7 +461,6 @@ public class ActiveInfoStorageCalculatorMultiVariateViaMutualInfo
 		double[] localsToReturn = new double[local.length + (k-1)*tau + 1];
 		System.arraycopy(local, 0, localsToReturn, (k-1)*tau + 1, local.length);
 		return localsToReturn;
-  }
-
+	}
 }
 
