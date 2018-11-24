@@ -415,6 +415,50 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 	}
 
 	/**
+	 * For the points within norms r_upper and r_lower for a given
+	 *  sample index in the data set, sum up the total amount that
+	 *  all of these points are above r_lower.
+	 *  The node itself is excluded from the search.
+	 * Nearest neighbour function to compare to radii is the specified norm.
+	 * (If {@link EuclideanUtils#NORM_EUCLIDEAN} was selected, then the supplied
+	 * r should be the required Euclidean norm <b>squared</b>, since we switch it
+	 * to {@link EuclideanUtils#NORM_EUCLIDEAN_SQUARED} internally).
+	 */
+	public double sumDistanceAboveThresholdForPointsWithinRs(int sampleIndex, double r_upper,
+			double r_lower, boolean allowEqualToR) {
+		int sumDistance = 0;
+		// Find where this node sits in the sorted array:
+		int indexInSortedArray = indicesInSortedArray[sampleIndex];
+		// Check the points with smaller data values first:
+		for (int i = indexInSortedArray - 1; i >= 0; i--) {
+			double theNorm = norm(originalDataSet[sampleIndex],
+					originalDataSet[sortedArrayIndices[i]], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r_lower)) ||
+				(!allowEqualToR && (theNorm < r_lower))) {
+				// This point would be counted within the norms
+				sumDistance += r_lower - theNorm;
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		// Next check the points with larger data values:
+		for (int i = indexInSortedArray + 1; i < numObservations; i++) {
+			double theNorm = norm(originalDataSet[sampleIndex],
+					originalDataSet[sortedArrayIndices[i]], normTypeToUse);
+			if ((allowEqualToR  && (theNorm <= r_upper)) ||
+				(!allowEqualToR && (theNorm < r_upper))) {
+				// This point would be counted within the norms
+				sumDistance += r_lower + theNorm;
+				continue;
+			}
+			// Else no point checking further points
+			break;
+		}
+		return sumDistance;
+	}
+
+	/**
 	 * Count the number of points within norm r for a given
 	 *  sample index in the data set. Nodes within dynCorrExclTime
 	 *  of sampleIndex are excluded from the search.
@@ -641,7 +685,7 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 	 * </p> 
 	 * 
 	 */
-	public void findPointsWithinR(
+	public int findPointsWithinR(
 			int sampleIndex, double r, boolean allowEqualToR,
 			boolean[] isWithinR, int[] indicesWithinR) {
 		int indexInIndicesWithinR = 0;
@@ -674,7 +718,8 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 			break;
 		}
 		// Write the terminating integer into the indicesWithinR array:
-		indicesWithinR[indexInIndicesWithinR++] = -1;
+		indicesWithinR[indexInIndicesWithinR] = -1;
+		return indexInIndicesWithinR;
 	}
 
 	/**
