@@ -717,9 +717,10 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
           System.load(gpuLibraryPath);
         }
       } catch (Throwable e) {
-        String errmsg = "GPU library not found. To compile GPU code set the enablegpu flag to true in build.xml";
+        String errmsg = "GPU library not found. To compile GPU code set the enablegpu flag to true in build.xml, or run `ant gpu jar`.";
+        errmsg += "\nFor more information see the JIDT GPU wiki page: https://github.com/jlizier/jidt/wiki/GPU";
         if (gpuLibraryPath.length() > 0) {
-          errmsg += "\nGPU library was not found in the path provided. Provide full path including library file name.";
+          errmsg += "\n\nGPU library was not found in the path provided. Provide full path including library file name.";
           errmsg += "\nExample: /home/johndoe/myfolder/libKraskov.so";
         }
         throw new Exception(errmsg);
