@@ -39,6 +39,16 @@ See other [PublicationsUsingThisToolkit](../../wiki/PublicationsUsingThisToolkit
 
 # News
 
+_26/11/2018_ - New jar and full distribution files available for **release v1.5**; Changes for v1.5 include:
+Added GPU (cuda) capability for KSG Conditional Mutual Information calculator (proper documentation to come), brief [wiki page](../../wiki/GPU) and unit tests included;
+Added auto-embedding for TE/AIS with multivariate KSG, and univariate and multivariate Gaussian estimator (plus unit tests), for Ragwitz criteria and Maximum bias-corrected AIS, and also added Maximum bias corrected AIS and TE to handle source embedding as well;
+Kozachenko entropy estimator adds noise to data by default;
+Added bias-correction property to Gaussian and Kernel estimators for MI and conditional MI, including with surrogates (only option for kernel);
+Enabled use of different bases for different variables in MI discrete estimator;
+All new above features enabled in AutoAnalyser;
+Added drop-down menus for parameters in AutoAnalyser;
+Included long-form lecture slides in course folder;
+
 _26/11/2017_ - New jar and full distribution files available for **release v1.4**; Changes for v1.4 include:
 Major expansion of functionality for AutoAnalysers: adding Launcher applet and capability to double click jar to launch, added Entropy, CMI, CTE and AIS AutoAnalysers, also added binned estimator type, added all variables/pairs analysis, added statistical significance analysis, and ensured functionality of generated Python code with Python3;
 Added GPU (cuda) capability for KSG Mutual Information calculator (proper documentation and wiki page to come), including unit tests;
