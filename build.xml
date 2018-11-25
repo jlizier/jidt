@@ -11,6 +11,7 @@
 	<property name="jarversiondistnamezip" value="${mainfilename}-jar-${version}.zip" />
 	<property name="distname" value="${mainfilename}-dist-${version}" />
 	<property name="distnamezip" value="${distname}.zip" />
+	<property name="distnametargz" value="${distname}.tar.gz" />
 	<property name="src" location="java/source"/>
 	<property name="cudasrc" location="cuda"/>
 	<property name="bin" location="bin"/>
@@ -148,6 +149,7 @@
 		<delete file="demos/clojure/project.clj"/>
 		<delete file="${jarversiondistnamezip}"/>
 		<delete file="${distnamezip}"/>
+		<delete file="${distnametargz}"/>
 		<delete file="${jarplainname}"/>
 		<delete>
 			 <fileset dir="demos/AutoAnalyser" includes="GeneratedCalculator.*"/>
@@ -293,24 +295,30 @@
 		</zip>
 	</target>
 	
-	<!-- Developer build - builds everything and makes the full distribution file -->
+	<!-- Developer build - builds everything and makes the full distribution file in zip and tar.gz -->
 	<target name="dist" depends="jar,junit,javadocs,readmefiles" description="developer: generate the full distribution">
 		<echo message="${ant.project.name}: ${ant.file}"/>
 		<zip destfile="${distnamezip}">
 			<fileset file="build.xml"/>
-			<fileset file="${jarplainname}"/>
+			<zipfileset file="${jarplainname}" filemode="755"/>
 			<fileset file="license-gplv3.txt"/>
 			<fileset file="readme.txt"/>
 			<fileset file="InfoDynamicsToolkit.pdf"/>
 			<fileset file="JIDT-logo.png" erroronmissingdir="false"/> <!-- This file is missing in full repository versions -->
 			<fileset file="${versionfile}"/>
 			<zipfileset dir="java" includes="**/*.java" prefix="java"/>
-			<zipfileset dir="demos" includes="**/*.*,**/*" excludes="clojure/deploy,clojure/deploy/*.*,python/*.pyc" prefix="demos"/>
+			<zipfileset dir="demos" includes="**/*.*,**/*" excludes="clojure/deploy,clojure/deploy/*.*,python/*.pyc,**/*.sh,**/*.bat" prefix="demos"/>
+			<zipfileset dir="demos" includes="**/*.sh,**/*.bat" prefix="demos" filemode="755"/> <!-- Do these separately to get executable permissions -->
 			<zipfileset dir="javadocs" includes="**/*.*,**/*" prefix="javadocs"/>
 			<zipfileset dir="notices" includes="**/*.*,**/*" prefix="notices"/>
+			<zipfileset dir="cuda" prefix="cuda" excludes="benchmark.sh"/>
+			<zipfileset dir="cuda" prefix="cuda" includes="benchmark.sh" filemode="755"/> <!-- Do this separately to get executable permissions -->
 			<zipfileset dir="course" prefix="course"/>
 			<zipfileset dir="tutorial" prefix="tutorial"/> <!-- Get rid of this when tutorial is subsumed in course... -->
 			<zipfileset dir="web" includes="JIDT-logo.png" prefix="" erroronmissingdir="false"/> <!-- This file is missing in zip dist versions -->
 		</zip>
+		<tar destfile="${distnametargz}" compression="gzip" longfile="posix"> <!-- for longfiles could also use "gnu" but apparently is slightly less widely supported -->
+			<zipfileset src="${distnamezip}"/>
+		</tar>
 	</target>
 </project>
