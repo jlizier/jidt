@@ -134,6 +134,18 @@ Notices for this software are found in the notices/JAMA directory.
  Release notes
 ===============
 
+v1.5 25/11/2018
+---------------
+(after 749 commits recorded by github, repository as at https://github.com/jlizier/jidt/tree/dc4e59f94583f2cae53ff4167d8052151cddc3d8 save for this file update)
+Added GPU (cuda) capability for KSG Conditional Mutual Information calculator (proper documentation and wiki page to come), including unit tests;
+Added auto-embedding for TE/AIS with multivariate KSG, and univariate and multivariate Gaussian estimator (plus unit tests), for Ragwitz criteria and Maximum bias-corrected AIS, and also added Maximum bias corrected AIS and TE to handle source embedding as well;
+Kozachenko entropy estimator adds noise to data by default;
+Added bias-correction property to Gaussian and Kernel estimators for MI and conditional MI, including with surrogates (only option for kernel);
+Enabled use of different bases for different variables in MI discrete estimator;
+All new above features enabled in AutoAnalyser;
+Added drop-down menus for parameters in AutoAnalyser;
+Included long-form lecture slides in course folder;
+
 v1.4 26/11/2017
 ---------------
 (after 638 commits recorded by github, repository as at https://github.com/jlizier/jidt/tree/589d51674e6a9cfb569432679e515bea17092876 save for this file update)
