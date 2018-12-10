@@ -602,7 +602,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 						new double[] {radius_sourcePast, radius_destPast}, 0,
 							true, isWithinR, indicesWithinR);
 			// Set the search point itself to be a neighbour - this is necessary to include the waiting time
-			//  for it in our count:
+			//  for it in our count::
 			indicesWithinR[numMatches] = eventIndexWithinType;
 			indicesWithinR[numMatches+1] = -1;
 			isWithinR[eventIndexWithinType] = true;
