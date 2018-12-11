@@ -743,31 +743,25 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 			// Real start of window cannot be before previous destination spike:
 			double realStartOfWindow = Math.max(timeToNextSpikeSincePreviousDestSpike - radius_destNext, 0);				
 			if (k > 1) {
-			    double radius_max = 0;
+
 			    if(!USE_SAME_RADII) {
 				nnPQ = kdTreeDestNext.findKNearestNeighbours(Knns, eventIndexWithinType);
 			
-				radius_sourcePast = 0.0;
 				radius_destPast = 0.0;
 				radius_destNext = 0.0;
 				radius_destNext_sampleIndex = -1;
 				for (int j = 0; j < Knns; j++) {
 				    // Take the furthest remaining of the nearest neighbours from the PQ:
 				    NeighbourNodeData nnData = nnPQ.poll();
-				    if (nnData.norms[0] > radius_sourcePast) {
-					radius_sourcePast = nnData.norms[0];
+				    if (nnData.norms[0] > radius_destPast) {
+					radius_destPast = nnData.norms[0];
 				    }
-				    if (nnData.norms[1] > radius_destPast) {
-				    	radius_destPast = nnData.norms[1];
+				    if (nnData.norms[1] > radius_destNext) {
+				    	radius_destNext = nnData.norms[1];
 				    }
-				    //if (nnData.norms[2] > radius_destNext) {
-				    //	radius_destNext = nnData.norms[2];
-				    //	radius_destNext_sampleIndex = nnData.sampleIndex;
-				    //}
 				}
 				if (!TRIM_RADII) {
-				    radius_max = Math.max(Math.max(radius_sourcePast, radius_destPast), radius_destNext);
-				    radius_sourcePast = radius_max;
+				    radius_max = Math.max(radius_destPast, radius_destNext);
 				    radius_destPast = radius_max;
 				    radius_destNext = radius_max;
 				}
@@ -799,7 +793,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 						// (The "equal to" is why we look for matches within kthNnData.distance here as well.)
 
 
-					    realStartOfWindow = Math.max(timeToNextSpikeSincePreviousDestSpike - radius_max, 0);
+					    realStartOfWindow = Math.max(timeToNextSpikeSincePreviousDestSpike - radius_destNext, 0);
 					    // Also, real start cannot be before previous source spike:
 					    //  (previous source spike occurs at -matchedHistoryEventTimings[0][0] relative
 					    //   to previous destination spike)
