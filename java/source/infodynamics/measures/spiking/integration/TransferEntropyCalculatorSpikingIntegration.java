@@ -30,6 +30,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 
         protected final static boolean USE_POINT_ITSELF  = false;
         protected final static boolean TRIM_RADII  = false;
+        protected final static boolean USE_SAME_RADII  = false;
 
 	/**
 	 * Number of past destination spikes to consider (akin to embedding length)
@@ -742,6 +743,38 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 			// Real start of window cannot be before previous destination spike:
 			double realStartOfWindow = Math.max(timeToNextSpikeSincePreviousDestSpike - radius_destNext, 0);				
 			if (k > 1) {
+			    double radius_max = 0;
+			    if(!USE_SAME_RADII) {
+				nnPQ = kdTreeDestNext.findKNearestNeighbours(Knns, eventIndexWithinType);
+			
+				radius_sourcePast = 0.0;
+				radius_destPast = 0.0;
+				radius_destNext = 0.0;
+				radius_destNext_sampleIndex = -1;
+				for (int j = 0; j < Knns; j++) {
+				    // Take the furthest remaining of the nearest neighbours from the PQ:
+				    NeighbourNodeData nnData = nnPQ.poll();
+				    if (nnData.norms[0] > radius_sourcePast) {
+					radius_sourcePast = nnData.norms[0];
+				    }
+				    if (nnData.norms[1] > radius_destPast) {
+				    	radius_destPast = nnData.norms[1];
+				    }
+				    //if (nnData.norms[2] > radius_destNext) {
+				    //	radius_destNext = nnData.norms[2];
+				    //	radius_destNext_sampleIndex = nnData.sampleIndex;
+				    //}
+				}
+				if (!TRIM_RADII) {
+				    radius_max = Math.max(Math.max(radius_sourcePast, radius_destPast), radius_destNext);
+				    radius_sourcePast = radius_max;
+				    radius_destPast = radius_max;
+				    radius_destNext = radius_max;
+				}
+			
+			    }
+			    
+
 				// Search only the space of dest past -- no point
 				//  searching dest past and next, since we need to run through
 				//  all matches of dest past to count those with greater next spike
@@ -765,6 +798,13 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 						//  spike with an interval longer than or considered equal to the current sample.
 						// (The "equal to" is why we look for matches within kthNnData.distance here as well.)
 
+
+					    realStartOfWindow = Math.max(timeToNextSpikeSincePreviousDestSpike - radius_max, 0);
+					    // Also, real start cannot be before previous source spike:
+					    //  (previous source spike occurs at -matchedHistoryEventTimings[0][0] relative
+					    //   to previous destination spike)
+					    realStartOfWindow = Math.max(realStartOfWindow, -matchedHistoryEventTimings[0][0]);
+					    
 						// Real end of window happened either when the spike occurred or at
 						//  the end of the window:
 						double realEndOfWindow = Math.min(matchedHistoryEventTimings[1][0],
@@ -783,6 +823,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 					// Reset the isWithinR array while we're here
 					isWithinR[indicesWithinR[nIndex]] = false;
 				}
+				//System.out.println(countOfDestNextMatched);
 			} else {
 				
 				// For k = 1, we only care about time since last spike.
@@ -830,9 +871,9 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 			double rawRateGivenDest = (double) countOfDestNextMatched / timeInWindowWithMatchingDestHistory;
 			// Attempt at bias correction:
 			// Using digamma of neighbour_count - 1, since the neighbour count now includes our search point and it's really k waiting times
-			double logRateGivenSourceAndDestCorrected = MathsUtils.digamma(Knns) // - (1.0 / (double) Knns) // I don't think this correction is required
+			double logRateGivenSourceAndDestCorrected = //MathsUtils.digamma(Knns) // - (1.0 / (double) Knns) // I don't think this correction is required
 					- Math.log(timeInWindowWithMatchingJointHistories);
-			double logRateGivenDestCorrected = MathsUtils.digamma(countOfDestNextMatched-1) // - (1.0 / (double) countOfDestNextMatched) // I don't think this correction is required
+			double logRateGivenDestCorrected = //MathsUtils.digamma(countOfDestNextMatched-1) // - (1.0 / (double) countOfDestNextMatched) // I don't think this correction is required
 					- Math.log(timeInWindowWithMatchingDestHistory);
 			//============================
 			
