@@ -28,6 +28,8 @@ import infodynamics.utils.UnivariateNearestNeighbourSearcher;
 public class TransferEntropyCalculatorSpikingIntegration implements
 		TransferEntropyCalculatorSpiking {
 
+        protected final static boolean USE_POINT_ITSELF  = false;
+
 	/**
 	 * Number of past destination spikes to consider (akin to embedding length)
 	 */
@@ -603,9 +605,11 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 							true, isWithinR, indicesWithinR);
 			// Set the search point itself to be a neighbour - this is necessary to include the waiting time
 			//  for it in our count::
-			indicesWithinR[numMatches] = eventIndexWithinType;
-			indicesWithinR[numMatches+1] = -1;
-			isWithinR[eventIndexWithinType] = true;
+			if(USE_POINT_ITSELF) {
+			    indicesWithinR[numMatches] = eventIndexWithinType;
+			    indicesWithinR[numMatches+1] = -1;
+			    isWithinR[eventIndexWithinType] = true;
+			}
 			// And check which of these samples had spike time in dest in the window or after ours:
 			int countOfDestNextAndGreater = 0;
 			int countOfDestNextInWindow = 0; // Would be Knns except for one on the lower boundary (if there is one)
@@ -740,9 +744,11 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 						true, isWithinR, indicesWithinR);
 				// Set the search point itself to be a neighbour - this is necessary to include the waiting time
 				//  for it in our count:
-				indicesWithinR[numMatches] = indexForNextIsDest;
-				indicesWithinR[numMatches+1] = -1;
-				isWithinR[indexForNextIsDest] = true;
+				if(USE_POINT_ITSELF) {
+				    indicesWithinR[numMatches] = indexForNextIsDest;
+				    indicesWithinR[numMatches+1] = -1;
+				    isWithinR[indexForNextIsDest] = true;
+				}
 				// And check which of these samples had next spike time after our window starts:
 				for (int nIndex = 0; indicesWithinR[nIndex] != -1; nIndex++) {
 					// Pull out this matching event from the dest history space
