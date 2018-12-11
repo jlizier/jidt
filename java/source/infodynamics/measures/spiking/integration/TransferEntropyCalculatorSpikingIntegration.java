@@ -741,7 +741,6 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 			int countOfDestNextMatched = 0;
 			double timeInWindowWithMatchingDestHistory = 0;
 			// Real start of window cannot be before previous destination spike:
-			double realStartOfWindow = Math.max(timeToNextSpikeSincePreviousDestSpike - radius_destNext, 0);				
 			if (k > 1) {
 
 			    if(!USE_SAME_RADII) {
@@ -761,7 +760,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 				    }
 				}
 				if (!TRIM_RADII) {
-				    radius_max = Math.max(radius_destPast, radius_destNext);
+				    double radius_max = Math.max(radius_destPast, radius_destNext);
 				    radius_destPast = radius_max;
 				    radius_destNext = radius_max;
 				}
@@ -783,6 +782,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 				    indicesWithinR[numMatches+1] = -1;
 				    isWithinR[indexForNextIsDest] = true;
 				}
+				double realStartOfWindow = Math.max(timeToNextSpikeSincePreviousDestSpike - radius_destNext, 0);
 				// And check which of these samples had next spike time after our window starts:
 				for (int nIndex = 0; indicesWithinR[nIndex] != -1; nIndex++) {
 					// Pull out this matching event from the dest history space
@@ -793,13 +793,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 						// (The "equal to" is why we look for matches within kthNnData.distance here as well.)
 
 
-					    realStartOfWindow = Math.max(timeToNextSpikeSincePreviousDestSpike - radius_destNext, 0);
-					    // Also, real start cannot be before previous source spike:
-					    //  (previous source spike occurs at -matchedHistoryEventTimings[0][0] relative
-					    //   to previous destination spike)
-					    realStartOfWindow = Math.max(realStartOfWindow, -matchedHistoryEventTimings[0][0]);
-					    
-						// Real end of window happened either when the spike occurred or at
+					    // Real end of window happened either when the spike occurred or at
 						//  the end of the window:
 						double realEndOfWindow = Math.min(matchedHistoryEventTimings[1][0],
 								timeToNextSpikeSincePreviousDestSpike + radius_destNext);
@@ -819,7 +813,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 				}
 				//System.out.println(countOfDestNextMatched);
 			} else {
-				
+			    double realStartOfWindow = Math.max(timeToNextSpikeSincePreviousDestSpike - radius_destNext, 0);
 				// For k = 1, we only care about time since last spike.
 				// So count how many of the next spikes were within the window first:
 				//  -- we don't take any past dest spike ISIs into account, so we just need to look at the proportion of next
@@ -865,10 +859,14 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 			double rawRateGivenDest = (double) countOfDestNextMatched / timeInWindowWithMatchingDestHistory;
 			// Attempt at bias correction:
 			// Using digamma of neighbour_count - 1, since the neighbour count now includes our search point and it's really k waiting times
-			double logRateGivenSourceAndDestCorrected = //MathsUtils.digamma(Knns) // - (1.0 / (double) Knns) // I don't think this correction is required
+			double logRateGivenSourceAndDestCorrected = MathsUtils.digamma(Knns) // - (1.0 / (double) Knns) // I don't think this correction is required
 					- Math.log(timeInWindowWithMatchingJointHistories);
-			double logRateGivenDestCorrected = //MathsUtils.digamma(countOfDestNextMatched-1) // - (1.0 / (double) countOfDestNextMatched) // I don't think this correction is required
+			double logRateGivenDestCorrected = MathsUtils.digamma(countOfDestNextMatched) // - (1.0 / (double) countOfDestNextMatched) // I don't think this correction is required
 					- Math.log(timeInWindowWithMatchingDestHistory);
+			if(USE_POINT_ITSELF) {
+			    logRateGivenSourceAndDestCorrected = MathsUtils.digamma(Knns + 1) - Math.log(timeInWindowWithMatchingJointHistories);
+			    logRateGivenDestCorrected = MathsUtils.digamma(countOfDestNextMatched) - Math.log(timeInWindowWithMatchingDestHistory);
+			}
 			//============================
 			
 			if (debug && (eventIndex < 10000)) {
