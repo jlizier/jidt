@@ -29,6 +29,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 		TransferEntropyCalculatorSpiking {
 
         protected final static boolean USE_POINT_ITSELF  = false;
+        protected final static boolean TRIM_RADII  = false;
 
 	/**
 	 * Number of past destination spikes to consider (akin to embedding length)
@@ -582,6 +583,12 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 					radius_destNext = nnData.norms[2];
 					radius_destNext_sampleIndex = nnData.sampleIndex;
 				}
+			}
+			if (!TRIM_RADII) {
+			    double radius_max = Math.max(Math.max(radius_sourcePast, radius_destPast), radius_destNext);
+			    radius_sourcePast = radius_max;
+			    radius_destPast = radius_max;
+			    radius_destNext = radius_max;
 			}
 			// Postcondition: radius_* variables hold the search radius for each sourcePast, destPast and destNext matches.
 
