@@ -766,7 +766,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 				}
 			
 			    }
-			    
+
 
 				// Search only the space of dest past -- no point
 				//  searching dest past and next, since we need to run through
@@ -859,7 +859,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 			double rawRateGivenDest = (double) countOfDestNextMatched / timeInWindowWithMatchingDestHistory;
 			// Attempt at bias correction:
 			// Using digamma of neighbour_count - 1, since the neighbour count now includes our search point and it's really k waiting times
-			double logRateGivenSourceAndDestCorrected = MathsUtils.digamma(Knns) // - (1.0 / (double) Knns) // I don't think this correction is required
+			double logRateGivenSourceAndDestCorrected = MathsUtils.digamma(Knns) //- (1.0 / (double) Knns) // I don't think this correction is required
 					- Math.log(timeInWindowWithMatchingJointHistories);
 			double logRateGivenDestCorrected = MathsUtils.digamma(countOfDestNextMatched) // - (1.0 / (double) countOfDestNextMatched) // I don't think this correction is required
 					- Math.log(timeInWindowWithMatchingDestHistory);
