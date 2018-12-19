@@ -521,6 +521,9 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 		int numberOfEvents = eventTypeLocator.size();
 		
 		double contributionFromSpikes = 0;
+		double contributionRate_X = 0;
+		double contributionRate_XY = 0;
+		int numContributions = 0;
 		double totalTimeLength = 0;
 		
 		// Create temporary storage for arrays used in the neighbour counting:
@@ -855,11 +858,11 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 			// This code section takes the counts of spikes and total intervals, and
 			//  estimates the log rates.
 			// Inferred rates raw:
-			double rawRateGivenSourceAndDest = (double) countOfDestNextInWindow / timeInWindowWithMatchingJointHistories;
-			double rawRateGivenDest = (double) countOfDestNextMatched / timeInWindowWithMatchingDestHistory;
+			double rawRateGivenSourceAndDest = ((double) (Knns - 1)) / timeInWindowWithMatchingJointHistories;
+			double rawRateGivenDest = ((double) (countOfDestNextMatched - 1)) / timeInWindowWithMatchingDestHistory;
 			// Attempt at bias correction:
 			// Using digamma of neighbour_count - 1, since the neighbour count now includes our search point and it's really k waiting times
-			double logRateGivenSourceAndDestCorrected = MathsUtils.digamma(Knns) //- (1.0 / (double) Knns) // I don't think this correction is required
+			double logRateGivenSourceAndDestCorrected = MathsUtils.digamma(Knns) //`- (1.0 / (double) Knns) // I don't think this correction is required
 					- Math.log(timeInWindowWithMatchingJointHistories);
 			double logRateGivenDestCorrected = MathsUtils.digamma(countOfDestNextMatched) // - (1.0 / (double) countOfDestNextMatched) // I don't think this correction is required
 					- Math.log(timeInWindowWithMatchingDestHistory);
@@ -890,6 +893,9 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 			// Add the contribution in:
 			// a.If we were using digamma logs:
 			contributionFromSpikes += logRateGivenSourceAndDestCorrected - logRateGivenDestCorrected;
+			contributionRate_X += rawRateGivenDest;
+			contributionRate_XY += rawRateGivenSourceAndDest;
+			numContributions++;
 			// contributionFromSpikes += Math.log(rawRateGivenSourceAndDest / rawRateGivenDest);
 			
 			
@@ -901,6 +907,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 			//				totalSearchTimeWindowCondDestPast));
 		}
 		System.out.println("All done!");
+		System.out.println(contributionRate_X/(float)numContributions + " " + contributionRate_XY/(float)numContributions);
 		contributionFromSpikes /= totalTimeLength;
 		return contributionFromSpikes;
 	}
