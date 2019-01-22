@@ -28,7 +28,7 @@ import infodynamics.utils.UnivariateNearestNeighbourSearcher;
 public class TransferEntropyCalculatorSpikingIntegration implements
 		TransferEntropyCalculatorSpiking {
 
-        protected final static boolean USE_POINT_ITSELF  = false;
+        protected final static boolean USE_POINT_ITSELF  = true;
         protected final static boolean TRIM_RADII  = false;
         protected final static boolean USE_SAME_RADII  = false;
 
@@ -867,8 +867,8 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 			double logRateGivenDestCorrected = MathsUtils.digamma(countOfDestNextMatched) // - (1.0 / (double) countOfDestNextMatched) // I don't think this correction is required
 					- Math.log(timeInWindowWithMatchingDestHistory);
 			if(USE_POINT_ITSELF) {
-			    logRateGivenSourceAndDestCorrected = MathsUtils.digamma(Knns + 1) - Math.log(timeInWindowWithMatchingJointHistories);
-			    logRateGivenDestCorrected = MathsUtils.digamma(countOfDestNextMatched) - Math.log(timeInWindowWithMatchingDestHistory);
+			    logRateGivenSourceAndDestCorrected = MathsUtils.digamma(Knns) - Math.log(timeInWindowWithMatchingJointHistories);
+			    logRateGivenDestCorrected = MathsUtils.digamma(countOfDestNextMatched - 1) - Math.log(timeInWindowWithMatchingDestHistory);
 			}
 			//============================
 			
