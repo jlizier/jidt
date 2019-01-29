@@ -28,9 +28,9 @@ import infodynamics.utils.UnivariateNearestNeighbourSearcher;
 public class TransferEntropyCalculatorSpikingIntegration implements
 		TransferEntropyCalculatorSpiking {
 
-        protected final static boolean USE_POINT_ITSELF  = true;
+        protected final static boolean USE_POINT_ITSELF  = false;
         protected final static boolean TRIM_RADII  = false;
-        protected final static boolean USE_SAME_RADII  = false;
+        protected final static boolean USE_SAME_RADII  = true;
 
 	/**
 	 * Number of past destination spikes to consider (akin to embedding length)
@@ -565,9 +565,38 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 			// Find the Knns nearest neighbour matches to this event,
 			//  with the same previous spiker and the next.
 			// TODO Add dynamic exclusion time later
+
+			/*int num_after_event = 0;
+			int extra_to_search = -1;
+			boolean leave_out = false;
+			while(num_after_event < Knns) {
+			    extra_to_search++;
+			    num_after_event = 0;
+			    PriorityQueue<NeighbourNodeData> nnPQ =
+				kdTreesJoint[NEXT_DEST].findKNearestNeighbours(Knns + extra_to_search,
+									       eventIndexWithinType);
+			    
+			    for (int j = 0; j < Knns + extra_to_search; j++) {
+				NeighbourNodeData nnData = nnPQ.poll();
+				if(eventTimings[NEXT_DEST].elementAt(nnData.sampleIndex)[2][0] >
+				    timeToNextSpikeSincePreviousDestSpike) {
+				    num_after_event++;
+				}
+			    }
+			    if(extra_to_search > 500) {
+				System.out.println("on edge");
+				leave_out = true;
+				break;
+			    }
+			    //System.out.println("Num " + eventIndexWithinType + " " + num_after_event);
+			}
+			if(leave_out) {
+			    continue;
+			    }*/
+
 			PriorityQueue<NeighbourNodeData> nnPQ =
-					kdTreesJoint[NEXT_DEST].findKNearestNeighbours(
-							Knns, eventIndexWithinType);
+				kdTreesJoint[NEXT_DEST].findKNearestNeighbours(Knns,
+									       eventIndexWithinType);
 			
 			// Find eps_{x,y,z} as the maximum x, y and z norms amongst this set:
 			double radius_sourcePast = 0.0;
@@ -643,6 +672,18 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 				if ((matchingHistoryTimeToNextSpike >= timeToNextSpikeSincePreviousDestSpike - radius_destNext) &&
 					(matchingHistoryTimeToPrevSourceSpike <= timeToNextSpikeSincePreviousDestSpike + radius_destNext)) {
 					
+				    /*// Real start of window cannot be before previous destination spike:
+					double realStartOfWindow = Math.max(timeToNextSpikeSincePreviousDestSpike, 0);
+					// Also, real start cannot be before previous source spike:
+					//  (previous source spike occurs at -matchedHistoryEventTimings[0][0] relative
+					//   to previous destination spike)
+					//realStartOfWindow = Math.max(realStartOfWindow, matchingHistoryTimeToPrevSourceSpike);
+					
+					// Real end of window happened either when the spike occurred (which changes the history) or at
+					//  the end of the window:
+					double realEndOfWindow = Math.min(matchingHistoryTimeToNextSpike,
+					timeToNextSpikeSincePreviousDestSpike + radius_destNext);*/
+
 					// Real start of window cannot be before previous destination spike:
 					double realStartOfWindow = Math.max(timeToNextSpikeSincePreviousDestSpike - radius_destNext, 0);
 					// Also, real start cannot be before previous source spike:
@@ -656,9 +697,10 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 							timeToNextSpikeSincePreviousDestSpike + radius_destNext);
 					
 					// Add in how much time with a matching history we spent in this window:
-					timeInWindowWithMatchingJointHistories += 
-							realEndOfWindow - realStartOfWindow;
-					
+					if(realEndOfWindow - realStartOfWindow > 0) {
+					    timeInWindowWithMatchingJointHistories += realEndOfWindow - realStartOfWindow;
+					}
+
 					countOfDestNextAndGreater++;
 					
 					// Count spikes occurring here in the window (and check below)
@@ -703,21 +745,38 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 				if ((matchingHistoryTimeToNextSpike >= timeToNextSpikeSincePreviousDestSpike - radius_destNext) &&
 						(matchingHistoryTimeToPrevSourceSpike <= timeToNextSpikeSincePreviousDestSpike + radius_destNext)) {
 					
-					// Real start of window cannot be before previous destination spike:
-					double realStartOfWindow = Math.max(timeToNextSpikeSincePreviousDestSpike - radius_destNext, 0);
+				    /*// Real start of window cannot be before previous destination spike:
+					double realStartOfWindow = Math.max(timeToNextSpikeSincePreviousDestSpike, 0);
 					// Also, real start cannot be before previous source spike:
 					//  (previous source spike occurs at matchingHistoryTimeToPrevSourceSpike relative
 					//   to previous destination spike)
-					realStartOfWindow = Math.max(realStartOfWindow, matchingHistoryTimeToPrevSourceSpike);
+					//realStartOfWindow = Math.max(realStartOfWindow, matchingHistoryTimeToPrevSourceSpike);
 					
 					// Real end of window happened either when the spike occurred or at
+					//  the end of the window:
+					double realEndOfWindow = Math.min(matchingHistoryTimeToNextSpike,
+					timeToNextSpikeSincePreviousDestSpike + radius_destNext);*/
+
+					// Real start of window cannot be before previous destination spike:
+					double realStartOfWindow = Math.max(timeToNextSpikeSincePreviousDestSpike - radius_destNext, 0);
+					// Also, real start cannot be before previous source spike:
+					//  (previous source spike occurs at -matchedHistoryEventTimings[0][0] relative
+					//   to previous destination spike)
+					realStartOfWindow = Math.max(realStartOfWindow, matchingHistoryTimeToPrevSourceSpike);
+					
+					// Real end of window happened either when the spike occurred (which changes the history) or at
 					//  the end of the window:
 					double realEndOfWindow = Math.min(matchingHistoryTimeToNextSpike,
 							timeToNextSpikeSincePreviousDestSpike + radius_destNext);
 					
 					// Add in how much time with a matching history we spent in this window:
-					timeInWindowWithMatchingJointHistories += 
-							realEndOfWindow - realStartOfWindow;
+					if(realEndOfWindow - realStartOfWindow > 0) {
+					    timeInWindowWithMatchingJointHistories += realEndOfWindow - realStartOfWindow;
+					}
+
+					if(timeInWindowWithMatchingJointHistories < 0) {
+					    timeInWindowWithMatchingJointHistories = 0;
+					}
 
 					countOfSourceNextAndGreater++;
 				}
@@ -858,8 +917,11 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 			// This code section takes the counts of spikes and total intervals, and
 			//  estimates the log rates.
 			// Inferred rates raw:
-			double rawRateGivenSourceAndDest = ((double) (Knns - 1)) / timeInWindowWithMatchingJointHistories;
-			double rawRateGivenDest = ((double) (countOfDestNextMatched - 1)) / timeInWindowWithMatchingDestHistory;
+			double rawRateGivenSourceAndDest = ((double) (Knns)) / timeInWindowWithMatchingJointHistories;
+			if(rawRateGivenSourceAndDest > 50) {
+			    System.out.println("SUPER HIGGHHG");
+			}
+			double rawRateGivenDest = ((double) (countOfDestNextMatched)) / timeInWindowWithMatchingDestHistory;
 			// Attempt at bias correction:
 			// Using digamma of neighbour_count - 1, since the neighbour count now includes our search point and it's really k waiting times
 			double logRateGivenSourceAndDestCorrected = MathsUtils.digamma(Knns) //`- (1.0 / (double) Knns) // I don't think this correction is required
@@ -869,6 +931,8 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 			if(USE_POINT_ITSELF) {
 			    logRateGivenSourceAndDestCorrected = MathsUtils.digamma(Knns) - Math.log(timeInWindowWithMatchingJointHistories);
 			    logRateGivenDestCorrected = MathsUtils.digamma(countOfDestNextMatched - 1) - Math.log(timeInWindowWithMatchingDestHistory);
+			    rawRateGivenSourceAndDest = ((double) (Knns)) / timeInWindowWithMatchingJointHistories;
+			    rawRateGivenDest = ((double) (countOfDestNextMatched - 1)) / timeInWindowWithMatchingDestHistory;
 			}
 			//============================
 			
@@ -893,9 +957,11 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 			// Add the contribution in:
 			// a.If we were using digamma logs:
 			contributionFromSpikes += logRateGivenSourceAndDestCorrected - logRateGivenDestCorrected;
-			contributionRate_X += rawRateGivenDest;
-			contributionRate_XY += rawRateGivenSourceAndDest;
-			numContributions++;
+			contributionRate_X += 1/rawRateGivenDest;
+			if(rawRateGivenSourceAndDest < 100) {
+			    contributionRate_XY += 1/rawRateGivenSourceAndDest;
+			    numContributions++;
+			}
 			// contributionFromSpikes += Math.log(rawRateGivenSourceAndDest / rawRateGivenDest);
 			
 			
@@ -907,9 +973,10 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 			//				totalSearchTimeWindowCondDestPast));
 		}
 		System.out.println("All done!");
-		System.out.println(contributionRate_X/(float)numContributions + " " + contributionRate_XY/(float)numContributions);
+		System.out.println("Rate X " + numContributions/contributionRate_X);
+		System.out.println("Rate XY " + numContributions/contributionRate_XY);
 		contributionFromSpikes /= totalTimeLength;
-		return contributionFromSpikes;
+		return numContributions/contributionRate_XY;
 	}
 
 	/*
