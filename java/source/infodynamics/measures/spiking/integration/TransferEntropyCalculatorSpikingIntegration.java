@@ -30,7 +30,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 
         protected final static boolean USE_POINT_ITSELF  = false;
         protected final static boolean TRIM_RADII  = false;
-        protected final static boolean USE_SAME_RADII  = true;
+        protected final static boolean USE_SAME_RADII  = false;
 
 	/**
 	 * Number of past destination spikes to consider (akin to embedding length)
@@ -565,15 +565,17 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 			// Find the Knns nearest neighbour matches to this event,
 			//  with the same previous spiker and the next.
 			// TODO Add dynamic exclusion time later
-
 			/*int num_after_event = 0;
 			int extra_to_search = -1;
 			boolean leave_out = false;
+			if(timeToNextSpikeSincePreviousDestSpike < 0.01 || timeToNextSpikeSincePreviousDestSpike > 0.5) {
+				continue;
+			    }
 			while(num_after_event < Knns) {
 			    extra_to_search++;
 			    num_after_event = 0;
 			    PriorityQueue<NeighbourNodeData> nnPQ =
-				kdTreesJoint[NEXT_DEST].findKNearestNeighbours(Knns + extra_to_search,
+				 kdTreesJoint[NEXT_DEST].findKNearestNeighbours(Knns + extra_to_search,
 									       eventIndexWithinType);
 			    
 			    for (int j = 0; j < Knns + extra_to_search; j++) {
@@ -596,7 +598,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 
 			PriorityQueue<NeighbourNodeData> nnPQ =
 				kdTreesJoint[NEXT_DEST].findKNearestNeighbours(Knns,
-									       eventIndexWithinType);
+				eventIndexWithinType);
 			
 			// Find eps_{x,y,z} as the maximum x, y and z norms amongst this set:
 			double radius_sourcePast = 0.0;
@@ -606,16 +608,19 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 			for (int j = 0; j < Knns; j++) {
 				// Take the furthest remaining of the nearest neighbours from the PQ:
 				NeighbourNodeData nnData = nnPQ.poll();
-				if (nnData.norms[0] > radius_sourcePast) {
+				//if(eventTimings[NEXT_DEST].elementAt(nnData.sampleIndex)[2][0] >
+				// timeToNextSpikeSincePreviousDestSpike) {
+				    if (nnData.norms[0] > radius_sourcePast) {
 					radius_sourcePast = nnData.norms[0];
-				}
-				if (nnData.norms[1] > radius_destPast) {
+				    }
+				    if (nnData.norms[1] > radius_destPast) {
 					radius_destPast = nnData.norms[1];
-				}
-				if (nnData.norms[2] > radius_destNext) {
+				    }
+				    if (nnData.norms[2] > radius_destNext) {
 					radius_destNext = nnData.norms[2];
 					radius_destNext_sampleIndex = nnData.sampleIndex;
-				}
+				    }
+				    //}
 			}
 			if (!TRIM_RADII) {
 			    double radius_max = Math.max(Math.max(radius_sourcePast, radius_destPast), radius_destNext);
@@ -743,7 +748,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 				//  and that the previous source spike did not occur after the window
 				//  (this is possible since our neighbour match hasn't checked for the next spike time)
 				if ((matchingHistoryTimeToNextSpike >= timeToNextSpikeSincePreviousDestSpike - radius_destNext) &&
-						(matchingHistoryTimeToPrevSourceSpike <= timeToNextSpikeSincePreviousDestSpike + radius_destNext)) {
+				    (matchingHistoryTimeToPrevSourceSpike <= timeToNextSpikeSincePreviousDestSpike + radius_destNext)) {
 					
 				    /*// Real start of window cannot be before previous destination spike:
 					double realStartOfWindow = Math.max(timeToNextSpikeSincePreviousDestSpike, 0);
@@ -918,9 +923,9 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 			//  estimates the log rates.
 			// Inferred rates raw:
 			double rawRateGivenSourceAndDest = ((double) (Knns)) / timeInWindowWithMatchingJointHistories;
-			if(rawRateGivenSourceAndDest > 50) {
+			/*if(rawRateGivenSourceAndDest > 50) {
 			    System.out.println("SUPER HIGGHHG");
-			}
+			    }*/
 			double rawRateGivenDest = ((double) (countOfDestNextMatched)) / timeInWindowWithMatchingDestHistory;
 			// Attempt at bias correction:
 			// Using digamma of neighbour_count - 1, since the neighbour count now includes our search point and it's really k waiting times
