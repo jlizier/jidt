@@ -138,3 +138,5 @@ _7/5/2012_ - JIDT project created and code uploaded
 This project has been supported by funding through:
 * Australian Research Council Discovery Early Career Researcher Award (DECRA) "Relating function of complex networks to structure using information theory", J.T. Lizier, 2016-19 DE160100630
 * Universities Australia - Deutscher Akademischer Austauschdienst (German Academic Exchange Service) UA-DAAD Australia-Germany Joint Research Co-operation grant "Measuring neural information synthesis and its impairment", Wibral, Lizier, Priesemann, Wollstadt, Finn, 2016-17
+* University of Sydney Research Accelerator (SOAR) Fellowship 2019 Scheme, J.T. Lizier (CI), 2019-2020
+* Australian Research Council Discovery Project "Large-scale computational modelling of epidemics in Australia: analysis, prediction and mitigation", M. Prokopenko, P. Pattison, M. Gambhir, J.T. Lizier, M. Piraveenan, 2016-19 DP160102742
