@@ -116,12 +116,12 @@
 	<target name="javadocs" depends="compile" description="Make the javadocs for the toolkit">
 		<delete dir="${javadocsdir}"/>
 		<javadoc destdir="${javadocsdir}">
-			<fileset dir="${src}">
-				<include name="**/*.java"/>
-				<exclude name="infodynamics/demos/**/*.java"/>
-				<exclude name="**/commonsmath3/*.java"/>
-				<exclude name="**/commonsmath3/**/*.java"/>
-			</fileset>
+			<packageset dir="${src}">
+				<include name="**"/>
+				<exclude name="infodynamics/demos/**"/>
+				<exclude name="**/commonsmath3/*"/>
+				<exclude name="**/commonsmath3/**"/>
+			</packageset>
 		</javadoc>
 		<!-- Change some of the style in the javadocs css for our lists: -->
 		<concat destfile="${javadocsdir}/stylesheet.css" append="true">
