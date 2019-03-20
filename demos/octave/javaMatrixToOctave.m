@@ -47,7 +47,12 @@ function octaveMatrix = javaMatrixToOctave(javaMatrix, startRow, startCol, numRo
 		% Convert whole matrix first:
 		tmp = javaObject('org.octave.Matrix', javaMatrix);
 		% Make sure tmp.ident() is converted to native octave:
-		oldFlag = java_convert_matrix (1);
+		if (exist('java_matrix_autoconversion') > 0)
+			oldFlag = java_matrix_autoconversion (1);
+		else
+			% Must be old octave version:
+			oldFlag = java_convert_matrix (1);
+		end
 		converted = false;
 		unwind_protect
 			octaveMatrix = tmp.ident(tmp);
@@ -55,7 +60,12 @@ function octaveMatrix = javaMatrixToOctave(javaMatrix, startRow, startCol, numRo
 		unwind_protect_cleanup
 			% restore to non-default conversion, otherwise we get
 			%  bad errors on other calls
-			java_convert_matrix(oldFlag);
+			if (exist('java_matrix_autoconversion') > 0)
+				java_matrix_autoconversion(oldFlag);
+			else
+				% Must be old octave version:
+				java_convert_matrix(oldFlag);
+			end
 		end_unwind_protect
 		if (converted)
 			if (nargin >= 2)
