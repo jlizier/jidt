@@ -254,8 +254,8 @@ public class TransferEntropyCalculatorGaussian
 				(ConditionalMutualInfoCalculatorMultiVariateGaussian) condMiCalc;
 		double[] determinants = new double[4];
 		determinants[0] = condMiGaussian.detCovariance;
-		determinants[1] = condMiGaussian.det1cCovariance;
-		determinants[2] = condMiGaussian.det2cCovariance;
+		determinants[1] = condMiGaussian.detc1Covariance;
+		determinants[2] = condMiGaussian.detc2Covariance;
 		determinants[3] = condMiGaussian.detccCovariance;
 		return determinants;
 	}
