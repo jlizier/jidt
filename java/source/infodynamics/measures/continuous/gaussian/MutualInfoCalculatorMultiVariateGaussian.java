@@ -18,11 +18,14 @@
 
 package infodynamics.measures.continuous.gaussian;
 
+import java.util.ArrayList;
+
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.measures.continuous.MutualInfoMultiVariateCommon;
 import infodynamics.utils.AnalyticNullDistributionComputer;
 import infodynamics.utils.ChiSquareMeasurementDistribution;
 import infodynamics.utils.MatrixUtils;
+import infodynamics.utils.NonPositiveDefiniteMatrixException;
 
 /**
  * <p>Computes the differential mutual information of two given multivariate
@@ -109,6 +112,16 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	 * Cached determinant of the destination covariance matrix
 	 */
 	protected double detDestCovariance;
+	/**
+	 * Cache the sub-variables which are a linearly-independent set
+	 *  (and so are used in the covariances) for the source
+	 */
+	protected int[] sourceIndicesInCovariance;
+	/**
+	 * Cache the sub-variables which are a linearly-independent set
+	 *  (and so are used in the covariances) for the destination
+	 */
+	protected int[] destIndicesInCovariance;
 	
 	/**
 	 * Construct an instance of the Gaussian MI calculator
@@ -126,6 +139,8 @@ public class MutualInfoCalculatorMultiVariateGaussian
 		detCovariance = 0;
 		detSourceCovariance = 0;
 		detDestCovariance = 0;
+		sourceIndicesInCovariance = null;
+		destIndicesInCovariance = null;
 	}
 
 	/**
@@ -272,32 +287,59 @@ public class MutualInfoCalculatorMultiVariateGaussian
 			sourceObservations = null;
 			destObservations = null;
 		}
-		// Make sure the supplied covariance matrix matches the required dimenions:
-		int rows = covariance.length;
-		if (rows != dimensionsSource + dimensionsDest) {
-			throw new Exception("Supplied covariance matrix does not match initialised number of dimensions");
+		// Make sure the supplied covariance matrix matches the required dimensions:
+		if (covariance.length != dimensionsSource + dimensionsDest) {
+			throw new Exception("Number of rows of supplied covariance matrix does not match initialised number of dimensions");
+		}
+		// Check also for non-square matrix: the later calls for Cholesky decompositions
+		//  will only check the sub-matrices supplied to them
+		for (int r = 0; r < covariance.length; r++) {
+			if (covariance[r].length != dimensionsSource + dimensionsDest) {
+				throw new Exception("Number of columns for row " + r +
+						" of supplied covariance matrix does not match initialised number of dimensions");
+			}
 		}
 
-		// Make sure the matrix is symmetric and positive definite, by taking the 
-		//  Cholesky decomposition (which we need for the determinant later anyway):
-		//  (this will check and throw Exceptions for non-square,
+		// Now store the Cholesky decompositions for computing the cond MI later.
+		//  (these calls will check and throw Exceptions for non-square,
 		//   asymmetric, non-positive definite A)
-		L = MatrixUtils.CholeskyDecomposition(covariance);
 		
-		// And store the Cholesky decompositions for the source covariance
-		//  and dest covariance as well:
-		int[] sourceIndicesInCovariance = MatrixUtils.range(0, dimensionsSource - 1);
-		double[][] sourceCovariance =
-			MatrixUtils.selectRowsAndColumns(covariance, 
-					sourceIndicesInCovariance, sourceIndicesInCovariance);
-		Lsource = MatrixUtils.CholeskyDecomposition(sourceCovariance);
+		// Start with source variable:
+		ArrayList<Integer> sourceIndicesSet = MatrixUtils.createArrayList(
+				MatrixUtils.range(0, dimensionsSource - 1));
+		Lsource = MatrixUtils.makeCholeskyOfIndependentComponents(covariance, sourceIndicesSet, null);
+		// Postcondition: souceIndicesSet stores a set of independent components of the source
+		sourceIndicesInCovariance = MatrixUtils.toArray(sourceIndicesSet);
+		
+		// And dest covariance as well:
+		ArrayList<Integer> destIndicesSet = MatrixUtils.createArrayList(
+				MatrixUtils.range(dimensionsSource,
+						dimensionsSource + dimensionsDest - 1));
+		Ldest = MatrixUtils.makeCholeskyOfIndependentComponents(covariance, destIndicesSet, null);
+		// Postcondition: destIndicesSet stores a set of independent components of the dest
+		destIndicesInCovariance = MatrixUtils.toArray(destIndicesSet);
 
-		int[] destIndicesInCovariance = MatrixUtils.range(dimensionsSource,
-				dimensionsSource + dimensionsDest - 1);
-		double[][] destCovariance =
-			MatrixUtils.selectRowsAndColumns(covariance, 
-				destIndicesInCovariance, destIndicesInCovariance);
-		Ldest = MatrixUtils.CholeskyDecomposition(destCovariance);
+		// Finally, store the Cholesky decomposition for the whole covariance matrix.
+		// The order var1-var2 is important for the local evaluations later.
+		ArrayList<Integer> varsForCovarianceSet = new ArrayList<Integer>(sourceIndicesSet);
+		varsForCovarianceSet.addAll(destIndicesSet);
+		double[][] prunedCovariance =
+				MatrixUtils.selectRowsAndColumns(covariance, 
+						varsForCovarianceSet, varsForCovarianceSet);
+		try {
+			L = MatrixUtils.CholeskyDecomposition(prunedCovariance);
+		} catch (NonPositiveDefiniteMatrixException e) {
+			// There is a linear redundancy between the var1 and var2
+			//  (it's not possible that it was within var1 or var 2, given 
+			//  that we've already pruned these above, so we need not try to remove the redundancy.
+			// Flag this by setting:
+			L = null;
+		}
+		// Allow exceptions indicating asymmetric and non-square to be propagated
+		
+		// Postcondition: L's contain Cholesky decompositions of covariance
+		//  matrices with linearly dependent variables removed,
+		//  using null to flag where this was not possible
 	}
 
 	/**
@@ -346,13 +388,36 @@ public class MutualInfoCalculatorMultiVariateGaussian
 		// Simple way:
 		// detCovariance = MatrixUtils.determinantSymmPosDefMatrix(covariance);
 		// Using cached Cholesky decomposition:
-		detCovariance = MatrixUtils.determinantViaCholeskyResult(L);
-		detSourceCovariance = MatrixUtils.determinantViaCholeskyResult(Lsource);
-		detDestCovariance = MatrixUtils.determinantViaCholeskyResult(Ldest);
+		// And also with extended checks for linear redundancies:
+		
+		if (Lsource == null) {
+			// Source variable is fully linearly redundant, so
+			//  we will have zero MI:
+			lastAverage = 0;
+		} else {
+			detSourceCovariance = MatrixUtils.determinantViaCholeskyResult(Lsource);
+			if (Ldest == null) {
+				// Destination variable is fully linearly redundant, so
+				//  we will have zero MI:
+				lastAverage = 0;
+			} else {
+				detDestCovariance = MatrixUtils.determinantViaCholeskyResult(Ldest);
+				if (L == null) {
+					// There is a linear dependence amongst variables 1 and 2
+					//  which did not exist for either alone,
+					//  so MI diverges:
+					lastAverage = Double.POSITIVE_INFINITY;
+				} else {
+					detCovariance = MatrixUtils.determinantViaCholeskyResult(L);
 
-		lastAverage = 0.5 * Math.log(Math.abs(
-				detSourceCovariance * detDestCovariance /
-						detCovariance));
+					// So all the covariance matrices were ok
+					lastAverage = 0.5 * Math.log(Math.abs(
+							detSourceCovariance * detDestCovariance /
+									detCovariance));
+				}
+			}
+		}
+
 		if (biasCorrection) {
 			ChiSquareMeasurementDistribution analyticMeasDist = computeSignificance(true);
 			lastAverage -= analyticMeasDist.getMeanOfUncorrectedDistribution();
@@ -443,7 +508,7 @@ public class MutualInfoCalculatorMultiVariateGaussian
 		// else use 0 for now in the distribution
 		return new ChiSquareMeasurementDistribution(averageToUse,
 				totalObservations,
-				dimensionsSource * dimensionsDest,
+				sourceIndicesInCovariance.length * destIndicesInCovariance.length,
 				biasCorrection);
 	}
 
@@ -536,12 +601,29 @@ public class MutualInfoCalculatorMultiVariateGaussian
 			// Simple way:
 			// detCovariance = MatrixUtils.determinantSymmPosDefMatrix(covariance);
 			// Using cached Cholesky decomposition:
-			detCovariance = MatrixUtils.determinantViaCholeskyResult(L);
-			if (detCovariance == 0) {
-				throw new Exception("Covariance matrix is not positive definite");
+			
+			if (Lsource == null) {
+				// Source variable is fully linearly redundant, so
+				//  we will have zero conditional MI:
+				return MatrixUtils.constantArray(newSourceObs.length, 0);
+			} else {
+				detSourceCovariance = MatrixUtils.determinantViaCholeskyResult(Lsource);
+				if (Ldest == null) {
+					// Dest variable is fully linearly redundant, so
+					//  we will have zero conditional MI:
+					return MatrixUtils.constantArray(newDestObs.length, 0);
+				} else {
+					detDestCovariance = MatrixUtils.determinantViaCholeskyResult(Ldest);
+					if (L == null) {
+						// There is a linear dependence amongst source and destination
+						//  which did not exist for either with the conditional alone,
+						//  so MI diverges:
+						return MatrixUtils.constantArray(newSourceObs.length, Double.POSITIVE_INFINITY);
+					} else {
+						detCovariance = MatrixUtils.determinantViaCholeskyResult(L);
+					}
+				}
 			}
-			detSourceCovariance = MatrixUtils.determinantViaCholeskyResult(Lsource);
-			detDestCovariance = MatrixUtils.determinantViaCholeskyResult(Ldest);
 		}
 
 		// Now we are clear to take the matrix inverse (via Cholesky decomposition,
@@ -552,9 +634,12 @@ public class MutualInfoCalculatorMultiVariateGaussian
 				MatrixUtils.identityMatrix(Lsource.length));
 		double[][] invDestCovariance = MatrixUtils.solveViaCholeskyResult(Ldest,
 				MatrixUtils.identityMatrix(Ldest.length));
-			
-		double[] sourceMeans = MatrixUtils.select(means, 0, dimensionsSource);
-		double[] destMeans = MatrixUtils.select(means, dimensionsSource, dimensionsDest);
+		
+		// Now, only use the means from the subsets of linearly independent variables:
+		// double[] sourceMeans = MatrixUtils.select(means, 0, dimensionsSource);
+		double[] sourceMeans = MatrixUtils.select(means, sourceIndicesInCovariance);
+		// double[] destMeans = MatrixUtils.select(means, dimensionsSource, dimensionsDest);
+		double[] destMeans = MatrixUtils.select(means, destIndicesInCovariance);
 		
 		int lengthOfReturnArray, offset;
 		if (isPreviousObservations && addedMoreThanOneObservationSet) {
@@ -569,6 +654,11 @@ public class MutualInfoCalculatorMultiVariateGaussian
 			offset = timeDiff;
 		}
 		
+		// Use the following array to index directly into dimensions of the destination sample vectors.
+		// We don't need a sourceIndicesSelected because there is no offset
+		//  from zero for sourceIndicesInCovariance (unlike for destIndicesInCovariance)
+		int[] destIndicesSelected = MatrixUtils.subtract(destIndicesInCovariance, dimensionsSource);
+
 		// In case we need this for bias correction:
 		ChiSquareMeasurementDistribution analyticMeasDist = computeSignificance();
 		
@@ -580,10 +670,13 @@ public class MutualInfoCalculatorMultiVariateGaussian
 			//  b. destObservations[t]
 			
 			double[] sourceDeviationsFromMean =
-					MatrixUtils.subtract(newSourceObs[t - offset],
-							sourceMeans);
+					MatrixUtils.subtract(
+							MatrixUtils.select(newSourceObs[t - offset], sourceIndicesInCovariance),
+								sourceMeans);
 			double[] destDeviationsFromMean =
-					MatrixUtils.subtract(newDestObs[t], destMeans);
+					MatrixUtils.subtract(
+							MatrixUtils.select(newDestObs[t], destIndicesSelected),
+								destMeans);
 			double[] deviationsFromMean =
 					MatrixUtils.append(sourceDeviationsFromMean,
 							destDeviationsFromMean);
@@ -610,9 +703,8 @@ public class MutualInfoCalculatorMultiVariateGaussian
 					Math.sqrt(detCovariance);
 			
 			// Returning results in nats:
-			double localValue = Math.log(adjustedPJoint /
+			localValues[t] = Math.log(adjustedPJoint /
 					(adjustedPSource * adjustedPDest));
-			localValues[t] = localValue;
 			
 			if (biasCorrection) {
 				// Remove the average bias from every local estimate.
