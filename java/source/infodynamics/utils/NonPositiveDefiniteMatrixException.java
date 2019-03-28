@@ -30,8 +30,11 @@ public class NonPositiveDefiniteMatrixException extends Exception {
 	 * Default serialVersionUID
 	 */
 	private static final long serialVersionUID = 1L;
+	
+	public int problematicRow = -1;
 
-	public NonPositiveDefiniteMatrixException(String message) {
+	public NonPositiveDefiniteMatrixException(String message, int row) {
 		super(message);
+		this.problematicRow = row;
 	}
 }

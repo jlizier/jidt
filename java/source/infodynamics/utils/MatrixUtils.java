@@ -19,8 +19,10 @@
 package infodynamics.utils;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Vector;
 
 /**
@@ -1398,7 +1400,7 @@ public class MatrixUtils {
 		
 		for (int i = 0; i < includeColumnFlags.length; i++) {
 			if (includeColumnFlags[i]) {
-				v.add(new Integer(i));
+				v.add(i);
 			}
 		}
 		double[][] data = new double[matrix.length][v.size()];
@@ -1418,11 +1420,11 @@ public class MatrixUtils {
 	 * @param columns
 	 * @return
 	 */
-	public static double[][] selectColumns(double matrix[][], Vector<Integer> columns) {
+	public static double[][] selectColumns(double matrix[][], List<Integer> columns) {
 		double[][] data = new double[matrix.length][columns.size()];
 		for (int r = 0; r < matrix.length; r++) {
 			for (int cIndex = 0; cIndex < columns.size(); cIndex++) {
-				data[r][cIndex] = matrix[r][columns.elementAt(cIndex).intValue()];
+				data[r][cIndex] = matrix[r][columns.get(cIndex)];
 			}
 		}
 		return data;
@@ -1440,6 +1442,24 @@ public class MatrixUtils {
 		double[][] data = new double[rows][];
 		for (int rIndex = 0; rIndex < rows; rIndex++) {
 			data[rIndex] = matrix[rIndex + fromRow];
+		}
+		return data;
+	}
+
+	/**
+	 * Extract the required rows and columns from the matrix
+	 * 
+	 * @param matrix 2D data array
+	 * @param rows indices of the rows to select
+	 * @param columns indices of the columns to select
+	 * @return a 2D data array of the selected rows and columns
+	 */
+	public static double[][] selectRowsAndColumns(double matrix[][], List<Integer> rows, List<Integer> columns) {
+		double[][] data = new double[rows.size()][columns.size()];
+		for (int rIndex = 0; rIndex < rows.size(); rIndex++) {
+			for (int cIndex = 0; cIndex < columns.size(); cIndex++) {
+				data[rIndex][cIndex] = matrix[rows.get(rIndex)][columns.get(cIndex)];
+			}
 		}
 		return data;
 	}
@@ -3701,6 +3721,14 @@ public class MatrixUtils {
 	 * Make note, however, that NIST makes no endorsement of these projects.
 	 */
 	/**
+	 * 
+	 * @see {@link #CholeskyDecomposition(double[][], double)}
+	 */
+	public static double[][] CholeskyDecomposition(double[][] A) throws Exception {
+		return CholeskyDecomposition(A, 10e-10);
+	}
+	
+	/**
 	 * <p>Make the Cholesky decomposition L of a given input matrix A,
 	 * where:
 	 * 	<ol>
@@ -3718,6 +3746,7 @@ public class MatrixUtils {
 	 * </p>
 	 * 
 	 * @param A input matrix
+	 * @param tol tolerance for non-positive definite exception (default is 10^-10 for signature without this parameter)
 	 * @return L 
 	 * @throws Exception when the matrix A is not square, is asymmetric, or
 	 * 		not positive definite
@@ -3727,7 +3756,7 @@ public class MatrixUtils {
 	 * @see {@link http://math.nist.gov/javanumerics/jama/}
 	 * @see {@link http://www2.gsu.edu/~mkteer/npdmatri.html}
 	 */
-	public static double[][] CholeskyDecomposition(double[][] A) throws Exception {
+	public static double[][] CholeskyDecomposition(double[][] A, double tol) throws Exception {
 		int n = A.length;
 		double[][] L = new double[n][n];
 		// Loop over all rows:
@@ -3751,12 +3780,14 @@ public class MatrixUtils {
 			}
 			d = A[j][j] - d;
 			// Check the positive definite condition:
-			if (d <= 0.0) {
+			if (d <= tol) {
 				// Throw an error with some suggestions. The last suggestion is from my observations
 				//  from a simple test with Matlab - I should find a reference for this ...
 				throw new NonPositiveDefiniteMatrixException("CholeskyDecomposition is only performed on positive-definite matrices. " + 
 						"Some reasons for non-positive-definite matrix are listed at http://www2.gsu.edu/~mkteer/npdmatri.html - " +
-						"note: a correlation matrix is non-positive-definite if you have more variables than observations");
+						"note: a correlation matrix is non-positive-definite if you have more variables than observations. " +
+						"Failed row is " + j,
+						j);
 			}
 			L[j][j] = Math.sqrt(d);
 			// Set the upper triangular part to all zeros:
@@ -3879,6 +3910,68 @@ public class MatrixUtils {
 		return detL * detL;
 	}
 
+	/**
+	 * Attempts to produce a Cholesky decomposition of the subset of rows/columns
+	 *  of the given covariance matrix (composed of both fixedCandidates and variableCandidates).
+	 *  If some of the variables amongst the variableCandidates are linearly
+	 *  dependent (including with the fixedCandidates), it removes them from the subset variableCandidates until 
+	 *  a linearly independent set is found, then the decomposition is returned
+	 *  for that set (and the set is updated in the variableCandidates list).
+	 *  If there are no elements left in variableCandidates that are independent from the fixedCandidates
+	 *  (or if fixedCandidates is empty then no candidates with any variance), null is returned.
+	 *  If a dependency is found amongst the fixedCandidates alone, an Exception is thrown.
+	 * 
+	 * @param covariance
+	 * @param variableCandidates
+	 * @return Cholesky decomposition, for the (final) fixedCandidates and then variableCandidates.
+	 * @throws Exception for asymmetric and non-square matrices, or a NonPositiveDefiniteMatrixException
+	 *   if the error is generated by rows from the fixedCandidates
+	 */
+	public static double[][] makeCholeskyOfIndependentComponents(
+			double[][] covariance, ArrayList<Integer> variableCandidates, ArrayList<Integer> fixedCandidates) throws Exception {
+		
+		// Compute the Cholesky decompositions for the given candidates of the covariance matrix.
+		//  In case there are linear redundancies amongst the variables,
+		//  remove the problematic components until the linear redundancy is gone.
+		//  This allows a conditional MI computation to still take place.
+		double[][] choleskyL = null;
+		ArrayList<Integer> allCandidates;
+		int numFixedCandidates = 0;
+		if (fixedCandidates == null) {
+			allCandidates = new ArrayList<Integer>();
+		} else {
+			allCandidates = new ArrayList<Integer>(fixedCandidates);
+			numFixedCandidates = fixedCandidates.size();
+		}
+		allCandidates.addAll(variableCandidates); // append the variable candidates so they get tested based on the fixed ones
+		for (int v = 0; v < variableCandidates.size(); v++) {
+			double[][] selectedCovariance =
+				MatrixUtils.selectRowsAndColumns(covariance, 
+						allCandidates, allCandidates);
+			try {
+				choleskyL = MatrixUtils.CholeskyDecomposition(selectedCovariance);
+			} catch (NonPositiveDefiniteMatrixException e) {
+				if (e.problematicRow < numFixedCandidates) {
+					// The problem is within the fixed candidates.
+					// The calling method should have ensured this was not the case
+					throw e;
+				}
+				// There is a linear redundancy between the variable candidates - so
+				//  remove the one we just found is dependent for the next loop iteration
+				allCandidates.remove(e.problematicRow);
+				// And remove it from the list of variables we are returning:
+				variableCandidates.remove(e.problematicRow - numFixedCandidates);
+				continue;
+			}
+			// Allow exceptions indicating asymmetric and non-square to be propagated
+			// Otherwise, we've found a linearly independent subset of the conditioned variable
+			return choleskyL;
+		}
+		// Postcondition: we only reach this point if there were no remaining components
+		//  with any variance.
+		return null;
+	}
+	
 	public static void printMatrix(PrintStream out, double[][] matrix) {
 		for (int r = 0; r < matrix.length; r++) {
 			for (int c = 0; c < matrix[r].length; c++) {
@@ -4146,5 +4239,36 @@ public class MatrixUtils {
 			}
 		}
 		return intArray;
+	}
+	
+	/**
+	 * Shorthand creation of an array list initialised from an existing int[] array
+	 * 
+	 * @param array
+	 * @return
+	 */
+	public static ArrayList<Integer> createArrayList(int[] array) {
+		ArrayList<Integer> list = new ArrayList<Integer>(array.length);
+		for (int i = 0; i < array.length; i++) {
+			list.add(array[i]);
+		}
+		return list;
+	}
+	
+	/**
+	 * Utility to convert an ArrayList<Integer> to the primitive int[] array.
+	 * Surprisingly, there is no simple way to do this!
+	 * 
+	 * @param arrayList
+	 * @return
+	 */
+	public static int[] toArray(ArrayList<Integer> arrayList) {
+		int[] array = new int[arrayList.size()];
+		
+		int i = 0;
+		for (Integer alInt : arrayList) {
+			array[i++] = alInt;
+		}
+		return array;
 	}
 }

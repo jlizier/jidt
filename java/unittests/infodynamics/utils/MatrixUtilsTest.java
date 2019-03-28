@@ -109,16 +109,101 @@ public class MatrixUtilsTest extends TestCase {
 			flaggedException = true;
 		}
 		assertTrue(flaggedException);
-		
+	}
+	
+	public void testCholeskyNotPositiveDefinite() throws Exception {
+
 		// Now check that it picks up if A is not positive definite:
-		double[][] notpositiveDefiniteA = {{1, 2, 3}, {2, 4, 5}, {3, 5, 6}};
-		flaggedException = false;
+		//  Variable 2 is a scaled version of variable 1 here
+		double[][] notpositiveDefiniteA = {{1, 2}, {2, 4}};
+		boolean flaggedException = false;
+		int problematicRow = -1;
 		try {
 			MatrixUtils.CholeskyDecomposition(notpositiveDefiniteA);
-		} catch (Exception e) {
+		} catch (NonPositiveDefiniteMatrixException npdme) {
 			flaggedException = true;
+			problematicRow = npdme.problematicRow;
 		}
 		assertTrue(flaggedException);
+		assertEquals(1, problematicRow);
+				
+		// Test that we pick up a variable which duplicates another
+		double[][] copiedVariableA = {{1, 1.9, 1}, {1.9, 4, 1.9}, {1, 1.9, 1}};
+		problematicRow = -1;
+		flaggedException = false;
+		try {
+			MatrixUtils.CholeskyDecomposition(copiedVariableA);
+		} catch (NonPositiveDefiniteMatrixException npdme) {
+			flaggedException = true;
+			problematicRow = npdme.problematicRow;
+		}
+		assertTrue(flaggedException);
+		assertEquals(2, problematicRow);
+		double[][] copiedVariableRow1A = {{1, 1, 1.9}, {1, 1, 1.9}, {1.9, 1.9, 4}};
+		problematicRow = -1;
+		flaggedException = false;
+		try {
+			MatrixUtils.CholeskyDecomposition(copiedVariableRow1A);
+		} catch (NonPositiveDefiniteMatrixException npdme) {
+			flaggedException = true;
+			problematicRow = npdme.problematicRow;
+		}
+		assertTrue(flaggedException);
+		assertEquals(1, problematicRow);
+		
+		// Now do this with some real data:
+		RandomGenerator rg = new RandomGenerator();
+		int N = 1000;
+		double[][] data = new double[N][3];
+		MatrixUtils.copyIntoColumn(data, 0, rg.generateNormalData(N, 0, 1));
+		MatrixUtils.copyIntoColumn(data, 1, rg.generateNormalData(N, 0, 1));
+		MatrixUtils.copyIntoColumn(data, 2, rg.generateNormalData(N, 0, 1));
+		double[][] covarianceMatrix = MatrixUtils.covarianceMatrix(data);
+		// This one should be fine and not throw an exception:
+		MatrixUtils.CholeskyDecomposition(covarianceMatrix);
+		// But if we substitute in a linearly redundant variable:
+		MatrixUtils.copyIntoColumn(data, 2,
+				MatrixUtils.add(MatrixUtils.selectColumn(data, 0),
+								MatrixUtils.selectColumn(data, 1)));
+		covarianceMatrix = MatrixUtils.covarianceMatrix(data);
+		problematicRow = -1;
+		flaggedException = false;
+		double[][] L;
+		try {
+			// This should throw an exception:
+			L = MatrixUtils.CholeskyDecomposition(covarianceMatrix);
+			// Debug prints in case it does not (because tolerance in the CholeskyDecomposition was too large):
+			System.out.println(L[2][2]);
+			System.out.println("Det " + MatrixUtils.determinantViaCholeskyResult(L) + " > 0, unexpectedly, but it happens - precision is approx: " + 
+					java.lang.Math.ulp(0));
+			MatrixUtils.printMatrix(System.out, covarianceMatrix);
+			System.out.printf("%.6f, %.6f\n", covarianceMatrix[0][2] - covarianceMatrix[0][1] - covarianceMatrix[0][0],
+					covarianceMatrix[1][2] - covarianceMatrix[1][1] - covarianceMatrix[1][0]);
+		} catch (NonPositiveDefiniteMatrixException npdme) {
+			flaggedException = true;
+			problematicRow = npdme.problematicRow;
+			L = null;
+		}
+		assertTrue(flaggedException);
+		assertEquals(2, problematicRow);
+		// Now if we swap the second and third variables in the data, it should still complain about the last one
+		//  since that's the one it saw last:
+		double[] temp = MatrixUtils.selectColumn(data, 2);
+		MatrixUtils.copyIntoColumn(data, 2, MatrixUtils.selectColumn(data, 1));
+		MatrixUtils.copyIntoColumn(data, 1, temp);
+		covarianceMatrix = MatrixUtils.covarianceMatrix(data);
+		problematicRow = -1;
+		flaggedException = false;
+		try {
+			// This should throw an exception:
+			L = MatrixUtils.CholeskyDecomposition(covarianceMatrix);
+		} catch (NonPositiveDefiniteMatrixException npdme) {
+			flaggedException = true;
+			problematicRow = npdme.problematicRow;
+			L = null;
+		}
+		assertTrue(flaggedException);
+		assertEquals(2, problematicRow);
 	}
 	
 	/**
