@@ -179,4 +179,133 @@ public class MutualInfoMultiVariateTester extends TestCase {
 		// And now check that the pValues are unchanged whether we bias correct or not:
 		assertEquals(distroNotBiasCorrected.pValue, distroBiasCorrected.pValue);
 	}
+
+	public void testHandlingLinearDependencies() throws Exception {
+		MutualInfoCalculatorMultiVariateGaussian miCalc =
+				new MutualInfoCalculatorMultiVariateGaussian();
+		
+		int dimensions = 2; // Assumed to be >-= 2
+		assertTrue(dimensions == 2);
+		int timeSteps = 100;
+		RandomGenerator rg = new RandomGenerator();
+		
+		// Generate some random data and do an MI on copied version
+		//  - both dimensions are copied
+		double[][] sourceData = rg.generateNormalData(timeSteps, dimensions,
+				0, 1);
+		double[][] destData = MatrixUtils.arrayCopy(sourceData);
+		miCalc.initialise(dimensions, dimensions);
+		miCalc.setObservations(sourceData, destData);
+		double miCopied = miCalc.computeAverageLocalOfObservations();
+		assertTrue(Double.isInfinite(miCopied));
+		
+		// Now overwrite one of the columns, and check result is still infinite
+		//  with two columns across the variables the same (only one dimension copied):
+		MatrixUtils.copyIntoColumn(sourceData, 1,
+				rg.generateNormalData(timeSteps, 0, 1));
+		miCalc.initialise(dimensions, dimensions);
+		miCalc.setObservations(sourceData, destData);
+		double miOneCopied = miCalc.computeAverageLocalOfObservations();
+		assertTrue(Double.isInfinite(miOneCopied));
+		
+		// Now make the source columns a copy of themselves, and check that it can ignore this
+		double[] indpColumn = MatrixUtils.selectColumn(sourceData, 1);
+		MatrixUtils.copyIntoColumn(sourceData, 0,
+				indpColumn);
+		miCalc.initialise(dimensions, dimensions);
+		miCalc.setObservations(sourceData, destData);
+		double mi1SourceFrom2 = miCalc.computeAverageLocalOfObservations();
+		assertTrue(Double.isFinite(mi1SourceFrom2));
+		miCalc.initialise(1,dimensions);
+		// Should be the same whether we compute this from both source columns or only 1
+		double[][] source1Column = new double[timeSteps][1];
+		MatrixUtils.copyIntoColumn(source1Column, 0, indpColumn);
+		miCalc.setObservations(source1Column, destData);
+		double mi1DSourceFrom1 = miCalc.computeAverageLocalOfObservations();
+		assertTrue(Double.isFinite(mi1DSourceFrom1));
+		assertEquals(mi1DSourceFrom1, mi1SourceFrom2, 0.00000001);
+		// And check it works if we flip source and dest:
+		miCalc.initialise(dimensions, dimensions);
+		miCalc.setObservations(destData, sourceData);
+		double mi1SourceFrom2Flipped = miCalc.computeAverageLocalOfObservations();
+		assertTrue(Double.isFinite(mi1SourceFrom2Flipped));
+		assertEquals(mi1DSourceFrom1, mi1SourceFrom2Flipped, 0.00000001);
+		
+		// Refresh data, with a third dependent source variable in and check that this doesn't change things: 
+		sourceData = rg.generateNormalData(timeSteps, dimensions,
+				0, 1);
+		destData = rg.generateNormalData(timeSteps, dimensions + 1,
+				0, 1);
+		MatrixUtils.copyIntoColumn(destData, dimensions,
+				MatrixUtils.add(MatrixUtils.selectColumn(destData, 0), MatrixUtils.selectColumn(destData, 1)));
+		miCalc.initialise(dimensions, dimensions + 1);
+		miCalc.setObservations(sourceData, destData);
+		double mi1RedundantDest = miCalc.computeAverageLocalOfObservations();
+		assertTrue(Double.isFinite(mi1RedundantDest));
+		// check that it works flipped
+		miCalc.initialise(dimensions+1, dimensions);
+		miCalc.setObservations(destData, sourceData);
+		double mi1Redundantsource = miCalc.computeAverageLocalOfObservations();
+		assertEquals(mi1RedundantDest, mi1Redundantsource, 1e-7);
+		// Check that it's the same if we only use the independent variables:
+		destData = MatrixUtils.selectColumns(destData, new int[] {0, 1});
+		miCalc.initialise(dimensions, dimensions);
+		miCalc.setObservations(sourceData, destData);
+		double miDestWithoutRedundant = miCalc.computeAverageLocalOfObservations();
+		assertTrue(Double.isFinite(miDestWithoutRedundant));
+		assertEquals(mi1RedundantDest, miDestWithoutRedundant, 0.00000001);
+		
+		// First check that the MI is not precisely zero if only one of the sub-variables is a zero:
+		MatrixUtils.copyIntoColumn(destData, 0,
+				MatrixUtils.constantArray(timeSteps, 0));
+		miCalc.initialise(dimensions, dimensions);
+		miCalc.setObservations(sourceData, destData);
+		double miOneColZero = miCalc.computeAverageLocalOfObservations();
+		// Check that the MI here is not precisely zero, it shouldn't be for a finite sample length
+		// System.out.println(miOneColZero);
+		assertTrue(Math.abs(miOneColZero) > 1e-12);
+		miCalc.initialise(dimensions, dimensions);
+		miCalc.setObservations(destData, sourceData); // check if we swap the variables all is the same
+		double miOneColZeroSwapped = miCalc.computeAverageLocalOfObservations();
+		assertEquals(miOneColZero, miOneColZeroSwapped, 1e-7);
+		// Now do the same to a sub-variable of the source:
+		MatrixUtils.copyIntoColumn(sourceData, 1,
+				MatrixUtils.constantArray(timeSteps, 0));
+		miCalc.initialise(dimensions, dimensions);
+		miCalc.setObservations(sourceData, destData);
+		double miOneColZeroSourceAlso = miCalc.computeAverageLocalOfObservations();
+		assertTrue(Math.abs(miOneColZeroSourceAlso) > 1e-12);
+		// Check that the result is the same if we only supplied the non-zero columns:
+		miCalc.initialise(1, 1);
+		miCalc.setObservations(MatrixUtils.selectColumn(sourceData, 0),
+				MatrixUtils.selectColumn(destData, 1));
+		double miOneColZeroSourceAlsoUnivariateCalcs = miCalc.computeAverageLocalOfObservations();
+		assertEquals(miOneColZeroSourceAlsoUnivariateCalcs, miOneColZeroSourceAlso, 1e-7);
+		
+		// Test that we get a zero if no variance within any source or target variables
+		MatrixUtils.copyIntoColumn(destData, 1,
+				MatrixUtils.constantArray(timeSteps, 0));
+		miCalc.initialise(dimensions, dimensions);
+		miCalc.setObservations(sourceData, destData);
+		double miDestAllZeros = miCalc.computeAverageLocalOfObservations();
+		assertEquals(miDestAllZeros, 0, 1e-13);
+		// And the other way around:
+		miCalc.initialise(dimensions, dimensions);
+		miCalc.setObservations(destData, sourceData);
+		double miSourceAllZeros = miCalc.computeAverageLocalOfObservations();
+		assertEquals(miSourceAllZeros, 0, 1e-13);
+		
+		// And if only a univariate is all zeros:
+		miCalc.initialise(1, dimensions);
+		miCalc.setObservations(MatrixUtils.selectColumns(destData, 1, 1),
+				rg.generateNormalData(timeSteps, dimensions, 0, 1));
+		double miSourceZero = miCalc.computeAverageLocalOfObservations();
+		assertEquals(miSourceZero, 0, 1e-13);
+		// and the other way around:
+		miCalc.initialise(dimensions, 1);
+		miCalc.setObservations(rg.generateNormalData(timeSteps, dimensions, 0, 1),
+				MatrixUtils.selectColumns(destData, 1, 1));
+		double miDestZero = miCalc.computeAverageLocalOfObservations();
+		assertEquals(miDestZero, 0, 1e-13);
+	}
 }

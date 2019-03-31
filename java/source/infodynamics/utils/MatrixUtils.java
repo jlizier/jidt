@@ -3944,7 +3944,8 @@ public class MatrixUtils {
 			numFixedCandidates = fixedCandidates.size();
 		}
 		allCandidates.addAll(variableCandidates); // append the variable candidates so they get tested based on the fixed ones
-		for (int v = 0; v < variableCandidates.size(); v++) {
+		int numVariableCandidates = variableCandidates.size(); // Grab this now because it will change later
+		for (int v = 0; v < numVariableCandidates; v++) {
 			double[][] selectedCovariance =
 				MatrixUtils.selectRowsAndColumns(covariance, 
 						allCandidates, allCandidates);
