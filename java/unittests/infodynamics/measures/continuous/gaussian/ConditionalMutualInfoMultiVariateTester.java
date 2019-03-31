@@ -191,4 +191,260 @@ public class ConditionalMutualInfoMultiVariateTester extends
 		// And now check that the pValues are unchanged whether we bias correct or not:
 		assertEquals(distroNotBiasCorrected.pValue, distroBiasCorrected.pValue);
 	}
+
+	protected int timeStepsDepCheck = 100;
+
+	/**
+	 * Check that the tests of linear dependencies that we also use for the MI calculator
+	 * apply for conditional MI when the conditional is empty in some fashion
+	 * (i.e. no dimensions, null or all constants)
+	 * 
+	 */
+	public void testHandlingLinearDependenciesNoConditional() throws Exception {
+		// 2D array with 0 variables (columns):
+		checkHandlingLinearDependenciesUnrelatedOrNoConditional(new double[timeStepsDepCheck][0], 0);
+		
+		// Array of constants for each variable
+		for (int c = 1; c < 5; c++) {
+			double[][] conditional = new double[timeStepsDepCheck][c];
+			for (int j = 0; j < c; j++) {
+				MatrixUtils.copyIntoColumn(conditional, j,
+						MatrixUtils.constantArray(timeStepsDepCheck, j)); // Just use a constant, not necessraily zeros
+			}
+			checkHandlingLinearDependenciesUnrelatedOrNoConditional(conditional, c);
+		}
+		// Null conditional
+		checkHandlingLinearDependenciesUnrelatedOrNoConditional(null, 0);
+	}
+	
+	/**
+	 * Check that the tests of linear dependencies that we also use for the MI calculator
+	 * apply for conditional MI when the conditional is irrelevant to source and dest
+	 * 
+	 */
+	public void testHandlingLinearDependenciesIrrelevantConditional() throws Exception {
+		RandomGenerator rg = new RandomGenerator();
+		for (int c = 0; c < 5; c++) {
+			// Try with just noisy conditionals:
+			double[][] condData = rg.generateNormalData(timeStepsDepCheck, c,
+				0, 1);
+			checkHandlingLinearDependenciesUnrelatedOrNoConditional(condData, c);
+			// Try also if one of the variables is redundant with others
+			if (c > 2) {
+				condData = rg.generateNormalData(timeStepsDepCheck, c, 0, 1);
+				MatrixUtils.copyIntoColumn(condData, 2,
+						MatrixUtils.add(
+								MatrixUtils.selectColumn(condData, 0),
+								MatrixUtils.selectColumn(condData, 1)));
+				checkHandlingLinearDependenciesUnrelatedOrNoConditional(condData, c);
+			}
+		}
+	}
+
+	/**
+	 * Check that the tests of linear dependencies that we also use for the MI calculator
+	 * apply for conditional MI when the conditional is empty in some fashion or irrelevant
+	 * 
+	 * @param emptyConditional
+	 * @param conditionalDims
+	 * @throws Exception
+	 */
+	protected void checkHandlingLinearDependenciesUnrelatedOrNoConditional(
+			double[][] emptyConditional, int conditionalDims) throws Exception {
+		
+		ConditionalMutualInfoCalculatorMultiVariateGaussian condMiCalc =
+				new ConditionalMutualInfoCalculatorMultiVariateGaussian();
+				
+		int dimensions = 2; // Assumed to be >-= 2
+		assertTrue(dimensions == 2);
+		RandomGenerator rg = new RandomGenerator();
+
+		// Generate some random data and do an MI on copied version
+		//  - both dimensions are copied
+		double[][] sourceData = rg.generateNormalData(timeStepsDepCheck, dimensions,
+				0, 1);
+		double[][] destData = MatrixUtils.arrayCopy(sourceData);
+		condMiCalc.initialise(dimensions, dimensions, conditionalDims);
+		condMiCalc.setObservations(sourceData, destData, emptyConditional);
+		double miCopied = condMiCalc.computeAverageLocalOfObservations();
+		assertTrue(Double.isInfinite(miCopied));
+		
+		// Now overwrite one of the columns, and check result is still infinite
+		//  with two columns across the variables the same (only one dimension copied):
+		MatrixUtils.copyIntoColumn(sourceData, 1,
+				rg.generateNormalData(timeStepsDepCheck, 0, 1));
+		condMiCalc.initialise(dimensions, dimensions, conditionalDims);
+		condMiCalc.setObservations(sourceData, destData, emptyConditional);
+		double miOneCopied = condMiCalc.computeAverageLocalOfObservations();
+		assertTrue(Double.isInfinite(miOneCopied));
+		
+		// Now make the source columns a copy of themselves, and check that it can ignore this
+		double[] indpColumn = MatrixUtils.selectColumn(sourceData, 1);
+		MatrixUtils.copyIntoColumn(sourceData, 0,
+				indpColumn);
+		condMiCalc.initialise(dimensions, dimensions, conditionalDims);
+		condMiCalc.setObservations(sourceData, destData, emptyConditional);
+		double mi1SourceFrom2 = condMiCalc.computeAverageLocalOfObservations();
+		assertTrue(Double.isFinite(mi1SourceFrom2));
+		condMiCalc.initialise(1,dimensions, conditionalDims);
+		// Should be the same whether we compute this from both source columns or only 1
+		double[][] source1Column = new double[timeStepsDepCheck][1];
+		MatrixUtils.copyIntoColumn(source1Column, 0, indpColumn);
+		condMiCalc.setObservations(source1Column, destData, emptyConditional);
+		double mi1DSourceFrom1 = condMiCalc.computeAverageLocalOfObservations();
+		assertTrue(Double.isFinite(mi1DSourceFrom1));
+		assertEquals(mi1DSourceFrom1, mi1SourceFrom2, 0.00000001);
+		// And check it works if we flip source and dest:
+		condMiCalc.initialise(dimensions, dimensions, conditionalDims);
+		condMiCalc.setObservations(destData, sourceData, emptyConditional);
+		double mi1SourceFrom2Flipped = condMiCalc.computeAverageLocalOfObservations();
+		assertTrue(Double.isFinite(mi1SourceFrom2Flipped));
+		assertEquals(mi1DSourceFrom1, mi1SourceFrom2Flipped, 0.00000001);
+		
+		// Refresh data, with a third dependent source variable in and check that this doesn't change things: 
+		sourceData = rg.generateNormalData(timeStepsDepCheck, dimensions,
+				0, 1);
+		destData = rg.generateNormalData(timeStepsDepCheck, dimensions + 1,
+				0, 1);
+		MatrixUtils.copyIntoColumn(destData, dimensions,
+				MatrixUtils.add(MatrixUtils.selectColumn(destData, 0), MatrixUtils.selectColumn(destData, 1)));
+		condMiCalc.initialise(dimensions, dimensions + 1, conditionalDims);
+		condMiCalc.setObservations(sourceData, destData, emptyConditional);
+		double mi1RedundantDest = condMiCalc.computeAverageLocalOfObservations();
+		assertTrue(Double.isFinite(mi1RedundantDest));
+		// check that it works flipped
+		condMiCalc.initialise(dimensions+1, dimensions, conditionalDims);
+		condMiCalc.setObservations(destData, sourceData, emptyConditional);
+		double mi1Redundantsource = condMiCalc.computeAverageLocalOfObservations();
+		assertEquals(mi1RedundantDest, mi1Redundantsource, 1e-7);
+		// Check that it's the same if we only use the independent variables:
+		destData = MatrixUtils.selectColumns(destData, new int[] {0, 1});
+		condMiCalc.initialise(dimensions, dimensions, conditionalDims);
+		condMiCalc.setObservations(sourceData, destData, emptyConditional);
+		double miDestWithoutRedundant = condMiCalc.computeAverageLocalOfObservations();
+		assertTrue(Double.isFinite(miDestWithoutRedundant));
+		assertEquals(mi1RedundantDest, miDestWithoutRedundant, 0.00000001);
+		
+		// First check that the MI is not precisely zero if only one of the sub-variables is a zero:
+		MatrixUtils.copyIntoColumn(destData, 0,
+				MatrixUtils.constantArray(timeStepsDepCheck, 0));
+		condMiCalc.initialise(dimensions, dimensions, conditionalDims);
+		condMiCalc.setObservations(sourceData, destData, emptyConditional);
+		double miOneColZero = condMiCalc.computeAverageLocalOfObservations();
+		// Check that the MI here is not precisely zero, it shouldn't be for a finite sample length
+		// System.out.println(miOneColZero);
+		assertTrue(Math.abs(miOneColZero) > 1e-12);
+		condMiCalc.initialise(dimensions, dimensions, conditionalDims);
+		condMiCalc.setObservations(destData, sourceData, emptyConditional); // check if we swap the variables all is the same
+		double miOneColZeroSwapped = condMiCalc.computeAverageLocalOfObservations();
+		assertEquals(miOneColZero, miOneColZeroSwapped, 1e-7);
+		// Now do the same to a sub-variable of the source:
+		MatrixUtils.copyIntoColumn(sourceData, 1,
+				MatrixUtils.constantArray(timeStepsDepCheck, 0));
+		condMiCalc.initialise(dimensions, dimensions, conditionalDims);
+		condMiCalc.setObservations(sourceData, destData, emptyConditional);
+		double miOneColZeroSourceAlso = condMiCalc.computeAverageLocalOfObservations();
+		assertTrue(Math.abs(miOneColZeroSourceAlso) > 1e-12);
+		// Check that the result is the same if we only supplied the non-zero columns:
+		condMiCalc.initialise(1, 1, conditionalDims);
+		condMiCalc.setObservations(MatrixUtils.selectColumns(sourceData, new int[] {0}),
+				MatrixUtils.selectColumns(destData, new int[] {1}),
+				emptyConditional);
+		double miOneColZeroSourceAlsoUnivariateCalcs = condMiCalc.computeAverageLocalOfObservations();
+		assertEquals(miOneColZeroSourceAlsoUnivariateCalcs, miOneColZeroSourceAlso, 1e-7);
+		
+		// Test that we get a zero if no variance within any source or target variables
+		MatrixUtils.copyIntoColumn(destData, 1,
+				MatrixUtils.constantArray(timeStepsDepCheck, 0));
+		condMiCalc.initialise(dimensions, dimensions, conditionalDims);
+		condMiCalc.setObservations(sourceData, destData, emptyConditional);
+		double miDestAllZeros = condMiCalc.computeAverageLocalOfObservations();
+		assertEquals(miDestAllZeros, 0, 1e-13);
+		// And the other way around:
+		condMiCalc.initialise(dimensions, dimensions, conditionalDims);
+		condMiCalc.setObservations(destData, sourceData, emptyConditional);
+		double miSourceAllZeros = condMiCalc.computeAverageLocalOfObservations();
+		assertEquals(miSourceAllZeros, 0, 1e-13);
+		
+		// And if only a univariate is all zeros:
+		condMiCalc.initialise(1, dimensions, conditionalDims);
+		condMiCalc.setObservations(MatrixUtils.selectColumns(destData, 1, 1),
+				rg.generateNormalData(timeStepsDepCheck, dimensions, 0, 1), emptyConditional);
+		double miSourceZero = condMiCalc.computeAverageLocalOfObservations();
+		assertEquals(miSourceZero, 0, 1e-13);
+		// and the other way around:
+		condMiCalc.initialise(dimensions, 1, conditionalDims);
+		condMiCalc.setObservations(rg.generateNormalData(timeStepsDepCheck, dimensions, 0, 1),
+				MatrixUtils.selectColumns(destData, 1, 1), emptyConditional);
+		double miDestZero = condMiCalc.computeAverageLocalOfObservations();
+		assertEquals(miDestZero, 0, 1e-13);
+	}
+
+	public void testHandlingLinearDependenciesWithConditionalRelated() throws Exception {
+		
+		ConditionalMutualInfoCalculatorMultiVariateGaussian condMiCalc =
+				new ConditionalMutualInfoCalculatorMultiVariateGaussian();
+				
+		int dimensions = 2; // Assumed to be 2
+		assertTrue(dimensions == 2);
+		int conditionalDims = 2; // Assumed to be 2
+		assertTrue(conditionalDims == 2);
+		RandomGenerator rg = new RandomGenerator();
+
+		// Generate some random data and do an MI on copied version
+		//  - both dimensions are copied
+		double[][] sourceData = rg.generateNormalData(timeStepsDepCheck, dimensions,
+				0, 1);
+		double[][] condData = rg.generateNormalData(timeStepsDepCheck, dimensions,
+				0, 1);
+		double[][] destData = MatrixUtils.arrayCopy(condData);
+
+		// Conditional renders dest fully redundant (straight copy of conditional) -> 0
+		condMiCalc.initialise(dimensions, dimensions, conditionalDims);
+		condMiCalc.setObservations(sourceData, destData, condData);
+		double miDestRedundantWithCond = condMiCalc.computeAverageLocalOfObservations();
+		assertEquals(0, miDestRedundantWithCond, 1e-7);
+		// Or is sum of two variables
+		MatrixUtils.copyIntoColumn(destData, 0,
+				MatrixUtils.add(MatrixUtils.selectColumn(condData, 0),
+							MatrixUtils.selectColumn(condData, 1)));
+		condMiCalc.initialise(dimensions, dimensions, conditionalDims);
+		condMiCalc.setObservations(sourceData, destData, condData);
+		double miDestRedundantWithCondSum = condMiCalc.computeAverageLocalOfObservations();
+		assertEquals(0, miDestRedundantWithCondSum, 1e-7);
+		// And the other way around:
+		condMiCalc.initialise(dimensions, dimensions, conditionalDims);
+		condMiCalc.setObservations(destData, sourceData, condData);
+		assertEquals(0, condMiCalc.computeAverageLocalOfObservations(), 1e-7);
+		// And what if we only use a univariate dest:
+		condMiCalc.initialise(dimensions, 1, conditionalDims);
+		condMiCalc.setObservations(sourceData, MatrixUtils.selectColumns(destData, 0, 1), condData);
+		assertEquals(0, condMiCalc.computeAverageLocalOfObservations(), 1e-7);		
+		
+		// Conditional rendering a dest column (0) fully dependent doesn't change other result (for its column 1)
+		MatrixUtils.copyIntoColumn(destData, 1, rg.generateNormalData(timeStepsDepCheck, 0, 1));
+		condMiCalc.initialise(dimensions, dimensions, conditionalDims);
+		condMiCalc.setObservations(sourceData, destData, condData);
+		double miFromOneIndpCol = condMiCalc.computeAverageLocalOfObservations();
+		condMiCalc.initialise(dimensions, 1, conditionalDims);
+		condMiCalc.setObservations(sourceData, MatrixUtils.selectColumns(destData, 1, 1), condData);
+		assertEquals(miFromOneIndpCol, condMiCalc.computeAverageLocalOfObservations(), 1e-7);
+		
+		// Conditional renders source and dest dependent (e.g. by summing the two) - inf
+		// Whether it's only one variable or both
+		destData = MatrixUtils.add(sourceData, condData);
+		condMiCalc.initialise(dimensions, dimensions, conditionalDims);
+		condMiCalc.setObservations(sourceData, destData, condData);
+		assertTrue(Double.isInfinite(condMiCalc.computeAverageLocalOfObservations()));
+		condMiCalc.initialise(dimensions, 1, conditionalDims);
+		condMiCalc.setObservations(sourceData, MatrixUtils.selectColumns(destData, 0, 1), condData);
+		assertTrue(Double.isInfinite(condMiCalc.computeAverageLocalOfObservations()));
+		// And now flip the source and dest
+		condMiCalc.initialise(dimensions, dimensions, conditionalDims);
+		condMiCalc.setObservations(destData, sourceData, condData);
+		assertTrue(Double.isInfinite(condMiCalc.computeAverageLocalOfObservations()));
+		condMiCalc.initialise(1, dimensions, conditionalDims);
+		condMiCalc.setObservations(MatrixUtils.selectColumns(destData, 0, 1), sourceData, condData);
+		assertTrue(Double.isInfinite(condMiCalc.computeAverageLocalOfObservations()));
+	}
 }
