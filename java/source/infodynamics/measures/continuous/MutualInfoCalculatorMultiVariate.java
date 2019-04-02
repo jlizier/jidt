@@ -79,7 +79,18 @@ public interface MutualInfoCalculatorMultiVariate
 	 * must be >= 0)
 	 */ 
 	public static final String PROP_TIME_DIFF = "TIME_DIFF";
-	
+	/**
+	 * Property name for whether to normalise the incoming data to 
+	 * mean 0, standard deviation 1 (default true)
+	 */
+	public static final String PROP_NORMALISE = "NORMALISE";
+	/**
+	 * Property name for the std deviation of random Gaussian noise to be
+	 *  added to the data (default is 1e-8, matching the MILCA toolkit);
+	 *  if the data is to be normalised, that will be done before adding this noise.
+	 */
+	public static final String PROP_ADD_NOISE = "NOISE_LEVEL_TO_ADD";
+
 	/**
 	 * Compute the mutual information if the observations of the
 	 * first variable (source)

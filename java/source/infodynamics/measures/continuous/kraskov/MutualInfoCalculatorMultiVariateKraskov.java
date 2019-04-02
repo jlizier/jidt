@@ -20,7 +20,6 @@ package infodynamics.measures.continuous.kraskov;
 
 import java.util.Calendar;
 import java.util.PriorityQueue;
-import java.util.Random;
 
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.measures.continuous.MutualInfoMultiVariateCommon;
@@ -92,16 +91,6 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
    */
   public final static String PROP_NORM_TYPE = "NORM_TYPE";
   /**
-   * Property name for whether to normalise the incoming data to 
-   * mean 0, standard deviation 1 (default true)
-   */
-  public static final String PROP_NORMALISE = "NORMALISE";
-  /**
-   * Property name for an amount of random Gaussian noise to be
-   *  added to the data (default is 1e-8, matching the MILCA toolkit).
-   */
-  public static final String PROP_ADD_NOISE = "NOISE_LEVEL_TO_ADD";
-  /**
    * Property name for a dynamics exclusion time window 
    * otherwise known as Theiler window (see Kantz and Schreiber).
    * Default is 0 which means no dynamic exclusion window.
@@ -129,18 +118,6 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
    */
   public static final String PROP_GPU_LIBRARY_PATH = "GPU_LIBRARY_PATH";
   
-  /**
-   * Whether to normalise the incoming data 
-   */
-  protected boolean normalise = true;
-  /**
-   * Whether to add an amount of random noise to the incoming data
-   */
-  protected boolean addNoise = true;
-  /**
-   * Amount of random Gaussian noise to add to the incoming data
-   */
-  protected double noiseLevel = (double) 1e-8;
   /**
    * Whether we use dynamic correlation exclusion
    */
@@ -202,6 +179,9 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
    */
   public MutualInfoCalculatorMultiVariateKraskov() {
     super();
+    // Switch on adding noise to the data by default for the KSG estimator
+    addNoise = true;
+    noiseLevel = (double) 1e-8;
   }
 
   @Override
@@ -226,20 +206,9 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
    *    working out the norms between the points in each marginal space.
    *    Options are defined by {@link KdTree#setNormType(String)} -
    *    default is {@link EuclideanUtils#NORM_MAX_NORM}.</li>
-   *  <li>{@link #PROP_NORMALISE} -- whether to normalise the incoming individual
-   *      variables to mean 0 and standard deviation 1 (true by default)</li>
    *  <li>{@link #PROP_DYN_CORR_EXCL_TIME} -- a dynamics exclusion time window,
    *      also known as Theiler window (see Kantz and Schreiber);
    *      default is 0 which means no dynamic exclusion window.</li>
-   *  <li>{@link #PROP_ADD_NOISE} -- a standard deviation for an amount of
-   *    random Gaussian noise to add to
-   *      each variable, to avoid having neighbourhoods with artificially
-   *      large counts. (We also accept "false" to indicate "0".)
-   *      The amount is added in after any normalisation,
-   *      so can be considered as a number of standard deviations of the data.
-   *      (Recommended by Kraskov. MILCA uses 1e-8; but adds in
-   *      a random amount of noise in [0,noiseLevel) ).
-   *      Default 1e-8 to match the noise order in MILCA toolkit.</li>
    *  <li>{@link #PROP_NUM_THREADS} -- the integer number of parallel threads
    *    to use in the computation. Can be passed as a string "USE_ALL"
    *      to use all available processors on the machine.
@@ -259,20 +228,9 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
       k = Integer.parseInt(propertyValue);
     } else if (propertyName.equalsIgnoreCase(PROP_NORM_TYPE)) {
       normType = KdTree.validateNormType(propertyValue);
-    } else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
-      normalise = Boolean.parseBoolean(propertyValue);
     } else if (propertyName.equalsIgnoreCase(PROP_DYN_CORR_EXCL_TIME)) {
       dynCorrExclTime = Integer.parseInt(propertyValue);
       dynCorrExcl = (dynCorrExclTime > 0);
-    } else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
-      if (propertyValue.equals("0") ||
-          propertyValue.equalsIgnoreCase("false")) {
-        addNoise = false;
-        noiseLevel = 0;
-      } else {
-        addNoise = true;
-        noiseLevel = Double.parseDouble(propertyValue);
-      }
     } else if (propertyName.equalsIgnoreCase(PROP_NUM_THREADS)) {
       if (propertyValue.equalsIgnoreCase(USE_ALL_THREADS)) {
         numThreads = Runtime.getRuntime().availableProcessors();
@@ -315,12 +273,8 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
       return Integer.toString(k);
     } else if (propertyName.equalsIgnoreCase(PROP_NORM_TYPE)) {
       return KdTree.convertNormTypeToString(normType);
-    } else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
-      return Boolean.toString(normalise);
     } else if (propertyName.equalsIgnoreCase(PROP_DYN_CORR_EXCL_TIME)) {
       return Integer.toString(dynCorrExclTime);
-    } else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
-      return Double.toString(noiseLevel);
     } else if (propertyName.equalsIgnoreCase(PROP_NUM_THREADS)) {
       return Integer.toString(numThreads);
     } else if (propertyName.equalsIgnoreCase(PROP_USE_GPU)) {
@@ -355,29 +309,6 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
           k + ") and any dynamic correlation exclusion (" + dynCorrExclTime + ")");
     }
     
-    // Normalise the data if required
-    if (normalise) {
-      // We can overwrite these since they're already
-      //  a copy of the users' data.
-      MatrixUtils.normalise(sourceObservations);
-      MatrixUtils.normalise(destObservations);
-    }
-    
-    if (addNoise) {
-      Random random = new Random();
-      // Add Gaussian noise of std dev noiseLevel to the data
-      for (int r = 0; r < sourceObservations.length; r++) {
-        for (int c = 0; c < dimensionsSource; c++) {
-          sourceObservations[r][c] +=
-              random.nextGaussian()*noiseLevel;
-        }
-        for (int c = 0; c < dimensionsDest; c++) {
-          destObservations[r][c] +=
-              random.nextGaussian()*noiseLevel;
-        }
-      }
-    }
-
     // Set the constants:
     digammaK = MathsUtils.digamma(k);
     digammaN = MathsUtils.digamma(totalObservations);

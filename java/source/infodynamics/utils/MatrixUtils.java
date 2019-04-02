@@ -2336,11 +2336,16 @@ public class MatrixUtils {
 	}
 
 	/**
-	 * Normalises the elements along each column of the matrix
+	 * Normalises the elements along each column of the matrix, storing the result
+	 *  back into the original matrix.
+	 * If the standard deviation of the column is zero, we just remove the mean
 	 * 
-	 * @param matrix 2D matrix of doubles
+	 * @param matrix 2D matrix of doubles -- normalised results are returned in place (not 
+	 *  in the return value of the method)
+	 * @return a double[][] returnMatrix where returnMatrix[0] is an array of the means
+	 *   of each column, and returnMatrix[1] is an array of the std deviations of each column.
 	 */
-	public static void normalise(double[][] matrix) {
+	public static double[][] normalise(double[][] matrix) {
 		double[] means = means(matrix);
 		double[] stds = stdDevs(matrix, means);
 		
@@ -2357,6 +2362,8 @@ public class MatrixUtils {
 				} // else we just subtract off the mean
 			}
 		}
+		
+		return new double[][] {means, stds};
 	}
 
 	/**
@@ -4271,5 +4278,19 @@ public class MatrixUtils {
 			array[i++] = alInt;
 		}
 		return array;
+	}
+	
+	/**
+	 * Return an array correpsonding to the diagonal of the given matrix
+	 * 
+	 * @param matrix
+	 * @return
+	 */
+	public static double[] diagonal(double[][] matrix) {
+		double[] diag = new double[matrix.length];
+		for (int i = 0; i < matrix.length; i++) {
+			diag[i] = matrix[i][i];
+		}
+		return diag;
 	}
 }

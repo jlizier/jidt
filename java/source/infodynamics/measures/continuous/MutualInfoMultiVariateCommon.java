@@ -24,6 +24,7 @@ import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.RandomGenerator;
 
 import java.util.Iterator;
+import java.util.Random;
 import java.util.Vector;
 
 /**
@@ -60,6 +61,14 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 *  {@link addObservations(double[][], double[][])} functions.
 	 */
 	protected double[][] sourceObservations;
+	/**
+	 * Stored means of source variables before any normalising or noise addition
+	 */
+	protected double[] sourceMeansBeforeNorm;
+	/**
+	 * Stored standard deviations of source variables before any normalising or noise addition
+	 */
+	protected double[] sourceStdsBeforeNorm;
 
 	/**
 	 * The set of destination observations, retained in case the user wants to retrieve the local
@@ -68,6 +77,14 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 *  {@link addObservations(double[][], double[][])} functions.
 	 */
 	protected double[][] destObservations;
+	/**
+	 * Stored means of destination variables before any normalising or noise addition
+	 */
+	protected double[] destMeansBeforeNorm;
+	/**
+	 * Stored standard deviations of destination variablesbefore any normalising or noise addition
+	 */
+	protected double[] destStdsBeforeNorm;
 
 	/**
 	 * Total number of observations supplied.
@@ -114,6 +131,18 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 * Whether the user has supplied more than one (disjoint) set of samples
 	 */
 	protected boolean addedMoreThanOneObservationSet;
+	/**
+	 * Whether to normalise the incoming data 
+	 */
+	protected boolean normalise = true;
+	/**
+	 * Whether to add an amount of random noise to the incoming data
+	 */
+	protected boolean addNoise = false;
+	/**
+	 * Amount of random Gaussian noise to add to the incoming data
+	 */
+	protected double noiseLevel = (double) 0.0;
 
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ChannelCalculatorCommon#initialise()
@@ -130,6 +159,10 @@ public abstract class MutualInfoMultiVariateCommon implements
 		miComputed = false;
 		sourceObservations = null;
 		destObservations = null;
+		sourceMeansBeforeNorm = null;
+		sourceStdsBeforeNorm = null;
+		destMeansBeforeNorm = null;
+		destStdsBeforeNorm = null;
 		addedMoreThanOneObservationSet = false;
 	}
 
@@ -145,6 +178,18 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 *  		Time difference between source and destination (0 by default).
 	 * 			Must be >= 0.
 	 * 		</li>
+	 *  <li>{@link #PROP_NORMALISE} -- whether to normalise the incoming individual
+	 *      variables to mean 0 and standard deviation 1 (true by default, except for Gaussian calculator)</li>
+	 *  <li>{@link #PROP_ADD_NOISE} -- a standard deviation for an amount of
+	 *    random Gaussian noise to add to
+	 *      each variable, to avoid having neighbourhoods with artificially
+	 *      large counts. (We also accept "false" to indicate "0".)
+	 *      The amount is added in after any normalisation,
+	 *      so can be considered as a number of standard deviations of the data.
+	 *      Default is 0 for most estimators; this is strongly recommended by
+	 *      by Kraskov for the KSG method though, so for that estimator we 
+	 *      use 1e-8 to match the MILCA toolkit (though note it adds in
+	 *      a random amount of noise in [0,noiseLevel) ).</li>
 	 * </ul>
 	 * 
 	 * <p>Unknown property values are ignored.</p>
@@ -156,16 +201,23 @@ public abstract class MutualInfoMultiVariateCommon implements
 	public void setProperty(String propertyName, String propertyValue)
 			throws Exception {
 		
-		// TODO Have a NORMALISE property which is true by default,
-		//  except for the linear Gaussian calculator (see conditional
-		//  mutual info calculators)
-		
 		boolean propertySet = true;
 		if (propertyName.equalsIgnoreCase(PROP_TIME_DIFF)) {
 			timeDiff = Integer.parseInt(propertyValue);
 			if (timeDiff < 0) {
 				throw new Exception("Time difference must be >= 0. Flip data1 and data2 around if required.");
 			}
+	    } else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
+	        normalise = Boolean.parseBoolean(propertyValue);
+	    } else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
+	        if (propertyValue.equals("0") ||
+	            propertyValue.equalsIgnoreCase("false")) {
+	          addNoise = false;
+	          noiseLevel = 0;
+	        } else {
+	          addNoise = true;
+	          noiseLevel = Double.parseDouble(propertyValue);
+	        }
 		} else {
 			// No property was set here
 			propertySet = false;
@@ -182,6 +234,10 @@ public abstract class MutualInfoMultiVariateCommon implements
 		
 		if (propertyName.equalsIgnoreCase(PROP_TIME_DIFF)) {
 			return Integer.toString(timeDiff);
+	    } else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
+	        return Boolean.toString(normalise);
+	    } else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
+	        return Double.toString(noiseLevel);
 		} else {
 			// No property was recognised here
 			return null;
@@ -356,6 +412,47 @@ public abstract class MutualInfoMultiVariateCommon implements
 		// We don't need to keep the vectors of observation sets anymore:
 		vectorOfSourceObservations = null;
 		vectorOfDestinationObservations = null;
+		
+		// Normalise the data if required, and store means/stds any normalising
+		if (normalise) {
+			normaliseData();
+		} else {
+			sourceMeansBeforeNorm = MatrixUtils.means(sourceObservations);
+			sourceStdsBeforeNorm = MatrixUtils.stdDevs(sourceObservations, sourceMeansBeforeNorm);
+			destMeansBeforeNorm = MatrixUtils.means(destObservations);
+			destStdsBeforeNorm = MatrixUtils.stdDevs(destObservations, destMeansBeforeNorm);
+		}
+
+		// Add Gaussian noise of std dev noiseLevel to the data if required
+		if (addNoise) {
+			Random random = new Random();
+			for (int r = 0; r < sourceObservations.length; r++) {
+				for (int c = 0; c < dimensionsSource; c++) {
+					sourceObservations[r][c] +=
+							random.nextGaussian()*noiseLevel;
+				}
+				for (int c = 0; c < dimensionsDest; c++) {
+					destObservations[r][c] +=
+							random.nextGaussian()*noiseLevel;
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Protected method to normalise the stored data samples for each variable.
+	 * This method can be overriden by children if required to perform
+	 * specific actions for their estimation methods.
+	 */
+	protected void normaliseData() {
+		// We can overwrite these since they're already
+		//  a copy of the users' data.
+		double[][] stats = MatrixUtils.normalise(sourceObservations);
+		sourceMeansBeforeNorm = stats[0];
+		sourceStdsBeforeNorm = stats[1];
+		stats = MatrixUtils.normalise(destObservations);
+		destMeansBeforeNorm = stats[0];
+		destStdsBeforeNorm = stats[1];
 	}
 	
 	/**

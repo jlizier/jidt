@@ -95,12 +95,6 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	protected double[][] Ldest;
 	
 	/**
-	 * Means of the most recently supplied observations (source variables
-	 *  listed first, destination variables second).
-	 */
-	protected double[] means;
-
-	/**
 	 * Cached determinant of the joint covariance matrix
 	 */
 	protected double detCovariance;
@@ -127,7 +121,7 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	 * Construct an instance of the Gaussian MI calculator
 	 */
 	public MutualInfoCalculatorMultiVariateGaussian() {
-		// Nothing to do
+		normalise = false; // Not much need to have this set for Gaussian, just creating work
 	}
 	
 	public void initialise(int sourceDimensions, int destDimensions) {
@@ -135,7 +129,6 @@ public class MutualInfoCalculatorMultiVariateGaussian
 		L = null;
 		Lsource = null;
 		Ldest = null;
-		means = null;
 		detCovariance = 0;
 		detSourceCovariance = 0;
 		detDestCovariance = 0;
@@ -214,13 +207,6 @@ public class MutualInfoCalculatorMultiVariateGaussian
 		//  destObservations[][] arrays.
 		super.finaliseAddObservations();
 
-		// Store the means of each variable (useful for local values later)
-		means = new double[dimensionsSource + dimensionsDest];
-		double[] sourceMeans = MatrixUtils.means(sourceObservations);
-		double[] destMeans = MatrixUtils.means(destObservations);
-		System.arraycopy(sourceMeans, 0, means, 0, dimensionsSource);
-		System.arraycopy(destMeans, 0, means, dimensionsSource, dimensionsDest);
-		
 		// Store the covariances of the variables
 		// Generally, this should not throw an exception, since we checked
 		//  the observations had the correct number of variables
@@ -361,8 +347,19 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	 */
 	public void setCovarianceAndMeans(double[][] covariance, double[] means,
 			int numObservations) throws Exception {
-		this.means = means;
+		sourceMeansBeforeNorm = MatrixUtils.select(means, 0, dimensionsSource);
+		destMeansBeforeNorm = MatrixUtils.select(means, dimensionsSource, dimensionsDest);
 		setCovariance(covariance, numObservations);
+		// set the std deviations from the covariance:
+		sourceStdsBeforeNorm = new double[dimensionsSource];
+		destStdsBeforeNorm = new double[dimensionsDest];
+		for (int i = 0; i < covariance.length; i++) {
+			if (i < dimensionsSource) {
+				sourceStdsBeforeNorm[i] = Math.sqrt(covariance[i][i]);
+			} else {
+				destStdsBeforeNorm[i - dimensionsSource] = Math.sqrt(covariance[i][i]);
+			}
+		}
 	}
 
 	/**
@@ -589,10 +586,16 @@ public class MutualInfoCalculatorMultiVariateGaussian
 	protected double[] computeLocalUsingPreviousObservations(double[][] newSourceObs,
 			double[][] newDestObs, boolean isPreviousObservations) throws Exception {
 		
-		if (means == null) {
+		if (sourceMeansBeforeNorm == null) {
 			throw new Exception("Cannot compute local values without having means either supplied or computed via setObservations()");
 		}
 
+		if ((!isPreviousObservations) && normalise) {
+			// Need to normalise new observations
+			newSourceObs = MatrixUtils.normaliseIntoNewArray(newSourceObs, sourceMeansBeforeNorm, sourceStdsBeforeNorm);
+			newDestObs = MatrixUtils.normaliseIntoNewArray(newDestObs, destMeansBeforeNorm, destStdsBeforeNorm);
+		}
+		
 		// Check that the covariance matrix was positive definite:
 		// (this was done earlier in computing the Cholesky decomposition,
 		//  we may still need to compute the determinant)
@@ -635,11 +638,14 @@ public class MutualInfoCalculatorMultiVariateGaussian
 		double[][] invDestCovariance = MatrixUtils.solveViaCholeskyResult(Ldest,
 				MatrixUtils.identityMatrix(Ldest.length));
 		
+		// Use the following array to index directly into dimensions of the destination sample vectors.
+		// We don't need a sourceIndicesSelected because there is no offset
+		//  from zero for sourceIndicesInCovariance (unlike for destIndicesInCovariance)
+		int[] destIndicesSelected = MatrixUtils.subtract(destIndicesInCovariance, dimensionsSource);
+
 		// Now, only use the means from the subsets of linearly independent variables:
-		// double[] sourceMeans = MatrixUtils.select(means, 0, dimensionsSource);
-		double[] sourceMeans = MatrixUtils.select(means, sourceIndicesInCovariance);
-		// double[] destMeans = MatrixUtils.select(means, dimensionsSource, dimensionsDest);
-		double[] destMeans = MatrixUtils.select(means, destIndicesInCovariance);
+		double[] sourceMeans = MatrixUtils.select(sourceMeansBeforeNorm, sourceIndicesInCovariance);
+		double[] destMeans = MatrixUtils.select(destMeansBeforeNorm, destIndicesSelected);
 		
 		int lengthOfReturnArray, offset;
 		if (isPreviousObservations && addedMoreThanOneObservationSet) {
@@ -654,11 +660,6 @@ public class MutualInfoCalculatorMultiVariateGaussian
 			offset = timeDiff;
 		}
 		
-		// Use the following array to index directly into dimensions of the destination sample vectors.
-		// We don't need a sourceIndicesSelected because there is no offset
-		//  from zero for sourceIndicesInCovariance (unlike for destIndicesInCovariance)
-		int[] destIndicesSelected = MatrixUtils.subtract(destIndicesInCovariance, dimensionsSource);
-
 		// In case we need this for bias correction:
 		ChiSquareMeasurementDistribution analyticMeasDist = computeSignificance();
 		
