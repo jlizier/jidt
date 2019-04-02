@@ -19,7 +19,6 @@
 package infodynamics.measures.continuous.kraskov;
 
 import java.util.Calendar;
-import java.util.Random;
 
 import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariate;
 import infodynamics.measures.continuous.ConditionalMutualInfoMultiVariateCommon;
@@ -114,11 +113,6 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	 */
 	public final static String PROP_NORM_TYPE = "NORM_TYPE";
 	/**
-	 * Property name for an amount of random Gaussian noise to be
-	 *  added to the data (default 1e-8 to match the noise order in MILCA toolkit.).
-	 */
-	public static final String PROP_ADD_NOISE = "NOISE_LEVEL_TO_ADD";
-	/**
 	 * Property name for a dynamics exclusion time window 
 	 * otherwise known as Theiler window (see Kantz and Schreiber).
 	 * Default is 0 which means no dynamic exclusion window.
@@ -146,14 +140,6 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
    */
   public static final String PROP_GPU_LIBRARY_PATH = "GPU_LIBRARY_PATH";
 
-	/**
-	 * Whether to add an amount of random noise to the incoming data
-	 */
-	protected boolean addNoise = true;
-	/**
-	 * Amount of random Gaussian noise to add to the incoming data
-	 */
-	protected double noiseLevel = (double) 1e-8;
 	/**
 	 * Whether we use dynamic correlation exclusion
 	 */
@@ -228,6 +214,8 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	 */
 	public ConditionalMutualInfoCalculatorMultiVariateKraskov() {
 		super();
+		addNoise = true;
+		noiseLevel = 1e-8; // to match the noise order in MILCA toolkit.
 	}
 
 	@Override
@@ -258,15 +246,6 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	 *  <li>{@link #DYN_CORR_EXCL_TIME_NAME} -- a dynamics exclusion time window,
 	 *      also known as Theiler window (see Kantz and Schreiber);
 	 *      default is 0 which means no dynamic exclusion window.</li>
-	 *  <li>{@link #PROP_ADD_NOISE} -- a standard deviation for an amount of
-	 *  	random Gaussian noise to add to
-	 *      each variable, to avoid having neighbourhoods with artificially
-	 *      large counts. (We also accept "false" to indicate "0".)
-	 *      The amount is added in after any normalisation,
-	 *      so can be considered as a number of standard deviations of the data.
-	 *      (Recommended by Kraskov. MILCA uses 1e-8; but adds in
-	 *      a random amount of noise in [0,noiseLevel) ).
-	 *      Default 1e-8 to match the noise order in MILCA toolkit..</li>
 	 *  <li>{@link #PROP_NUM_THREADS} -- the integer number of parallel threads
 	 *  	to use in the computation. Can be passed as a string "USE_ALL"
 	 *      to use all available processors on the machine.
@@ -290,25 +269,16 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 		} else if (propertyName.equalsIgnoreCase(PROP_DYN_CORR_EXCL_TIME)) {
 			dynCorrExclTime = Integer.parseInt(propertyValue);
 			dynCorrExcl = (dynCorrExclTime > 0);
-		} else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
-			if (propertyValue.equals("0") ||
-					propertyValue.equalsIgnoreCase("false")) {
-				addNoise = false;
-				noiseLevel = 0;
-			} else {
-				addNoise = true;
-				noiseLevel = Double.parseDouble(propertyValue);
-			}
 		} else if (propertyName.equalsIgnoreCase(PROP_NUM_THREADS)) {
 			if (propertyValue.equalsIgnoreCase(USE_ALL_THREADS)) {
 				numThreads = Runtime.getRuntime().availableProcessors();
 			} else { // otherwise the user has passed in an integer:
 				numThreads = Integer.parseInt(propertyValue);
 			}
-    } else if (propertyName.equalsIgnoreCase(PROP_USE_GPU)) {
-      useGPU = Boolean.parseBoolean(propertyValue);
-    } else if (propertyName.equalsIgnoreCase(PROP_GPU_LIBRARY_PATH)) {
-      gpuLibraryPath = propertyValue;
+		} else if (propertyName.equalsIgnoreCase(PROP_USE_GPU)) {
+			useGPU = Boolean.parseBoolean(propertyValue);
+		} else if (propertyName.equalsIgnoreCase(PROP_GPU_LIBRARY_PATH)) {
+			gpuLibraryPath = propertyValue;
 		} else {
 			// Assume this is a property for the common parent class
 			super.setProperty(propertyName, propertyValue);
@@ -323,14 +293,12 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 			return KdTree.convertNormTypeToString(normType);
 		} else if (propertyName.equalsIgnoreCase(PROP_DYN_CORR_EXCL_TIME)) {
 			return Integer.toString(dynCorrExclTime);
-		} else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
-			return Double.toString(noiseLevel);
 		} else if (propertyName.equalsIgnoreCase(PROP_NUM_THREADS)) {
 			return Integer.toString(numThreads);
-    } else if (propertyName.equalsIgnoreCase(PROP_USE_GPU)) {
-        return Boolean.toString(useGPU);
-    } else if (propertyName.equalsIgnoreCase(PROP_GPU_LIBRARY_PATH)) {
-        return gpuLibraryPath;
+		} else if (propertyName.equalsIgnoreCase(PROP_USE_GPU)) {
+			return Boolean.toString(useGPU);
+		} else if (propertyName.equalsIgnoreCase(PROP_GPU_LIBRARY_PATH)) {
+			return gpuLibraryPath;
 		} else {
 			// try the superclass:
 			return super.getProperty(propertyName);
@@ -359,26 +327,6 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 					k + ") and any dynamic correlation exclusion (" + dynCorrExclTime + ")");
 		}
 		
-		if (addNoise) {
-			Random random = new Random();
-			// Add Gaussian noise of std dev noiseLevel to the data
-			for (int r = 0; r < var1Observations.length; r++) {
-				for (int c = 0; c < dimensionsVar1; c++) {
-					var1Observations[r][c] +=
-							random.nextGaussian()*noiseLevel;
-				}
-				for (int c = 0; c < dimensionsVar2; c++) {
-					var2Observations[r][c] +=
-							random.nextGaussian()*noiseLevel;
-				}
-				// This next loop will only execute if dimensionsCond > 0
-				for (int c = 0; c < dimensionsCond; c++) {
-					condObservations[r][c] +=
-							random.nextGaussian()*noiseLevel;
-				}
-			}
-		}
-
 		// Set the constants:
 		digammaK = MathsUtils.digamma(k);
 	}

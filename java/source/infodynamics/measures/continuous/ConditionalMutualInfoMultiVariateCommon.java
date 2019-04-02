@@ -18,12 +18,12 @@
 
 package infodynamics.measures.continuous;
 
-import infodynamics.measures.continuous.kraskov.ConditionalMutualInfoCalculatorMultiVariateKraskov;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.RandomGenerator;
 
 import java.util.Iterator;
+import java.util.Random;
 import java.util.Vector;
 
 /**
@@ -127,13 +127,19 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	protected boolean addedMoreThanOneObservationSet;
 
 	/**
-	 * Property name for 
-	 *  specifying whether the data is normalised or not (to mean 0,
-	 *  variance 1, for each of the multiple variables)
-	 *  before the calculation is made.
+	 * Member to track whether PROP_NORMALISE has been set
 	 */
-	public static final String PROP_NORMALISE = "NORMALISE";
 	protected boolean normalise = true;
+	/**
+	 * Whether to add an amount of random noise to the incoming data
+	 */
+	protected boolean addNoise = true;
+	/**
+	 * Amount of random Gaussian noise to add to the incoming data.
+	 * 0 by default except for KSG estimators (where it is recommended
+	 *  and 1e-8 is used to match MILCA toolkit)
+	 */
+	protected double noiseLevel = (double) 0;
 
 	/**
 	 * Cache for the means of each dimension in variable 1, in case we need to normalise 
@@ -204,6 +210,15 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	 *      (true by default, except for child class
 	 *      {@link infodynamics.measures.continuous.gaussian.ConditionalMutualInfoCalculatorMultiVariateGaussian}
 	 *      for which this property is false and cannot be altered)</li>
+	 *      <li>{@link #PROP_ADD_NOISE} -- a standard deviation for an amount of
+	 *  	random Gaussian noise to add to
+	 *      each variable, to avoid having neighbourhoods with artificially
+	 *      large counts. (We also accept "false" to indicate "0".)
+	 *      The amount is added in after any normalisation,
+	 *      so can be considered as a number of standard deviations of the data.
+	 *      (Default is 0, except for KSG estimators where it is recommended by Kraskov
+	 *      and so they use 1e-8 to match the MILCA toolkit, although that adds in
+	 *      a random amount of noise in [0,noiseLevel) ).</li>
 	 * </ul>
 	 * 
 	 * <p>Unknown property values are ignored.</p>
@@ -216,6 +231,15 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	public void setProperty(String propertyName, String propertyValue) {
 		if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
 			normalise = Boolean.parseBoolean(propertyValue);
+		} else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
+			if (propertyValue.equals("0") ||
+					propertyValue.equalsIgnoreCase("false")) {
+				addNoise = false;
+				noiseLevel = 0;
+			} else {
+				addNoise = true;
+				noiseLevel = Double.parseDouble(propertyValue);
+			}
 		}
 	}
 
@@ -223,6 +247,8 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	public String getProperty(String propertyName) {
 		if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
 			return Boolean.toString(normalise);
+		} else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
+			return Double.toString(noiseLevel);
 		} else {
 			// No property matches for this class
 			return null;
@@ -400,24 +426,59 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		}
 		
 		// Normalise the data if required
+		var1Means = MatrixUtils.means(var1Observations);
+		var1Stds = MatrixUtils.stdDevs(var1Observations, var1Means);
+		var2Means = MatrixUtils.means(var2Observations);
+		var2Stds = MatrixUtils.stdDevs(var2Observations, var2Means);
+		if (dimensionsCond != 0) {
+			condMeans = MatrixUtils.means(condObservations);
+			condStds = MatrixUtils.stdDevs(condObservations, condMeans);
+		}
 		if (normalise) {
-			var1Means = MatrixUtils.means(var1Observations);
-			var1Stds = MatrixUtils.stdDevs(var1Observations, var1Means);
-			MatrixUtils.normalise(var1Observations, var1Means, var1Stds);
-			var2Means = MatrixUtils.means(var2Observations);
-			var2Stds = MatrixUtils.stdDevs(var2Observations, var2Means);
-			MatrixUtils.normalise(var2Observations, var2Means, var2Stds);
-			if (dimensionsCond != 0) {
-				condMeans = MatrixUtils.means(condObservations);
-				condStds = MatrixUtils.stdDevs(condObservations, condMeans);
-				MatrixUtils.normalise(condObservations, condMeans, condStds);
-			}
+			normaliseData();
 		}
 		
 		// We don't need to keep the vectors of observation sets anymore:
 		vectorOfVar1Observations = null;
 		vectorOfVar2Observations = null;
 		vectorOfCondObservations = null;
+
+		// Add Gaussian noise of std dev noiseLevel to the data if required
+		if (addNoise) {
+			Random random = new Random();
+			for (int r = 0; r < var1Observations.length; r++) {
+				for (int c = 0; c < dimensionsVar1; c++) {
+					var1Observations[r][c] +=
+							random.nextGaussian()*noiseLevel;
+				}
+				for (int c = 0; c < dimensionsVar2; c++) {
+					var2Observations[r][c] +=
+							random.nextGaussian()*noiseLevel;
+				}
+				// This next loop will only execute if dimensionsCond > 0
+				for (int c = 0; c < dimensionsCond; c++) {
+					condObservations[r][c] +=
+							random.nextGaussian()*noiseLevel;
+				}
+			}
+		}
+	}
+	
+
+	/**
+	 * Protected method to normalise the stored data samples for each variable.
+	 * This method can be overriden by children if required to perform
+	 * specific actions for their estimation methods.
+	 * Assumes that the member variables for means and stds have already been computed.
+	 */
+	protected void normaliseData() {
+		// We can overwrite these since they're already
+		//  a copy of the users' data.
+		MatrixUtils.normalise(var1Observations, var1Means, var1Stds);
+		MatrixUtils.normalise(var2Observations, var2Means, var2Stds);
+		if (dimensionsCond != 0) {
+			MatrixUtils.normalise(condObservations, condMeans, condStds);
+		}
 	}
 	
 	@Override
@@ -478,7 +539,7 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		//  the small added noise values to the standard scale, and bring a range of CMI values
 		//  instead of just the zeros that we should otherwise get).
 		miSurrogateCalculator.setProperty(PROP_NORMALISE, "false");
-		miSurrogateCalculator.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "0");
+		miSurrogateCalculator.setProperty(PROP_ADD_NOISE, "0");
 
 		double[] surrogateMeasurements = new double[numPermutationsToCheck];
 		
