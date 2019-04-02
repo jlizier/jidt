@@ -596,6 +596,9 @@ public class MutualInfoCalculatorMultiVariateGaussian
 			newDestObs = MatrixUtils.normaliseIntoNewArray(newDestObs, destMeansBeforeNorm, destStdsBeforeNorm);
 		}
 		
+		// In case we need this for bias correction:
+		ChiSquareMeasurementDistribution analyticMeasDist = computeSignificance();
+		
 		// Check that the covariance matrix was positive definite:
 		// (this was done earlier in computing the Cholesky decomposition,
 		//  we may still need to compute the determinant)
@@ -608,13 +611,15 @@ public class MutualInfoCalculatorMultiVariateGaussian
 			if (Lsource == null) {
 				// Source variable is fully linearly redundant, so
 				//  we will have zero conditional MI:
-				return MatrixUtils.constantArray(newSourceObs.length, 0);
+				return MatrixUtils.constantArray(newSourceObs.length,
+						biasCorrection ? -analyticMeasDist.getMeanOfUncorrectedDistribution() : 0);
 			} else {
 				detSourceCovariance = MatrixUtils.determinantViaCholeskyResult(Lsource);
 				if (Ldest == null) {
 					// Dest variable is fully linearly redundant, so
 					//  we will have zero conditional MI:
-					return MatrixUtils.constantArray(newDestObs.length, 0);
+					return MatrixUtils.constantArray(newDestObs.length,
+							biasCorrection ? -analyticMeasDist.getMeanOfUncorrectedDistribution() : 0);
 				} else {
 					detDestCovariance = MatrixUtils.determinantViaCholeskyResult(Ldest);
 					if (L == null) {
@@ -659,9 +664,6 @@ public class MutualInfoCalculatorMultiVariateGaussian
 			lengthOfReturnArray = newDestObs.length + timeDiff;
 			offset = timeDiff;
 		}
-		
-		// In case we need this for bias correction:
-		ChiSquareMeasurementDistribution analyticMeasDist = computeSignificance();
 		
 		// If we have a time delay, slide the local values
 		double[] localValues = new double[lengthOfReturnArray];

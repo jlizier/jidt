@@ -414,13 +414,12 @@ public abstract class MutualInfoMultiVariateCommon implements
 		vectorOfDestinationObservations = null;
 		
 		// Normalise the data if required, and store means/stds any normalising
+		sourceMeansBeforeNorm = MatrixUtils.means(sourceObservations);
+		sourceStdsBeforeNorm = MatrixUtils.stdDevs(sourceObservations, sourceMeansBeforeNorm);
+		destMeansBeforeNorm = MatrixUtils.means(destObservations);
+		destStdsBeforeNorm = MatrixUtils.stdDevs(destObservations, destMeansBeforeNorm);
 		if (normalise) {
 			normaliseData();
-		} else {
-			sourceMeansBeforeNorm = MatrixUtils.means(sourceObservations);
-			sourceStdsBeforeNorm = MatrixUtils.stdDevs(sourceObservations, sourceMeansBeforeNorm);
-			destMeansBeforeNorm = MatrixUtils.means(destObservations);
-			destStdsBeforeNorm = MatrixUtils.stdDevs(destObservations, destMeansBeforeNorm);
 		}
 
 		// Add Gaussian noise of std dev noiseLevel to the data if required
@@ -443,16 +442,13 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 * Protected method to normalise the stored data samples for each variable.
 	 * This method can be overriden by children if required to perform
 	 * specific actions for their estimation methods.
+	 * Assumes that the member variables for means and stds have already been computed.
 	 */
 	protected void normaliseData() {
 		// We can overwrite these since they're already
 		//  a copy of the users' data.
-		double[][] stats = MatrixUtils.normalise(sourceObservations);
-		sourceMeansBeforeNorm = stats[0];
-		sourceStdsBeforeNorm = stats[1];
-		stats = MatrixUtils.normalise(destObservations);
-		destMeansBeforeNorm = stats[0];
-		destStdsBeforeNorm = stats[1];
+		MatrixUtils.normalise(sourceObservations, sourceMeansBeforeNorm, sourceStdsBeforeNorm);
+		MatrixUtils.normalise(destObservations, destMeansBeforeNorm, destStdsBeforeNorm);
 	}
 	
 	/**

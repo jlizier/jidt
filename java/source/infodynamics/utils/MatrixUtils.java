@@ -2340,12 +2340,9 @@ public class MatrixUtils {
 	 *  back into the original matrix.
 	 * If the standard deviation of the column is zero, we just remove the mean
 	 * 
-	 * @param matrix 2D matrix of doubles -- normalised results are returned in place (not 
-	 *  in the return value of the method)
-	 * @return a double[][] returnMatrix where returnMatrix[0] is an array of the means
-	 *   of each column, and returnMatrix[1] is an array of the std deviations of each column.
+	 * @param matrix 2D matrix of doubles -- normalised results are returned in place.
 	 */
-	public static double[][] normalise(double[][] matrix) {
+	public static void normalise(double[][] matrix) {
 		double[] means = means(matrix);
 		double[] stds = stdDevs(matrix, means);
 		
@@ -2362,8 +2359,6 @@ public class MatrixUtils {
 				} // else we just subtract off the mean
 			}
 		}
-		
-		return new double[][] {means, stds};
 	}
 
 	/**

@@ -86,7 +86,8 @@ public interface MutualInfoCalculatorMultiVariate
 	public static final String PROP_NORMALISE = "NORMALISE";
 	/**
 	 * Property name for the std deviation of random Gaussian noise to be
-	 *  added to the data (default is 1e-8, matching the MILCA toolkit);
+	 *  added to the data (default is 0, except for Kraskov/KSG estimator
+	 *  where it is 1e-8, matching the MILCA toolkit);
 	 *  if the data is to be normalised, that will be done before adding this noise.
 	 */
 	public static final String PROP_ADD_NOISE = "NOISE_LEVEL_TO_ADD";
