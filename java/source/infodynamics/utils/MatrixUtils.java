@@ -139,6 +139,14 @@ public class MatrixUtils {
 		return total;
 	}
 
+	public static double sum(double[][] input, int column, int startRow, int length) {
+		double total = 0;
+		for (int i = startRow; i < startRow + length; i++) {
+			total += input[i][column];
+		}
+		return total;
+	}
+
 	public static double sum(double[][][] input) {
 		double total = 0;
 		for (int i = 0; i < input.length; i++) {
@@ -311,6 +319,19 @@ public class MatrixUtils {
 	}
 
 	/**
+	 * Compute the mean along the given column 
+	 * 
+	 * @param input
+	 * @param column
+	 * @param startRow
+	 * @param length
+	 * @return
+	 */
+	public static double mean(double[][] input, int column, int startRow, int length) {
+		return sum(input, column, startRow, length) / (double) length;
+	}
+
+	/**
 	 * Return an array of the means of each column in the 2D input
 	 * 
 	 * @param input
@@ -352,6 +373,73 @@ public class MatrixUtils {
 			theMeans[i] = mean(input[i]);
 		}
 		return theMeans;
+	}
+
+	/**
+	 * Compute the new mean of the given column of the 2D matrix data,
+	 *  given the current mean computed over currentNumPointsInMean elements,
+	 *  after removing the numIndicesToRemove elements starting from removeFromIndex.
+	 * 
+	 * @param matrix
+	 * @param column
+	 * @param removeFromIndex
+	 * @param numIndicesToRemove
+	 * @param currentMean
+	 * @param currentNumPointsInMean
+	 * @return
+	 */
+	public static double removeFromColumnMean(double[][] matrix, int column, int removeFromIndex,
+			int numIndicesToRemove, double currentMean, int currentNumPointsInMean) {
+
+		double sumToRemove = 0;
+		for (int t = removeFromIndex; t < removeFromIndex + numIndicesToRemove; t++) {
+			sumToRemove += matrix[t][column];
+		}
+		return ((double) currentNumPointsInMean) / ((double) (currentNumPointsInMean - numIndicesToRemove)) * currentMean -
+							   (1.0 / (double) (currentNumPointsInMean - numIndicesToRemove)) * sumToRemove;
+	}
+	
+	/**
+	 * Compute the new mean of the given column of the 2D matrix data,
+	 *  given the current mean computed over currentNumPointsInMean elements,
+	 *  after adding the numIndicesToAdd elements starting from addFromIndex.
+	 * 
+	 * @param matrix
+	 * @param column
+	 * @param addFromIndex
+	 * @param numIndicesToAdd
+	 * @param currentMean
+	 * @param currentNumPointsInMean
+	 * @return
+	 */
+	public static double addToColumnMean(double[][] matrix, int column, int addFromIndex,
+			int numIndicesToAdd, double currentMean, int currentNumPointsInMean) {
+
+		double sumToAdd = 0;
+		for (int t = addFromIndex; t < addFromIndex + numIndicesToAdd; t++) {
+			sumToAdd += matrix[t][column];
+		}
+		return ((double) currentNumPointsInMean) / ((double) (currentNumPointsInMean + numIndicesToAdd)) * currentMean +
+							   (1.0 / (double) (currentNumPointsInMean + numIndicesToAdd)) * sumToAdd;
+	}
+	
+	/**
+	 * Compute the new mean of the given column of the 2D matrix data,
+	 *  given the current mean computed over currentNumPointsInMean elements,
+	 *  after adding in the value at addIndex and removing the value at removeIndex.
+	 *  
+	 * @param matrix
+	 * @param column
+	 * @param addIndex
+	 * @param removeIndex
+	 * @param currentMean
+	 * @param currentNumPointsInMean
+	 * @return the new mean value
+	 */
+	public static double swapIntoColumnMean(double[][] matrix, int column, int addIndex, 
+			int removeIndex, double currentMean, int currentNumPointsInMean) {
+
+		return currentMean + (matrix[addIndex][column] - matrix[removeIndex][column]) / ((double) currentNumPointsInMean);
 	}
 
 	public static int[][] columnShift(int[][] input, int shiftBy){
@@ -1444,6 +1532,40 @@ public class MatrixUtils {
 			data[rIndex] = matrix[rIndex + fromRow];
 		}
 		return data;
+	}
+
+	/**
+	 * Extract the required rows from the matrix
+	 * 
+	 * @param matrix 2D data array
+	 * @param rows list of rows to return
+	 * @return a 2D data array of the selected rows
+	 */
+	public static double[][] selectRows(double matrix[][], List<Integer> rows) {
+		double[][] data = new double[rows.size()][];
+		for (int rIndex = 0; rIndex < rows.size(); rIndex++) {
+			data[rIndex] = matrix[rows.get(rIndex)];
+		}
+		return data;
+	}
+
+	/**
+	 * Extract the required rows from the matrix
+	 * 
+	 * @param matrix 2D data array
+	 * @param includeRowFlags array with boolean set to true for each index 
+	 *   of rows that we should return
+	 * @return a 2D data array of the selected rows
+	 */
+	public static double[][] selectRows(double matrix[][], boolean[] includeRowFlags) {
+		ArrayList<Integer> rows = new ArrayList<Integer>();
+		
+		for (int i = 0; i < includeRowFlags.length; i++) {
+			if (includeRowFlags[i]) {
+				rows.add(i);
+			}
+		}
+		return selectRows(matrix, rows);
 	}
 
 	/**
@@ -3062,8 +3184,8 @@ public class MatrixUtils {
 	 *    variable number
 	 * @param col1 variable number 1 to compute the covariance to
 	 * @param col2 variable number 2 to compute the covariance to
-	 * @param mean1 mean of variable 1
-	 * @param mean2 mean of variable 2
+	 * @param mean1 sample mean of variable 1
+	 * @param mean2 sample mean of variable 2
 	 * @return the covariance
 	 */
 	public static double covarianceTwoColumns(double[][] data, int col1, int col2,
@@ -3337,6 +3459,472 @@ public class MatrixUtils {
 			}
 		}
 		return covariances;
+	}
+
+	/**
+	 * Update the covariance matrix between all column pairs (variables) in the
+	 *  multivariate data set, which consists of three separate
+	 *  multivariate vectors, by removing the contribution of certain rows of data.
+	 * 
+	 * @param covariances current covariance matrix, is updated by this method;
+	 *    The columns of data1 are numbered
+	 *   first, the columns of data2 after that, and finally the columns
+	 *   of data3.
+	 * @param data1 multivariate array of data; first index is time, second is 
+	 *    variable number
+	 * @param data2 a second multivariate array of data, which can be thought
+	 *    of as extensions of rows of the first.
+	 * @param data3 a third multivariate array of data, which can be thought
+	 *    of as extensions of rows of the first and second.
+	 * @param columnsFrom1 array indicating which columns of variable 1 to use
+	 * @param columnsFrom2 array indicating which columns of variable 2 to use
+	 * @param columnsFrom3 array indicating which columns of variable 3 to use
+	 * @param prevMeans1 array of previous means for all columns of data1
+	 * @param prevMeans2 array of previous means for all columns of data2
+	 * @param prevMeans3 array of previous means for all columns of data3
+	 * @param removeFromIndex which sample (row) index to start removing contributions from
+	 * @param numIndicesToRemove how many rows to remove contributions from
+	 * @param currentNumPointsInCov how many samples the covariance is currently computed from
+	 */
+	public static void removeFromCovarianceMatrix(
+			double[][] covariances,
+			double[][] data1, double[][] data2, double[][] data3,
+			int[] columnsFrom1, int[] columnsFrom2, int[] columnsFrom3,
+			double[] prevMeans1, double[] prevMeans2, double[] prevMeans3,
+			int removeFromIndex, int numIndicesToRemove,
+			int currentNumPointsInCov) {
+
+		int numSelectedVariables1 = columnsFrom1.length;
+		int numSelectedVariables2 = columnsFrom2.length;
+		int numSelectedVariables3 = columnsFrom3.length;
+
+		// Now update the covariances:
+		for (int r = 0; r < numSelectedVariables1; r++) {
+			// Update the covariances internal to data1:
+			for (int c = r; c < numSelectedVariables1; c++) {
+				// Update the covariance between variable r and c:
+				covariances[r][c] = (((double) (currentNumPointsInCov - 1) * covariances[r][c]) -
+										computeCovarianceMatrixRemoval(data1, data1, columnsFrom1[r], columnsFrom1[c],
+												prevMeans1[columnsFrom1[r]], prevMeans1[columnsFrom1[c]], currentNumPointsInCov,
+												removeFromIndex, numIndicesToRemove)) /
+									  (double) (currentNumPointsInCov - 1 - numIndicesToRemove);
+				// And of course this is symmetric between c and r:
+				covariances[c][r] = covariances[r][c];
+			}
+			// Update the covariances between data1 and data2
+			for (int c = 0; c < numSelectedVariables2; c++) {
+				// Update the covariance between variable r and c:
+				covariances[r][numSelectedVariables1 + c] =
+						(((double) (currentNumPointsInCov - 1) * covariances[r][numSelectedVariables1 + c]) -
+								computeCovarianceMatrixRemoval(data1, data2, columnsFrom1[r], columnsFrom2[c],
+										prevMeans1[columnsFrom1[r]], prevMeans2[columnsFrom2[c]], currentNumPointsInCov,
+										removeFromIndex, numIndicesToRemove)) /
+							  (double) (currentNumPointsInCov - 1 - numIndicesToRemove);
+				// And of course this is symmetric between c and r:
+				covariances[numSelectedVariables1 + c][r] =
+						covariances[r][numSelectedVariables1 + c];
+			}
+			// Update the covariances between data1 and data3
+			for (int c = 0; c < numSelectedVariables3; c++) {
+				// Update the covariance between variable r and c:
+				covariances[r][numSelectedVariables1 + numSelectedVariables2 + c] =
+						(((double) (currentNumPointsInCov - 1) * covariances[r][numSelectedVariables1 + numSelectedVariables2 + c]) -
+								computeCovarianceMatrixRemoval(data1, data3, columnsFrom1[r], columnsFrom3[c],
+										prevMeans1[columnsFrom1[r]], prevMeans3[columnsFrom3[c]], currentNumPointsInCov,
+										removeFromIndex, numIndicesToRemove)) /
+							  (double) (currentNumPointsInCov - 1 - numIndicesToRemove);
+				// And of course this is symmetric between c and r:
+				covariances[numSelectedVariables1 + numSelectedVariables2 + c][r] =
+						covariances[r][numSelectedVariables1 + numSelectedVariables2 + c];
+			}
+		}
+		// Update the other covariances for data2
+		for (int r = 0; r < numSelectedVariables2; r++) {
+			// Update the covariances internal to data2:
+			for (int c = r; c < numSelectedVariables2; c++) {
+				// Update the covariance between variable r and c:
+				covariances[numSelectedVariables1 + r][numSelectedVariables1 + c] =
+						(((double) (currentNumPointsInCov - 1) * covariances[numSelectedVariables1 + r][numSelectedVariables1 + c]) -
+								computeCovarianceMatrixRemoval(data2, data2, columnsFrom2[r], columnsFrom2[c],
+										prevMeans2[columnsFrom2[r]], prevMeans2[columnsFrom2[c]], currentNumPointsInCov,
+										removeFromIndex, numIndicesToRemove)) /
+							  (double) (currentNumPointsInCov - 1 - numIndicesToRemove);
+				// And of course this is symmetric between c and r:
+				covariances[numSelectedVariables1 + c][numSelectedVariables1 + r] =
+						covariances[numSelectedVariables1 + r][numSelectedVariables1 + c];
+			}
+			// Update the covariances between data2 and data3
+			for (int c = 0; c < numSelectedVariables3; c++) {
+				// Update the covariance between variable r and c:
+				covariances[numSelectedVariables1 + r][numSelectedVariables1 + numSelectedVariables2 + c] =
+						(((double) (currentNumPointsInCov - 1) * covariances[numSelectedVariables1 + r][numSelectedVariables1 + numSelectedVariables2 + c]) -
+								computeCovarianceMatrixRemoval(data2, data3, columnsFrom2[r], columnsFrom3[c],
+										prevMeans2[columnsFrom2[r]], prevMeans3[columnsFrom3[c]], currentNumPointsInCov,
+										removeFromIndex, numIndicesToRemove)) /
+							  (double) (currentNumPointsInCov - 1 - numIndicesToRemove);
+				// And of course this is symmetric between c and r:
+				covariances[numSelectedVariables1 + numSelectedVariables2 + c][numSelectedVariables1 + r] =
+						covariances[numSelectedVariables1 + r][numSelectedVariables1 + numSelectedVariables2 + c];
+			}
+		}		
+		// Update the internal covariances for data3
+		for (int r = 0; r < numSelectedVariables3; r++) {
+			for (int c = r; c < numSelectedVariables3; c++) {
+				// Update the covariance between variable r and c:
+				covariances[numSelectedVariables1 + numSelectedVariables2 + r][numSelectedVariables1 + numSelectedVariables2 + c] =
+						(((double) (currentNumPointsInCov - 1) * covariances[numSelectedVariables1 + numSelectedVariables2 + r][numSelectedVariables1 + numSelectedVariables2 + c]) -
+								computeCovarianceMatrixRemoval(data3, data3, columnsFrom3[r], columnsFrom3[c],
+										prevMeans3[columnsFrom3[r]], prevMeans3[columnsFrom3[c]], currentNumPointsInCov,
+										removeFromIndex, numIndicesToRemove)) /
+							  (double) (currentNumPointsInCov - 1 - numIndicesToRemove);
+				// And of course this is symmetric between c and r:
+				covariances[numSelectedVariables1 + numSelectedVariables2 + c][numSelectedVariables1 + numSelectedVariables2 + r] =
+						covariances[numSelectedVariables1 + numSelectedVariables2 + r][numSelectedVariables1 + numSelectedVariables2 + c];
+			}
+		}
+	}
+
+	/**
+	 * Compute the subtraction required as part of an update to the covariance matrix of
+	 *  data1 and data2, by removing the contribution of certain rows of data.
+	 * 
+	 * @param data1 multivariate array of data; first index is time, second is 
+	 *    variable number
+	 * @param data2 a second multivariate array of data, which can be thought
+	 *    of as extensions of rows of the first.
+	 * @param columnFor1 indicates which column of variable 1 to use
+	 * @param columnFor2 indicates which column of variable 2 to use
+	 * @param prevMean1 current mean of variable 1's column
+	 * @param prevMean2 current mean of variable 2's column
+	 * @param prevNumberSamples current number of samples in use
+	 * @param removeFromIndex which sample (row) index to start removing contributions from
+	 * @param numIndicesToRemove how many rows to remove contributions from
+	 */
+	public static double computeCovarianceMatrixRemoval(
+			double[][] data1, double[][] data2,
+			int columnFor1, int columnFor2,
+			double prevMean1, double prevMean2,
+			int prevNumberSamples,
+			int removeFromIndex, int numIndicesToRemove) {
+		
+		double sumProd = 0.0;
+		double sum1 = 0.0;
+		double sum2 = 0.0;
+		for (int t = removeFromIndex; t < removeFromIndex + numIndicesToRemove; t++) {
+			sumProd += data1[t][columnFor1] * data2[t][columnFor2];
+			sum1 += data1[t][columnFor1];
+			sum2 += data2[t][columnFor2];
+		}
+		
+		return ((double) numIndicesToRemove * prevNumberSamples) / ((double) (prevNumberSamples-numIndicesToRemove)) * prevMean1 * prevMean2
+				+ sumProd + sum1 * sum2 / ((double) (prevNumberSamples - numIndicesToRemove))
+				- ((double) prevNumberSamples) / ((double) (prevNumberSamples - numIndicesToRemove)) * (prevMean1 * sum2 + prevMean2 * sum1);
+	}
+	
+	/**
+	 * Update the covariance matrix between all column pairs (variables) in the
+	 *  multivariate data set, which consists of three separate
+	 *  multivariate vectors, by adding the contribution of certain rows of data.
+	 * 
+	 * @param covariances current covariance matrix, is updated by this method;
+	 *    The columns of data1 are numbered
+	 *   first, the columns of data2 after that, and finally the columns
+	 *   of data3.
+	 * @param data1 multivariate array of data; first index is time, second is 
+	 *    variable number
+	 * @param data2 a second multivariate array of data, which can be thought
+	 *    of as extensions of rows of the first.
+	 * @param data3 a third multivariate array of data, which can be thought
+	 *    of as extensions of rows of the first and second.
+	 * @param columnsFrom1 array indicating which columns of variable 1 to use
+	 * @param columnsFrom2 array indicating which columns of variable 2 to use
+	 * @param columnsFrom3 array indicating which columns of variable 3 to use
+	 * @param prevMeans1 array of previous means for all columns of data1
+	 * @param prevMeans2 array of previous means for all columns of data2
+	 * @param prevMeans3 array of previous means for all columns of data3
+	 * @param addFromIndex which sample (row) index to start adding contributions from
+	 * @param numIndicesToAdd how many rows to add contributions from
+	 * @param currentNumPointsInCov how many samples the covariance is currently computed from
+	 */
+	public static void addToCovarianceMatrix(
+			double[][] covariances,
+			double[][] data1, double[][] data2, double[][] data3,
+			int[] columnsFrom1, int[] columnsFrom2, int[] columnsFrom3,
+			double[] prevMeans1, double[] prevMeans2, double[] prevMeans3,
+			int addFromIndex, int numIndicesToAdd,
+			int currentNumPointsInCov) {
+
+		int numSelectedVariables1 = columnsFrom1.length;
+		int numSelectedVariables2 = columnsFrom2.length;
+		int numSelectedVariables3 = columnsFrom3.length;
+
+		// Now update the covariances:
+		for (int r = 0; r < numSelectedVariables1; r++) {
+			// Update the covariances internal to data1:
+			for (int c = r; c < numSelectedVariables1; c++) {
+				// Update the covariance between variable r and c:
+				covariances[r][c] = (((double) (currentNumPointsInCov - 1) * covariances[r][c]) +
+										computeCovarianceMatrixAddition(data1, data1, columnsFrom1[r], columnsFrom1[c],
+												prevMeans1[columnsFrom1[r]], prevMeans1[columnsFrom1[c]], currentNumPointsInCov,
+												addFromIndex, numIndicesToAdd)) /
+									  (double) (currentNumPointsInCov - 1 + numIndicesToAdd);
+				// And of course this is symmetric between c and r:
+				covariances[c][r] = covariances[r][c];
+			}
+			// Update the covariances between data1 and data2
+			for (int c = 0; c < numSelectedVariables2; c++) {
+				// Update the covariance between variable r and c:
+				covariances[r][numSelectedVariables1 + c] =
+						(((double) (currentNumPointsInCov - 1) * covariances[r][numSelectedVariables1 + c]) +
+								computeCovarianceMatrixAddition(data1, data2, columnsFrom1[r], columnsFrom2[c],
+										prevMeans1[columnsFrom1[r]], prevMeans2[columnsFrom2[c]], currentNumPointsInCov,
+										addFromIndex, numIndicesToAdd)) /
+							  (double) (currentNumPointsInCov - 1 + numIndicesToAdd);
+				// And of course this is symmetric between c and r:
+				covariances[numSelectedVariables1 + c][r] =
+						covariances[r][numSelectedVariables1 + c];
+			}
+			// Update the covariances between data1 and data3
+			for (int c = 0; c < numSelectedVariables3; c++) {
+				// Update the covariance between variable r and c:
+				covariances[r][numSelectedVariables1 + numSelectedVariables2 + c] =
+						(((double) (currentNumPointsInCov - 1) * covariances[r][numSelectedVariables1 + numSelectedVariables2 + c]) +
+								computeCovarianceMatrixAddition(data1, data3, columnsFrom1[r], columnsFrom3[c],
+										prevMeans1[columnsFrom1[r]], prevMeans3[columnsFrom3[c]], currentNumPointsInCov,
+										addFromIndex, numIndicesToAdd)) /
+							  (double) (currentNumPointsInCov - 1 + numIndicesToAdd);
+				// And of course this is symmetric between c and r:
+				covariances[numSelectedVariables1 + numSelectedVariables2 + c][r] =
+						covariances[r][numSelectedVariables1 + numSelectedVariables2 + c];
+			}
+		}
+		// Update the other covariances for data2
+		for (int r = 0; r < numSelectedVariables2; r++) {
+			// Update the covariances internal to data2:
+			for (int c = r; c < numSelectedVariables2; c++) {
+				// Update the covariance between variable r and c:
+				covariances[numSelectedVariables1 + r][numSelectedVariables1 + c] =
+						(((double) (currentNumPointsInCov - 1) * covariances[numSelectedVariables1 + r][numSelectedVariables1 + c]) +
+								computeCovarianceMatrixAddition(data2, data2, columnsFrom2[r], columnsFrom2[c],
+										prevMeans2[columnsFrom2[r]], prevMeans2[columnsFrom2[c]], currentNumPointsInCov,
+										addFromIndex, numIndicesToAdd)) /
+							  (double) (currentNumPointsInCov - 1 + numIndicesToAdd);
+				// And of course this is symmetric between c and r:
+				covariances[numSelectedVariables1 + c][numSelectedVariables1 + r] =
+						covariances[numSelectedVariables1 + r][numSelectedVariables1 + c];
+			}
+			// Update the covariances between data2 and data3
+			for (int c = 0; c < numSelectedVariables3; c++) {
+				// Update the covariance between variable r and c:
+				covariances[numSelectedVariables1 + r][numSelectedVariables1 + numSelectedVariables2 + c] =
+						(((double) (currentNumPointsInCov - 1) * covariances[numSelectedVariables1 + r][numSelectedVariables1 + numSelectedVariables2 + c]) +
+								computeCovarianceMatrixAddition(data2, data3, columnsFrom2[r], columnsFrom3[c],
+										prevMeans2[columnsFrom2[r]], prevMeans3[columnsFrom3[c]], currentNumPointsInCov,
+										addFromIndex, numIndicesToAdd)) /
+							  (double) (currentNumPointsInCov - 1 + numIndicesToAdd);
+				// And of course this is symmetric between c and r:
+				covariances[numSelectedVariables1 + numSelectedVariables2 + c][numSelectedVariables1 + r] =
+						covariances[numSelectedVariables1 + r][numSelectedVariables1 + numSelectedVariables2 + c];
+			}
+		}		
+		// Update the internal covariances for data3
+		for (int r = 0; r < numSelectedVariables3; r++) {
+			for (int c = r; c < numSelectedVariables3; c++) {
+				// Update the covariance between variable r and c:
+				covariances[numSelectedVariables1 + numSelectedVariables2 + r][numSelectedVariables1 + numSelectedVariables2 + c] =
+						(((double) (currentNumPointsInCov - 1) * covariances[numSelectedVariables1 + numSelectedVariables2 + r][numSelectedVariables1 + numSelectedVariables2 + c]) +
+								computeCovarianceMatrixAddition(data3, data3, columnsFrom3[r], columnsFrom3[c],
+										prevMeans3[columnsFrom3[r]], prevMeans3[columnsFrom3[c]], currentNumPointsInCov,
+										addFromIndex, numIndicesToAdd)) /
+							  (double) (currentNumPointsInCov - 1 + numIndicesToAdd);
+				// And of course this is symmetric between c and r:
+				covariances[numSelectedVariables1 + numSelectedVariables2 + c][numSelectedVariables1 + numSelectedVariables2 + r] =
+						covariances[numSelectedVariables1 + numSelectedVariables2 + r][numSelectedVariables1 + numSelectedVariables2 + c];
+			}
+		}
+	}
+
+	/**
+	 * Compute the addition required as part of an update to the covariance matrix of
+	 *  data1 and data2, by adding the contribution of certain rows of data.
+	 * 
+	 * @param data1 multivariate array of data; first index is time, second is 
+	 *    variable number
+	 * @param data2 a second multivariate array of data, which can be thought
+	 *    of as extensions of rows of the first.
+	 * @param columnFor1 indicates which column of variable 1 to use
+	 * @param columnFor2 indicates which column of variable 2 to use
+	 * @param prevMean1 current mean of variable 1's column
+	 * @param prevMean2 current mean of variable 2's column
+	 * @param prevNumberSamples current number of samples in use
+	 * @param addFromIndex which sample (row) index to start adding contributions from
+	 * @param numIndicesToAdd how many rows to add contributions from
+	 */
+	public static double computeCovarianceMatrixAddition(
+			double[][] data1, double[][] data2,
+			int columnFor1, int columnFor2,
+			double prevMean1, double prevMean2,
+			int prevNumberSamples,
+			int addFromIndex, int numIndicesToAdd) {
+		
+		double sumProd = 0.0;
+		double sum1 = 0.0;
+		double sum2 = 0.0;
+		for (int t = addFromIndex; t < addFromIndex + numIndicesToAdd; t++) {
+			sumProd += data1[t][columnFor1] * data2[t][columnFor2];
+			sum1 += data1[t][columnFor1];
+			sum2 += data2[t][columnFor2];
+		}
+		
+		return ((double) numIndicesToAdd * prevNumberSamples) / ((double) (prevNumberSamples+numIndicesToAdd)) * prevMean1 * prevMean2
+				+ sumProd - sum1 * sum2 / ((double) prevNumberSamples + numIndicesToAdd) -
+				((double) prevNumberSamples) * (prevMean1 * sum2 + prevMean2 * sum1) / ((double) prevNumberSamples + numIndicesToAdd);
+	}
+	
+	/**
+	 * Update the covariance matrix between all column pairs (variables) in the
+	 *  multivariate data set, which consists of three separate
+	 *  multivariate vectors, by removing the contribution one row of data
+	 *  and adding the contribution of another row.
+	 * 
+	 * @param covariances current covariance matrix, is updated by this method;
+	 *    The columns of data1 are numbered
+	 *   first, the columns of data2 after that, and finally the columns
+	 *   of data3.
+	 * @param data1 multivariate array of data; first index is time, second is 
+	 *    variable number
+	 * @param data2 a second multivariate array of data, which can be thought
+	 *    of as extensions of rows of the first.
+	 * @param data3 a third multivariate array of data, which can be thought
+	 *    of as extensions of rows of the first and second.
+	 * @param columnsFrom1 array indicating which columns of variable 1 to use
+	 * @param columnsFrom2 array indicating which columns of variable 2 to use
+	 * @param columnsFrom3 array indicating which columns of variable 3 to use
+	 * @param prevMeans1 array of previous means for all columns of data1
+	 * @param prevMeans2 array of previous means for all columns of data2
+	 * @param prevMeans3 array of previous means for all columns of data3
+	 * @param addIndex which sample (row) index to add contributions from
+	 * @param removeIndex which sample (row) index to remove contributions from
+	 * @param currentNumPointsInCov how many samples the covariance is currently computed from
+	 */
+	public static void swapIntoCovarianceMatrix(
+			double[][] covariances,
+			double[][] data1, double[][] data2, double[][] data3,
+			int[] columnsFrom1, int[] columnsFrom2, int[] columnsFrom3,
+			double[] prevMeans1, double[] prevMeans2, double[] prevMeans3,
+			int addIndex, int removeIndex,
+			int currentNumPointsInCov) {
+
+		int numSelectedVariables1 = columnsFrom1.length;
+		int numSelectedVariables2 = columnsFrom2.length;
+		int numSelectedVariables3 = columnsFrom3.length;
+
+		// Now update the covariances:
+		for (int r = 0; r < numSelectedVariables1; r++) {
+			// Update the covariances internal to data1:
+			for (int c = r; c < numSelectedVariables1; c++) {
+				// Update the covariance between variable r and c:
+				covariances[r][c] += computeCovarianceMatrixSwap(data1, data1, columnsFrom1[r], columnsFrom1[c],
+												prevMeans1[columnsFrom1[r]], prevMeans1[columnsFrom1[c]], currentNumPointsInCov,
+												addIndex, removeIndex);
+				// And of course this is symmetric between c and r:
+				covariances[c][r] = covariances[r][c];
+			}
+			// Update the covariances between data1 and data2
+			for (int c = 0; c < numSelectedVariables2; c++) {
+				// Update the covariance between variable r and c:
+				covariances[r][numSelectedVariables1 + c] +=
+						computeCovarianceMatrixSwap(data1, data2, columnsFrom1[r], columnsFrom2[c],
+										prevMeans1[columnsFrom1[r]], prevMeans2[columnsFrom2[c]], currentNumPointsInCov,
+										addIndex, removeIndex);
+				// And of course this is symmetric between c and r:
+				covariances[numSelectedVariables1 + c][r] =
+						covariances[r][numSelectedVariables1 + c];
+			}
+			// Update the covariances between data1 and data3
+			for (int c = 0; c < numSelectedVariables3; c++) {
+				// Update the covariance between variable r and c:
+				covariances[r][numSelectedVariables1 + numSelectedVariables2 + c] +=
+						computeCovarianceMatrixSwap(data1, data3, columnsFrom1[r], columnsFrom3[c],
+										prevMeans1[columnsFrom1[r]], prevMeans3[columnsFrom3[c]], currentNumPointsInCov,
+										addIndex, removeIndex);
+				// And of course this is symmetric between c and r:
+				covariances[numSelectedVariables1 + numSelectedVariables2 + c][r] =
+						covariances[r][numSelectedVariables1 + numSelectedVariables2 + c];
+			}
+		}
+		// Update the other covariances for data2
+		for (int r = 0; r < numSelectedVariables2; r++) {
+			// Update the covariances internal to data2:
+			for (int c = r; c < numSelectedVariables2; c++) {
+				// Update the covariance between variable r and c:
+				covariances[numSelectedVariables1 + r][numSelectedVariables1 + c] +=
+						computeCovarianceMatrixSwap(data2, data2, columnsFrom2[r], columnsFrom2[c],
+										prevMeans2[columnsFrom2[r]], prevMeans2[columnsFrom2[c]], currentNumPointsInCov,
+										addIndex, removeIndex);
+				// And of course this is symmetric between c and r:
+				covariances[numSelectedVariables1 + c][numSelectedVariables1 + r] =
+						covariances[numSelectedVariables1 + r][numSelectedVariables1 + c];
+			}
+			// Update the covariances between data2 and data3
+			for (int c = 0; c < numSelectedVariables3; c++) {
+				// Update the covariance between variable r and c:
+				covariances[numSelectedVariables1 + r][numSelectedVariables1 + numSelectedVariables2 + c] +=
+						computeCovarianceMatrixSwap(data2, data3, columnsFrom2[r], columnsFrom3[c],
+										prevMeans2[columnsFrom2[r]], prevMeans3[columnsFrom3[c]], currentNumPointsInCov,
+										addIndex, removeIndex);
+				// And of course this is symmetric between c and r:
+				covariances[numSelectedVariables1 + numSelectedVariables2 + c][numSelectedVariables1 + r] =
+						covariances[numSelectedVariables1 + r][numSelectedVariables1 + numSelectedVariables2 + c];
+			}
+		}		
+		// Update the internal covariances for data3
+		for (int r = 0; r < numSelectedVariables3; r++) {
+			for (int c = r; c < numSelectedVariables3; c++) {
+				// Update the covariance between variable r and c:
+				covariances[numSelectedVariables1 + numSelectedVariables2 + r][numSelectedVariables1 + numSelectedVariables2 + c] +=
+						computeCovarianceMatrixSwap(data3, data3, columnsFrom3[r], columnsFrom3[c],
+										prevMeans3[columnsFrom3[r]], prevMeans3[columnsFrom3[c]], currentNumPointsInCov,
+										addIndex, removeIndex);
+				// And of course this is symmetric between c and r:
+				covariances[numSelectedVariables1 + numSelectedVariables2 + c][numSelectedVariables1 + numSelectedVariables2 + r] =
+						covariances[numSelectedVariables1 + numSelectedVariables2 + r][numSelectedVariables1 + numSelectedVariables2 + c];
+			}
+		}
+	}
+
+	/**
+	 * Compute the addition required as part of an update to the covariance matrix of
+	 *  data1 and data2, by including the contribution of one row of data
+	 *  and removing another.
+	 * 
+	 * @param data1 multivariate array of data; first index is time, second is 
+	 *    variable number
+	 * @param data2 a second multivariate array of data, which can be thought
+	 *    of as extensions of rows of the first.
+	 * @param columnFor1 indicates which column of variable 1 to use
+	 * @param columnFor2 indicates which column of variable 2 to use
+	 * @param prevMean1 current mean of variable 1's column
+	 * @param prevMean2 current mean of variable 2's column
+	 * @param prevNumberSamples current number of samples in use
+	 * @param addIndex which sample (row) index to add contributions from
+	 * @param removeIndex which sample (row) index to remove contributions from
+	 */
+	public static double computeCovarianceMatrixSwap(
+			double[][] data1, double[][] data2,
+			int columnFor1, int columnFor2,
+			double prevMean1, double prevMean2,
+			int prevNumberSamples,
+			int addIndex, int removeIndex) {
+		
+		double diff1 = data1[addIndex][columnFor1] - data1[removeIndex][columnFor1];
+		double diff2 = data2[addIndex][columnFor2] - data2[removeIndex][columnFor2];
+		
+		return 1.0 / ((double) (prevNumberSamples - 1)) *
+				(data1[addIndex][columnFor1] * data2[addIndex][columnFor2] -
+				 data1[removeIndex][columnFor1] * data2[removeIndex][columnFor2] -
+				 prevMean1 * diff2 - prevMean2 * diff1 -
+				 diff1 * diff2 / ((double) prevNumberSamples));
 	}
 
 	/**

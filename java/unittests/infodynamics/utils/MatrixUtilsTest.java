@@ -18,6 +18,8 @@
 
 package infodynamics.utils;
 
+import java.util.List;
+
 import junit.framework.TestCase;
 
 /**
@@ -420,7 +422,7 @@ public class MatrixUtilsTest extends TestCase {
 		}		
 	}
 	
-	public static void test2DArrayCopy() {
+	public void test2DArrayCopy() {
 		double[][] temp = {{1,2,3,4}, {4,5,6,7}, {7,8,9,10}, {10,11,12,13}};
 		double[][] newMatrix = new double[10][10];
 		
@@ -432,4 +434,137 @@ public class MatrixUtilsTest extends TestCase {
 		}
 	}
 	
+	public void testAddAndRemoveFromMean() {
+		RandomGenerator rg = new RandomGenerator();
+		int N = 1000;
+		int cols = 3;
+		int rowsToRemove = 10;
+		double[][] data = rg.generateNormalData(N, cols, 0, 1);
+		
+		for (int c = 0; c < cols; c++) {
+			double mean = MatrixUtils.mean(data, c);
+			
+			// Remove mean from row c as well
+			double meanAfterRemoval = MatrixUtils.removeFromColumnMean(
+					data, c, c, rowsToRemove, mean, N);
+			
+			// And now try manually:
+			double sum = mean * (double) N;
+			for (int r = c; r < c + rowsToRemove; r++) {
+				sum -= data[r][c];
+			}
+			double meanAfterRemovalManual = sum / (double) (N - rowsToRemove);
+			assertEquals(meanAfterRemovalManual, meanAfterRemoval, 1e-5);
+			
+			// Then add back in:
+			double meanAfterAddingBackIn = MatrixUtils.addToColumnMean(
+					data, c, c, rowsToRemove, meanAfterRemoval, N - rowsToRemove);
+			assertEquals(mean, meanAfterAddingBackIn, 1e-5);
+			
+			// Take one row out then try swapping it with another:
+			double meanAfterOneRemoval = MatrixUtils.removeFromColumnMean(
+					data, c, c, 1, mean, N);
+			double meanAfterSwappedRemoval = MatrixUtils.swapIntoColumnMean(
+					data, c, c, c+1, meanAfterOneRemoval, N-1);
+			double meanAfterSwapManual = (mean * (double) N - data[c+1][c]) / ((double) (N - 1));
+			assertEquals(meanAfterSwapManual, meanAfterSwappedRemoval, 1e-5);
+		}
+	}
+
+	public void testAddAndRemoveFromCovariance() {
+		RandomGenerator rg = new RandomGenerator();
+		
+		// Run a short test:
+		double[][] shortData = new double[10][1];
+		shortData[0][0] = 1; // Only item that contributes to the variance (otherwise it will be zero)
+		double[][] shortCovariance = MatrixUtils.covarianceMatrix(shortData);
+		double initialCovariance = shortCovariance[0][0];
+		System.out.printf("Initial covariance = %.5f\n", initialCovariance);
+		MatrixUtils.removeFromCovarianceMatrix(shortCovariance,
+				shortData, null, null,
+				new int[] {0}, new int[] {}, new int[] {},
+				new double[] {0.1}, new double[] {}, new double[] {},
+				0, 1, 10);
+		// and now check what happens if we remove this row manually:
+		double[][] cutShortData = MatrixUtils.selectRows(shortData, 1, 9);
+		double[][] covShortAfterManualCut = MatrixUtils.covarianceMatrix(cutShortData);
+		double covMatRemoval = MatrixUtils.computeCovarianceMatrixRemoval(shortData, shortData,
+				0, 0, 0.1, 0.1, 10, 0, 1);
+		System.out.printf("computeCovarianceMatrixRemoval returns %.5f\n", covMatRemoval);
+		assertEquals(covShortAfterManualCut[0][0], shortCovariance[0][0], 1e-6);
+		assertEquals(0, shortCovariance[0][0], 1e-6);
+		// or indeed if and now check what happens if we add this row back in:
+		MatrixUtils.addToCovarianceMatrix(shortCovariance,
+				shortData, null, null,
+				new int[] {0}, new int[] {}, new int[] {},
+				new double[] {0}, new double[] {}, new double[] {},
+				0, 1, 9);
+		assertEquals(initialCovariance, shortCovariance[0][0], 1e-6);
+		
+		int N = 100;
+		int cols = 3;
+		int rowsToRemove = 10;
+		double[][] data = rg.generateNormalData(N, cols, 0, 1);
+		
+		double[][] covariances = MatrixUtils.covarianceMatrix(data);
+		double[][] covariancesOriginal = MatrixUtils.arrayCopy(covariances);
+		MatrixUtils.removeFromCovarianceMatrix(covariances,
+				MatrixUtils.selectColumns(data, new int[] {0}), MatrixUtils.selectColumns(data, new int[] {1}),
+				MatrixUtils.selectColumns(data, new int[] {2}),
+				new int[] {0}, new int[] {0}, new int[] {0},
+				new double[] {MatrixUtils.mean(data, 0)}, new double[] {MatrixUtils.mean(data, 1)}, new double[] {MatrixUtils.mean(data, 2)},
+				0, rowsToRemove, N);
+		
+		// and now check what happens if we remove these rows manually:
+		double[][] cutData = MatrixUtils.selectRows(data, rowsToRemove, N-rowsToRemove);
+		double[][] covAfterManualCut = MatrixUtils.covarianceMatrix(cutData);
+		
+		// Need fairly large tolerance here, because the two are being computed in different
+		///  ways and so have slightly different numerical errors
+		checkMatrix(covAfterManualCut, covariances, 1e-6);
+		
+		// And check that all is resolved once we insert them again
+		double runningMean0 = MatrixUtils.mean(data, 0, rowsToRemove, N-rowsToRemove);
+		double runningMean1 = MatrixUtils.mean(data, 1, rowsToRemove, N-rowsToRemove);
+		double runningMean2 = MatrixUtils.mean(data, 2, rowsToRemove, N-rowsToRemove);
+		MatrixUtils.addToCovarianceMatrix(covariances,
+				MatrixUtils.selectColumns(data, new int[] {0}), MatrixUtils.selectColumns(data, new int[] {1}),
+				MatrixUtils.selectColumns(data, new int[] {2}),
+				new int[] {0}, new int[] {0}, new int[] {0},
+				new double[] {runningMean0},
+				new double[] {runningMean1},
+				new double[] {runningMean2},
+				0, rowsToRemove, N - rowsToRemove);
+		// Maybe need larger tolerance here, because the two are being computed in different
+		///  ways and so have slightly different numerical errors
+		checkMatrix(covariancesOriginal, covariances, 1e-6);
+		
+		// Now need to test that we can swap rows in and out ok with new code
+		List<Integer> rows = MatrixUtils.createArrayList(MatrixUtils.range(rowsToRemove, N-1));
+		for (int r = rowsToRemove; r < rowsToRemove + 10; r++) {
+			// Swap row r - 1 in, and row r out:
+			rows.remove(0); // row r will be the first index for this test
+			rows.add(r-1);
+			// First from covariance, since it uses the old means:
+			MatrixUtils.swapIntoCovarianceMatrix(
+				covAfterManualCut,
+				MatrixUtils.selectColumns(data, new int[] {0}), MatrixUtils.selectColumns(data, new int[] {1}),
+				MatrixUtils.selectColumns(data, new int[] {2}),
+				new int[] {0}, new int[] {0}, new int[] {0},
+				new double[] {runningMean0}, new double[] {runningMean1}, new double[] {runningMean2},
+				r - 1, r, N-rowsToRemove);
+			// Then from the means:
+			runningMean0 = MatrixUtils.swapIntoColumnMean(data, 0, r-1, r, runningMean0, N-rowsToRemove);
+			runningMean1 = MatrixUtils.swapIntoColumnMean(data, 1, r-1, r, runningMean1, N-rowsToRemove);
+			runningMean2 = MatrixUtils.swapIntoColumnMean(data, 2, r-1, r, runningMean2, N-rowsToRemove);
+			// Now check them:
+			double[][] extractedData = MatrixUtils.selectRows(data, rows);
+			double[] means = MatrixUtils.means(extractedData);
+			assertEquals(means[0], runningMean0, 1e-6);
+			assertEquals(means[1], runningMean1, 1e-6);
+			assertEquals(means[2], runningMean2, 1e-6);
+			double[][] covarianceMatrix = MatrixUtils.covarianceMatrix(extractedData, means);
+			checkMatrix(covarianceMatrix, covAfterManualCut, 1e-6);
+		}
+	}
 }
