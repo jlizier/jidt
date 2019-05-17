@@ -354,6 +354,9 @@ public class MathsUtils {
 		if (k <= 0) {
 			throw new IllegalArgumentException("k (" + k + ") must be > 0");
 		}
+		if (Double.isInfinite(x) && (x > 0)) {
+			return 1.0;
+		}
 		// Old approach: (not numerically stable):
 		// return lowerIncompleteGammaFunctionOfArgsOn2(k,x) /
 		//		gammaOfArgOn2Plus1(k-2); // denominator is Gamma(k/2)
