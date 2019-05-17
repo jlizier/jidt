@@ -97,8 +97,13 @@ public class ChiSquareMeasurementDistribution extends
 		super(0, 0);
 		this.numObservations = numObservations;
 		this.degreesOfFreedom = degreesOfFreedom;
-		chi2dist = new ChiSquaredDistribution(degreesOfFreedom); // Uncorrected distribution
-		meanOfUncorrectedDistribution = chi2dist.getNumericalMean() / (2.0*((double)numObservations));
+		if (degreesOfFreedom > 0) {
+			chi2dist = new ChiSquaredDistribution(degreesOfFreedom); // Uncorrected distribution
+			meanOfUncorrectedDistribution = chi2dist.getNumericalMean() / (2.0*((double)numObservations));
+		} else {
+			chi2dist = null; // Signal that all values will be (uncorrected) zero
+			meanOfUncorrectedDistribution = 0;
+		}
 		this.isBiasCorrected = isBiasCorrected;
 		this.actualValue = actualValue; // will be bias corrected, if we are bias correcting
 		// Now we can properly compute the p-value of this potentially bias corrected actual value
@@ -106,6 +111,14 @@ public class ChiSquareMeasurementDistribution extends
 	}
 
 	public double computePValueForGivenEstimate(double estimate) {
+		if (chi2dist == null) {
+			if (estimate > 0) {
+				return 1;
+			} else {
+				return 0;
+			}
+		}
+		// Postcondition: we have a valid chi2dist:
 		if (isBiasCorrected) {
 			// estimate is biasCorrected, so we need to add back into it the meanOfUncorrectedDistribution
 			return 1 - MathsUtils.chiSquareCdf(2.0*((double)numObservations)*(estimate + meanOfUncorrectedDistribution), degreesOfFreedom);
@@ -115,6 +128,10 @@ public class ChiSquareMeasurementDistribution extends
 	}
 
 	public double computeEstimateForGivenPValue(double pValue) {
+		if (chi2dist == null) {
+			// All p-values map to estimate 0
+			return 0;
+		}
 		double uncorrectedEstimate = chi2dist.inverseCumulativeProbability(1 - pValue) / (2.0*((double)numObservations));
 		if (isBiasCorrected) {
 			return uncorrectedEstimate - meanOfUncorrectedDistribution;
@@ -152,6 +169,9 @@ public class ChiSquareMeasurementDistribution extends
 	 * @return the standard deviation
 	 */
 	public double getStdOfDistribution() {
+		if (chi2dist == null) {
+			return 0; // All nulls are 0
+		}
 		return Math.sqrt(chi2dist.getNumericalVariance()) / (2.0*((double)numObservations));
 	}
 }
