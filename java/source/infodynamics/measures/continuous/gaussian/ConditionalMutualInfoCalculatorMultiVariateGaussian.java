@@ -737,6 +737,10 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 
 		double[] localValues = new double[lengthOfReturnArray];
 
+		if (isPreviousObservations) {
+			lastAverage = 0;
+		}
+		
 		for (int t = 0; t < newVar2Obs.length; t++) {
 			
 			double[] var1DeviationsFromMean =
@@ -813,12 +817,18 @@ public class ConditionalMutualInfoCalculatorMultiVariateGaussian
 				localValues[t] -= analyticMeasDist.getMeanOfUncorrectedDistribution();
 			}
 
+			if (isPreviousObservations) {
+				lastAverage += localValues[t];
+			}
 		}
 		
-		// if (isPreviousObservations) {
-		// Don't store the average value here, since it won't be exactly 
-		//  the same as what would have been computed under the analytic expression
-		// }
+		if (isPreviousObservations) {
+			// Originally we didn't store the average value here, worrying that it wouldn't be exactly 
+			//  the same as what would have been computed under the analytic expression; 
+			//  however it should be, any difference is only numerical
+			lastAverage /= (double) newVar2Obs.length;
+			condMiComputed = true;
+		}
 		
 		return localValues;
 	}
