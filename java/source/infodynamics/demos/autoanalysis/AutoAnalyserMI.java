@@ -161,6 +161,9 @@ public class AutoAnalyserMI extends AutoAnalyserChannelCalculator
 				MutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE,
 				MutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS,
 				MutualInfoCalculatorMultiVariateKraskov.PROP_USE_GPU,
+				MutualInfoCalculatorMultiVariateKraskov.PROP_BOUNDARY_SOURCE,
+				MutualInfoCalculatorMultiVariateKraskov.PROP_BOUNDARY_DEST
+				
 		};
 		kraskovPropertiesFieldNames = new String[] {
 				"MutualInfoCalculatorMultiVariateKraskov.PROP_NORMALISE",
@@ -169,7 +172,9 @@ public class AutoAnalyserMI extends AutoAnalyserChannelCalculator
 				"MutualInfoCalculatorMultiVariateKraskov.PROP_DYN_CORR_EXCL_TIME",
 				"MutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE",
 				"MutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS",
-				"MutualInfoCalculatorMultiVariateKraskov.PROP_USE_GPU"
+				"MutualInfoCalculatorMultiVariateKraskov.PROP_USE_GPU",
+				"MutualInfoCalculatorMultiVariateKraskov.PROP_BOUNDARY_SOURCE",
+				"MutualInfoCalculatorMultiVariateKraskov.PROP_BOUNDARY_DEST"
 		};
 		kraskovPropertyDescriptions = new String[] {
 				"(boolean) whether to normalise <br/>each incoming time-series to mean 0, standard deviation 1, or not (recommended)",
@@ -183,7 +188,9 @@ public class AutoAnalyserMI extends AutoAnalyserChannelCalculator
 						"\"MAX_NORM\" (default), otherwise \"EUCLIDEAN\" or \"EUCLIDEAN_SQUARED\" (both equivalent here)",
 				"Number of parallel threads to use <br/>in computation: an integer > 0 or \"USE_ALL\" " +
 						"(default, to indicate to use all available processors)",
-				"Whether to enable the GPU module (number of threads then has no bearing); boolean, default false"
+				"Whether to enable the GPU module (number of threads then has no bearing); boolean, default false",
+				"Boundary value of each dimension with periodic boundary condition for source data.",
+				"Boundary value of each dimension with periodic boundary condition for destination data ."
 		};
 		kraskovPropertyValueChoices = new String[][] {
 				{"true", "false"},
@@ -193,6 +200,8 @@ public class AutoAnalyserMI extends AutoAnalyserChannelCalculator
 				{"MAX_NORM", "EUCLIDEAN", "EUCLIDEAN_SQUARED"},
 				null,
 				{"true", "false"},
+				null,
+				null
 		};
 	}
 

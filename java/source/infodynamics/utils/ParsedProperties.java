@@ -116,10 +116,40 @@ public class ParsedProperties {
 			}
 		} else {
 			// The repeats are in a comma separated format
-			String[] repeatStrings = stringOfInts.split(",");
+			String[] repeatStrings = stringOfInts.split("[ ,]");
 			returnValues = new int[repeatStrings.length];
 			for (int i = 0; i < returnValues.length; i++) {
 				returnValues[i] = Integer.parseInt(repeatStrings[i]);
+			}
+		}
+		return returnValues;
+	}
+	
+	
+	/**
+	 * Return an double array for a comma or space separated integer list argument,
+	 * or a specification of "startIndex:endIndex"
+	 * 
+	 * @param stringOfInts the string contained the integers
+	 * @return an int array
+	 */
+	public static double[] parseStringArrayOfDoubles(String stringOfDoubles) {
+		double[] returnValues;
+		if (stringOfDoubles.indexOf(':') >= 0) {
+			// The repeats are of the format "startIndex:endIndex"
+			String[] indices = stringOfDoubles.split(":");
+			int startIndex = Integer.parseInt(indices[0]);
+			int endIndex = Integer.parseInt(indices[1]);
+			returnValues = new double[endIndex - startIndex + 1];
+			for (int i = 0; i < returnValues.length; i++) {
+				returnValues[i] = startIndex + i;
+			}
+		} else {
+			// The repeats are in a comma separated format
+			String[] repeatStrings = stringOfDoubles.split("[ ,]");
+			returnValues = new double[repeatStrings.length];
+			for (int i = 0; i < returnValues.length; i++) {
+				returnValues[i] = Double.parseDouble(repeatStrings[i]);
 			}
 		}
 		return returnValues;

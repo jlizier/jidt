@@ -21,6 +21,8 @@ package infodynamics.utils;
 import java.util.Collection;
 import java.util.PriorityQueue;
 
+import infodynamics.utils.NearestNeighbourSearcherInterface;
+
 /**
  * Generic class for fast neighbour searching
  *  possibly across several (multi-dimensional) variables.
@@ -33,13 +35,15 @@ import java.util.PriorityQueue;
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public abstract class NearestNeighbourSearcher {
-
+public abstract class NearestNeighbourSearcher 
+	implements NearestNeighbourSearcherInterface{
 	/**
 	 * The norm type to use between the univariates.
 	 */
 	protected int normTypeToUse = EuclideanUtils.NORM_MAX_NORM;
 
+	
+	
 	/**
 	 * Factory method to construct the searcher from a set of double[][] data.
 	 * This will return a {@link KdTree} or if the data is univaraite
@@ -326,9 +330,8 @@ public abstract class NearestNeighbourSearcher {
 	 *  found to be within r of that at sampleIndex.
 	 * @param indicesWithinR a list of array indices
 	 *  for points marked as true in isWithinR, terminated with a -1 value.
-	 * @return the number of matching points found
 	 */
-	public abstract int findPointsWithinR(
+	public abstract void findPointsWithinR(
 			int sampleIndex, double r,
 			boolean allowEqualToR, boolean[] isWithinR, int[] indicesWithinR);
 

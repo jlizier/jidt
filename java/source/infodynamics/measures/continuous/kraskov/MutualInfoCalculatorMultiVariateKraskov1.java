@@ -24,6 +24,7 @@ import java.util.PriorityQueue;
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
+import infodynamics.utils.NearestNeighbourSearcher;
 import infodynamics.utils.NeighbourNodeData;
 import infodynamics.utils.EuclideanUtils;
 
@@ -74,29 +75,37 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 		double sumNx = 0;
 		double sumNy = 0;
 				
+		
 		for (int t = startTimePoint; t < startTimePoint + numTimePoints; t++) {
 			// Compute eps for this time step by
 			//  finding the kth closest neighbour for point t:
 			PriorityQueue<NeighbourNodeData> nnPQ =
-					kdTreeJoint.findKNearestNeighbours(k, t, dynCorrExclTime);
+					treeJoint.findKNearestNeighbours(k, t, dynCorrExclTime);
+			
+			int qsize = nnPQ.size();
 			// First element in the PQ is the kth NN,
 			//  and epsilon = kthNnData.distance
 			NeighbourNodeData kthNnData = nnPQ.poll();
 
+			
+			int n_x = 0, n_y=0;
 			// Count the number of points whose x distance is less
 			//  than eps, and whose y distance is less than
 			//  epsilon = kthNnData.distance
-			int n_x = nnSearcherSource.countPointsStrictlyWithinR(
+			n_x = nnSearcherSource.countPointsStrictlyWithinR(
 							t, kthNnData.distance, dynCorrExclTime);
-			int n_y = nnSearcherDest.countPointsStrictlyWithinR(
+			n_y = nnSearcherDest.countPointsStrictlyWithinR(
 							t, kthNnData.distance, dynCorrExclTime);
-
+			
 			sumNx += n_x;
 			sumNy += n_y;
+			
+
 			// And take the digammas:
 			double digammaNxPlusOne = MathsUtils.digamma(n_x+1);
 			double digammaNyPlusOne = MathsUtils.digamma(n_y+1);
 			sumDiGammas += digammaNxPlusOne + digammaNyPlusOne;
+			
 
 			if (returnLocals) {
 				// TODO should digammaN be adjusted if we are using 
@@ -105,6 +114,7 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 				localMi[t-startTimePoint] = digammaK - digammaNxPlusOne - digammaNyPlusOne + digammaN;
 			}
 		}
+		
 
 		if (debug) {
 			Calendar rightNow2 = Calendar.getInstance();
@@ -148,7 +158,7 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 			// Compute eps for this time step by
 			//  finding the kth closest neighbour for point t:
 			PriorityQueue<NeighbourNodeData> nnPQ =
-					kdTreeJoint.findKNearestNeighbours(k, t, dynCorrExclTime);
+					treeJoint.findKNearestNeighbours(k, t, dynCorrExclTime);
 			// First element in the PQ is the kth NN,
 			//  and epsilon = kthNnData.distance
 			NeighbourNodeData kthNnData = nnPQ.poll();

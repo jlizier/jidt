@@ -18,6 +18,10 @@
 
 package infodynamics.measures.continuous.kraskov;
 
+import java.util.Hashtable;
+import java.util.Iterator;
+
+import infodynamics.measures.continuous.ActiveInfoStorageCalculator;
 import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariate;
 import infodynamics.measures.continuous.TransferEntropyCalculator;
 import infodynamics.measures.continuous.TransferEntropyCalculatorViaCondMutualInfo;
@@ -48,8 +52,13 @@ import infodynamics.measures.continuous.TransferEntropyCalculatorViaCondMutualIn
  *      as outlined
  *      in {@link TransferEntropyCalculatorViaCondMutualInfo#setProperty(String, String)});
  *      as well as for {@link #PROP_KRASKOV_ALG_NUM}.
- *      Embedding parameters may be automatically determined as outlined in 
- *      {@link TransferEntropyCalculatorViaCondMutualInfo#setProperty(String, String)}.</li>
+ *      Embedding parameters may be automatically determined as per the Ragwitz criteria
+ *      by setting the property {@link #PROP_AUTO_EMBED_METHOD} to {@link #AUTO_EMBED_METHOD_RAGWITZ}
+ *      or {@link #AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY},
+ *      or as per the max. bias-corrected AIS criteria by 
+ *      setting the property {@link #PROP_AUTO_EMBED_METHOD} to {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS}
+ *      (as per Garland et al. in the reference list)
+ *      plus additional parameter settings for these.</li>
  *      </li>
  *  <li>Computed values are in <b>nats</b>, not bits!</li>
  *  </ul>
@@ -74,6 +83,11 @@ import infodynamics.measures.continuous.TransferEntropyCalculatorViaCondMutualIn
  *  <a href="http://dx.doi.org/10.1103/PhysRevE.77.026110">
  *  "Local information transfer as a spatiotemporal filter for complex systems"</a>
  *  Physical Review E 77, 026110, 2008.</li>
+ * 	<li>Ragwitz and Kantz, "Markov models from data by simple nonlinear time series
+ *  	predictors in delay embedding spaces", Physical Review E, vol 65, 056201 (2002).</li>
+ *  <li>J. Garland, R. G. James, E. Bradley, <a href="http://dx.doi.org/10.1103/physreve.93.022221">
+ *  	"Leveraging information storage to select forecast-optimal parameters for delay-coordinate reconstructions"</a>,
+ *  	Physical Review E, Vol. 93 (2016), 022221, doi:</li>
  * </ul>
  * 
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
@@ -104,6 +118,98 @@ public class TransferEntropyCalculatorKraskov
 	 */
 	protected int kraskovAlgorithmNumber = 1;
 	protected boolean algChanged = false;
+	/**
+	 * Storage for the properties ready to pass onto the underlying conditional MI calculators should they change 
+	 */
+	protected Hashtable<String,String> props;
+
+	/**
+	 * Property name for specifying which (if any) auto-embedding method to use.
+	 * Valid values include {@link #AUTO_EMBED_METHOD_RAGWITZ}, {@link #AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY},
+	 * {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS}, {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS_DEST_ONLY},
+	 * {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE} and {@link #AUTO_EMBED_METHOD_NONE}.
+	 * Defaults to {@link #AUTO_EMBED_METHOD_NONE}
+	 */
+	public static final String PROP_AUTO_EMBED_METHOD = "AUTO_EMBED_METHOD";
+	/**
+	 * Valid value for the property {@link #PROP_AUTO_EMBED_METHOD} indicating that
+	 *  no auto embedding should be done (i.e. to use manually supplied parameters)
+	 */
+	public static final String AUTO_EMBED_METHOD_NONE = "NONE";
+	/**
+	 * Valid value for the property {@link #PROP_AUTO_EMBED_METHOD} indicating that
+	 *  the Ragwitz optimisation technique should be used for automatic embedding
+	 *  for both source and destination time-series
+	 */
+	public static final String AUTO_EMBED_METHOD_RAGWITZ = "RAGWITZ";
+	/**
+	 * Valid value for the property {@link #PROP_AUTO_EMBED_METHOD} indicating that
+	 *  the Ragwitz optimisation technique should be used for automatic embedding
+	 *  for the destination time-series only
+	 */
+	public static final String AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY = "RAGWITZ_DEST_ONLY";
+	/**
+	 * Valid value for the property {@link #PROP_AUTO_EMBED_METHOD} indicating that
+	 *  the automatic embedding should be done by maximising the bias corrected
+	 *  AIS, for both source and destination time series
+	 */
+	public static final String AUTO_EMBED_METHOD_MAX_CORR_AIS = "MAX_CORR_AIS";
+	/**
+	 * Valid value for the property {@link #PROP_AUTO_EMBED_METHOD} indicating that
+	 *  the automatic embedding should be done by maximising the bias corrected
+	 *  AIS for the target and subsequently maximising the TE over source embeddings,
+	 *  given a fixed source-target delay.
+	 */
+	public static final String AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE = "MAX_CORR_AIS_AND_TE";
+	/**
+	 * Valid value for the property {@link #PROP_AUTO_EMBED_METHOD} indicating that
+	 *  the automatic embedding should be done by maximising the bias corrected
+	 *  AIS, for destination time series only
+	 */
+	public static final String AUTO_EMBED_METHOD_MAX_CORR_AIS_DEST_ONLY = "MAX_CORR_AIS_DEST_ONLY";
+	/**
+	 * Internal variable tracking what type of auto embedding (if any)
+	 *  we are using
+	 */
+	protected String autoEmbeddingMethod = AUTO_EMBED_METHOD_NONE;
+	
+	/**
+	 * Property name for maximum embedding lengths (i.e. k for destination, and l for source if we're auto-embedding
+	 *  the source as well) for the auto-embedding search. Defaults to 1
+	 */
+	public static final String PROP_K_SEARCH_MAX = "AUTO_EMBED_K_SEARCH_MAX";
+	/**
+	 * Internal variable for storing the maximum embedding length to search up to for
+	 *  automating the parameters.
+	 */
+	protected int k_search_max = 1;
+
+	/**
+	 * Property name for maximum embedding delay (i.e. k_tau for destination, and l_tau for source if we're auto-embedding
+	 *   the source as well) for the auto-embedding search. Defaults to 1
+	 */
+	public static final String PROP_TAU_SEARCH_MAX = "AUTO_EMBED_TAU_SEARCH_MAX";
+	/**
+	 * Internal variable for storing the maximum embedding delay to search up to for
+	 *  automating the parameters.
+	 */
+	protected int tau_search_max = 1;
+
+	/**
+	 * Property name for the number of nearest neighbours to use for the auto-embedding search (Ragwitz criteria).
+	 * Defaults to match the value in use for {@link MutualInfoCalculatorMultiVariateKraskov#PROP_K}
+	 */
+	public static final String PROP_RAGWITZ_NUM_NNS = "AUTO_EMBED_RAGWITZ_NUM_NNS";
+	/**
+	 * Internal variable for storing the number of nearest neighbours to use for the
+	 *  auto embedding search (Ragwitz criteria)
+	 */
+	protected int ragwitz_num_nns = 1;
+	/** 
+	 * Internal variable to track whether the property {@link #PROP_RAGWITZ_NUM_NNS} has been
+	 * set yet
+	 */
+	protected boolean ragwitz_num_nns_set = false;
 
 	/**
 	 * Creates a new instance of the Kraskov-estimate style transfer entropy calculator
@@ -118,6 +224,7 @@ public class TransferEntropyCalculatorKraskov
 	public TransferEntropyCalculatorKraskov() throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		super(COND_MI_CALCULATOR_KRASKOV1);
 		kraskovAlgorithmNumber = 1;
+		props = new Hashtable<String,String>();
 	}
 
 	/**
@@ -141,6 +248,7 @@ public class TransferEntropyCalculatorKraskov
 		} else {
 			throw new ClassNotFoundException("Must be an underlying Kraskov-Grassberger conditional MI calculator");
 		}
+		props = new Hashtable<String,String>();
 	}
 
 	/**
@@ -159,6 +267,7 @@ public class TransferEntropyCalculatorKraskov
 		if ((algorithm != 1) && (algorithm != 2)) {
 			throw new ClassNotFoundException("Algorithm must be 1 or 2");
 		}
+		props = new Hashtable<String,String>();
 	}
 
 	/* (non-Javadoc)
@@ -198,6 +307,34 @@ public class TransferEntropyCalculatorKraskov
 	 * values should represent, include:</p>
 	 * <ul>
 	 * 		<li>{@link #PROP_KRASKOV_ALG_NUM} -- which Kraskov algorithm number to use (1 or 2).</li>
+	 * 		<li>{@link #PROP_AUTO_EMBED_METHOD} -- method by which the calculator
+	 * 		automatically determines the embedding history length ({@link #K_PROP_NAME})
+	 * 		and embedding delay ({@link #TAU_PROP_NAME}) for destination and potentially source.
+	 * 		Default is {@link #AUTO_EMBED_METHOD_NONE} meaning
+	 * 		values are set manually; other accepted values include: {@link #AUTO_EMBED_METHOD_RAGWITZ} for use
+	 * 		of the Ragwitz criteria for both source and destination (searching up to {@link #PROP_K_SEARCH_MAX} and 
+	 * 		{@link #PROP_TAU_SEARCH_MAX}), and {@link #AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY} for use
+	 * 		of the Ragwitz criteria for the destination only;
+	 * 		{@link #AUTO_EMBED_METHOD_MAX_CORR_AIS} for use of the max bias corrected AIS criteria
+	 * 		for both source and destination (searching up to {@link #PROP_K_SEARCH_MAX} and 
+	 * 		{@link #PROP_TAU_SEARCH_MAX}), {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS_DEST_ONLY} for use of
+	 * 		this criteria for the destination only and {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE} for
+	 * 		use of this criteria for the target, plus the max bias corrected TE for source embeddings.
+	 * 		Use of any value other than {@link #AUTO_EMBED_METHOD_NONE}
+	 * 		will lead to previous settings for embedding lengths and delays (via e.g. {@link #initialise(int, int)} or
+	 * 		auto-embedding during previous calculations) for the destination and perhaps source to
+	 * 		be overwritten after observations are supplied.</li>
+	 * 		<li>{@link #PROP_K_SEARCH_MAX} -- maximum embedded history length to search
+	 * 		up to if automatically determining the embedding parameters (as set by
+	 * 		{@link #PROP_AUTO_EMBED_METHOD}) for the time-series to be embedded; default is 1</li>
+	 * 		<li>{@link #PROP_TAU_SEARCH_MAX} -- maximum embedded history length to search
+	 * 		up to if automatically determining the embedding parameters (as set by
+	 * 		{@link #PROP_AUTO_EMBED_METHOD}) for the time-series to be embedded; default is 1</li>
+	 * 		<li>{@link #PROP_RAGWITZ_NUM_NNS} -- number of nearest neighbours to use
+	 * 		in the auto-embedding if the property {@link #PROP_AUTO_EMBED_METHOD}
+	 * 		has been set to {@link #AUTO_EMBED_METHOD_RAGWITZ} or {@link #AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY}.
+	 * 		Defaults to the property value
+	 *      set for {@link ConditionalMutualInfoCalculatorMultiVariateKraskov#PROP_K}</li>
 	 * 		<li>Any properties accepted by {@link TransferEntropyCalculatorViaCondMutualInfo#setProperty(String, String)}</li>
 	 * 		<li>Or properties accepted by the underlying
 	 * 		{@link ConditionalMutualInfoCalculatorMultiVariateKraskov#setProperty(String, String)} implementation.</li>
@@ -226,9 +363,23 @@ public class TransferEntropyCalculatorKraskov
 				System.out.println(this.getClass().getSimpleName() + ": Set property " + propertyName +
 						" to " + propertyValue);
 			}
+		} else if (propertyName.equalsIgnoreCase(PROP_AUTO_EMBED_METHOD)) {
+			// New method set for determining the embedding parameters
+			autoEmbeddingMethod = propertyValue;
+		} else if (propertyName.equalsIgnoreCase(PROP_K_SEARCH_MAX)) {
+			// Set max embedding history length for auto determination of embedding
+			k_search_max = Integer.parseInt(propertyValue);
+		} else if (propertyName.equalsIgnoreCase(PROP_TAU_SEARCH_MAX)) {
+			// Set maximum embedding delay for auto determination of embedding
+			tau_search_max = Integer.parseInt(propertyValue);
+		} else if (propertyName.equalsIgnoreCase(PROP_RAGWITZ_NUM_NNS)) {
+			// Set the number of nearest neighbours to use in case of Ragwitz auto embedding:
+			ragwitz_num_nns = Integer.parseInt(propertyValue);
+			ragwitz_num_nns_set = true;
 		} else {
 			// Assume it was a property for the parent class or underlying conditional MI calculator
 			super.setProperty(propertyName, propertyValue);
+			props.put(propertyName, propertyValue); // This will keep properties for the super class as well as the cond MI calculator, but this is ok
 		}
 	}
 
@@ -236,10 +387,13 @@ public class TransferEntropyCalculatorKraskov
 	public String getProperty(String propertyName) throws Exception {
 		if (propertyName.equalsIgnoreCase(PROP_KRASKOV_ALG_NUM)) {
 			return Integer.toString(kraskovAlgorithmNumber);
+		} else if (propertyName.equalsIgnoreCase(PROP_AUTO_EMBED_METHOD)) {
+			return autoEmbeddingMethod;
+		} else if (propertyName.equalsIgnoreCase(PROP_K_SEARCH_MAX)) {
+			return Integer.toString(k_search_max);
+		} else if (propertyName.equalsIgnoreCase(PROP_TAU_SEARCH_MAX)) {
+			return Integer.toString(tau_search_max);
 		} else if (propertyName.equalsIgnoreCase(PROP_RAGWITZ_NUM_NNS)) {
-			// Need to deal with this one here instead of in super class, 
-			//  since if it's not set especially by the user we'll default to the
-			//  kNNs used in the KSG method:
 			if (ragwitz_num_nns_set) {
 				return Integer.toString(ragwitz_num_nns);
 			} else {
@@ -248,6 +402,151 @@ public class TransferEntropyCalculatorKraskov
 		} else {
 			// Assume it was a property for the parent class or underlying conditional MI calculator
 			return super.getProperty(propertyName);
+		}
+	}
+
+	@Override
+	public void preFinaliseAddObservations() throws Exception {
+		// Automatically determine the embedding parameters for the given time series
+		
+		if (autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_NONE)) {
+			return;
+		}
+		// Else we need to auto embed
+		
+		// If we need to check which embedding method later:
+		if (autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_RAGWITZ) ||
+				autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY) ||
+				autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_MAX_CORR_AIS) ||
+				autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_MAX_CORR_AIS_DEST_ONLY) ||
+				autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE)) {
+		
+			// Use a Kraskov AIS calculator to embed both time-series individually:
+			ActiveInfoStorageCalculatorKraskov aisCalc = new ActiveInfoStorageCalculatorKraskov();
+			// Set the properties for the underlying MI Kraskov calculator here to match ours:
+			for (String key : props.keySet()) {
+				aisCalc.setProperty(key, props.get(key));
+			}
+			// Set the auto-embedding properties as we require:
+			if (autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_RAGWITZ) ||
+					autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY)) {
+				// We're doing Ragwitz auto-embedding
+				aisCalc.setProperty(ActiveInfoStorageCalculatorKraskov.PROP_AUTO_EMBED_METHOD,
+					ActiveInfoStorageCalculatorKraskov.AUTO_EMBED_METHOD_RAGWITZ);
+				// In case !ragwitz_num_nns_set and our condMiCalc has a different default number of
+				//  kNNs for Kraskov search than miCalc, we had best supply the number directly here:
+				aisCalc.setProperty(ActiveInfoStorageCalculatorKraskov.PROP_RAGWITZ_NUM_NNS,
+							getProperty(PROP_RAGWITZ_NUM_NNS));
+			} else {
+				// We're doing max bias-corrected AIS embeding:
+				aisCalc.setProperty(ActiveInfoStorageCalculatorKraskov.PROP_AUTO_EMBED_METHOD,
+						ActiveInfoStorageCalculatorKraskov.AUTO_EMBED_METHOD_MAX_CORR_AIS);
+			}
+			aisCalc.setProperty(ActiveInfoStorageCalculatorKraskov.PROP_K_SEARCH_MAX,
+					Integer.toString(k_search_max));
+			aisCalc.setProperty(ActiveInfoStorageCalculatorKraskov.PROP_TAU_SEARCH_MAX,
+					Integer.toString(tau_search_max));
+			
+			// Embed the destination:
+			if (debug) {
+				System.out.println("Starting embedding of destination:");
+			}
+			aisCalc.initialise();
+			aisCalc.startAddObservations();
+			for (double[] destination : vectorOfDestinationTimeSeries) {
+				aisCalc.addObservations(destination);
+			}
+			aisCalc.finaliseAddObservations();
+			// Set the auto-embedding parameters for the destination:
+			k = Integer.parseInt(aisCalc.getProperty(ActiveInfoStorageCalculator.K_PROP_NAME));
+			k_tau = Integer.parseInt(aisCalc.getProperty(ActiveInfoStorageCalculator.TAU_PROP_NAME));
+			if (debug) {
+				System.out.printf("Embedding parameters for destination set to k=%d,k_tau=%d\n",
+					k, k_tau);
+			}
+		
+			if (autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_RAGWITZ) ||
+					autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_MAX_CORR_AIS)) {
+				// Embed the source also:
+				if (debug) {
+					System.out.println("Starting embedding of source:");
+				}
+				aisCalc.initialise();
+				aisCalc.startAddObservations();
+				for (double[] source : vectorOfSourceTimeSeries) {
+					aisCalc.addObservations(source);
+				}
+				aisCalc.finaliseAddObservations();
+				// Set the auto-embedding parameters for the source:
+				l = Integer.parseInt(aisCalc.getProperty(ActiveInfoStorageCalculator.K_PROP_NAME));
+				l_tau = Integer.parseInt(aisCalc.getProperty(ActiveInfoStorageCalculator.TAU_PROP_NAME));
+				if (debug) {
+					System.out.printf("Embedding parameters for source set to l=%d,l_tau=%d\n",
+						l, l_tau);
+				}
+
+			} else if (autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE)) {
+				if (debug) {
+					System.out.println("Starting embedding of source:");
+				}
+
+				// Instantiate a new calculator to optimize the embedding parameters
+				TransferEntropyCalculatorKraskov teEmbeddingCalc =
+						new TransferEntropyCalculatorKraskov();
+
+				// Set all properties of the current calculator except embedding method
+				for (String key : props.keySet()) {
+					teEmbeddingCalc.setProperty(key, props.get(key));
+				}
+				teEmbeddingCalc.setProperty(PROP_AUTO_EMBED_METHOD, AUTO_EMBED_METHOD_NONE);
+
+				double bestTE = Double.NEGATIVE_INFINITY;
+				int l_candidate_best = 1;
+				int l_tau_candidate_best = 1;
+
+				// Iterate over all possible embeddings
+				for (int l_candidate = 1; l_candidate <= k_search_max; l_candidate++) {
+					for (int l_tau_candidate = 1; l_tau_candidate <= tau_search_max; l_tau_candidate++) {
+
+						teEmbeddingCalc.initialise(k, k_tau, l_candidate, l_tau_candidate, delay);
+						teEmbeddingCalc.startAddObservations();
+
+						Iterator<double[]> destIterator = vectorOfDestinationTimeSeries.iterator();
+						for (double[] source : vectorOfSourceTimeSeries) {
+							double[] dest = destIterator.next();
+							teEmbeddingCalc.addObservations(source, dest);
+						}
+						teEmbeddingCalc.finaliseAddObservations();
+						double thisTE = teEmbeddingCalc.computeAverageLocalOfObservations();
+
+						if (debug) {
+							System.out.printf("TE for l=%d, l_tau=%d is %.3f\n",
+									l_candidate, l_tau_candidate, thisTE);
+						}
+
+						if (thisTE > bestTE) {
+							// This parameter setting is the best so far:
+							bestTE = thisTE;
+							l_candidate_best = l_candidate;
+							l_tau_candidate_best = l_tau_candidate;
+						}
+						if (l_candidate == 1) {
+							// tau is irrelevant, so no point testing other values
+							break;
+						}
+					}
+				}
+				l = l_candidate_best;
+				l_tau = l_tau_candidate_best;
+				if (debug) {
+					System.out.printf("Embedding parameters for source set to l=%d,l_tau=%d\n",
+						l, l_tau);
+				}
+
+			}
+	
+			// Now that embedding parameters are finalised:
+			setStartTimeForFirstDestEmbedding();
 		}
 	}
 }

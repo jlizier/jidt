@@ -18,14 +18,19 @@
 
 package infodynamics.measures.continuous.kraskov;
 
+import java.util.Arrays;
+import java.util.PriorityQueue;
+
 import infodynamics.utils.ArrayFileReader;
 import infodynamics.utils.MatrixUtils;
+
 
 public class MutualInfoMultiVariateTester
 	extends infodynamics.measures.continuous.MutualInfoMultiVariateAbstractTester {
 
 	protected String NUM_THREADS_TO_USE_DEFAULT = MutualInfoCalculatorMultiVariateKraskov.USE_ALL_THREADS;
 	protected String NUM_THREADS_TO_USE = NUM_THREADS_TO_USE_DEFAULT;
+//	protected String NUM_THREADS_TO_USE = "1";
 	
 	/**
 	 * Utility function to create a calculator for the given algorithm number
@@ -89,6 +94,7 @@ public class MutualInfoMultiVariateTester
 
 		super.testComputeSignificanceDoesntAlterAverage(miCalc, 2, 100);
 	}
+
 	public void testComputeSignificanceDoesntAlterAverage() throws Exception {
 		checkComputeSignificanceDoesntAlterAverage(1);
 		checkComputeSignificanceDoesntAlterAverage(2);
@@ -181,6 +187,9 @@ public class MutualInfoMultiVariateTester
 				kNNs, expectedFromMILCA_2);
 
 	}
+	
+	
+
 
 	/**
 	 * Test the computed multivariate MI against that calculated by Kraskov's own MILCA
@@ -459,6 +468,59 @@ public class MutualInfoMultiVariateTester
 		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0}),
 				MatrixUtils.selectColumns(data, new int[] {1}),
 				kNNs, expectedFromMILCA_2);
+
+	}
+	
+	
+	/**
+	 * Test the computed multivariate MI for random variables with periodic conditions.
+	 * 
+	 * @throws Exception
+	 */
+public void testMultivariateMIforRandomVariablesWithPeriodicCondition() throws Exception {
+		// Test set 10:
+		
+		// We'll take the columns from this data set
+		ArrayFileReader afr = new ArrayFileReader("demos/data/periodicRandomDataRange0to1length1000dimension1.txt");
+		double[][] data = afr.getDouble2DMatrix();
+		
+		// Use various Kraskov k nearest neighbours parameter
+		int[] kNNs = {4};
+		// Expected values from Kraskov's MILCA toolkit:
+		double[] expectedFromMILCA = {Math.log(5)};
+				
+		// The Kraskov MILCA toolkit MIhigherdim executable 
+		//  uses algorithm 2 by default (this is what it means by rectangular):
+		MutualInfoCalculatorMultiVariateKraskov miCalc = getNewCalc(1);
+		miCalc.setProperty(
+				MutualInfoCalculatorMultiVariateKraskov.PROP_K,
+				Integer.toString(kNNs[0]));
+//		miCalc.setProperty(
+//				MutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS,
+//				"1");
+		miCalc.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_NORMALISE, "true"); // No normalise for periodic condition.
+		miCalc.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "1e-8"); // Need consistency for unit tests
+		miCalc.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_BOUNDARY_SOURCE, "1");
+		miCalc.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_BOUNDARY_DEST, "1");
+		miCalc.initialise(MatrixUtils.selectColumns(data, new int[] {0})[0].length,
+				MatrixUtils.selectColumns(data, new int[] {1})[0].length);
+		
+		miCalc.setObservations(MatrixUtils.selectColumns(data, new int[] {0}),
+				MatrixUtils.selectColumns(data, new int[] {1}));
+		miCalc.setDebug(true);
+		
+		double mi = miCalc.computeAverageLocalOfObservations();
+		miCalc.setDebug(false);
+		// No longer need to set this property as it's set by default:
+		//miCalc.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE,
+		//		EuclideanUtils.NORM_MAX_NORM_STRING);
+		
+		
+		System.out.printf("k=%d: Average MI %.8f (expected %.8f)\n",
+				kNNs[0], mi, expectedFromMILCA[0]);
+		// Dropping required accuracy by one order of magnitude, due
+		//  to faster but slightly less accurate digamma estimator change
+		assertEquals(expectedFromMILCA[0], mi, 0.1);			
 
 	}
 

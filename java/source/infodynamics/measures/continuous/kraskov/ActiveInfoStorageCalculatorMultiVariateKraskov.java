@@ -332,18 +332,6 @@ public class ActiveInfoStorageCalculatorMultiVariateKraskov
 	}
 
   // TODO: PEDRO: should I implement a getProperty here?
-	// Joe: Yes. But look into this in wider context of what else we could cut from this class --
-	//  there seems to be an awful lot that's re-implementing variables and code that we 
-	//  inherit already ...
-	@Override
-	public String getProperty(String propertyName) throws Exception {
-		if (propertyName.equalsIgnoreCase(PROP_KRASKOV_ALG_NUM)) {
-			return Integer.toString(kraskovAlgorithmNumber);
-		} else {
-			// Assume it was a property for the parent class or underlying conditional MI calculator
-			return super.getProperty(propertyName);
-		}
-	}
 
 	@Override
 	public void preFinaliseAddObservations() throws Exception {

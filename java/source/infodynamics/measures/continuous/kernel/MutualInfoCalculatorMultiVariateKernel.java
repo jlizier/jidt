@@ -163,13 +163,6 @@ public class MutualInfoCalculatorMultiVariateKernel
 		}
 	}
 
-	@Override
-	protected void normaliseData() {
-	    // Here we actually do nothing -- normalising is implemented for 
-		//  the kernel estimator by adjusting the kernel widths only, not by
-		//  changing the data we operate on!!
-	}
-	
 	/**
 	 * Compute the average MI from the previously supplied observations.
 	 * 
@@ -631,6 +624,8 @@ public class MutualInfoCalculatorMultiVariateKernel
 	 * 			kernel width to be used in the calculation. If {@link #normalise} is set,
 	 * 		    then this is a number of standard deviations; otherwise it
 	 * 			is an absolute value. Default is {@link #DEFAULT_KERNEL_WIDTH}.</li>
+	 * 		<li>{@link #NORMALISE_PROP_NAME} -- whether to normalise the incoming variables 
+	 * 			to mean 0, standard deviation 1, or not (default false). Sets {@link #normalise}.</li>
 	 * 		<li>{@link #DYN_CORR_EXCL_TIME_NAME} -- a dynamics exclusion time window (see Kantz and Schreiber),
 	 * 			default is 0 which means no dynamic exclusion window.</li>
 	 * 		<li>{@link #FORCE_KERNEL_COMPARE_TO_ALL} -- whether to force the underlying kernel estimators to compare
@@ -660,8 +655,6 @@ public class MutualInfoCalculatorMultiVariateKernel
 				propertyName.equalsIgnoreCase(EPSILON_PROP_NAME)) {
 			kernelWidth = Double.parseDouble(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(NORMALISE_PROP_NAME)) {
-			// This is nominally a property of the super class, but we 
-			//  have extra work to do with this one
 			normalise = Boolean.parseBoolean(propertyValue);
 			mvkeSource.setNormalise(normalise);
 			mvkeDest.setNormalise(normalise);
@@ -702,6 +695,8 @@ public class MutualInfoCalculatorMultiVariateKernel
 		if (propertyName.equalsIgnoreCase(KERNEL_WIDTH_PROP_NAME) ||
 				propertyName.equalsIgnoreCase(EPSILON_PROP_NAME)) {
 			return Double.toString(kernelWidth);
+		} else if (propertyName.equalsIgnoreCase(NORMALISE_PROP_NAME)) {
+			return Boolean.toString(normalise);
 		} else if (propertyName.equalsIgnoreCase(DYN_CORR_EXCL_TIME_NAME)) {
 			return Integer.toString(dynCorrExclTime);
 		} else if (propertyName.equalsIgnoreCase(FORCE_KERNEL_COMPARE_TO_ALL)) {

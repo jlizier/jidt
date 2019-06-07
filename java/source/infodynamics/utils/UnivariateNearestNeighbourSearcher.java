@@ -685,7 +685,7 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 	 * </p> 
 	 * 
 	 */
-	public int findPointsWithinR(
+	public void findPointsWithinR(
 			int sampleIndex, double r, boolean allowEqualToR,
 			boolean[] isWithinR, int[] indicesWithinR) {
 		int indexInIndicesWithinR = 0;
@@ -719,7 +719,7 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 		}
 		// Write the terminating integer into the indicesWithinR array:
 		indicesWithinR[indexInIndicesWithinR] = -1;
-		return indexInIndicesWithinR;
+		return;
 	}
 
 	/**
