@@ -111,8 +111,6 @@ public abstract class ConditionalTransferEntropyAbstractTester extends TestCase 
 	 */
 	public void testUnivariateCallFailsIfWrongInitialisation(ConditionalTransferEntropyCalculator teCalc) throws Exception {
 		
-		teCalc.initialise(1, 1, 1);
-		
 		// generate some random data
 		RandomGenerator rg = new RandomGenerator();
 		double[] sourceData = rg.generateNormalData(10,
@@ -121,13 +119,28 @@ public abstract class ConditionalTransferEntropyAbstractTester extends TestCase 
 				0, 1);
 		double[] condData = rg.generateNormalData(10,
 				0, 1);
+
+		// Univariate initialisation:
+		teCalc.initialise(1, 1, 1);
 		boolean gotException = false;
 		try {
 			teCalc.setObservations(sourceData, destData, condData);
 		} catch (Exception e) {
 			gotException = true;
 		}
-		assert(gotException);
+		System.out.println("Got an exception? " + gotException);
+		assertFalse(gotException);
+
+		// Multivariate initialisation:
+		teCalc.initialise(1, 1, 1, 1, 1, new int[] {1, 1}, new int[] {1, 1},  new int[] {1, 1});
+		gotException = false;
+		try {
+			teCalc.setObservations(sourceData, destData, condData);
+		} catch (Exception e) {
+			gotException = true;
+		}
+		System.out.println("Got an exception? " + gotException);
+		assertTrue(gotException);
 	}
 	
 	/**
@@ -183,6 +196,29 @@ public abstract class ConditionalTransferEntropyAbstractTester extends TestCase 
 		
 		assertEquals(teCalc.getNumObservations(), condTeCalc.getNumObservations());
 		assertEquals(te, condTe, 0.000000001);
+		
+		// Finally, compute conditional TE with some older
+		//  parts of the destination as conditional variables (plural variables!)
+		//  instead of in the destination past.
+		int multivarDim = k - 1; // How many conditional variables we will use
+		condDims = new int[multivarDim];
+		condTaus = new int[multivarDim];
+		condDelays = new int[multivarDim];
+		double[][] conditionals = new double[timeSteps][multivarDim];
+		for (int i = 0; i < multivarDim; i++) {
+			condDims[i] = 1;
+			condTaus[i] = 1;
+			condDelays[i] = 2 + i;
+			MatrixUtils.copyIntoColumn(conditionals, i, destData);
+		}
+		condTeCalc.initialise(1, 1, 1, 1, 1, condDims, condTaus, condDelays);
+		condTeCalc.setObservations(sourceData, destData, conditionals);
+		double condTeMultivarDelays = condTeCalc.computeAverageLocalOfObservations();
+		System.out.printf("CondTE(k=%d, with delays): Average was %.5f\n", k, condTeMultivarDelays);
+		
+		assertEquals(teCalc.getNumObservations(), condTeCalc.getNumObservations());
+		assertEquals(te, condTeMultivarDelays, 0.000000001);
+
 	}
 	
 }
