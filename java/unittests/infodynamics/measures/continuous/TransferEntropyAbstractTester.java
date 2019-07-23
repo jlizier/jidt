@@ -25,6 +25,40 @@ import infodynamics.utils.RandomGenerator;
 public abstract class TransferEntropyAbstractTester extends TestCase {
 
 	/**
+	 * Confirm that the TE calculator with k=0 produces the same result as
+	 *  lagged MI
+	 * 
+	 * @param teCalc
+	 * @param miCalc
+	 * @param timeSteps
+	 * @throws Exception
+	 */
+	public void testHandlesK0(TransferEntropyCalculator teCalc,
+			MutualInfoCalculatorMultiVariate miCalc, int timeSteps) throws Exception {
+		
+		System.out.println("Testing k=0 runs ok for TE");
+				
+		// generate some random data
+		RandomGenerator rg = new RandomGenerator();
+		double[] sourceData = rg.generateNormalData(timeSteps,
+				0, 1);
+		double[] destData = rg.generateNormalData(timeSteps,
+				0, 1);
+		
+		teCalc.initialise(0);
+		teCalc.setObservations(sourceData, destData);
+		double te = teCalc.computeAverageLocalOfObservations();
+		
+		miCalc.initialise();
+		miCalc.setProperty(MutualInfoCalculatorMultiVariate.PROP_TIME_DIFF, "1");
+		miCalc.setObservations(sourceData, destData);
+		double miLagged = miCalc.computeAverageLocalOfObservations();
+
+		assertEquals(miLagged, te, 0.00001);
+
+	}
+	
+	/**
 	 * Confirm that the local values average correctly back to the average value
 	 * 
 	 * @param teCalc a pre-constructed TransferEntropyCalculator object

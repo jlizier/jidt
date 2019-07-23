@@ -30,6 +30,12 @@ import infodynamics.utils.RandomGenerator;
 
 public class TransferEntropyGaussianTester extends TransferEntropyAbstractTester {
 
+	public void testK0() throws Exception {
+		TransferEntropyCalculatorGaussian teCalc = new TransferEntropyCalculatorGaussian();
+		MutualInfoCalculatorMultiVariateGaussian miCalc = new MutualInfoCalculatorMultiVariateGaussian();
+		super.testHandlesK0(teCalc, miCalc, 100);
+	}
+
 	public void testLocalsAverageCorrectly() throws Exception {
 		TransferEntropyCalculatorGaussian teCalc = new TransferEntropyCalculatorGaussian();
 		super.testLocalsAverageCorrectly(teCalc, 100, 2);

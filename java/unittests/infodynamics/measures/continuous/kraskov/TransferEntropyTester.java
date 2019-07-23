@@ -29,6 +29,20 @@ public class TransferEntropyTester
 	extends infodynamics.measures.continuous.TransferEntropyAbstractTester {
 
 	/**
+	 * Confirm that k=0 works as expected
+	 * 
+	 */
+	public void testK0() throws Exception {
+		
+		TransferEntropyCalculatorKraskov teCalc =
+				new TransferEntropyCalculatorKraskov();
+		MutualInfoCalculatorMultiVariateKraskov1 miCalc =
+				new MutualInfoCalculatorMultiVariateKraskov1();
+		
+		super.testHandlesK0(teCalc, miCalc, 100);
+	}
+
+	/**
 	 * Confirm that the local values average correctly back to the average value
 	 * 
 	 */
