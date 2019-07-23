@@ -124,8 +124,10 @@ public class OctaveMatrix
    * @param data array of booleans
    * @param dims array of true dimensions of the data
    */
-  public void loadIntData (boolean[] data, int[] dims)
+  public void loadBooleanAsIntData (boolean[] data, int[] dims)
   {
+    // We'll print a warning for the user in case this is not the expected method signature:
+    System.out.printf("Loading boolean array of length %d into Java\n", data.length);
     this.dims = dims;
 	int[] intData = new int[data.length];
 	for (int i = 0; i < data.length; i++) {
@@ -238,7 +240,7 @@ public class OctaveMatrix
 
   public static Object ident (Object o)
   {
-    System.out.println (o);
+    // System.out.println (o);
     return o;
   }
 

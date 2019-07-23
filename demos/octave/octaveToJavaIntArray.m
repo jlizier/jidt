@@ -32,7 +32,12 @@ function jIntArray = octaveToJavaIntArray(octaveArray)
 		if (length(octaveArray) > 1)
 			% Do this the normal way
 			tmp = javaObject('infodynamics.utils.OctaveMatrix');
-			tmp.loadIntData(octaveArray,[1, length(octaveArray)]);
+			try
+				tmp.loadIntData(octaveArray,[1, length(octaveArray)]);
+			catch
+				% Most likely error here is that octaveArray is interpreted as booleans, so try loading as booleans:
+				tmp.loadBooleanAsIntData(octaveArray,[1, length(octaveArray)]);
+			end
 			jIntArray = tmp.asIntVector();
 		else
 			% For length 1 arrays, we need to perform a hack here or else
