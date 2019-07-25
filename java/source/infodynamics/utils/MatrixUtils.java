@@ -1625,6 +1625,24 @@ public class MatrixUtils {
 		return data;
 	}
 
+	/**
+	 * Subsample rows from the matrix
+	 * 
+	 * @param matrix 2D data array
+	 * @param fromRow index of the first row to return
+	 * @param subsampleFactor we will skip (subsampleFactor-1) rows
+	 *   before returning the next one
+	 * @return a 2D data array of the selected rows
+	 */
+	public static double[][] subsampleRows(double matrix[][], int fromRow, int subsampleFactor) {
+		double[][] data = new double[(int) Math.ceil(((double) (matrix.length - fromRow)) / (double) subsampleFactor)][];
+		int newRow = 0;
+		for (int rIndex = fromRow; rIndex < matrix.length; rIndex += subsampleFactor) {
+			data[newRow++] = matrix[rIndex];
+		}
+		return data;
+	}
+
 	public static double[][] selectFirstTwoDimenions(double[][][][] matrix, int d2, int d3) {
 		double[][] newMatrix = new double[matrix.length][];
 		for (int i = 0; i < matrix.length; i++) {
