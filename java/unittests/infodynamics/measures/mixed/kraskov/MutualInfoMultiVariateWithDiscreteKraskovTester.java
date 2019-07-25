@@ -249,7 +249,14 @@ public class MutualInfoMultiVariateWithDiscreteKraskovTester extends TestCase {
     miCalc.initialise(1, 2);
     miCalc.setObservations(contData, discData);
     double res3 = miCalc.computeAverageLocalOfObservations();
-    assertTrue(Math.abs(res3 - res1) > 0.001);
+    double diff = Math.abs(res3 - res1);
+    double tol = 1e-6;
+    if (diff <= tol) {
+    	System.out.printf("KSG MI with discrete changed less (%.8f) than %.7f when K changed from 2 to 4." +
+    			"That can happen at random, but we are failing the unit test as a warning; re-run to check.\n",
+    			diff, tol);
+    }
+    assertTrue(diff > tol);
     miCalc.setProperty("k", "4");
 
     // Test that noiseLevel has an effect
