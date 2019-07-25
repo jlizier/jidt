@@ -244,23 +244,51 @@ public abstract class MutualInfoMultiVariateCommon implements
 		}
 	}
 
+	@Override
 	public void setObservations(double[][] source, double[][] destination) throws Exception {
 		startAddObservations();
 		addObservations(source, destination);
 		finaliseAddObservations();
 	}
 
+	/**
+	 * A non-overloaded method signature for setObservations with 2D arguments, as there have been
+	 *  some problems calling overloaded versions of setObservations from jpype. 
+	 * 
+	 * @param source
+	 * @param destination
+	 * @throws Exception
+	 */
+	public void setObservations2D(double[][] source, double[][] destination) throws Exception {
+		setObservations(source, destination);
+	}
+
+	@Override
 	public void setObservations(double[] source, double[] destination) throws Exception {
 		startAddObservations();
 		addObservations(source, destination);
 		finaliseAddObservations();
 	}
 
+	/**
+	 * A non-overloaded method signature for setObservations with 1D arguments, as there have been
+	 *  some problems calling overloaded versions of setObservations from jpype. 
+	 * 
+	 * @param source
+	 * @param destination
+	 * @throws Exception
+	 */
+	public void setObservations1D(double[] source, double[] destination) throws Exception {
+		setObservations(source, destination);
+	}
+	
+	@Override
 	public void startAddObservations() {
 		vectorOfSourceObservations = new Vector<double[][]>();
 		vectorOfDestinationObservations = new Vector<double[][]>();
 	}
 	
+	@Override
 	public void addObservations(double[][] source, double[][] destination) throws Exception {
 		if (vectorOfSourceObservations == null) {
 			// startAddObservations was not called first
@@ -286,6 +314,19 @@ public abstract class MutualInfoMultiVariateCommon implements
 		vectorOfDestinationObservations.add(destination);
 	}
 
+	/**
+	 * A non-overloaded method signature for addObservations with 2D arguments, as there have been
+	 *  some problems calling overloaded versions of setObservations from jpype. 
+	 * 
+	 * @param source
+	 * @param destination
+	 * @throws Exception
+	 */
+	public void addObservations2D(double[][] source, double[][] destination) throws Exception {
+		addObservations(source, destination);
+	}
+
+	@Override
 	public void addObservations(double[] source, double[] destination) throws Exception {
 		
 		if ((dimensionsDest != 1) || (dimensionsSource != 1)) {
@@ -296,6 +337,18 @@ public abstract class MutualInfoMultiVariateCommon implements
 		}
 		addObservations(MatrixUtils.reshape(source, source.length, 1),
 						MatrixUtils.reshape(destination, destination.length, 1));
+	}
+
+	/**
+	 * A non-overloaded method signature for addObservations with 1D arguments, as there have been
+	 *  some problems calling overloaded versions of setObservations from jpype. 
+	 * 
+	 * @param source
+	 * @param destination
+	 * @throws Exception
+	 */
+	public void addObservations1D(double[] source, double[] destination) throws Exception {
+		addObservations(source, destination);
 	}
 
 	public void addObservations(double[][] source, double[][] destination,

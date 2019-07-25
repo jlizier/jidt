@@ -264,6 +264,19 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		addedMoreThanOneObservationSet = false;
 	}
 
+	/**
+	 * A non-overloaded method signature for setObservations with 2D arguments, as there have been
+	 *  some problems calling overloaded versions of setObservations from jpype. 
+	 * 
+	 * @param var1
+	 * @param var2
+	 * @param cond
+	 * @throws Exception
+	 */
+	public void setObservations2D(double[][] var1, double[][] var, double[][] cond) throws Exception {
+		setObservations(var1, var, cond);
+	}
+
 	@Override
 	public void setObservations(double[] var1, double[] var2,
 			double[] cond) throws Exception {
@@ -273,6 +286,19 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		addedMoreThanOneObservationSet = false;
 	}
 
+	/**
+	 * A non-overloaded method signature for setObservations with 1D arguments, as there have been
+	 *  some problems calling overloaded versions of setObservations from jpype. 
+	 * 
+	 * @param var1
+	 * @param var2
+	 * @param cond
+	 * @throws Exception
+	 */
+	public void setObservations1D(double[] var1, double[] var, double[] cond) throws Exception {
+		setObservations(var1, var, cond);
+	}
+	
 	@Override
 	public void startAddObservations() {
 		vectorOfVar1Observations = new Vector<double[][]>();
@@ -312,6 +338,19 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		}
 	}
 
+	/**
+	 * A non-overloaded method signature for addObservations with 2D arguments, as there have been
+	 *  some problems calling overloaded versions of setObservations from jpype. 
+	 * 
+	 * @param var1
+	 * @param var2
+	 * @param cond
+	 * @throws Exception
+	 */
+	public void addObservations2D(double[][] var1, double[][] var, double[][] cond) throws Exception {
+		addObservations(var1, var, cond);
+	}
+
 	@Override
 	public void addObservations(double[] var1, double[] var2,
 			double[] cond) throws Exception {
@@ -327,6 +366,19 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 						MatrixUtils.reshape(var2, var2.length, 1),
 						MatrixUtils.reshape(cond, cond.length, 1));
 
+	}
+	
+	/**
+	 * A non-overloaded method signature for addObservations with 1D arguments, as there have been
+	 *  some problems calling overloaded versions of setObservations from jpype. 
+	 * 
+	 * @param var1
+	 * @param var2
+	 * @param cond
+	 * @throws Exception
+	 */
+	public void addObservations1D(double[] var1, double[] var, double[] cond) throws Exception {
+		addObservations(var1, var, cond);
 	}
 	
 	@Override
