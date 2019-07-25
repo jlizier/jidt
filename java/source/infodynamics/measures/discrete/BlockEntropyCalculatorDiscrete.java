@@ -83,6 +83,13 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 	}
 	
 	/**
+	 * Construct an instance with default blocksize 1 and base 2
+	 */
+	public BlockEntropyCalculatorDiscrete() {
+		this(1, 2);
+	}
+	
+	/**
 	 * Construct a new instance
 	 * 
 	 * @param blocksize Number of consecutive time-steps to compute entropy over.
@@ -92,7 +99,10 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 	public BlockEntropyCalculatorDiscrete(int blocksize, int base) {
 
 		super(base);
-		
+		resetBlocksize(blocksize);
+	}
+	
+	private void resetBlocksize(int blocksize) {
 		this.blocksize = blocksize;
 		base_power_blocksize = MathsUtils.power(base, blocksize);
 
@@ -102,19 +112,7 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 		if (blocksize > Math.log(Integer.MAX_VALUE) / log_base) {
 			throw new RuntimeException("Base and blocksize combination too large");
 		}
-
-		// Create storage for counts of observations.
-		// We're recreating stateCount, which was created in super()
-		//  however the super() didn't create it for blocksize > 1
-		try {
-			stateCount = new int[MathsUtils.power(base, blocksize)];
-		} catch (OutOfMemoryError e) {
-			// Allow any Exceptions to be thrown, but catch and wrap
-			//  Error as a Runtimexception
-			throw new RuntimeException("Requested memory for the base " +
-					base + " and k=" + blocksize+ " is too large for the JVM at this time", e);
-		}
-
+		
 		// Create constants for tracking stateValues
 		maxShiftedValue = new int[base];
 		for (int v = 0; v < base; v++) {
@@ -122,10 +120,35 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 		}
 	}
 	
+	public void initialise(int blocksize, int base) {
+		boolean baseOrBlocksizeChanged = (this.blocksize != blocksize) || (this.base != base);
+		
+		super.initialise(base);
+		if (baseOrBlocksizeChanged) {
+			resetBlocksize(blocksize);
+		}
+		
+		if (baseOrBlocksizeChanged || (stateCount == null)) {
+			// Create storage for counts of observations.
+			// We're recreating stateCount, which was created in super()
+			//  however the super() didn't create it for blocksize > 1
+			try {
+				stateCount = new int[MathsUtils.power(base, blocksize)];
+			} catch (OutOfMemoryError e) {
+				// Allow any Exceptions to be thrown, but catch and wrap
+				//  Error as a Runtimexception
+				throw new RuntimeException("Requested memory for the base " +
+						base + " and k=" + blocksize+ " is too large for the JVM at this time", e);
+			}
+		} else {
+			// Storage for sample counts exists and needs to be reset
+			MatrixUtils.fill(stateCount, 0);
+		}
+	}
+	
 	@Override
-	public void initialise(){
-		super.initialise();
-		MatrixUtils.fill(stateCount, 0);
+	public void initialise() {
+		initialise(blocksize, base);
 	}
 	
 	@Override

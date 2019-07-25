@@ -174,6 +174,15 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 	}
 	
 	/**
+	 * Create a new TE calculator with all parameters as default
+	 * (base 2 and all embedding/delay parameters 1)
+	 * 
+	 */
+	public TransferEntropyCalculatorDiscrete() {
+		this(2, 1, 1, 1, 1, 1);
+	}
+	
+	/**
 	 * Create a new TE calculator for the given base and destination history embedding length
 	 *  (leave the other embedding parameters as default)
 	 * 
@@ -223,6 +232,25 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 			int sourceHistoryEmbeddingLength, int sourceEmbeddingDelay, int delay) {
 
 		super(base, destHistoryEmbedLength);
+		updateParameters(base, destHistoryEmbedLength, destEmbeddingDelay,
+				sourceHistoryEmbeddingLength, sourceEmbeddingDelay, delay);
+	}
+
+	/**
+	 * Private method to update the estimators parameters,
+	 *  save for parts only concerning base and destHistoryEmbedLength
+	 *  which are to be handled before this by the super
+	 * 
+	 * @param base
+	 * @param destHistoryEmbedLength
+	 * @param destEmbeddingDelay
+	 * @param sourceHistoryEmbeddingLength
+	 * @param sourceEmbeddingDelay
+	 * @param delay
+	 */
+	private void updateParameters(int base, int destHistoryEmbedLength, int destEmbeddingDelay,
+			int sourceHistoryEmbeddingLength, int sourceEmbeddingDelay, int delay) {
+		
 		this.destEmbeddingDelay = destEmbeddingDelay;
 		if (sourceHistoryEmbeddingLength <= 0) {
 			throw new RuntimeException("Cannot have source embedding length of zero or less");
@@ -243,18 +271,6 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 			maxShiftedSourceValue[v] = v * MathsUtils.power(base, sourceHistoryEmbedLength-1);
 		}
 
-		// Create storage for extra counts of observations
-		try {
-			sourceNextPastCount = new int[base_power_l][base][base_power_k];
-			sourcePastCount = new int[base_power_l][base_power_k];
-		} catch (OutOfMemoryError e) {
-			// Allow any Exceptions to be thrown, but catch and wrap
-			//  Error as a RuntimeException
-			throw new RuntimeException("Requested memory for the base " +
-					base + ", k=" + k + ", l=" + sourceHistoryEmbedLength +
-					" is too large for the JVM at this time", e);
-		}
-		
 		// Which time step do we start taking observations from?
 		// These two integers represent the earliest next time step, in the cases where the destination
 		// embedding itself determines where we can start taking observations, or
@@ -263,16 +279,53 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 		int startTimeBasedOnDestPast = (k-1)*destEmbeddingDelay + 1;
 		int startTimeBasedOnSourcePast = (sourceHistoryEmbedLength-1)*sourceEmbeddingDelay + delay;
 		startObservationTime = Math.max(startTimeBasedOnDestPast, startTimeBasedOnSourcePast);
-
 	}
-
+	
+	/**
+	 * Initialise with (potentially) new parameters
+	 * 
+	 * @param base
+	 * @param destHistoryEmbedLength
+	 * @param destEmbeddingDelay
+	 * @param sourceHistoryEmbeddingLength
+	 * @param sourceEmbeddingDelay
+	 * @param delay
+	 */
+	public void initialise(int base, int destHistoryEmbedLength, int destEmbeddingDelay,
+			int sourceHistoryEmbeddingLength, int sourceEmbeddingDelay, int delay) {
+		
+		boolean paramsChanged = (this.base != base) || (k != destHistoryEmbedLength) ||
+				(this.destEmbeddingDelay != destEmbeddingDelay) || (this.sourceHistoryEmbedLength != sourceHistoryEmbeddingLength) ||
+				(this.sourceEmbeddingDelay != sourceEmbeddingDelay) || (this.delay != delay); 
+		super.initialise(base, destHistoryEmbedLength);
+		if (paramsChanged) {
+			updateParameters(base, destHistoryEmbedLength, destEmbeddingDelay,
+				sourceHistoryEmbeddingLength, sourceEmbeddingDelay, delay);
+		}
+		
+		if (paramsChanged || (sourceNextPastCount == null)) {
+			// Create new storage for extra counts of observations
+			try {
+				sourceNextPastCount = new int[base_power_l][base][base_power_k];
+				sourcePastCount = new int[base_power_l][base_power_k];
+			} catch (OutOfMemoryError e) {
+				// Allow any Exceptions to be thrown, but catch and wrap
+				//  Error as a RuntimeException
+				throw new RuntimeException("Requested memory for the base " +
+						base + ", k=" + k + ", l=" + sourceHistoryEmbedLength +
+						" is too large for the JVM at this time", e);
+			}
+		} else {
+			MatrixUtils.fill(sourceNextPastCount, 0);
+			MatrixUtils.fill(sourcePastCount, 0);
+		}
+		estimateComputed = false;
+	}
+	
 	@Override
 	public void initialise(){
-		super.initialise();
-		estimateComputed = false;
-		
-		MatrixUtils.fill(sourceNextPastCount, 0);
-		MatrixUtils.fill(sourcePastCount, 0);
+		initialise(base, k, destEmbeddingDelay, sourceHistoryEmbedLength,
+				sourceEmbeddingDelay, delay);
 	}
 	
 	@Override

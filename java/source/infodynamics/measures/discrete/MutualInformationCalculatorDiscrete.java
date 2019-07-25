@@ -80,6 +80,16 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 	protected boolean miComputed = false;
 	
 	/**
+	 * Construct a new MI calculator with default bases of 2 and time difference of 0
+	 *  between the variables
+	 * 
+	 * @throws Exception
+	 */
+	public MutualInformationCalculatorDiscrete() throws Exception {
+		this(2);
+	}
+
+	/**
 	 * Construct a new MI calculator with default time difference of 0
 	 *  between the variables
 	 * 
@@ -109,35 +119,78 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 		// Create super object, just with first base
 		super(base1);
 		
+		changeBases(base1, base2, timeDiff);		
+	}
+
+	/**
+	 * Common code to be called when bases are changed (does not update arrays though)
+	 * 
+	 * @param base1
+	 * @param base2
+	 * @param timeDiff
+	 * @throws Exception 
+	 */
+	private boolean changeBases(int base1, int base2, int timeDiff) throws Exception {
+		boolean basesChanged = false;
+		if ((this.base1 != base1) || (this.base2 != base2)) {
+			basesChanged = true;
+		}
+		
 		// Store the bases
 		this.base1 = base1;
 		this.base2 = base2;
-
+		
 		if (timeDiff < 0) {
 			throw new Exception("timeDiff must be >= 0");
 		}
 		this.timeDiff = timeDiff;
-		try {
-			jointCount = new int[base1][base2];
-			iCount = new int[base1];
-			jCount = new int[base2];
-		} catch (OutOfMemoryError e) {
-			// Allow any Exceptions to be thrown, but catch and wrap
-			//  Error as a RuntimeException
-			throw new RuntimeException("Requested memory for the MI bases (" +
-					base1 + ", " + base2 + ") is too large for the JVM at this time", e);
-		}
+		
+		return basesChanged;
 	}
 
 	@Override
-	public void initialise(){
-		super.initialise();
-		miComputed = false;		
-		MatrixUtils.fill(iCount, 0);
-		MatrixUtils.fill(jCount, 0);
-		MatrixUtils.fill(jointCount, 0);
+	public void initialise() {
+		try {
+			initialise(base1, base2, timeDiff);
+		} catch (Exception e) {
+			// The only possible (non runtime) exception here is that the timeDiff was < 0
+			// which we've already checked, so we can cast this as a Runtime Exception
+			throw new RuntimeException(e);
+		}
 	}
-	
+
+	/**
+	 * Initialise with new bases and time diff
+	 * 
+	 * @param base1
+	 * @param base2
+	 * @param timeDiff
+	 * @throws Exception 
+	 */
+	public void initialise(int base1, int base2, int timeDiff) throws Exception {
+		boolean basesChanged = changeBases(base1, base2, timeDiff);
+		super.initialise(base1);
+
+		if (basesChanged || (jointCount == null)) {
+			try {
+				jointCount = new int[base1][base2];
+				iCount = new int[base1];
+				jCount = new int[base2];
+			} catch (OutOfMemoryError e) {
+				// Allow any Exceptions to be thrown, but catch and wrap
+				//  Error as a RuntimeException
+				throw new RuntimeException("Requested memory for the MI bases (" +
+						base1 + ", " + base2 + ") is too large for the JVM at this time", e);
+			}
+		} else {
+			MatrixUtils.fill(iCount, 0);
+			MatrixUtils.fill(jCount, 0);
+			MatrixUtils.fill(jointCount, 0);
+		}
+		miComputed = false;
+
+	}
+
 	/**
 	 * {@inheritDoc}
 	 * 

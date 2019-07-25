@@ -43,6 +43,13 @@ package infodynamics.measures.discrete;
 public interface SingleAgentMeasureDiscrete {
 
 	/**
+	 * Initialise the calculator with (potentially) a new base
+	 * 
+	 * @param base
+	 */
+	public void initialise(int base);
+	
+	/**
  	 * Add observations in to our estimates of the pdfs.
 	 *
 	 * @param states series of samples

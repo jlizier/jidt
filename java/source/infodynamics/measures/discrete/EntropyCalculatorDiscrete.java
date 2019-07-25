@@ -84,31 +84,49 @@ public class EntropyCalculatorDiscrete extends InfoMeasureCalculatorDiscrete
 	}
 	
 	/**
+	 * Construct a new instance with default base of 2
+	 */
+	public EntropyCalculatorDiscrete() {
+		this(2);
+	}
+	
+	/**
 	 * Contruct a new instance
 	 * 
 	 * @param base number of quantisation levels for each variable.
 	 *        E.g. binary variables are in base-2.
 	 */
 	public EntropyCalculatorDiscrete(int base) {
-
 		super(base);
-		
-		// Create storage for counts of observations
-		try {
-			stateCount = new int[base];
-		} catch (OutOfMemoryError e) {
-			// Allow any Exceptions to be thrown, but catch and wrap
-			//  Error as a RuntimeException
-			throw new RuntimeException("Requested memory for the base (" +
-					base + ") is too large for the JVM at this time", e);
-		}
-
 	}
 	
+	/**
+	 * Initialise with new base
+	 * 
+	 * @param base
+	 */
+	public void initialise(int base){
+		boolean baseChanged = (this.base != base);
+		super.initialise(base);
+		
+		if (baseChanged || (stateCount == null)) {
+			// Create storage for counts of observations
+			try {
+				stateCount = new int[base];
+			} catch (OutOfMemoryError e) {
+				// Allow any Exceptions to be thrown, but catch and wrap
+				//  Error as a RuntimeException
+				throw new RuntimeException("Requested memory for the base (" +
+						base + ") is too large for the JVM at this time", e);
+			}
+		} else {
+			MatrixUtils.fill(stateCount, 0);
+		}
+	}
+
 	@Override
 	public void initialise(){
-		super.initialise();
-		MatrixUtils.fill(stateCount, 0);
+		initialise(base);
 	}
 		
 	@Override

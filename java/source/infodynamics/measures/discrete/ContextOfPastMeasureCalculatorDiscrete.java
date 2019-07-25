@@ -66,6 +66,14 @@ public abstract class ContextOfPastMeasureCalculatorDiscrete extends
 	protected int base_power_k = 0;
 
 	/**
+	 * Construct an instance with default base 2 and history 1
+	 *  and not keeping sample counts
+	 */
+	public ContextOfPastMeasureCalculatorDiscrete() {
+		this(2, 1, false);
+	}
+
+	/**
 	 * Construct an instance
 	 * 
 	 * @param base number of quantisation levels for each variable.
@@ -90,7 +98,18 @@ public abstract class ContextOfPastMeasureCalculatorDiscrete extends
 	 */
 	protected ContextOfPastMeasureCalculatorDiscrete(int base, int history, boolean dontCreateObsStorage) {
 		super(base);
+		resetHistory(history);
+		
+		noObservationStorage = dontCreateObsStorage;
+	}
 
+	/**
+	 * Should be called after {@link #resetBase(int)} has just been called.
+	 * 
+	 * @param history
+	 */
+	private void resetHistory(int history) {
+		
 		k = history;
 		base_power_k = MathsUtils.power(base, k);
 		
@@ -108,31 +127,51 @@ public abstract class ContextOfPastMeasureCalculatorDiscrete extends
 		for (int v = 0; v < base; v++) {
 			maxShiftedValue[v] = v * MathsUtils.power(base, k-1);
 		}
-		
-		noObservationStorage = dontCreateObsStorage;
-		if (!dontCreateObsStorage) {
-			// Create storage for counts of observations
-			try {
-				nextPastCount = new int[base][base_power_k];
-				pastCount = new int[base_power_k];
-				nextCount = new int[base];
-			} catch (OutOfMemoryError e) {
-				// Allow any Exceptions to be thrown, but catch and wrap
-				//  Error as a RuntimeException
-				throw new RuntimeException("Requested memory for the base " +
-						base + " and k=" + k + " is too large for the JVM at this time", e);
-			}
-		}
 	}
 	
 	@Override
 	public void initialise() {
-		super.initialise();
+		initialise(base, k);
+	}
+	
+	/**
+	 * Initialise the calculator with (potentially new) 
+	 * specified base and history
+	 * 
+	 * @param base
+	 * @param history
+	 */
+	public void initialise(int base, int history) {
+		boolean baseOrHistoryChanged = false;
+		if ((this.base != base) || (k != history)) {
+			baseOrHistoryChanged = true;
+		}
+		
+		super.initialise(base);
+		if (baseOrHistoryChanged) {
+			resetHistory(history);
+		}
 		
 		if (!noObservationStorage) {
-			MatrixUtils.fill(nextPastCount, 0);
-			MatrixUtils.fill(pastCount, 0);
-			MatrixUtils.fill(nextCount, 0);
+			// We manage storage for relevant sample counts here:
+			if (baseOrHistoryChanged || (nextPastCount == null)) {
+				// Create new storage for counts of observations
+				try {
+					nextPastCount = new int[base][base_power_k];
+					pastCount = new int[base_power_k];
+					nextCount = new int[base];
+				} catch (OutOfMemoryError e) {
+					// Allow any Exceptions to be thrown, but catch and wrap
+					//  Error as a RuntimeException
+					throw new RuntimeException("Requested memory for the base " +
+							base + " and k=" + k + " is too large for the JVM at this time", e);
+				}
+			} else {
+				// Storage for sample counts exists and needs to be reset
+				MatrixUtils.fill(nextPastCount, 0);
+				MatrixUtils.fill(pastCount, 0);
+				MatrixUtils.fill(nextCount, 0);
+			}
 		}
 	}
 	

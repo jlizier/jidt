@@ -98,13 +98,23 @@ public abstract class InfoMeasureCalculatorDiscrete {
 	protected boolean debug = false;
 	
 	/**
+	 * Construct an instance with default base of 2
+	 */
+	protected InfoMeasureCalculatorDiscrete() {
+		this(2);
+	}
+
+	/**
 	 * Construct an instance
 	 * 
 	 * @param base number of quantisation levels for each variable.
 	 *        E.g. binary variables are in base-2.
 	 */
 	protected InfoMeasureCalculatorDiscrete(int base) {
-		
+		resetBase(base);
+	}
+	
+	protected void resetBase(int base) {
 		this.base = base;
 		log_base = Math.log(base);
 
@@ -122,15 +132,26 @@ public abstract class InfoMeasureCalculatorDiscrete {
 	/**
 	 * Initialise the calculator for re-use with new observations.
 	 * (Child classes should clear the existing PDFs)
+	 * @throws Exception 
 	 */
-	public void initialise(){
+	public void initialise() {
+		initialise(base);
+	}
+
+	/**
+	 * Initialise the calculator for re-use with new observations,
+	 * and a new base.
+	 * (Child classes should clear the existing PDFs)
+	 */
+	public void initialise(int base){
+		resetBase(base);
 		average = 0.0;
 		max = 0.0;
 		min = 0.0;
 		std = 0.0;
 		observations = 0;
 	}
-	
+
 	/**
 	 * Return the measure last calculated in a call to
 	 * {@link #computeAverageLocalOfObservations()}

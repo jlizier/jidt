@@ -77,12 +77,6 @@ import infodynamics.utils.RandomGenerator;
  *  be incorrect.
  * </p>
  * 
- * <p><i>Note for developers</i>: Ideally, this class would extend ContextOfPastMeasure, however
- *  by conditioning on other info contributors, we need to alter
- *  the arrays pastCount and nextPastCount to consider all
- *  conditioned variables (i.e. other sources) also.
- * </p>
- * 
  * TODO Add methods for passing in single time series.
  * This is done for addObservations, but not other routines.
  * 
@@ -111,19 +105,17 @@ import infodynamics.utils.RandomGenerator;
  *
  */
 public class ConditionalTransferEntropyCalculatorDiscrete
-	extends InfoMeasureCalculatorDiscrete 
+	extends ContextOfPastMeasureCalculatorDiscrete 
 	implements EmpiricalNullDistributionComputer {
 
-	protected int k = 0; // history length k.
 	protected int base_others = 0; // base of the conditional variables
-	protected int base_power_k = 0;
 	protected int base_power_num_others = 0;
 	protected int numOtherInfoContributors = 0;
+	
 	protected int[][][][] sourceDestPastOthersCount = null;	// count for (i-j[n],i[n+1],i[n]^k,others) tuples
 	protected int[][][] sourcePastOthersCount = null;			// count for (i-j[n],i[n]^k,others) tuples
 	protected int[][][] destPastOthersCount = null; // Count for (i[n+1], i[n]^k,others) tuples
 	protected int[][] pastOthersCount = null; // Count for (i[n]^k,others)
-	protected int[] maxShiftedValue = null; // states * (base^(k-1))
 
 	/**
 	 * First time step at which we can take an observation
@@ -159,6 +151,13 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 		*/
 	}
 
+	/**
+	 * Construct with default parameters of base 2, history 1 and 1 other contributor
+	 */
+	public ConditionalTransferEntropyCalculatorDiscrete() {
+		this(2, 1, 1, 2);
+	}
+	
   /**
    * Construct a new instance. This constructor allows the source and
    * destination variables to have a different base from the other contributors
@@ -177,53 +176,8 @@ public class ConditionalTransferEntropyCalculatorDiscrete
   public ConditionalTransferEntropyCalculatorDiscrete
       (int base, int history, int numOtherInfoContributors, int base_others) {
 
-    super(base);
-
-    k = history;
-    this.base_others = base_others;
-		this.numOtherInfoContributors = numOtherInfoContributors;
-		base_power_k = MathsUtils.power(base, k);
-		base_power_num_others = MathsUtils.power(base_others, numOtherInfoContributors);
-
-		// Relaxing this assumption so we can use this calculation as
-		//  a time-lagged conditional MI at will:
-		//if (k < 1) {
-		//	throw new RuntimeException("History k " + history + " is not >= 1 a ContextOfPastMeasureCalculator");
-		//}
-
-		// Which time step do we start taking observations from?
-		// Normally this is k (to allow k previous time steps)
-		//  but if k==0 (becoming a lagged MI), it's 1.
-		startObservationTime = Math.max(k, 1);
-
-		// check that we can convert the base tuple into an integer ok
-		if (k > Math.log(Integer.MAX_VALUE) / log_base) {
-			throw new RuntimeException("Base and history combination too large");
-		}
-		if (numOtherInfoContributors < 1) {
-			throw new RuntimeException("Number of other info contributors < 1 for CompleteTECalculator");
-		}
-
-		// Create storage for counts of observations
-		try {
-			sourceDestPastOthersCount = new int[base][base][base_power_k][base_power_num_others];
-			sourcePastOthersCount = new int[base][base_power_k][base_power_num_others];
-			destPastOthersCount = new int [base][base_power_k][base_power_num_others];
-			pastOthersCount = new int[base_power_k][base_power_num_others];
-		} catch (OutOfMemoryError e) {
-			// Allow any Exceptions to be thrown, but catch and wrap
-			//  Error as a RuntimeException
-			throw new RuntimeException("Requested memory for the base " +
-					base + ", k=" + k + " num of others " + numOtherInfoContributors +
-					" with base " + base_others + ") is too large for the JVM at this time", e);
-		}
-		
-		// Create constants for tracking prevValues
-		maxShiftedValue = new int[base];
-		for (int v = 0; v < base; v++) {
-			maxShiftedValue[v] = v * MathsUtils.power(base, k-1);
-		}
-
+    super(base, history, true);
+    updateParameters(base, history, numOtherInfoContributors, base_others);		
   }
 	
 	/**
@@ -243,14 +197,78 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 		this(base, history, numOtherInfoContributors, base);
 	}
 
+	/**
+	 * Private method to update the parameters,
+	 *  save for parts only concerning base and history
+	 *  which are to be handled before this by the super
+	 * 
+	 * @param base
+	 * @param history
+	 * @param numOtherInfoContributors
+	 * @param base_others
+	 */
+	private void updateParameters(int base, int history,
+			int numOtherInfoContributors, int base_others) {
+		
+	    this.base_others = base_others;
+		this.numOtherInfoContributors = numOtherInfoContributors;
+		base_power_num_others = MathsUtils.power(base_others, numOtherInfoContributors);
+
+		// Which time step do we start taking observations from?
+		// Normally this is k (to allow k previous time steps)
+		//  but if k==0 (becoming a lagged MI), it's 1.
+		startObservationTime = Math.max(k, 1);
+
+		if (numOtherInfoContributors < 1) {
+			throw new RuntimeException("Number of other info contributors < 1 for CompleteTECalculator");
+		}
+
+	}
+	
+	/**
+	 * Initialise with (potentially) new parameters
+	 * 
+	 * @param base
+	 * @param history
+	 * @param numOtherInfoContributors
+	 * @param base_others
+	 */
+	public void initialise(int base, int history,
+			int numOtherInfoContributors, int base_others) {
+		
+		boolean paramsChanged = (this.base != base) || (k != history) ||
+				(this.numOtherInfoContributors != numOtherInfoContributors) ||
+				(this.base_others != base_others);
+		super.initialise(base, history);
+		if (paramsChanged) {
+			updateParameters(base, history, numOtherInfoContributors, base_others);
+		}
+		
+		if (paramsChanged || (sourceDestPastOthersCount == null)) {
+			// Create new storage for counts of observations
+			try {
+				sourceDestPastOthersCount = new int[base][base][base_power_k][base_power_num_others];
+				sourcePastOthersCount = new int[base][base_power_k][base_power_num_others];
+				destPastOthersCount = new int [base][base_power_k][base_power_num_others];
+				pastOthersCount = new int[base_power_k][base_power_num_others];
+			} catch (OutOfMemoryError e) {
+				// Allow any Exceptions to be thrown, but catch and wrap
+				//  Error as a RuntimeException
+				throw new RuntimeException("Requested memory for the base " +
+						base + ", k=" + k + " num of others " + numOtherInfoContributors +
+						" with base " + base_others + ") is too large for the JVM at this time", e);
+			}
+		} else {
+			MatrixUtils.fill(sourceDestPastOthersCount, 0);
+			MatrixUtils.fill(sourcePastOthersCount, 0);
+			MatrixUtils.fill(destPastOthersCount, 0);
+			MatrixUtils.fill(pastOthersCount, 0);
+		}
+	}
+	
 	@Override
 	public void initialise(){
-		super.initialise();
-		
-		MatrixUtils.fill(sourceDestPastOthersCount, 0);
-		MatrixUtils.fill(sourcePastOthersCount, 0);
-		MatrixUtils.fill(destPastOthersCount, 0);
-		MatrixUtils.fill(pastOthersCount, 0);
+		initialise(base, k, numOtherInfoContributors, base_others);
 	}
 	
 	/**

@@ -99,6 +99,15 @@ public class ConditionalMutualInformationCalculatorDiscrete
 	}
 
 	/**
+	 * Construct a new instance with default bases
+	 */
+	public ConditionalMutualInformationCalculatorDiscrete() {
+
+		// Create super object, just with first base defaulting to 2
+		this(2, 2, 2);
+	}
+
+	/**
 	 * Construct a new instance
 	 * 
 	 * @param base1 number of symbols for first variable.
@@ -110,39 +119,68 @@ public class ConditionalMutualInformationCalculatorDiscrete
 
 		// Create super object, just with first base
 		super(base1);
-		
+		changeBases(base1, base2, condBase);
+	}
+
+	/**
+	 * Common code to be called when bases are changed (does not update arrays though)
+	 * 
+	 * @param base1
+	 * @param base2
+	 * @param condBase
+	 */
+	private boolean changeBases(int base1, int base2, int condBase) {
+		boolean basesChanged = false;
+		if ((this.base1 != base1) || (this.base2 != base2) || (this.condBase != condBase)) {
+			basesChanged = true;
+		}
 		// Store the bases
 		this.base1 = base1;
 		this.base2 = base2;
 		this.condBase = condBase;
+		return basesChanged;
+	}
+	
+	@Override
+	public void initialise(){
+		initialise(base1, base2, condBase);
+	}
+
+	/**
+	 * Initialise with new bases
+	 * 
+	 * @param base1
+	 * @param base2
+	 * @param condBase
+	 */
+	public void initialise(int base1, int base2, int condBase){
+		boolean basesChanged = changeBases(base1, base2, condBase);
+		super.initialise(base1);
 		
-		// Create storage for extra counts of observations
-		try {
-			firstSecondCondCount = new int[base1][base2][condBase];
-			firstCondCount = new int[base1][condBase];
-			secondCondCount = new int[base2][condBase];
-			condCount = new int[condBase];
-		} catch (OutOfMemoryError e) {
-			// Allow any Exceptions to be thrown, but catch and wrap
-			//  Error as an Exception
-			throw new RuntimeException("Requested memory for the MI bases (" +
-					base1 + ", " + base2 + ", " + condBase +
-					") is too large for the JVM at this time", e);
+		condMiComputed = false;
+
+		if (basesChanged || (firstSecondCondCount == null)) {
+			// Create storage for extra counts of observations
+			try {
+				firstSecondCondCount = new int[base1][base2][condBase];
+				firstCondCount = new int[base1][condBase];
+				secondCondCount = new int[base2][condBase];
+				condCount = new int[condBase];
+			} catch (OutOfMemoryError e) {
+				// Allow any Exceptions to be thrown, but catch and wrap
+				//  Error as an Exception
+				throw new RuntimeException("Requested memory for the MI bases (" +
+						base1 + ", " + base2 + ", " + condBase +
+						") is too large for the JVM at this time", e);
+			}
+		} else {
+			MatrixUtils.fill(firstSecondCondCount, 0);
+			MatrixUtils.fill(firstCondCount, 0);
+			MatrixUtils.fill(secondCondCount, 0);
+			MatrixUtils.fill(condCount,0);
 		}
 	}
 
-	@Override
-	public void initialise(){
-		super.initialise();
-		
-		condMiComputed = false;
-		
-		MatrixUtils.fill(firstSecondCondCount, 0);
-		MatrixUtils.fill(firstCondCount, 0);
-		MatrixUtils.fill(secondCondCount, 0);
-		MatrixUtils.fill(condCount,0);
-	}
-		
 	/**
  	 * Add observations for the given var1,var2,cond tuples
  	 *  of the variables

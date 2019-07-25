@@ -47,6 +47,13 @@ public abstract class SingleAgentMeasureDiscreteInContextOfPastCalculator extend
 		ContextOfPastMeasureCalculatorDiscrete implements SingleAgentMeasureDiscrete {
 
 	/**
+	 * Construct the calculator with default base of 2 and history 1
+	 */
+	public SingleAgentMeasureDiscreteInContextOfPastCalculator() {
+		super(2, 1);
+	}
+	
+	/**
 	 * Construct the calculator
 	 * 
 	 * @param base number of quantisation levels for each variable.
@@ -57,6 +64,20 @@ public abstract class SingleAgentMeasureDiscreteInContextOfPastCalculator extend
 		super(base, history);
 	}
 	
+	/**
+	 * Construct the calculator
+	 * 
+	 * @param base number of quantisation levels for each variable.
+	 *        E.g. binary variables are in base-2.
+	 * @param history embedding length
+	 * @param dontCreateObsStorage do not create storage
+	 * 		for observations of the embedded past (as the child
+	 * 		class is signalling that it does not need it)
+	 */
+	public SingleAgentMeasureDiscreteInContextOfPastCalculator(int base, int history, boolean dontCreateObsStorage) {
+		super(base, history, dontCreateObsStorage);
+	}
+
 	@Override
 	public final double[] computeLocal(int[] states) {
 		initialise();

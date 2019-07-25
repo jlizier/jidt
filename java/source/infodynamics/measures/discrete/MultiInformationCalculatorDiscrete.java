@@ -69,6 +69,13 @@ public class MultiInformationCalculatorDiscrete extends InfoMeasureCalculatorDis
 	private boolean checkedFirst = false;
 
 	/**
+	 * Construct new instance with default base 2 and numVars 2
+	 */
+	public MultiInformationCalculatorDiscrete() {
+		this(2, 2);
+	}
+	
+	/**
 	 * Construct an instance
 	 * 
 	 * @base number of symbols for each variable.
@@ -78,25 +85,55 @@ public class MultiInformationCalculatorDiscrete extends InfoMeasureCalculatorDis
 	 */
 	public MultiInformationCalculatorDiscrete(int base, int numVars) {
 		super(base);
-		this.numVars = numVars;
-		jointStates = MathsUtils.power(base, numVars);
-		try {
-			jointCount = new int[jointStates];
-			marginalCounts = new int[numVars][base];
-		} catch (OutOfMemoryError e) {
-			// Allow any Exceptions to be thrown, but catch and wrap
-			//  Error as a RuntimeException
-			throw new RuntimeException("Requested memory for the base " +
-					base + " with " + numVars +
-					" variables is too large for the JVM at this time", e);
-		}
+		changeParams(base, numVars);
 	}
 
+	/**
+	 * Update the parameters using numVars
+	 * 
+	 * @param base
+	 * @param numVars
+	 * @return
+	 */
+	private boolean changeParams(int base, int numVars) {
+		boolean paramsChanged = (this.base != base) || (this.numVars != numVars);
+		
+		this.numVars = numVars;
+		jointStates = MathsUtils.power(base, numVars);
+		return paramsChanged;
+	}
+	
+	/**
+	 * Initialise (possible) updating the base and number of variables
+	 * 
+	 * @param base
+	 * @param numVars
+	 */
+	public void initialise(int base, int numVars) {
+		boolean paramsChanged = changeParams(base, numVars);
+		super.initialise(base);
+
+		if(paramsChanged || (jointCount == null)) {
+			// Create storage for counts of observations
+			try {
+				jointCount = new int[jointStates];
+				marginalCounts = new int[numVars][base];
+			} catch (OutOfMemoryError e) {
+				// Allow any Exceptions to be thrown, but catch and wrap
+				//  Error as a RuntimeException
+				throw new RuntimeException("Requested memory for the base " +
+						base + " with " + numVars +
+						" variables is too large for the JVM at this time", e);
+			}
+		} else {
+			MatrixUtils.fill(jointCount, 0);
+			MatrixUtils.fill(marginalCounts, 0);
+		}
+	}
+	
 	@Override
 	public void initialise(){
-		super.initialise();
-		MatrixUtils.fill(jointCount, 0);
-		MatrixUtils.fill(marginalCounts, 0);
+		initialise(base, numVars);
 	}
 	
 	/**

@@ -91,6 +91,13 @@ public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscr
 	}
 	
 	/**
+	 * Construct a new instance with default base 2 and history 1
+	 */
+	public ActiveInformationCalculatorDiscrete() {
+		super();
+	}
+
+	/**
 	 * Construct a new instance
 	 * 
 	 * @param base number of symbols for each variable.
@@ -104,10 +111,14 @@ public class ActiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscr
 
 	@Override
 	public void initialise() {
-		super.initialise();
-		aisComputed = false;
+		initialise(base, k);
 	}
 
+	public void initialise(int base, int history) {
+		super.initialise(base, history);
+		aisComputed = false;		
+	}
+	
 	@Override
 	public void addObservations(int states[]) {
 		int timeSteps = states.length;

@@ -18,7 +18,6 @@
 
 package infodynamics.measures.discrete;
 
-import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 
 /**
@@ -63,8 +62,7 @@ import infodynamics.utils.MatrixUtils;
  * 		</li>
  * 	</ol>
  * 
- * <p>TODO Inherit from {@link SingleAgentMeasureDiscreteInContextOfPastCalculator}
- *  as {@link ActiveInformationCalculatorDiscrete} does; Tidy up the Javadocs for
+ * <p>TODO Tidy up the Javadocs for
  *  the methods, which are somewhat preliminary</p>
  * 
  * <p><b>References:</b><br/>
@@ -82,22 +80,8 @@ import infodynamics.utils.MatrixUtils;
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public class PredictiveInformationCalculatorDiscrete {
+public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscreteInContextOfPastCalculator {
 
-	private double average = 0.0;
-	private double max = 0.0;
-	private double min = 0.0;
-	private int observations = 0;
-	private int k = 0; // history/future block length k.
-	private int numDiscreteValues = 0; // number of individual states.
-	private int[][]	jointCount = null; // Count for (x[t+1], x[t]) tuples
-	private int[] prevCount = null; // Count for x[t]
-	private int[] nextCount = null; // Count for x[t+1]
-	private int[] maxShiftedValue = null; // states * (base^(history-1))
-	
-	private int base_power_k = 0;
-	private double log_base = 0;
-	
 	/**
 	 * User was formerly forced to create new instances through this factory method.
 	 * Retained for backwards compatibility.
@@ -112,6 +96,13 @@ public class PredictiveInformationCalculatorDiscrete {
 	}
 	
 	/**
+	 * Construct a new instance with default base 2 and history 1
+	 */
+	public PredictiveInformationCalculatorDiscrete() {
+		this(2, 1);
+	}
+	
+	/**
 	 * Construct a new instance
 	 * 
 	 * @param numDiscreteValues number of quantisation levels for each variable.
@@ -120,55 +111,38 @@ public class PredictiveInformationCalculatorDiscrete {
 	 *        this is k in Schreiber's notation.
 	 */
 	public PredictiveInformationCalculatorDiscrete(int numDiscreteValues, int blockLength) {
-		super();
-		
-		this.numDiscreteValues = numDiscreteValues;
-		k = blockLength;
-		base_power_k = MathsUtils.power(numDiscreteValues, k);
-		log_base = Math.log(numDiscreteValues);
-		
-		if (blockLength < 1) {
-			throw new RuntimeException("History k " + blockLength + " is not >= 1 for Predictive information calculator");
-		}
-		if (k > Math.log(Integer.MAX_VALUE) / log_base) {
-			throw new RuntimeException("Base and history combination too large");
-		}
-
-		// Create storage for counts of observations
-		try {
-			jointCount = new int[base_power_k][base_power_k];
-			prevCount = new int[base_power_k];
-			nextCount = new int[base_power_k];
-		} catch (OutOfMemoryError e) {
-			// Allow any Exceptions to be thrown, but catch and wrap
-			//  Error as a RuntimeException
-			throw new RuntimeException("Requested memory for the base " +
-					numDiscreteValues + " with k=" + blockLength +
-					") is too large for the JVM at this time", e);
-		}
-
-		// Create constants for tracking prevValues and nextValues
-		maxShiftedValue = new int[numDiscreteValues];
-		for (int v = 0; v < numDiscreteValues; v++) {
-			maxShiftedValue[v] = v * MathsUtils.power(numDiscreteValues, k-1);
-		}
+		super(numDiscreteValues, blockLength, true);		
 	}
 
-	/**
-	 * Initialise calculator, preparing to take observation sets in
-	 * Should be called prior to any of the addObservations() methods.
-	 * You can reinitialise without needing to create a new object.
-	 *
-	 */
+	@Override
+	public void initialise(int base, int blockLength) {
+		boolean baseOrHistoryChanged = (this.base != base) || (k != blockLength);
+		super.initialise(base, blockLength);
+
+		if (baseOrHistoryChanged || (nextPastCount == null)) {
+			// Create new storage for counts of observations.
+			// Need to manage this here since next is now a block variable rather than univariate in the super.
+			try {
+				nextPastCount = new int[base_power_k][base_power_k];
+				pastCount = new int[base_power_k];
+				nextCount = new int[base_power_k];
+			} catch (OutOfMemoryError e) {
+				// Allow any Exceptions to be thrown, but catch and wrap
+				//  Error as a RuntimeException
+				throw new RuntimeException("Requested memory for the base " +
+						base + " with k=" + blockLength +
+						") is too large for the JVM at this time", e);
+			}
+		} else {
+			MatrixUtils.fill(nextPastCount, 0);
+			MatrixUtils.fill(pastCount, 0);
+			MatrixUtils.fill(nextCount, 0);
+		}
+	}
+	
+	@Override
 	public void initialise(){
-		average = 0.0;
-		max = 0.0;
-		min = 0.0;
-		observations = 0;
-		
-		MatrixUtils.fill(jointCount, 0);
-		MatrixUtils.fill(prevCount, 0);
-		MatrixUtils.fill(nextCount, 0);
+		initialise(base, k);
 	}
 		
 	/**
@@ -191,9 +165,9 @@ public class PredictiveInformationCalculatorDiscrete {
 		int prevVal = 0;
 		int nextVal = 0;
 		for (int p = 0; p < k; p++) {
-			prevVal *= numDiscreteValues;
+			prevVal *= base;
 			prevVal += timeSeries[p];
-			nextVal *= numDiscreteValues;
+			nextVal *= base;
 			nextVal += timeSeries[k-1+p];
 		}
 		
@@ -201,15 +175,15 @@ public class PredictiveInformationCalculatorDiscrete {
 		for (int t = k; t < timeSteps - (k-1); t++) {
 			// Update the next value:
 			nextVal -= maxShiftedValue[timeSeries[t-1]];
-			nextVal *= numDiscreteValues;
+			nextVal *= base;
 			nextVal += timeSeries[k-1+t];
 			// Update the counts
-			jointCount[nextVal][prevVal]++;
-			prevCount[prevVal]++;
+			nextPastCount[nextVal][prevVal]++;
+			pastCount[prevVal]++;
 			nextCount[nextVal]++;
 			// Update the previous value:
 			prevVal -= maxShiftedValue[timeSeries[t-k]];
-			prevVal *= numDiscreteValues;
+			prevVal *= base;
 			prevVal += timeSeries[t];
 		}		
 	}
@@ -239,9 +213,9 @@ public class PredictiveInformationCalculatorDiscrete {
 			prevVal[c] = 0;
 			nextVal[c] = 0;
 			for (int p = 0; p < k; p++) {
-				prevVal[c] *= numDiscreteValues;
+				prevVal[c] *= base;
 				prevVal[c] += states[p][c];
-				nextVal[c] *= numDiscreteValues;
+				nextVal[c] *= base;
 				nextVal[c] += states[k-1+p][c];
 			}
 		}
@@ -251,15 +225,15 @@ public class PredictiveInformationCalculatorDiscrete {
 			for (int c = 0; c < columns; c++) {
 				// Update the next value:
 				nextVal[c] -= maxShiftedValue[states[r-1][c]];
-				nextVal[c] *= numDiscreteValues;
+				nextVal[c] *= base;
 				nextVal[c] += states[k-1+r][c];
 				// Update the counts
-				jointCount[nextVal[c]][prevVal[c]]++;
-				prevCount[prevVal[c]]++;
+				nextPastCount[nextVal[c]][prevVal[c]]++;
+				pastCount[prevVal[c]]++;
 				nextCount[nextVal[c]]++;
 				// Update the previous value:
 				prevVal[c] -= maxShiftedValue[states[r-k][c]];
-				prevVal[c] *= numDiscreteValues;
+				prevVal[c] *= base;
 				prevVal[c] += states[r][c];
 			}
 		}		
@@ -296,9 +270,9 @@ public class PredictiveInformationCalculatorDiscrete {
 				prevVal[r][c] = 0;
 				nextVal[r][c] = 0;
 				for (int p = 0; p < k; p++) {
-					prevVal[r][c] *= numDiscreteValues;
+					prevVal[r][c] *= base;
 					prevVal[r][c] += states[p][r][c];
-					nextVal[r][c] *= numDiscreteValues;
+					nextVal[r][c] *= base;
 					nextVal[r][c] += states[k-1+p][r][c];
 				}
 			}
@@ -310,15 +284,15 @@ public class PredictiveInformationCalculatorDiscrete {
 				for (int c = 0; c < agentColumns; c++) {
 					// Update the next value:
 					nextVal[r][c] -= maxShiftedValue[states[t-1][r][c]];
-					nextVal[r][c] *= numDiscreteValues;
+					nextVal[r][c] *= base;
 					nextVal[r][c] += states[k-1+t][r][c];
 					// Update the counts
-					jointCount[nextVal[r][c]][prevVal[r][c]]++;
-					prevCount[prevVal[r][c]]++;
+					nextPastCount[nextVal[r][c]][prevVal[r][c]]++;
+					pastCount[prevVal[r][c]]++;
 					nextCount[nextVal[r][c]]++;
 					// Update the previous value:
 					prevVal[r][c] -= maxShiftedValue[states[t-k][r][c]];
-					prevVal[r][c] *= numDiscreteValues;
+					prevVal[r][c] *= base;
 					prevVal[r][c] += states[t][r][c];
 				}
 			}
@@ -347,9 +321,9 @@ public class PredictiveInformationCalculatorDiscrete {
 		int prevVal = 0; 
 		int nextVal = 0;
 		for (int p = 0; p < k; p++) {
-			prevVal *= numDiscreteValues;
+			prevVal *= base;
 			prevVal += states[p][col];
-			nextVal *= numDiscreteValues;
+			nextVal *= base;
 			nextVal += states[k-1+p][col];
 		}
 		
@@ -357,16 +331,16 @@ public class PredictiveInformationCalculatorDiscrete {
 		for (int r = k; r < rows - (k-1); r++) {
 			// Update the next value:
 			nextVal -= maxShiftedValue[states[r-1][col]];
-			nextVal *= numDiscreteValues;
+			nextVal *= base;
 			nextVal += states[k-1+r][col];
 			// Add to the count for this particular transition:
 			// (cell's assigned as above)
-			jointCount[nextVal][prevVal]++;
-			prevCount[prevVal]++;
+			nextPastCount[nextVal][prevVal]++;
+			pastCount[prevVal]++;
 			nextCount[nextVal]++;					
 			// Update the previous value:
 			prevVal -= maxShiftedValue[states[r-k][col]];
-			prevVal *= numDiscreteValues;
+			prevVal *= base;
 			prevVal += states[r][col];
 		}
 	}
@@ -394,9 +368,9 @@ public class PredictiveInformationCalculatorDiscrete {
 		int prevVal = 0; 
 		int nextVal = 0;
 		for (int p = 0; p < k; p++) {
-			prevVal *= numDiscreteValues;
+			prevVal *= base;
 			prevVal += states[p][agentIndex1][agentIndex2];
-			nextVal *= numDiscreteValues;
+			nextVal *= base;
 			nextVal += states[k-1+p][agentIndex1][agentIndex2];
 		}
 		
@@ -404,26 +378,21 @@ public class PredictiveInformationCalculatorDiscrete {
 		for (int t = k; t < timeSteps - (k-1); t++) {
 			// Update the next value:
 			nextVal -= maxShiftedValue[states[t-1][agentIndex1][agentIndex2]];
-			nextVal *= numDiscreteValues;
+			nextVal *= base;
 			nextVal += states[k-1+t][agentIndex1][agentIndex2];
 			// Add to the count for this particular transition:
 			// (cell's assigned as above)
-			jointCount[nextVal][prevVal]++;
-			prevCount[prevVal]++;
+			nextPastCount[nextVal][prevVal]++;
+			pastCount[prevVal]++;
 			nextCount[nextVal]++;
 			// Update the previous value:
 			prevVal -= maxShiftedValue[states[t-k][agentIndex1][agentIndex2]];
-			prevVal *= numDiscreteValues;
+			prevVal *= base;
 			prevVal += states[t][agentIndex1][agentIndex2];
 		}
 	}
 
-	/**
-	 * Returns the average predictive information from
-	 *  the observed values which have been passed in previously. 
-	 *  
-	 * @return
-	 */
+	@Override
 	public double computeAverageLocalOfObservations() {
 		double mi = 0.0;
 		double miCont = 0.0;
@@ -435,9 +404,9 @@ public class PredictiveInformationCalculatorDiscrete {
 			double p_next = (double) nextCount[nextVal] / (double) observations;
 			for (int prevVal = 0; prevVal < base_power_k; prevVal++) {
 				// compute p_prev
-				double p_prev = (double) prevCount[prevVal] / (double) observations;
+				double p_prev = (double) pastCount[prevVal] / (double) observations;
 				// compute p(prev, next)
-				double p_joint = (double) jointCount[nextVal][prevVal] / (double) observations;
+				double p_joint = (double) nextPastCount[nextVal][prevVal] / (double) observations;
 				// Compute MI contribution:
 				if (p_joint > 0.0) {
 					double logTerm = p_joint / (p_next * p_prev);
@@ -469,9 +438,9 @@ public class PredictiveInformationCalculatorDiscrete {
 	 * @return
 	 */
 	public double computeLocalFromPreviousObservations(int next, int past){
-		double logTerm = ( (double) jointCount[next][past] ) /
+		double logTerm = ( (double) nextPastCount[next][past] ) /
 		  ( (double) nextCount[next] *
-			(double) prevCount[past] );
+			(double) pastCount[past] );
 		logTerm *= (double) observations;
 		return Math.log(logTerm) / log_base;
 	}
@@ -503,9 +472,9 @@ public class PredictiveInformationCalculatorDiscrete {
 		int prevVal = 0;
 		int nextVal = 0;
 		for (int p = 0; p < k; p++) {
-			prevVal *= numDiscreteValues;
+			prevVal *= base;
 			prevVal += timeSeries[p];
-			nextVal *= numDiscreteValues;
+			nextVal *= base;
 			nextVal += timeSeries[k-1+p];
 		}
 
@@ -513,11 +482,11 @@ public class PredictiveInformationCalculatorDiscrete {
 		for (int t = k; t < timeSteps - (k-1); t++) {
 			// Update the next value:
 			nextVal -= maxShiftedValue[timeSeries[t-1]];
-			nextVal *= numDiscreteValues;
+			nextVal *= base;
 			nextVal += timeSeries[k-1+t];
-			logTerm = ( (double) jointCount[nextVal][prevVal] ) /
+			logTerm = ( (double) nextPastCount[nextVal][prevVal] ) /
 			  		  ( (double) nextCount[nextVal] *
-			  			(double) prevCount[prevVal] );
+			  			(double) pastCount[prevVal] );
 			// Now account for the fact that we've
 			//  just used counts rather than probabilities,
 			//  and we've got two counts on the bottom
@@ -532,7 +501,7 @@ public class PredictiveInformationCalculatorDiscrete {
 			}
 			// Update the previous value:
 			prevVal -= maxShiftedValue[timeSeries[t-k]];
-			prevVal *= numDiscreteValues;
+			prevVal *= base;
 			prevVal += timeSeries[t];
 		}
 		average = average/(double) (timeSteps - k - (k-1));
@@ -574,9 +543,9 @@ public class PredictiveInformationCalculatorDiscrete {
 			prevVal[c] = 0;
 			nextVal[c] = 0;
 			for (int p = 0; p < k; p++) {
-				prevVal[c] *= numDiscreteValues;
+				prevVal[c] *= base;
 				prevVal[c] += timeSeries[p][c];
-				nextVal[c] *= numDiscreteValues;
+				nextVal[c] *= base;
 				nextVal[c] += timeSeries[k-1+p][c];
 			}
 		}
@@ -585,11 +554,11 @@ public class PredictiveInformationCalculatorDiscrete {
 			for (int c = 0; c < columns; c++) {
 				// Update the next value:
 				nextVal[c] -= maxShiftedValue[timeSeries[r-1][c]];
-				nextVal[c] *= numDiscreteValues;
+				nextVal[c] *= base;
 				nextVal[c] += timeSeries[k-1+r][c];
-				logTerm = ( (double) jointCount[nextVal[c]][prevVal[c]] ) /
+				logTerm = ( (double) nextPastCount[nextVal[c]][prevVal[c]] ) /
 				  		  ( (double) nextCount[nextVal[c]] *
-				  			(double) prevCount[prevVal[c]] );
+				  			(double) pastCount[prevVal[c]] );
 				// Now account for the fact that we've
 				//  just used counts rather than probabilities,
 				//  and we've got two counts on the bottom
@@ -604,7 +573,7 @@ public class PredictiveInformationCalculatorDiscrete {
 				}
 				// Update the previous value:
 				prevVal[c] -= maxShiftedValue[timeSeries[r-k][c]];
-				prevVal[c] *= numDiscreteValues;
+				prevVal[c] *= base;
 				prevVal[c] += timeSeries[r][c];
 			}
 		}
@@ -649,9 +618,9 @@ public class PredictiveInformationCalculatorDiscrete {
 				prevVal[r][c] = 0;
 				nextVal[r][c] = 0;
 				for (int p = 0; p < k; p++) {
-					prevVal[r][c] *= numDiscreteValues;
+					prevVal[r][c] *= base;
 					prevVal[r][c] += timeSeries[p][r][c];
-					nextVal[r][c] *= numDiscreteValues;
+					nextVal[r][c] *= base;
 					nextVal[r][c] += timeSeries[k-1+p][r][c];
 				}
 			}
@@ -662,11 +631,11 @@ public class PredictiveInformationCalculatorDiscrete {
 				for (int c = 0; c < agentColumns; c++) {
 					// Update the next value:
 					nextVal[r][c] -= maxShiftedValue[timeSeries[t-1][r][c]];
-					nextVal[r][c] *= numDiscreteValues;
+					nextVal[r][c] *= base;
 					nextVal[r][c] += timeSeries[k-1+t][r][c];
-					logTerm = ( (double) jointCount[nextVal[r][c]][prevVal[r][c]] ) /
+					logTerm = ( (double) nextPastCount[nextVal[r][c]][prevVal[r][c]] ) /
 					  		  ( (double) nextCount[nextVal[r][c]] *
-					  			(double) prevCount[prevVal[r][c]] );
+					  			(double) pastCount[prevVal[r][c]] );
 					// Now account for the fact that we've
 					//  just used counts rather than probabilities,
 					//  and we've got two counts on the bottom
@@ -681,7 +650,7 @@ public class PredictiveInformationCalculatorDiscrete {
 					}
 					// Update the previous value:
 					prevVal[r][c] -= maxShiftedValue[timeSeries[t-k][r][c]];
-					prevVal[r][c] *= numDiscreteValues;
+					prevVal[r][c] *= base;
 					prevVal[r][c] += timeSeries[t][r][c];
 				}
 			}
@@ -721,20 +690,20 @@ public class PredictiveInformationCalculatorDiscrete {
 		int prevVal = 0; 
 		int nextVal = 0;
 		for (int p = 0; p < k; p++) {
-			prevVal *= numDiscreteValues;
+			prevVal *= base;
 			prevVal += states[p][col];
-			nextVal *= numDiscreteValues;
+			nextVal *= base;
 			nextVal += states[k-1+p][col];
 		}
 		double logTerm = 0.0;
 		for (int r = k; r < rows - (k-1); r++) {
 			// Update the next value:
 			nextVal -= maxShiftedValue[states[r-1][col]];
-			nextVal *= numDiscreteValues;
+			nextVal *= base;
 			nextVal += states[k-1+r][col];
-			logTerm = ( (double) jointCount[nextVal][prevVal] ) /
+			logTerm = ( (double) nextPastCount[nextVal][prevVal] ) /
 			  		  ( (double) nextCount[nextVal] *
-			  			(double) prevCount[prevVal] );
+			  			(double) pastCount[prevVal] );
 			// Now account for the fact that we've
 			//  just used counts rather than probabilities,
 			//  and we've got two counts on the bottom
@@ -749,7 +718,7 @@ public class PredictiveInformationCalculatorDiscrete {
 			}
 			// Update the previous value:
 			prevVal -= maxShiftedValue[states[r-k][col]];
-			prevVal *= numDiscreteValues;
+			prevVal *= base;
 			prevVal += states[r][col];
 		}
 		average = average/(double) (rows - k - (k-1));
@@ -789,20 +758,20 @@ public class PredictiveInformationCalculatorDiscrete {
 		int prevVal = 0;
 		int nextVal = 0;
 		for (int p = 0; p < k; p++) {
-			prevVal *= numDiscreteValues;
+			prevVal *= base;
 			prevVal += timeSeries[p][agentIndex1][agentIndex2];
-			nextVal *= numDiscreteValues;
+			nextVal *= base;
 			nextVal += timeSeries[k-1+p][agentIndex1][agentIndex2];
 		}
 		double logTerm = 0.0;
 		for (int t = k; t < timeSteps - (k-1); t++) {
 			// Update the next value:
 			nextVal -= maxShiftedValue[timeSeries[t-1][agentIndex1][agentIndex2]];
-			nextVal *= numDiscreteValues;
+			nextVal *= base;
 			nextVal += timeSeries[k-1+t][agentIndex1][agentIndex2];
-			logTerm = ( (double) jointCount[nextVal][prevVal] ) /
+			logTerm = ( (double) nextPastCount[nextVal][prevVal] ) /
 			  		  ( (double) nextCount[nextVal] *
-			  			(double) prevCount[prevVal] );
+			  			(double) pastCount[prevVal] );
 			// Now account for the fact that we've
 			//  just used counts rather than probabilities,
 			//  and we've got two counts on the bottom
@@ -817,7 +786,7 @@ public class PredictiveInformationCalculatorDiscrete {
 			}
 			// Update the previous value:
 			prevVal -= maxShiftedValue[timeSeries[t-k][agentIndex1][agentIndex2]];
-			prevVal *= numDiscreteValues;
+			prevVal *= base;
 			prevVal += timeSeries[t][agentIndex1][agentIndex2];
 		}
 		average = average/(double) (timeSteps - k - (k-1));
@@ -826,215 +795,6 @@ public class PredictiveInformationCalculatorDiscrete {
 		
 	}
 
-	/**
-	 * Standalone routine to 
-	 * compute local predictive information from a time series.
-	 * Return an array of local values.
-	 * First k and last k-1 rows are zeros.
-	 * 
-	 * @param timeSeries time series array of states
-	 * @return time series of local predictive information values
-	 */
-	public double[] computeLocal(int timeSeries[]) {
-		
-		initialise();
-		addObservations(timeSeries);
-		return computeLocalFromPreviousObservations(timeSeries);
-	}
-
-	/**
-	 * Standalone routine to 
-	 * compute local predictive information across a 2D spatiotemporal
-	 *  time series of the observations of homogeneous agents.
-	 * This method to be called for homogeneous agents only, as all 
-	 *  observations are pooled together.
-	 * First k and last k-1 rows are zeros.
-	 * 
-	 * @param timeSeries 2D array of states (first index is time, second is variable id)
-	 * @return multivariate time series of local predictive information values
-	 *  (1st index is time, second is variable id)
-	 */
-	public double[][] computeLocal(int timeSeries[][]) {
-		
-		initialise();
-		addObservations(timeSeries);
-		return computeLocalFromPreviousObservations(timeSeries);
-	}
-	
-	/**
-	 * Standalone routine to 
-	 * compute local predictive information across a 3D spatiotemporal
-	 *  array of the states of homogeneous agents
-	 * This method to be called for homogeneous agents only, as all 
-	 *  observations are pooled together.
-	 * First k and last k-1 rows are zeros.
-	 * 
-	 * @param timeSeries 2D array of states (first index is time, second
-	 *  and third are variable ids)
-	 * @return multivariate time series of local predictive information values
-	 *  (1st index is time, second and third are variable ids)
-	 */
-	public double[][][] computeLocal(int timeSeries[][][]) {
-		
-		initialise();
-		addObservations(timeSeries);
-		return computeLocalFromPreviousObservations(timeSeries);
-	}
-
-	/**
-	 * Standalone routine to 
-	 * compute average predictive information across a
-	 *  time series.
-	 * 
-	 * @param timeSeries time series array of states
-	 * @return average predictive information values
-	 */
-	public double computeAverageLocal(int timeSeries[]) {
-		
-		initialise();
-		addObservations(timeSeries);
-		return computeAverageLocalOfObservations();
-	}
-
-	/**
-	 * Standalone routine to 
-	 * compute average predictive information across a 2D spatiotemporal
-	 *  array of the states of homogeneous agents.
-	 * This method to be called for homogeneous agents only, as all 
-	 *  observations are pooled together.
-	 * 
-	 * @param timeSeries 2D array of states (first index is time, second is variable id)
-	 * @return average predictive information value
-	 */
-	public double computeAverageLocal(int timeSeries[][]) {
-		
-		initialise();
-		addObservations(timeSeries);
-		return computeAverageLocalOfObservations();
-	}
-
-	/**
-	 * Standalone routine to 
-	 * compute average predictive information across a 3D spatiotemporal
-	 *  array of the states of homogeneous agents
-	 * This method to be called for homogeneous agents only, as all 
-	 *  observations are pooled together.
-	 * 
-	 * @param timeSeries 2D array of states (first index is time, second
-	 *  and third are variable ids)
-	 * @return average predictive information value
-	 */
-	public double computeAverageLocal(int timeSeries[][][]) {
-		
-		initialise();
-		addObservations(timeSeries);
-		return computeAverageLocalOfObservations();
-	}
-
-	/**
-	 * Standalone routine to 
-	 * compute local predictive information for one agent in a 2D spatiotemporal
-	 *  array of the states of agents
-	 * First k and last k-1 rows are zeros.
-	 * 
-	 * This method should be used for heterogeneous agents.
-	 * 
-	 * @param timeSeries 2D array of states (first index is time, second is variable id)
-	 * @param col index of the agent whose local values should be calculated
-	 * @return time series of local predictive information values for the given agent id
-	 */
-	public double[] computeLocal(int timeSeries[][], int col) {
-		
-		initialise();
-		addObservations(timeSeries, col);
-		return computeLocalFromPreviousObservations(timeSeries, col);
-	}
-	
-	/**
-	 * Standalone routine to 
-	 * compute local predictive information for one agent in a 3D spatiotemporal
-	 *  array of the states of agents
-	 * First k and last k-1 rows are zeros.
-	 * This method should be used for heterogeneous agents.
-	 * 
-	 * @param timeSeries 3D array of states (first index is time, second 
-	 *  and third are variable id)
-	 * @param agentIndex1 row index of agent
-	 * @param agentIndex2 column index of agent
-	 * @return time series of local predictive information values for the given agent id
-	 */
-	public double[] computeLocal(int timeSeries[][][], int agentIndex1, int agentIndex2) {
-		
-		initialise();
-		addObservations(timeSeries, agentIndex1, agentIndex2);
-		return computeLocalFromPreviousObservations(timeSeries, agentIndex1, agentIndex2);
-	}
-
-	/**
-	 * Standalone routine to 
-	 * compute average local predictive information 
-	 * for a single agent in a 2D spatiotemporal time series.
-	 * This method suitable for heterogeneous agents, since the agent
-	 *  to be investigated is named.
-	 * 
-	 * @param timeSeries 2D array of states (first index is time, second is variable id)
-	 * @param col index of the agent whose local values should be calculated
-	 * @return average predictive info for the given agent id
-	 */
-	public double computeAverageLocal(int timeSeries[][], int col) {
-		
-		initialise();
-		addObservations(timeSeries, col);
-		return computeAverageLocalOfObservations();
-	}
-
-	/**
-	 * Standalone routine to 
-	 * compute average local active information storage 
-	 * for a single agent in a 3D spatiotemporal time series.
-	 * This method suitable for heterogeneous agents, since the agent
-	 *  to be investigated is named.
-	 * 
-	 * @param timeSeries 3D array of states (first index is time, second 
-	 *  and third are variable id)
-	 * @param agentIndex1 row index of agent
-	 * @param agentIndex2 column index of agent
-	 * @return average predictive info for the given agent id
-	 */
-	public double computeAverageLocal(int timeSeries[][][], int agentIndex1, int agentIndex2) {
-		
-		initialise();
-		addObservations(timeSeries, agentIndex1, agentIndex2);
-		return computeAverageLocalOfObservations();
-	}
-
-	/**
-	 * 
-	 * @return the last predictive information computed since the 
-	 *  previous {@link #initialise()} call.
-	 */
-	public double getLastAverage() {
-		return average;
-	}
-
-	/**
-	 * 
-	 * @return the last maximum local predictive information computed since the 
-	 *  previous {@link #initialise()} call.
-	 */
-	public double getLastMax() {
-		return max;
-	}
-
-	/**
-	 * 
-	 * @return the last minimum local predictive information computed since the 
-	 *  previous {@link #initialise()} call.
-	 */
-	public double getLastMin() {
-		return min;
-	}
-	
 	/**
 	 * Writes the current probability distribution functions 
 	 *  
@@ -1050,9 +810,9 @@ public class PredictiveInformationCalculatorDiscrete {
 			double p_next = (double) nextCount[nextVal] / (double) observations;
 			for (int prevVal = 0; prevVal < base_power_k; prevVal++) {
 				// compute p_prev
-				double p_prev = (double) prevCount[prevVal] / (double) observations;
+				double p_prev = (double) pastCount[prevVal] / (double) observations;
 				// compute p(prev, next)
-				double p_joint = (double) jointCount[nextVal][prevVal] / (double) observations;
+				double p_joint = (double) nextPastCount[nextVal][prevVal] / (double) observations;
 				// Compute MI contribution:
 				if (p_joint > 0.0) {
 					double logTerm = p_joint / (p_next * p_prev);
@@ -1084,7 +844,7 @@ public class PredictiveInformationCalculatorDiscrete {
 	public int computePastValue(int[] x, int t) {
 		int pastVal = 0;
 		for (int p = 0; p < k; p++) {
-			pastVal *= numDiscreteValues;
+			pastVal *= base;
 			pastVal += x[t - k + 1 + p];
 		}
 		return pastVal;
@@ -1103,7 +863,7 @@ public class PredictiveInformationCalculatorDiscrete {
 	public int computePastValue(int[][] x, int i, int t) {
 		int pastVal = 0;
 		for (int p = 0; p < k; p++) {
-			pastVal *= numDiscreteValues;
+			pastVal *= base;
 			pastVal += x[t - k + 1 + p][i];
 		}
 		return pastVal;
@@ -1123,7 +883,7 @@ public class PredictiveInformationCalculatorDiscrete {
 	public int computePastValue(int[][][] x, int i, int j, int t) {
 		int pastVal = 0;
 		for (int p = 0; p < k; p++) {
-			pastVal *= numDiscreteValues;
+			pastVal *= base;
 			pastVal += x[t - k + 1 + p][i][j];
 		}
 		return pastVal;

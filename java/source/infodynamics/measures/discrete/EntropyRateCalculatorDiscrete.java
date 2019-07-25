@@ -78,6 +78,13 @@ public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInC
 	}
 	
 	/**
+	 * Construct a new instance with default base 2 and history 1
+	 */
+	public EntropyRateCalculatorDiscrete() {
+		super();
+	}		
+
+	/**
 	 * Construct a new instance
 	 * 
 	 * @param base number of symbols for each variable.

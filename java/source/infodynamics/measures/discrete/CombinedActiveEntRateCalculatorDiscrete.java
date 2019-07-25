@@ -72,9 +72,16 @@ public class CombinedActiveEntRateCalculatorDiscrete {
 	}
 
 	public CombinedActiveEntRateCalculatorDiscrete() {
-		super();
+		// TODO Make this inherit from InfoMeasureCalculatorDiscrete
 	}
 
+	/**
+	 * Initialise with the existing history and base
+	 */
+	public void initialise() {
+		initialise(k, base);
+	}
+	
 	/**
 	 * Initialise calculator, preparing to take observation sets in
 	 * Should be called prior to any of the addObservations() methods.
