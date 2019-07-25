@@ -800,6 +800,7 @@ public abstract class AutoAnalyser extends JFrame
 		StringBuffer pythonCode = new StringBuffer();
 		pythonCode.append("from jpype import *\n");
 		pythonCode.append("import numpy\n");
+		pythonCode.append("import sys\n");
 		pythonCode.append("# Our python data file readers are a bit of a hack, python users will do better on this:\n");
 		pythonCode.append("sys.path.append(\"" + pythonDemosLocation + "\")\n");
 		if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE)) {
@@ -1126,6 +1127,7 @@ public abstract class AutoAnalyser extends JFrame
 								columnVariables[i] + "].tolist()), " + propertyValues.get(DISCRETE_PROPNAME_BASE) + ")\n");
 					}
 				} else {
+					// Continuous data
 					for (int i = 0; i < numVariables; i++) {
 						javaCode.append(javaPrefix + "double[] " + variableColNumLabels[i].toLowerCase() +
 								" = MatrixUtils.selectColumn(data, " + columnVariables[i] + ");\n");
@@ -1174,7 +1176,7 @@ public abstract class AutoAnalyser extends JFrame
 			javaCode.append(javaPrefix + "calc." + setObservationsMethod + "(" + methodArguments + ");\n");
 			// 2. Python
 			pythonCode.append(pythonPrefix + "# " + supplyDataComment);
-			pythonCode.append(pythonPrefix + "calc." + setObservationsMethod + "(" + methodArguments + ")\n");
+			pythonCode.append(pythonPrefix + "calc." + setObservationsMethod + pythonSetObsSuffix() + "(" + methodArguments + ")\n");
 			// 3. Matlab
 			matlabCode.append(matlabPrefix + "% " + supplyDataComment);
 			matlabCode.append(matlabPrefix + "calc." + setObservationsMethod + "(" + methodArguments + ");\n");
@@ -1517,7 +1519,15 @@ public abstract class AutoAnalyser extends JFrame
 			InfoMeasureCalculatorContinuous calcContinuous,
 			int[] columnCombo) throws Exception;
 
-
+	/**
+	 * Method to return any suffix if required on the set/addObservations method for python calls
+	 * 
+	 * @return
+	 */
+	protected String pythonSetObsSuffix() {
+		return "";
+	}
+	
 	/**
 	 * Extends JTable to add ToolTipText to the property names
 	 * 

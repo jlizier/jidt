@@ -246,6 +246,21 @@ public class AutoAnalyserMI extends AutoAnalyserChannelCalculator
 				base + ", " + base + ", " + timeDiff);
 	}
 
+	@Override
+	protected String pythonSetObsSuffix() {
+		String selectedCalcType = (String)
+				calcTypeComboBox.getSelectedItem();
+		if (selectedCalcType.equalsIgnoreCase(CALC_TYPE_DISCRETE) ||
+					selectedCalcType.equalsIgnoreCase(CALC_TYPE_BINNED)) {
+			return "";
+		} else {
+			// For the moment we could direct all calls to the 1D arrays version, 
+			//  but it is working fine with JPype 0.7; later
+			//  when we have 2D inputs we should dynamically detect that and return "2D"
+			return "";
+		}
+	}
+	
 	/**
 	 * @param args
 	 */
