@@ -2,7 +2,7 @@
 % This script loads properties for transfer entropy analysis of the data from
 %  the NetLogo Flocking model.
 %
-% Author: Joseph T. Lizier, 2019
+% Author: Joseph T. Lizier, Sooraj Sekhar, 2019
 %
 
 %%
@@ -37,7 +37,7 @@ clear('properties');
 % b. a call to ls or ls with an argument, e.g. ls('*.xlsx')
 % c. a space or tab separated character row vector of file names
 % d. a character matrix of filenames (each filename on a separate row)
-properties.files = 'positions%s-small.txt';
+properties.files = 'positions%s.txt';
 
 % Function to read in the data files:
 % loadScript must point to a function .m file that accepts two arguments
@@ -78,7 +78,11 @@ properties.k = 1;
 properties.tau = 1;
 properties.lag = 1;
 
-% Do we include the relative source position in the transfer entropy calculation (true), or
+% Do we compute TE based on headings or speeds or both for the info calculations? (need at least one of these set to true)
+properties.speedcalc = false;
+properties.headingcalc = true;
+
+% Additionally: Do we include the relative source position in the transfer entropy calculation (true), or
 %  only the relative source heading (false)
 properties.includeSourcePositionInTransfer = false;
 

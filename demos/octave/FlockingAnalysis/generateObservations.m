@@ -3,7 +3,7 @@ function [D, Dpast, S, RelSourcePos, maxSourceSamplesForATarget] = generateObser
 % we can then compute information dynamics with JIDT.
 % This will work for either 2D or 3D samples (as specified by the properties)
 %
-% Author: Emanuele Crosato, Joseph T. Lizier, 2019
+% Author: Emanuele Crosato, Joseph T. Lizier, Sooraj Sekhar, 2019
 %
 % Inputs:
 % - properties (required) - object with properties for the calculations,
@@ -67,8 +67,11 @@ for fileIndex = 1:length(files)
 	% Translate the raw positions into delta Positions
 	velX = x(2:end,:) - x(1:end-1,:);
 	velY = y(2:end,:) - y(1:end-1,:);
+	velXY = sqrt((velX .* velX) + (velY .* velY));
+	velALL = velXY; 
 	if (properties.data3d)
 		velZ = z(2:end,:) - z(1:end-1,:);
+		velALL = sqrt((velXY .* velXY) + (velZ .* velZ));
 	end
 
 	% Translate velocities into headings:
@@ -96,7 +99,8 @@ for fileIndex = 1:length(files)
 
 	% Initialising destPastSample is only important in terms of ensuring it is a row vector.
 	%  If we have 3D data, the vector will get padded out to the appropriate length with the first sample below.
-	destPastSample = zeros(1, properties.k);
+	destPastSampleHead = zeros(1, properties.k);
+	destPastSampleSpeed = zeros(1, properties.k);
 
 	startTime = max(1+properties.lag, (properties.k-1)*properties.tau + 3); % Adding 3: one for target, one for first target past, one for taking differences
 	for i = startTime : numCycles % cycle over time
@@ -159,35 +163,62 @@ for fileIndex = 1:length(files)
 			end
 			
 			% create **destination** observation as change in headings:
-			theta_FDXY_curr = headingXY(i,idxFD);
-			theta_FDXY_prev = headingXY(i-1,idxFD);
-			if properties.data3d
-				theta_FDZ_curr = headingZ(i,idxFD);
-				theta_FDZ_prev = headingZ(i-1,idxFD);
-				destSample = [angleDifference(theta_FDXY_curr, theta_FDXY_prev), ...
-					angleDifference(theta_FDZ_curr, theta_FDZ_prev)];
-			else
-				destSample = angleDifference(theta_FDXY_curr, theta_FDXY_prev);
+			if properties.headingcalc == true
+				theta_FDXY_curr = headingXY(i,idxFD);
+				theta_FDXY_prev = headingXY(i-1,idxFD);
+				if properties.data3d
+					theta_FDZ_curr = headingZ(i,idxFD);
+					theta_FDZ_prev = headingZ(i-1,idxFD);
+					destSampleHead = [angleDifference(theta_FDXY_curr, theta_FDXY_prev), ...
+						angleDifference(theta_FDZ_curr, theta_FDZ_prev)];
+				else
+					destSampleHead = angleDifference(theta_FDXY_curr, theta_FDXY_prev);
+				end
+				destSample = destSampleHead;
+			end
+			if properties.speedcalc == true
+				destSampleSpeed = velALL(i,idxFD);
+				destSample = destSampleSpeed;
+			end
+			
+			if properties.speedcalc == true && properties.headingcalc == true
+				destSample = [destSampleHead, destSampleSpeed];
 			end
 			
 			% create **destination past** observation as changes in headings at each step:
 			% TODO: we could take differences to previous sample amongst the k rather than only
 			%  one back from each sample: I'm not sure if this would be a more wholistic embedding or not
 			%  (only makes a difference if tau>1)
-			DpastColIndex = 1;
-			for h = 1 : properties.k
-				idx = i-1-(h-1)*properties.tau;
-				theta_FDXY_curr = headingXY(idx,idxFD);
-				theta_FDXY_prev = headingXY(idx-1,idxFD);
-				destPastSample(DpastColIndex) = angleDifference(theta_FDXY_curr, theta_FDXY_prev);
-				DpastColIndex = DpastColIndex + 1;
-				if properties.data3d
-					theta_FDZ_curr = headingZ(idx,idxFD);
-					theta_FDZ_prev = headingZ(idx-1,idxFD);
-					destPastSample(DpastColIndex) = angleDifference(theta_FDZ_curr, theta_FDZ_prev);
-					DpastColIndex = DpastColIndex + 1;
+			if (properties.headingcalc == true)
+				DpastColIndexHead = 1;
+				for h = 1 : properties.k
+					idx = i-1-(h-1)*properties.tau;
+					theta_FDXY_curr = headingXY(idx,idxFD);
+					theta_FDXY_prev = headingXY(idx-1,idxFD);
+					destPastSampleHead(DpastColIndexHead) = angleDifference(theta_FDXY_curr, theta_FDXY_prev);
+					DpastColIndexHead = DpastColIndexHead + 1;
+					if properties.data3d
+						theta_FDZ_curr = headingZ(idx,idxFD);
+						theta_FDZ_prev = headingZ(idx-1,idxFD);
+						destPastSampleHead(DpastColIndexHead) = angleDifference(theta_FDZ_curr, theta_FDZ_prev);
+						DpastColIndexHead = DpastColIndexHead + 1;
+					end
 				end
+				destPastSample = destPastSampleHead;
 			end
+			if (properties.speedcalc == true)
+				DpastColIndexSpeed = 1;
+				for h = 1 : properties.k
+					idx = i - 1 - (h - 1) * properties.tau;
+					destPastSampleSpeed (DpastColIndexSpeed) = velALL(idx,idxFD);
+					DpastColIndexSpeed = DpastColIndexSpeed + 1;
+				end
+				destPastSample = destPastSampleSpeed;
+			end
+			if (properties.speedcalc == true && properties.headingcalc == true)
+				destPastSample = [destPastSampleHead, destPastSampleSpeed];
+			end
+			
 
 			if (isfield(properties, 'destSamplesOnly'))
 				if (properties.destSamplesOnly)
@@ -262,8 +293,9 @@ for fileIndex = 1:length(files)
 							theta_FDXY_ref);
 				if properties.data3d
 					theta_FSZ_lag = headingZ(timePointForSourceHeading,idxFS);
-					sourceSample = [angleDifference(theta_FDXY_ref, theta_FSXY_lag), ...
+					sourceSampleHeading = [angleDifference(theta_FDXY_ref, theta_FSXY_lag), ...
 						angleDifference(theta_FDZ_ref, theta_FSZ_lag)];
+					sourceSample = sourceSampleHeading;
 					% Elevation angle differences need to be in -pi/2,pi/2 range
 					zRelativeAngleOfSource = angleDifferencePiOn2(...
 								zAbsoluteAngleOfSource, ...
@@ -271,10 +303,21 @@ for fileIndex = 1:length(files)
 					% Store these relative polar coordinates of source at timePointForSourcePosition
 					RelSourcePos(sample,:) = [distanceBetween, xyRelativeAngleOfSource, zRelativeAngleOfSource];
 				else
-					sourceSample = angleDifference(theta_FDXY_ref, theta_FSXY_lag);
+					sourceSampleHeading = angleDifference(theta_FDXY_ref, theta_FSXY_lag);
+					sourceSample = sourceSampleHeading;
 					% Store these relative polar coordinates of source at timePointForSourcePosition
 					RelSourcePos(sample,:) = [distanceBetween, xyRelativeAngleOfSource];
 				end
+				
+				if properties.speedcalc == true
+					sourceSampleSpeed = velALL(timePointForSourceHeading,idxFS);
+					sourceSample = sourceSampleSpeed;
+				end
+				
+				if properties.speedcalc == true && properties.headingcalc == true
+					sourceSample = [sourceSampleHeading, sourceSampleSpeed];
+				end
+				
 				if properties.includeSourcePositionInTransfer
 					S(sample,:) = [sourceSample, RelSourcePos];
 				else

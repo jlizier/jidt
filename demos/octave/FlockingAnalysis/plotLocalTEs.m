@@ -196,7 +196,12 @@ function makePolarBinnedPlot(thetas, radii, valuesToPlot, numAngleBins, numRadia
 	end
 	[A,B] = pol2cart(THETA,RR);
 	figure();
-	surf(A,B,valuesForEachBin','edgecolor','none')
+	% Old way which pinned TE values on the vertices of polygons (looks yuck)
+	% surf(A,B,valuesForEachBin','edgecolor','none')
+	% New way, smoothed visualisation:
+	plot = pcolor(A,B,valuesForEachBin');
+	plot.FaceColor = 'interp';
+	set(plot, 'EdgeColor', 'none');
 	xlabel('x [mm]');
 	ylabel('y [mm]');
 	colorbar;
