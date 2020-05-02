@@ -74,7 +74,7 @@ endif
 
 # Common includes and paths for CUDA. This assumes the CUDA toolkit is in PATH
 INCLUDES      := -I. -I./cub -I${JNI_INCLUDE} -I${JNI_PLATFORM_INCLUDE}
-LDFLAGS       += -L. -L$(BIN) -lcuda -lcudart
+NVCCLDFLAGS   := -L. -L$(BIN) -lcuda -lcudart
 
 .PHONY: all clean test
 
@@ -102,7 +102,7 @@ $(BIN)/%.o:	%.c
 ## Final shared library linking
 #------------------------------
 $(BIN)/libKraskov.so: $(BIN)/libgpuKnnLibrary.a $(c_objects)
-	${NVCC} ${NVCCFLAGS} ${INCLUDES} -Xcompiler -fPIC -shared -o $@ $(c_objects) ${LDFLAGS} -lgpuKnnLibrary
+	${NVCC} ${NVCCFLAGS} ${INCLUDES} -Xcompiler -fPIC -shared -o $@ $(c_objects) ${NVCCLDFLAGS} -lgpuKnnLibrary
 
 
 ## Test binary targets
