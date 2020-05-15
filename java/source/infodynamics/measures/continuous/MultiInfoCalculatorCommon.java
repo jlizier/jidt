@@ -172,9 +172,13 @@ public abstract class MultiInfoCalculatorCommon implements MultiInfoCalculator {
 	public void addObservations(double[][] observations) {
 		// This implementation is not particularly efficient,
 		//  however it will suffice for now.
+		boolean alreadyHadObservations = (individualObservations.size() > 0);
 		for (int s = 0; s < observations.length; s++) {
 			addObservation(observations[s]);
 		}
+		// May need to override addObservation() setting of addedMoreThanOneObservationSet
+		//  if it's only being called multiple times by this method instance
+		addedMoreThanOneObservationSet = alreadyHadObservations;
 	}
 
 	/**
