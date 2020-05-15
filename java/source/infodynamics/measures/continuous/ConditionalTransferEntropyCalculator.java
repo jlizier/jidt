@@ -395,6 +395,55 @@ public interface ConditionalTransferEntropyCalculator extends ChannelCalculatorC
 			int startTime, int numTimeSteps) throws Exception ;
 
 	/**
+	 * <p>Adds a set of observations to compute the PDFs from,
+	 * but only where these observations are indicated to be valid.
+	 * Cannot be called in conjunction with 
+	 * {@link #startAddObservations()}/{@link #addObservations(double[], double[])} /
+	 * {@link #finaliseAddObservations()}.</p>
+	 * 
+	 * @param source time-series observations for the source variable
+	 * @param destination time-series of observations for the destination
+	 *  variable. Length must match <code>source</code>.
+	 * @param conditionals 2D time-series array for the conditional variables
+	 *        (first index is time, second index is variable number).
+	 *        Length must match <code>source</code>.
+	 * @param sourceValid time-series (with time indices the same as source)
+	 *  indicating whether the source at that point is valid.
+	 * @param destValid time-series (with time indices the same as destination)
+	 *  indicating whether the destination at that point is valid.
+	 * @param conditionalsValid 2D time-series (with time indices the same as conditionals)
+	 *  indicating whether the conditional variables at that point are valid.
+	 * @throws Exception
+	 */
+	public void addObservations(double[] source, double[] destination,
+			double[][] conditionals,
+			boolean[] sourceValid, boolean[] destValid, boolean[][] conditionalsValid) throws Exception;
+
+	/**
+	 * <p>Adds a set of univariate observations to compute the PDFs from,
+	 * but only where these observations are indicated to be valid.
+	 * Cannot be called in conjunction with 
+	 * {@link #startAddObservations()}/{@link #addObservations(double[], double[])} /
+	 * {@link #finaliseAddObservations()}.</p>
+	 * 
+	 * @param source time-series observations for the source variable
+	 * @param destination time-series of observations for the destination
+	 *  variable. Length must match <code>source</code>.
+	 * @param conditionals time-series array for the conditional variable.
+	 *        Length must match <code>source</code>.
+	 * @param sourceValid time-series (with time indices the same as source)
+	 *  indicating whether the source at that point is valid.
+	 * @param destValid time-series (with time indices the same as destination)
+	 *  indicating whether the destination at that point is valid.
+	 * @param conditionalsValid time-series
+	 *  indicating whether the conditional variable at that point is valid.
+	 * @throws Exception
+	 */
+	public void addObservations(double[] source, double[] destination,
+			double[] conditionals,
+			boolean[] sourceValid, boolean[] destValid, boolean[] conditionalsValid) throws Exception;
+
+	/**
 	 * <p>Sets the single set of observations to compute the PDFs from,
 	 * but only where these observations are indicated to be valid.
 	 * Cannot be called in conjunction with 
@@ -418,6 +467,30 @@ public interface ConditionalTransferEntropyCalculator extends ChannelCalculatorC
 	public void setObservations(double[] source, double[] destination,
 			double[][] conditionals,
 			boolean[] sourceValid, boolean[] destValid, boolean[][] conditionalsValid) throws Exception;
+
+	/**
+	 * <p>Sets the single set of observations to compute the PDFs from,
+	 * but only where these observations are indicated to be valid.
+	 * Cannot be called in conjunction with 
+	 * {@link #startAddObservations()}/{@link #addObservations(double[], double[])} /
+	 * {@link #finaliseAddObservations()}.</p>
+	 * 
+	 * @param source time-series observations for the source variable
+	 * @param destination time-series of observations for the destination
+	 *  variable. Length must match <code>source</code>.
+	 * @param conditionals time-series array for the conditional variable.
+	 *        Length must match <code>source</code>.
+	 * @param sourceValid time-series (with time indices the same as source)
+	 *  indicating whether the source at that point is valid.
+	 * @param destValid time-series (with time indices the same as destination)
+	 *  indicating whether the destination at that point is valid.
+	 * @param conditionalsValid time-series (with time indices the same as conditional)
+	 *  indicating whether the conditional variable at that point is valid.
+	 * @throws Exception
+	 */
+	public void setObservations(double[] source, double[] destination,
+			double[] conditionals,
+			boolean[] sourceValid, boolean[] destValid, boolean[] conditionalsValid) throws Exception;
 
 	/**
 	 * Compute local conditional transfer entropy values for the

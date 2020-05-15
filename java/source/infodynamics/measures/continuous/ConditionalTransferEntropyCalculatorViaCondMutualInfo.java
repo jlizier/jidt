@@ -622,6 +622,47 @@ public class ConditionalTransferEntropyCalculatorViaCondMutualInfo implements
 	}
 	
 	/* (non-Javadoc)
+	 * @see infodynamics.measures.continuous.ConditionalTransferEntropyCalculator#addObservations(double[], double[], double[][], boolean[], boolean[], boolean[][])
+	 */
+	@Override
+	public void addObservations(double[] source, double[] destination,
+			double[][] conditionals, boolean[] sourceValid,
+			boolean[] destValid, boolean[][] conditionalsValid)
+			throws Exception {
+		
+		Vector<int[]> startAndEndTimePairs = 
+				computeStartAndEndTimePairs(sourceValid, destValid, conditionalsValid);
+		
+		// We've found the set of start and end times for this pair
+		for (int[] timePair : startAndEndTimePairs) {
+			int startTime = timePair[0];
+			int endTime = timePair[1];
+			addObservations(source, destination, conditionals, startTime, endTime - startTime + 1);
+		}
+	}
+
+	@Override
+	public void addObservations(double[] source, double[] destination, double[] conditionals, boolean[] sourceValid,
+			boolean[] destValid, boolean[] conditionalsValid) throws Exception {
+		if (condEmbedDims.length != 1) {
+			throw new Exception("Cannot call addObservations(double[], double[], double[], int, int) when the " +
+					"conditional TE calculator was not initialised for one conditional variable");
+		}
+		double[][] conditionalsIn2D = null;
+		boolean[][] conditionalsValidIn2D = null;
+		if (conditionals != null) {
+			// This isn't incredibly efficient, but is easy to code and doesn't cost more
+			//  than an increase in the linear time multiplier.
+			conditionalsIn2D = new double[conditionals.length][1];
+			MatrixUtils.copyIntoColumn(conditionalsIn2D, 0, conditionals);
+			conditionalsValidIn2D = new boolean[conditionalsValid.length][1];
+			MatrixUtils.copyIntoColumn(conditionalsValidIn2D, 0, conditionalsValid);
+		}
+		addObservations(source, destination, conditionalsIn2D,
+				sourceValid, destValid, conditionalsValidIn2D);
+	}
+
+	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ConditionalTransferEntropyCalculator#setObservations(double[], double[], double[][], boolean[], boolean[], boolean[][])
 	 */
 	@Override
@@ -641,6 +682,27 @@ public class ConditionalTransferEntropyCalculatorViaCondMutualInfo implements
 			addObservations(source, destination, conditionals, startTime, endTime - startTime + 1);
 		}
 		finaliseAddObservations();
+	}
+
+	@Override
+	public void setObservations(double[] source, double[] destination, double[] conditionals, boolean[] sourceValid,
+			boolean[] destValid, boolean[] conditionalsValid) throws Exception {
+		if (condEmbedDims.length != 1) {
+			throw new Exception("Cannot call addObservations(double[], double[], double[], int, int) when the " +
+					"conditional TE calculator was not initialised for one conditional variable");
+		}
+		double[][] conditionalsIn2D = null;
+		boolean[][] conditionalsValidIn2D = null;
+		if (conditionals != null) {
+			// This isn't incredibly efficient, but is easy to code and doesn't cost more
+			//  than an increase in the linear time multiplier.
+			conditionalsIn2D = new double[conditionals.length][1];
+			MatrixUtils.copyIntoColumn(conditionalsIn2D, 0, conditionals);
+			conditionalsValidIn2D = new boolean[conditionalsValid.length][1];
+			MatrixUtils.copyIntoColumn(conditionalsValidIn2D, 0, conditionalsValid);
+		}
+		setObservations(source, destination, conditionalsIn2D,
+				sourceValid, destValid, conditionalsValidIn2D);
 	}
 
 	/**

@@ -1031,6 +1031,23 @@ public class MatrixUtils {
 
 	/**
 	 * Copies the given source array into the required column number of the destination
+	 * 
+	 * @param destination
+	 * @param column
+	 * @param source
+	 */
+	public static void copyIntoColumn(boolean[][] destination, int column, boolean[] source) throws Exception {
+		if (source.length != destination.length) {
+			throw new Exception("Destination column is not of the same length as the source (" +
+					destination.length + " vs " + source.length + ")");
+		}
+		for (int r = 0; r < destination.length; r++) {
+			destination[r][column] = source[r];
+		}
+	}
+
+	/**
+	 * Copies the given source array into the required column number of the destination
 	 * @param destination
 	 * @param column
 	 * @param source
@@ -4665,6 +4682,34 @@ public class MatrixUtils {
 			if (discretised[t] == numBins) {
 				// This occurs for the maximum value; put it in the largest bin (base - 1)
 				discretised[t]--;
+			}
+		}
+		return discretised;
+	}
+	
+	/**
+	 * Discretizes using even bin sizes
+	 * 
+	 * @param data
+	 * @param numBins
+	 * @return
+	 */
+	public static int[][] discretise(double data[][], int numBins) {
+		int rows = data.length;
+		int cols = data[0].length;
+		int[][] discretised = new int[rows][cols];
+		
+		for (int c = 0; c < cols; c++) {
+			double min = min(data, c);
+			double max = max(data, c);
+			double binInterval = (max - min) / numBins;
+			
+			for (int t = 0; t < rows; t++) {
+				discretised[t][c] = (int) ((data[t][c] - min) / binInterval);
+				if (discretised[t][c] == numBins) {
+					// This occurs for the maximum value; put it in the largest bin (base - 1)
+					discretised[t][c]--;
+				}
 			}
 		}
 		return discretised;
