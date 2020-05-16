@@ -641,6 +641,27 @@ public class ConditionalTransferEntropyCalculatorViaCondMutualInfo implements
 		}
 	}
 
+	/**
+	 * A non-overloaded method signature -- it seems JPype from Python cannot resolve
+	 *  overloaded method signatures where more than 2 variables change between univariate and
+	 *  multivariate.
+	 *  
+	 * @param source
+	 * @param destination
+	 * @param conditionals
+	 * @param sourceValid
+	 * @param destValid
+	 * @param conditionalsValid
+	 * @throws Exception
+	 */
+	public void addObservations2D(double[] source, double[] destination,
+			double[][] conditionals, boolean[] sourceValid,
+			boolean[] destValid, boolean[][] conditionalsValid)
+			throws Exception {
+		addObservations(source, destination, conditionals,
+				sourceValid, destValid, conditionalsValid);
+	}	
+	
 	@Override
 	public void addObservations(double[] source, double[] destination, double[] conditionals, boolean[] sourceValid,
 			boolean[] destValid, boolean[] conditionalsValid) throws Exception {
@@ -662,6 +683,26 @@ public class ConditionalTransferEntropyCalculatorViaCondMutualInfo implements
 				sourceValid, destValid, conditionalsValidIn2D);
 	}
 
+	/**
+	 * A non-overloaded method signature -- it seems JPype from Python cannot resolve
+	 *  overloaded method signatures where more than 2 variables change between univariate and
+	 *  multivariate.
+	 *  
+	 * @param source
+	 * @param destination
+	 * @param conditionals
+	 * @param sourceValid
+	 * @param destValid
+	 * @param conditionalsValid
+	 * @throws Exception
+	 */
+	public void addObservations1D(double[] source, double[] destination, double[] conditionals, boolean[] sourceValid,
+			boolean[] destValid, boolean[] conditionalsValid) throws Exception {
+		addObservations(source, destination, conditionals,
+				sourceValid, destValid, conditionalsValid);
+	}
+
+	
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ConditionalTransferEntropyCalculator#setObservations(double[], double[], double[][], boolean[], boolean[], boolean[][])
 	 */
