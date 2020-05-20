@@ -840,8 +840,11 @@ public class ConditionalTransferEntropyCalculatorViaCondMutualInfo implements
 					}
 				}
 				if (!allOk) {
-					continue;
+					break;
 				}
+			}
+			if (!allOk) {
+				continue;
 			}
 			// allOk == true at this point
 			// Postcondition: We've got a first valid tuple:
