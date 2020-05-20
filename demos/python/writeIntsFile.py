@@ -20,14 +20,26 @@ def writeIntsFile(filename, array):
 	"Write a 2D array of ints to a given file"
 	with open(filename, "w") as f:
 		# Space separate numbers, one time step per line, each column is a variable
-		for row in array:
-			# write all rows
-			first = True;
-			for column in row:
-				if (not(first)):
-					f.write(" ");
-				f.write("%d" % column)
-				first = False;
+		for item in array:
+			# write all items
+			if iterable(item):
+				# Assume this item is a row with several columns of data
+				first = True;
+				for subitem in item:
+					if (not(first)):
+						f.write(" ");
+					f.write("%d" % subitem)
+					first = False;
+			else:
+				f.write("%d" % item)
 			f.write("\n")
 		f.close()
 	
+def iterable(a):
+	try:
+		iter(a)
+	except Exception:
+		return False
+	else:
+		return True
+
