@@ -415,6 +415,20 @@ public class ConditionalTransferEntropyCalculatorViaCondMutualInfo implements
 		finaliseAddObservations();
 	}
 
+	/**
+	 * A non-overloaded method signature for setObservations with 2D arguments, as there have been
+	 *  some problems calling overloaded versions of setObservations from jpype. 
+	 *  
+	 * @param source
+	 * @param destination
+	 * @param conditionals
+	 * @throws Exception
+	 */
+	public void setObservations2DCond(double[] source, double[] destination,
+			double[][] conditionals) throws Exception {
+		setObservations(source, destination, conditionals);
+	}
+	
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ConditionalTransferEntropyCalculator#setObservations(double[], double[], double[])
 	 */
@@ -429,7 +443,21 @@ public class ConditionalTransferEntropyCalculatorViaCondMutualInfo implements
 		addObservations(source, destination, conditionals);
 		finaliseAddObservations();
 	}
-	
+
+	/**
+	 * A non-overloaded method signature for setObservations with 2D arguments, as there have been
+	 *  some problems calling overloaded versions of setObservations from jpype. 
+	 *  
+	 * @param source
+	 * @param destination
+	 * @param conditionals
+	 * @throws Exception
+	 */
+	public void setObservations1DCond(double[] source, double[] destination,
+			double[] conditionals) throws Exception {
+		setObservations(source, destination, conditionals);
+	}
+
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ConditionalTransferEntropyCalculator#startAddObservations()
 	 */
@@ -479,6 +507,20 @@ public class ConditionalTransferEntropyCalculatorViaCondMutualInfo implements
 				embeddedVectorsForCondMI[1], embeddedVectorsForCondMI[2]);
 	}
 	
+	/**
+	 * A non-overloaded method signature for setObservations with 2D arguments, as there have been
+	 *  some problems calling overloaded versions of setObservations from jpype. 
+	 *  
+	 * @param source
+	 * @param destination
+	 * @param conditionals
+	 * @throws Exception
+	 */
+	public void addObservations2DCond(double[] source, double[] destination,
+			double[][] conditionals) throws Exception {
+		addObservations(source, destination, conditionals);
+	}
+
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ConditionalTransferEntropyCalculator#addObservations(double[], double[], double[])
 	 */
@@ -498,6 +540,21 @@ public class ConditionalTransferEntropyCalculatorViaCondMutualInfo implements
 		}
 		addObservations(source, destination, conditionalsIn2D);
 	}
+
+	/**
+	 * A non-overloaded method signature for setObservations with 2D arguments, as there have been
+	 *  some problems calling overloaded versions of setObservations from jpype. 
+	 *  
+	 * @param source
+	 * @param destination
+	 * @param conditionals
+	 * @throws Exception
+	 */
+	public void addObservations1DCond(double[] source, double[] destination,
+			double[][] conditionals) throws Exception {
+		addObservations(source, destination, conditionals);
+	}
+
 
 	/**
 	 * Internal method to take (pre-screened) time-series for a source, destination
