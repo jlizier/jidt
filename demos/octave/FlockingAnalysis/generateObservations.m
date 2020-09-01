@@ -1,4 +1,4 @@
-function [D, Dpast, S, RelSourcePos, maxSourceSamplesForATarget] = generateObservations(properties)
+function [D, Dpast, S, RelSourcePos, safeDynamicCorrelationExclusionSamples] = generateObservations(properties)
 % This function generates the observations from which
 % we can then compute information dynamics with JIDT.
 % This will work for either 2D or 3D samples (as specified by the properties)
@@ -14,7 +14,7 @@ function [D, Dpast, S, RelSourcePos, maxSourceSamplesForATarget] = generateObser
 % - Dpast - target past samples (multivariate, and embedded up to k previous samples)
 % - S - source relative headings samples (may be multivariate as per below)
 % - RelSourcePos - relative source position (may be multivariate as below)
-% - maxSourceSamplesForATarget - maximum number of sources in range for a specific target sample. Used for dynamic correlation exclusion externally for TE calculations.
+% - safeDynamicCorrelationExclusionSamples - maximum number of samples with potential dynamic correlation, used for dynamic correlation exclusion externally for the calculations.
 % If no outputs are requested, these are saved to properties.resultsFile
 
 %%
@@ -44,10 +44,11 @@ D = []; % initialise destination observations
 Dpast = []; % initialise destination past observations
 % only S and D are necessary for lagged mutual information
 % all S, D and Dpast are necessary for transfer entropy
-fileTimeAndPair = []; % to save time and pair
+fileTimeAndPair = []; % to save time and pair in the format [file_index, time_index, target_index, source_index]
 RelSourcePos = []; % initialise relative source positions
 sample = 1; % initialise the current sample number
 maxSourceSamplesForATarget = 0; % Track the maximum number of in range sources for a given target sample
+maxAcfTime = 1; % Track the maximum ACF time for targets
 
 % Need to loop over fileIndex rather than for file = files (which doesn't work properly for cell array of length 1)
 for fileIndex = 1:length(files)
@@ -96,6 +97,55 @@ for fileIndex = 1:length(files)
 	% get number of fish and update time cycles
 	numCycles = size(velX,1);
 	numFish = size(velX,2);
+
+	% Calculate the autocorrelation decay time in the changes in headings and the speed:
+	acfHeadingsDecayTime = zeros(numFish, 1);
+	acfSpeedDecayTime = zeros(numFish, 1);
+	for f = 1:numFish
+		numLags = min(200, size(headingXY,1)-1);
+		try
+			% The following sometimes breaks I think if too many Nans
+			[acfHeading, lags] = autocorr(headingXY(2:end,f) - headingXY(1:end-1,f), 'NumLags', numLags);
+		catch ME
+			fprintf('ACF Heading broke for file %d fish %d\n', fileIndex, f);
+			continue;
+		end
+		acfHeadingsDecayTime(f) = numLags;
+		for t = 1 : numLags
+			if (acfHeading(t) < exp(-1))
+				acfHeadingsDecayTime(f) = t;
+				break;
+			end
+		end
+		try
+			[acfSpeed, lags] = autocorr(speed(:,f), 'NumLags', numLags);
+		catch ME
+			fprintf('ACF Speed broke for file %d fish %d\n', fileIndex, f);
+			continue;
+		end
+		acfSpeedDecayTime(f) = numLags;
+		for t = 1 : numLags
+			if (acfSpeed(t) < exp(-1))
+				acfSpeedDecayTime(f) = t;
+				break;
+			end
+		end
+	end
+	maxAcfHeadingsDecayTime = mean(acfHeadingsDecayTime); % max(acfHeadingsDecayTime);
+	maxAcfSpeedDecayTime = mean(acfSpeedDecayTime); % max(acfSpeedDecayTime);
+	if properties.headingcalc == true
+		acfTime = maxAcfHeadingsDecayTime;
+	end
+	if properties.speedcalc == true
+		acfTime = maxAcfSpeedDecayTime;
+	end
+	if properties.speedcalc == true && properties.headingcalc == true
+		acfTime = max(maxAcfHeadingsDecayTime, maxAcfSpeedDecayTime);
+	end
+	if (acfTime > maxAcfTime)
+		maxAcfTime = acfTime;
+	end
+	fprintf('ACF time of %d from heading %d and speed %d\n', acfTime, maxAcfHeadingsDecayTime, maxAcfSpeedDecayTime);
 
 	% Initialising destPastSample is only important in terms of ensuring it is a row vector.
 	%  If we have 3D data, the vector will get padded out to the appropriate length with the first sample below.
@@ -319,7 +369,7 @@ for fileIndex = 1:length(files)
 				end
 				
 				if properties.includeSourcePositionInTransfer
-					S(sample,:) = [sourceSample, RelSourcePos];
+					S(sample,:) = [sourceSample, RelSourcePos(sample,:)];
 				else
 					S(sample,:) = sourceSample;
 				end
@@ -346,6 +396,14 @@ if (sample - 1 == 0)
 	warning('No samples added for the given parameters!');
 end
 
+if (isfield(properties, 'destSamplesOnly'))
+	if (properties.destSamplesOnly)
+		safeDynamicCorrelationExclusionSamples = maxAcfTime * numFish;
+	else
+		safeDynamicCorrelationExclusionSamples = maxAcfTime * numFish * maxSourceSamplesForATarget;
+	end
+end
+
 if (nargout > 1)
 	% Supply the samples back to the caller
 	%  (the caller is probably trying to optimise parameters at the moment)
@@ -362,7 +420,7 @@ else
 
 	% save series and properties
 	save(properties.resultsFile, 'S', 'D', 'Dpast', 'files', 'fileTimeAndPair', 'RelSourcePos', ...
-	   'maxSourceSamplesForATarget', 'properties');
+	   'maxSourceSamplesForATarget', 'safeDynamicCorrelationExclusionSamples', 'properties');
 	fprintf('Series saved in %s (%d samples in total)\n', properties.resultsFile, sample - 1);
 end
 

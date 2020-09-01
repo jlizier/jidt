@@ -89,10 +89,14 @@ if (isfield(properties, 'kRange') || isfield(properties, 'tauRange'))
 			end
 			properties.tau = tau;
 			% Generate the observations for k,tau:
-			[D, Dpast] = generateObservations(properties);
+			[D, Dpast, ~, ~, safeDynamicCorrelationExclusionSamples] = generateObservations(properties);
 			if (isempty(D))
 				% There were no samples found for the given parameters, presumably k etc are too long
 				continue;
+			end
+			% Check if we're turning on dynamic correlation exclusion:
+			if (isfield(properties.jidt, 'autoDynamicCorrelationExclusion'))
+				properties.jidt.dynamicCorrelationExclusion = safeDynamicCorrelationExclusionSamples;
 			end
 			% Compute the AIS:
 			ais = computeAIS(D, Dpast, properties);
@@ -111,8 +115,24 @@ if (isfield(properties, 'kRange') || isfield(properties, 'tauRange'))
 	fprintf('*** Optmised k=%d and tau=%d (giving AIS=%.4f)\n', properties.k, ...
 		properties.tau, properties.ais);
 else
-	fprintf('*** Hard-coded values for k=%d and tau=%d to be used\n', properties.k, ...
-		properties.tau);
+	% Hard coded embedding parameters: compute the AIS to be saved anyway :
+	% Ask generateObservations to only return the target samples for the AIS calculation
+	properties.destSamplesOnly = true;
+	[D, Dpast, ~, ~, safeDynamicCorrelationExclusionSamples] = generateObservations(properties);
+	if (isempty(D))
+		% There were no samples found for the given parameters, presumably k etc are too long
+		error('No embeddings possible for the given hard coded k and tau\n');
+	end
+	% Check if we're turning on dynamic correlation exclusion:
+	if (isfield(properties.jidt, 'autoDynamicCorrelationExclusion'))
+		properties.jidt.dynamicCorrelationExclusion = safeDynamicCorrelationExclusionSamples;
+	end
+	% Compute the AIS:
+	ais = computeAIS(D, Dpast, properties);
+	properties.ais = ais;
+	properties.destSamplesOnly = false;
+	fprintf('*** Hard-coded values for k=%d and tau=%d to be used (giving AIS=%.4f)\n', properties.k, ...
+		properties.tau, properties.ais);
 end
 
 % Step 2: automatically select the correct lag if required:
@@ -125,14 +145,14 @@ if (isfield(properties, 'lagRange'))
 	for lag = properties.lagRange
 		properties.lag = lag;
 		% Generate the observations for k,tau,lag:
-		[D, Dpast, S, ~, maxSourceSamplesForATarget] = generateObservations(properties);
+		[D, Dpast, S, ~, safeDynamicCorrelationExclusionSamples] = generateObservations(properties);
 		if (isempty(S))
 			% There were no samples found for the given parameters, presumably k etc are too long
 			continue;
 		end
 		% Check if we're turning on dynamic correlation exclusion:
 		if (isfield(properties.jidt, 'autoDynamicCorrelationExclusion'))
-			properties.jidt.dynamicCorrelationExclusion = maxSourceSamplesForATarget;
+			properties.jidt.dynamicCorrelationExclusion = safeDynamicCorrelationExclusionSamples;
 		end
 		% Compute the TE:
 		te = computeTE(S, D, Dpast, properties);
@@ -154,7 +174,7 @@ end
 % Now, once again pre-process the positional data into velocities, this time
 %  saving them into the results file (by not requesting [S,D,Dpast] outputs):
 generateObservations(properties);
-% And load these samples in from the saved file:
+% And load these samples (S, D, Dpast, properties, maxSourceSamplesForATarget, safeDynamicCorrelationExclusionSamples, etc) in from the saved file:
 load(properties.resultsFile);
 properties.teNumSurrogates = teNumSurrogates; % Allow surrogates to be computed for this final run with correct parameters
 % And compute the TE again for the optimal parameters, this time
@@ -162,13 +182,14 @@ properties.teNumSurrogates = teNumSurrogates; % Allow surrogates to be computed 
 % Turn on dynamic correlation exclusion if required:
 if (isfield(properties.jidt, 'autoDynamicCorrelationExclusion'))
 	if (properties.jidt.autoDynamicCorrelationExclusion)
-		properties.jidt.dynamicCorrelationExclusion = maxSourceSamplesForATarget; % maxSourceSamplesForATarget was loaded from the results file
+		properties.jidt.dynamicCorrelationExclusion = safeDynamicCorrelationExclusionSamples; % safeDynamicCorrelationExclusionSamples was loaded from the results file
 	else
 		properties.jidt.dynamicCorrelationExclusion = 0; % no dynamic correlation exclusion
 	end
 end
 % Compute TE with no output arguments so that results are saved
 computeTE(S, D, Dpast, properties);
+save(properties.resultsFile, 'ais', '-append'); % Add the AIS into the results file as well
 
 end
 

@@ -65,7 +65,7 @@ function tranEntropy = computeTE(S, D, Dpast, properties)
 	% -- STEP 4 : compute the local entropies
 	tranEntropy = TEcalculator.computeAverageLocalOfObservations(); % global (average) value
 	
-	fprintf('Mean TE_%s (k=%d,tau=%d,lag=%d) = %.3f\n', ...
+	fprintf('Mean TE_%s (k=%d,tau=%d,lag=%d) = %.4f\n', ...
 		properties.estimator, properties.k, properties.tau, properties.lag, tranEntropy);
 
 	if (properties.teNumSurrogates > 0)
