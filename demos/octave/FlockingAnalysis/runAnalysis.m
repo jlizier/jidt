@@ -60,6 +60,10 @@ else
 end
 
 % Step 1: Auto-embed if required:
+% Set the lag to 1 as a dummy if we are optimising over that later as well:
+if (~isfield(properties, 'lag'))
+	properties.lag = 1;
+end
 if (isfield(properties, 'kRange') || isfield(properties, 'tauRange'))
 	% If any one of these two ranges weren't supplied, set the range variables
 	%  to the value of the corresponding non-range variable:
@@ -69,20 +73,21 @@ if (isfield(properties, 'kRange') || isfield(properties, 'tauRange'))
 	if (~isfield(properties, 'tauRange'))
 		properties.tauRange = properties.tau;
 	end
-	% Also set the lag to 1 as a dummy if we are optimising over that later as well:
-	if (~isfield(properties, 'lag'))
-		properties.lag = 1;
-	end
 	% Ask generateObservations to only return the target samples for the AIS calculation
 	properties.destSamplesOnly = true;
 	% Optimise k and tau
 	maxAIS = -inf;
 	maxAISk = properties.kRange(1);
 	maxAIStau = properties.tauRange(1);
+	aisForKAndTau = zeros(length(properties.kRange), length(properties.tauRange));
+	kIndex = 0;
+	tauIndex = 0;
 	for k = properties.kRange
+		kIndex = kIndex + 1;
 		properties.k = k;
 		minTau = min(properties.tauRange);
 		for tau = properties.tauRange
+			tauIndex = tauIndex + 1;
 			if ((k == 1) && (tau > minTau))
 				% We only need compute k=1 for a single tau
 				continue;
@@ -105,6 +110,7 @@ if (isfield(properties, 'kRange') || isfield(properties, 'tauRange'))
 				maxAISk = k;
 				maxAIStau = tau;
 			end
+			aisForKAndTau(kIndex, tauIndex) = ais;
 		end
 	end
 	% Optimisation is complete:
@@ -142,7 +148,10 @@ if (isfield(properties, 'lagRange'))
 	% Caller asks us to maximise the TE over a given range:
 	maxTE = -inf;
 	maxTElag = properties.lagRange(1);
+	teForLag = zeros(length(properties.lagRange), 1);
+	lagIndex = 0;
 	for lag = properties.lagRange
+		lagIndex = lagIndex + 1;
 		properties.lag = lag;
 		% Generate the observations for k,tau,lag:
 		[D, Dpast, S, ~, safeDynamicCorrelationExclusionSamples] = generateObservations(properties);
@@ -160,6 +169,7 @@ if (isfield(properties, 'lagRange'))
 			maxTE = te;
 			maxTElag = lag;
 		end
+		teForLag(lagIndex) = te;
 	end
 	% Optimisation is complete:
 	properties.lag = maxTElag;
@@ -190,6 +200,12 @@ end
 % Compute TE with no output arguments so that results are saved
 computeTE(S, D, Dpast, properties);
 save(properties.resultsFile, 'ais', '-append'); % Add the AIS into the results file as well
+if (isfield(properties, 'kRange') || isfield(properties, 'tauRange'))
+	save(properties.resultsFile, 'aisForKAndTau', '-append'); % Add the AISs computed in auto-embedding
+end
+if (isfield(properties, 'lagRange'))
+	save(properties.resultsFile, 'teForLag', '-append'); % Add the TEs computed in optimising the source-target lag
+end
 
 end
 

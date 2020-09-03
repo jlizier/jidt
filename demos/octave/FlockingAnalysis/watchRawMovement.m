@@ -53,11 +53,11 @@ if (~zoomIn)
 		axis([minX, maxX, minY, maxY]);
 	end
 	% Need to set this so that the axes don't keep updating
-	set(gca,'NextPlot','replacechildren') ;
 end
 fprintf('Loading data in %s (%d missing values)\n', dataFileName, numMissing);
 
 for t = 1:size(x, 1)
+	set(gca,'NextPlot','replacechildren') ;
 	if (properties.data3d)
 		plot3(x(t,:), y(t,:), z(t,:), 'x')
 	else
