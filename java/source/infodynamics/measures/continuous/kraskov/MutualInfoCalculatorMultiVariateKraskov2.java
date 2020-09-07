@@ -23,6 +23,7 @@ import java.util.PriorityQueue;
 
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.utils.MathsUtils;
+import infodynamics.utils.NearestNeighbourSearcher;
 import infodynamics.utils.NeighbourNodeData;
 
 /**
@@ -78,7 +79,7 @@ public class MutualInfoCalculatorMultiVariateKraskov2
 			// Compute eps_x and eps_y for this time step by
 			//  finding the kth closest neighbours for point t:
 			PriorityQueue<NeighbourNodeData> nnPQ =
-					kdTreeJoint.findKNearestNeighbours(k, t, dynCorrExclTime);
+					treeJoint.findKNearestNeighbours(k, t, dynCorrExclTime);
 
 			// Find eps_{x,y} as the maximum x and y norms amongst this set:
 			double eps_x = 0.0;
@@ -86,11 +87,13 @@ public class MutualInfoCalculatorMultiVariateKraskov2
 			for (int j = 0; j < k; j++) {
 				// Take the furthest remaining of the nearest neighbours from the PQ:
 				NeighbourNodeData nnData = nnPQ.poll();
-				if (nnData.norms[0] > eps_x) {
-					eps_x = nnData.norms[0];
-				}
-				if (nnData.norms[1] > eps_y) {
-					eps_y = nnData.norms[1];
+				if (nnData.norms != null) {
+					if (nnData.norms[0] > eps_x) {
+						eps_x = nnData.norms[0];
+					}
+					if (nnData.norms[1] > eps_y) {
+						eps_y = nnData.norms[1];
+					}
 				}
 			}
 			

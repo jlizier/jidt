@@ -1384,19 +1384,19 @@ public class KdTree extends NearestNeighbourSearcher {
 	}
 	
 	@Override
-	public int findPointsWithinR(int sampleIndex,
+	public void findPointsWithinR(int sampleIndex,
 			double r, boolean allowEqualToR, boolean[] isWithinR,
 			int[] indicesWithinR) {
 		if (rootNode == null) {
 			indicesWithinR[0] = -1;
-			return 0;
+			return;
 		}
 		int currentIndexInIndicesWithinR =
 				findPointsWithinR(sampleIndex,
 				rootNode, 0, r, allowEqualToR, isWithinR,
 				indicesWithinR, 0);
 		indicesWithinR[currentIndexInIndicesWithinR] = -1;
-		return currentIndexInIndicesWithinR;
+		return;
 	}
 
 	/**

@@ -18,18 +18,9 @@
 
 package infodynamics.measures.continuous;
 
-import infodynamics.measures.continuous.gaussian.ActiveInfoStorageCalculatorGaussian;
-import infodynamics.measures.continuous.gaussian.ConditionalMutualInfoCalculatorMultiVariateGaussian;
-import infodynamics.measures.continuous.gaussian.TransferEntropyCalculatorGaussian;
-import infodynamics.measures.continuous.kraskov.ActiveInfoStorageCalculatorKraskov;
-import infodynamics.measures.continuous.kraskov.ConditionalMutualInfoCalculatorMultiVariateKraskov;
-import infodynamics.measures.continuous.kraskov.ConditionalMutualInfoCalculatorMultiVariateKraskov1;
-import infodynamics.measures.continuous.kraskov.ConditionalMutualInfoCalculatorMultiVariateKraskov2;
-import infodynamics.measures.continuous.kraskov.MutualInfoCalculatorMultiVariateKraskov;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.MatrixUtils;
 
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Vector;
 
@@ -54,15 +45,6 @@ import java.util.Vector;
  * 	<li>{@link infodynamics.measures.continuous.kraskov.TransferEntropyCalculatorKraskov}</li>
  * </ul>
  * 
- * <p>Embedding parameters may be automatically determined as per the Ragwitz criteria
- * by setting the property {@link #PROP_AUTO_EMBED_METHOD} to {@link #AUTO_EMBED_METHOD_RAGWITZ}
- * or {@link #AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY},
- * or as per the max. bias-corrected AIS criteria by 
- * setting the property {@link #PROP_AUTO_EMBED_METHOD} to {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS}
- * (as per Garland et al. in the reference list)
- * plus additional parameter settings for these.
- * </p>
- *      
  * TODO Delete TransferEntropyCalculatorCommon once we've switched everything over to use this?
  * Might be useful to leave it after all, and move common functionality from here to there.
  * 
@@ -75,11 +57,6 @@ import java.util.Vector;
  *  <a href="http://dx.doi.org/10.1103/PhysRevE.77.026110">
  *  "Local information transfer as a spatiotemporal filter for complex systems"</a>
  *  Physical Review E 77, 026110, 2008.</li>
- * 	<li>Ragwitz and Kantz, "Markov models from data by simple nonlinear time series
- *  	predictors in delay embedding spaces", Physical Review E, vol 65, 056201 (2002).</li>
- *  <li>J. Garland, R. G. James, E. Bradley, <a href="http://dx.doi.org/10.1103/physreve.93.022221">
- *  	"Leveraging information storage to select forecast-optimal parameters for delay-coordinate reconstructions"</a>,
- *  	Physical Review E, Vol. 93 (2016), 022221, doi:</li>
  * </ul>
  *  
  * @author Joseph Lizier, <a href="joseph.lizier at gmail.com">email</a>,
@@ -154,99 +131,6 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 	 * were made. This is returned by {@link #getSeparateNumObservations()}
 	 */
 	protected int[] separateNumObservations;
-	
-	/**
-	 * Property name for specifying which (if any) auto-embedding method to use.
-	 * Valid values include {@link #AUTO_EMBED_METHOD_RAGWITZ}, {@link #AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY},
-	 * {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS}, {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS_DEST_ONLY},
-	 * {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE} and {@link #AUTO_EMBED_METHOD_NONE}.
-	 * Defaults to {@link #AUTO_EMBED_METHOD_NONE}
-	 */
-	public static final String PROP_AUTO_EMBED_METHOD = "AUTO_EMBED_METHOD";
-	/**
-	 * Valid value for the property {@link #PROP_AUTO_EMBED_METHOD} indicating that
-	 *  no auto embedding should be done (i.e. to use manually supplied parameters)
-	 */
-	public static final String AUTO_EMBED_METHOD_NONE = "NONE";
-	/**
-	 * Valid value for the property {@link #PROP_AUTO_EMBED_METHOD} indicating that
-	 *  the Ragwitz optimisation technique should be used for automatic embedding
-	 *  for both source and destination time-series
-	 */
-	public static final String AUTO_EMBED_METHOD_RAGWITZ = "RAGWITZ";
-	/**
-	 * Valid value for the property {@link #PROP_AUTO_EMBED_METHOD} indicating that
-	 *  the Ragwitz optimisation technique should be used for automatic embedding
-	 *  for the destination time-series only
-	 */
-	public static final String AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY = "RAGWITZ_DEST_ONLY";
-	/**
-	 * Valid value for the property {@link #PROP_AUTO_EMBED_METHOD} indicating that
-	 *  the automatic embedding should be done by maximising the bias corrected
-	 *  AIS, for both source and destination time series
-	 */
-	public static final String AUTO_EMBED_METHOD_MAX_CORR_AIS = "MAX_CORR_AIS";
-	/**
-	 * Valid value for the property {@link #PROP_AUTO_EMBED_METHOD} indicating that
-	 *  the automatic embedding should be done by maximising the bias corrected
-	 *  AIS for the target and subsequently maximising the bias-corrected TE over source embeddings,
-	 *  given a fixed source-target delay.
-	 */
-	public static final String AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE = "MAX_CORR_AIS_AND_TE";
-	/**
-	 * Valid value for the property {@link #PROP_AUTO_EMBED_METHOD} indicating that
-	 *  the automatic embedding should be done by maximising the bias corrected
-	 *  AIS, for destination time series only
-	 */
-	public static final String AUTO_EMBED_METHOD_MAX_CORR_AIS_DEST_ONLY = "MAX_CORR_AIS_DEST_ONLY";
-	/**
-	 * Internal variable tracking what type of auto embedding (if any)
-	 *  we are using
-	 */
-	protected String autoEmbeddingMethod = AUTO_EMBED_METHOD_NONE;
-	
-	/**
-	 * Property name for maximum embedding lengths (i.e. k for destination, and l for source if we're auto-embedding
-	 *  the source as well) for the auto-embedding search. Defaults to 1
-	 */
-	public static final String PROP_K_SEARCH_MAX = "AUTO_EMBED_K_SEARCH_MAX";
-	/**
-	 * Internal variable for storing the maximum embedding length to search up to for
-	 *  automating the parameters.
-	 */
-	protected int k_search_max = 1;
-
-	/**
-	 * Property name for maximum embedding delay (i.e. k_tau for destination, and l_tau for source if we're auto-embedding
-	 *   the source as well) for the auto-embedding search. Defaults to 1
-	 */
-	public static final String PROP_TAU_SEARCH_MAX = "AUTO_EMBED_TAU_SEARCH_MAX";
-	/**
-	 * Internal variable for storing the maximum embedding delay to search up to for
-	 *  automating the parameters.
-	 */
-	protected int tau_search_max = 1;
-
-	/**
-	 * Property name for the number of nearest neighbours to use for the auto-embedding search (Ragwitz criteria).
-	 * Defaults to match the value in use for {@link MutualInfoCalculatorMultiVariateKraskov#PROP_K}
-	 */
-	public static final String PROP_RAGWITZ_NUM_NNS = "AUTO_EMBED_RAGWITZ_NUM_NNS";
-	/**
-	 * Internal variable for storing the number of nearest neighbours to use for the
-	 *  auto embedding search (Ragwitz criteria)
-	 */
-	protected int ragwitz_num_nns = 4;
-	/** 
-	 * Internal variable to track whether the property {@link #PROP_RAGWITZ_NUM_NNS} has been
-	 * set yet
-	 */
-	protected boolean ragwitz_num_nns_set = false;
-
-	/**
-	 * Storage for the properties ready to pass onto the underlying conditional MI calculators should they change 
-	 */
-	protected Hashtable<String,String> props = new Hashtable<String,String>();
 	
 	/**
 	 * Construct a transfer entropy calculator using an instance of
@@ -345,8 +229,7 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 		this.l_tau = l_tau;
 		this.delay = delay;
 		
-		startTimeForFirstDestEmbedding =
-				computeStartTimeForFirstDestEmbedding(k, k_tau, l, l_tau, delay);
+		setStartTimeForFirstDestEmbedding();
 
 		vectorOfSourceTimeSeries = null;
 		vectorOfDestinationTimeSeries = null;
@@ -359,22 +242,16 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 	 * Protected internal method to 
 	 * set the point at which we can start taking observations from in any
 	 * addObservations call.
-	 * 
-	 * User supplied parameters for k etc, so this can be used not only to
-	 *  set the definitive startTimeForFirstDestEmbedding but also when
-	 *  we're searching the parameter space in auto-embedding.
-	 * 
 	 */
-	protected static int computeStartTimeForFirstDestEmbedding(
-			int k_in_use, int k_tau_in_use, int l_in_use, int l_tau_in_use, int delay_in_use) {
+	protected void setStartTimeForFirstDestEmbedding() {
 		// These two integers represent the last
 		// point of the destination embedding, in the cases where the destination
 		// embedding itself determines where we can start taking observations, or
 		// the case where the source embedding plus delay is longer and so determines
 		// where we can start taking observations.
-		int startTimeBasedOnDestPast = (k_in_use-1)*k_tau_in_use;
-		int startTimeBasedOnSourcePast = (l_in_use-1)*l_tau_in_use + delay_in_use - 1;
-		return Math.max(startTimeBasedOnDestPast, startTimeBasedOnSourcePast);
+		int startTimeBasedOnDestPast = (k-1)*k_tau;
+		int startTimeBasedOnSourcePast = (l-1)*l_tau + delay - 1;
+		startTimeForFirstDestEmbedding = Math.max(startTimeBasedOnDestPast, startTimeBasedOnSourcePast);
 	}
 	
 	/**
@@ -385,34 +262,6 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 	 * <p>Valid property names, and what their
 	 * values should represent, include:</p>
 	 * <ul>
-	 * 		<li>{@link #PROP_AUTO_EMBED_METHOD} -- method by which the calculator
-	 * 		automatically determines the embedding history length ({@link #K_PROP_NAME})
-	 * 		and embedding delay ({@link #TAU_PROP_NAME}) for destination and potentially source.
-	 * 		Default is {@link #AUTO_EMBED_METHOD_NONE} meaning
-	 * 		values are set manually; other accepted values include: {@link #AUTO_EMBED_METHOD_RAGWITZ} for use
-	 * 		of the Ragwitz criteria for both source and destination (searching up to {@link #PROP_K_SEARCH_MAX} and 
-	 * 		{@link #PROP_TAU_SEARCH_MAX}), and {@link #AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY} for use
-	 * 		of the Ragwitz criteria for the destination only;
-	 * 		{@link #AUTO_EMBED_METHOD_MAX_CORR_AIS} for use of the max bias corrected AIS criteria
-	 * 		for both source and destination (searching up to {@link #PROP_K_SEARCH_MAX} and 
-	 * 		{@link #PROP_TAU_SEARCH_MAX}), {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS_DEST_ONLY} for use of
-	 * 		this criteria for the destination only and {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE} for
-	 * 		use of this criteria for the target, plus the max bias corrected TE for source embeddings.
-	 * 		Use of any value other than {@link #AUTO_EMBED_METHOD_NONE}
-	 * 		will lead to previous settings for embedding lengths and delays (via e.g. {@link #initialise(int, int)} or
-	 * 		auto-embedding during previous calculations) for the destination and perhaps source to
-	 * 		be overwritten after observations are supplied.</li>
-	 * 		<li>{@link #PROP_K_SEARCH_MAX} -- maximum embedded history length to search
-	 * 		up to if automatically determining the embedding parameters (as set by
-	 * 		{@link #PROP_AUTO_EMBED_METHOD}) for the time-series to be embedded; default is 1</li>
-	 * 		<li>{@link #PROP_TAU_SEARCH_MAX} -- maximum embedded history length to search
-	 * 		up to if automatically determining the embedding parameters (as set by
-	 * 		{@link #PROP_AUTO_EMBED_METHOD}) for the time-series to be embedded; default is 1</li>
-	 * 		<li>{@link #PROP_RAGWITZ_NUM_NNS} -- number of nearest neighbours to use
-	 * 		in the auto-embedding if the property {@link #PROP_AUTO_EMBED_METHOD}
-	 * 		has been set to {@link #AUTO_EMBED_METHOD_RAGWITZ} or {@link #AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY}.
-	 * 		Defaults to the property value
-	 *      set for {@link ConditionalMutualInfoCalculatorMultiVariateKraskov#PROP_K}</li>
 	 * 		<li>Any properties accepted by {@link TransferEntropyCalculator#setProperty(String, String)}</li>
 	 * 		<li>Or properties accepted by the underlying
 	 * 		{@link ConditionalMutualInfoCalculatorMultiVariate#setProperty(String, String)} implementation.</li>
@@ -437,24 +286,10 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 			l_tau = Integer.parseInt(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(DELAY_PROP_NAME)) {
 			delay = Integer.parseInt(propertyValue);
-		} else if (propertyName.equalsIgnoreCase(PROP_AUTO_EMBED_METHOD)) {
-			// New method set for determining the embedding parameters
-			autoEmbeddingMethod = propertyValue;
-		} else if (propertyName.equalsIgnoreCase(PROP_K_SEARCH_MAX)) {
-			// Set max embedding history length for auto determination of embedding
-			k_search_max = Integer.parseInt(propertyValue);
-		} else if (propertyName.equalsIgnoreCase(PROP_TAU_SEARCH_MAX)) {
-			// Set maximum embedding delay for auto determination of embedding
-			tau_search_max = Integer.parseInt(propertyValue);
-		} else if (propertyName.equalsIgnoreCase(PROP_RAGWITZ_NUM_NNS)) {
-			// Set the number of nearest neighbours to use in case of Ragwitz auto embedding:
-			ragwitz_num_nns = Integer.parseInt(propertyValue);
-			ragwitz_num_nns_set = true;
 		} else {
 			// No property was set on this class, assume it is for the underlying
 			//  conditional MI calculator
 			condMiCalc.setProperty(propertyName, propertyValue);
-			props.put(propertyName, propertyValue);
 			propertySet = false;
 		}
 		if (debug && propertySet) {
@@ -475,18 +310,6 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 			return Integer.toString(l_tau);
 		} else if (propertyName.equalsIgnoreCase(DELAY_PROP_NAME)) {
 			return Integer.toString(delay);
-		} else if (propertyName.equalsIgnoreCase(PROP_AUTO_EMBED_METHOD)) {
-			return autoEmbeddingMethod;
-		} else if (propertyName.equalsIgnoreCase(PROP_K_SEARCH_MAX)) {
-			return Integer.toString(k_search_max);
-		} else if (propertyName.equalsIgnoreCase(PROP_TAU_SEARCH_MAX)) {
-			return Integer.toString(tau_search_max);
-		} else if (propertyName.equalsIgnoreCase(PROP_RAGWITZ_NUM_NNS)) {
-			// if we're using a KSG estimator this will have been handled
-			//  by the child class. Else it doesn't matter whether it has been
-			//  explicitly set or not by the user, we'll return the
-			//  current value held here:
-			return Integer.toString(ragwitz_num_nns);
 		} else {
 			// No property matches for this class, assume it is for the underlying
 			//  conditional MI calculator
@@ -540,75 +363,50 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 
 	/**
 	 * Protected method to internally parse and submit observations through
-	 *  to the given conditional MI calculator with specific embedding parameter settings
-	 *  supplied.
-	 * This may be used in the final calculation, or by the auto-embedding 
-	 *  procedures, hence the use of static method and arguments rather than
-	 *  using any member variables directly.
+	 *  to the underlying conditional MI calculator once any internal parameter settings
+	 *  have been finalised (in the case of automatically determining the embedding
+	 *  parameters) 
 	 * 
-	 * @param condMiCalc_in_use conditional MI calculator to use 
-	 * @param k_in_use k embedding dimension to use for target
-	 * @param k_tau_in_use target tau embedding delay to use
-	 * @param l_in_use l embedding dimension to use for source
-	 * @param l_tau_in_use source tau embedding delay to use
-	 * @param delay_in_use source-target delay to use
 	 * @param source time series of source observations
 	 * @param destination time series of destination observations
 	 * @return the number of observations added
 	 * @throws Exception
 	 */
-	protected static int addObservationsWithGivenParams(
-			ConditionalMutualInfoCalculatorMultiVariate condMiCalc_in_use,
-			int k_in_use, int k_tau_in_use, int l_in_use, int l_tau_in_use,
-			int delay_in_use,
-			double[] source, double[] destination) throws Exception {
+	protected int addObservationsAfterParamsDetermined(double[] source, double[] destination) throws Exception {
 		if (source.length != destination.length) {
 			throw new Exception(String.format("Source and destination lengths (%d and %d) must match!",
 					source.length, destination.length));
 		}
-		int startTimeForFirstDestEmbedding_in_use =
-				computeStartTimeForFirstDestEmbedding(k_in_use, k_tau_in_use,
-						l_in_use, l_tau_in_use, delay_in_use);
-		if (source.length < startTimeForFirstDestEmbedding_in_use + 2) {
+		if (source.length < startTimeForFirstDestEmbedding + 2) {
 			// There are no observations to add here, the time series is too short
 			// Don't throw an exception, do nothing since more observations
 			//  can be added later.
 			return 0;
 		}
 		double[][] currentDestPastVectors = 
-				MatrixUtils.makeDelayEmbeddingVector(destination, k_in_use, k_tau_in_use,
-						startTimeForFirstDestEmbedding_in_use,
-						destination.length - startTimeForFirstDestEmbedding_in_use - 1);
+				MatrixUtils.makeDelayEmbeddingVector(destination, k, k_tau,
+						startTimeForFirstDestEmbedding,
+						destination.length - startTimeForFirstDestEmbedding - 1);
 		double[][] currentDestNextVectors =
 				MatrixUtils.makeDelayEmbeddingVector(destination, 1,
-						startTimeForFirstDestEmbedding_in_use + 1,
-						destination.length - startTimeForFirstDestEmbedding_in_use - 1);
+						startTimeForFirstDestEmbedding + 1,
+						destination.length - startTimeForFirstDestEmbedding - 1);
 		double[][] currentSourcePastVectors = 
-				MatrixUtils.makeDelayEmbeddingVector(source, l_in_use, l_tau_in_use,
-						startTimeForFirstDestEmbedding_in_use + 1 - delay_in_use,
-						source.length - startTimeForFirstDestEmbedding_in_use - 1);
-		condMiCalc_in_use.addObservations(currentSourcePastVectors, currentDestNextVectors, currentDestPastVectors);
-		return destination.length - startTimeForFirstDestEmbedding_in_use - 1;
+				MatrixUtils.makeDelayEmbeddingVector(source, l, l_tau,
+						startTimeForFirstDestEmbedding + 1 - delay,
+						source.length - startTimeForFirstDestEmbedding - 1);
+		condMiCalc.addObservations(currentSourcePastVectors, currentDestNextVectors, currentDestPastVectors);
+		return destination.length - startTimeForFirstDestEmbedding - 1;
 	}
 
 	/**
 	 * Protected method to internally parse and submit observations through
-	 *  to the given conditional MI calculator with specific embedding parameter settings
-	 *  supplied.
+	 *  to the underlying conditional MI calculator once any internal parameter settings
+	 *  have been finalised (in the case of automatically determining the embedding
+	 *  parameters) 
 	 * This is done given time-series of booleans indicating whether each entry
 	 *  is valid
-	 * This may be used in the final calculation, or by the auto-embedding 
-	 *  procedures, hence the use of static method and arguments rather than
-	 *  using any member variables directly.
 	 * 
-	 * @param condMiCalc_in_use conditional MI calculator to use
-	 * @param k_in_use k embedding dimension to use for target
-	 * @param k_tau_in_use target tau embedding delay to use
-	 * @param l_in_use l embedding dimension to use for source
-	 * @param l_tau_in_use source tau embedding delay to use
-	 * @param delay_in_use source-target delay to use
-	 * @param source time series of source observations
-	 * @param destination time series of destination observations
 	 * @param source time series of source observations
 	 * @param destination time series of destination observations
 	 * @param sourceValid array (with indices the same as source) indicating whether
@@ -618,25 +416,17 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 	 * @return total number of observations added 
 	 * @throws Exception
 	 */
-	protected static int addObservationsWithGivenParams(
-			ConditionalMutualInfoCalculatorMultiVariate condMiCalc_in_use,
-			int k_in_use, int k_tau_in_use, int l_in_use, int l_tau_in_use,
-			int delay_in_use,
-			double[] source, double[] destination,
+	protected int addObservationsAfterParamsDetermined(double[] source, double[] destination,
 			boolean[] sourceValid, boolean[] destValid) throws Exception {
 		
 		// Compute the start and end time pairs using our embedding parameters:
-		Vector<int[]> startAndEndTimePairs =
-				computeStartAndEndTimePairs(k_in_use, k_tau_in_use, l_in_use,
-						l_tau_in_use, delay_in_use, sourceValid, destValid);
+		Vector<int[]> startAndEndTimePairs = computeStartAndEndTimePairs(sourceValid, destValid);
 		
 		int totalObservationsAdded = 0;
 		for (int[] timePair : startAndEndTimePairs) {
 			int startTime = timePair[0];
 			int endTime = timePair[1];
-			totalObservationsAdded += addObservationsWithGivenParams(
-					condMiCalc_in_use, k_in_use, k_tau_in_use, l_in_use,
-					l_tau_in_use, delay_in_use,
+			totalObservationsAdded += addObservationsAfterParamsDetermined(
 					MatrixUtils.select(source, startTime, endTime - startTime + 1),
 					MatrixUtils.select(destination, startTime, endTime - startTime + 1));
 		}
@@ -659,248 +449,31 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 	}
 
 	/**
-	 * Hook in case this or child implementations need to perform any processing on the 
+	 * Hook in case child implementations need to perform any processing on the 
 	 *  observation time series prior to their being processed and supplied
 	 *  to the underlying MI calculator.
-	 * Primarily this is to allow this or child implementation to automatically determine
+	 * Primarily this is to allow the child implementation to automatically determine
 	 *  embedding parameters if desired.
 	 * Child implementations do not need to override this default empty implementation
 	 *  if no new functionality is required.
 	 */
 	protected void preFinaliseAddObservations() throws Exception {
-		// Automatically determine the embedding parameters for the given time series
-		
-		if (autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_NONE)) {
-			return;
-		}
-		// Else we need to auto embed
-		
-		// Check user has set a valid embedding method:
-		if (!(autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_RAGWITZ) ||
-				autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY) ||
-				autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_MAX_CORR_AIS) ||
-				autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_MAX_CORR_AIS_DEST_ONLY) ||
-				autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE))) {
-			throw new Exception("Invalid auto-embed method: " + autoEmbeddingMethod);
-		}
-		
-		// Use an AIS calculator to embed both time-series individually:
-		ActiveInfoStorageCalculator aisCalc;
-		if (autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_RAGWITZ) ||
-				autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY)) {
-			// We're doing Ragwitz auto-embedding:
-			// Use a KSG estimator, as Ragwitz is easy with these
-			aisCalc = new ActiveInfoStorageCalculatorKraskov();
-		} else {
-			// We're doing max bias-corrected AIS embedding, grab an instance of 
-			//  the corresponding calculator for the estimator type.
-			// This is not as nicely object-oriented as I would like, but I can't attach an
-			//  to this superclass to grab a relevant AIS calculator without making it abstract,
-			//  and I didn't want this class to be abstract.
-			if (condMiCalc instanceof ConditionalMutualInfoCalculatorMultiVariateGaussian) {
-				aisCalc = new ActiveInfoStorageCalculatorGaussian();
-				String numCorrectingSurrogates = getProperty(TransferEntropyCalculatorGaussian.PROP_MAX_CORR_NUM_SURROGATES);
-				if (numCorrectingSurrogates != null) {
-					aisCalc.setProperty(
-							ActiveInfoStorageCalculatorGaussian.PROP_MAX_CORR_AIS_NUM_SURROGATES,
-								numCorrectingSurrogates);
-				}
-			} else if (condMiCalc instanceof ConditionalMutualInfoCalculatorMultiVariateKraskov1) {
-				aisCalc = new ActiveInfoStorageCalculatorKraskov(1);
-			} else if (condMiCalc instanceof ConditionalMutualInfoCalculatorMultiVariateKraskov2) {
-				aisCalc = new ActiveInfoStorageCalculatorKraskov(2);
-			// Add these lines in once we have a CMI kernel calculator:
-			// } else if (condMiCalc instanceof ConditionalMutualInfoCalculatorMultiVariateKernel) {
-			//	aisCalc = new ActiveInfoStorageCalculatorKernel();
-			} else {
-				throw new RuntimeException("Invalid CMI type found during auto-embedding: " + condMiCalc.getClass().getName());
-			}
-		}
-		// Set the properties for the underlying MI calculator here to match our
-		//  properties for our underlying CMI calculator:
-		for (String key : props.keySet()) {
-			aisCalc.setProperty(key, props.get(key));
-		}
-		// Set the auto-embedding properties as we require:
-		if (autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_RAGWITZ) ||
-				autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_RAGWITZ_DEST_ONLY)) {
-			// We're doing Ragwitz auto-embedding
-			aisCalc.setProperty(ActiveInfoStorageCalculatorViaMutualInfo.PROP_AUTO_EMBED_METHOD,
-					ActiveInfoStorageCalculatorViaMutualInfo.AUTO_EMBED_METHOD_RAGWITZ);
-			// In case !ragwitz_num_nns_set and our condMiCalc has a different default number of
-			//  kNNs for Kraskov search than miCalc, we had best supply the number directly here:
-			aisCalc.setProperty(ActiveInfoStorageCalculatorViaMutualInfo.PROP_RAGWITZ_NUM_NNS,
-						getProperty(PROP_RAGWITZ_NUM_NNS));
-		} else {
-			// We're doing max bias-corrected AIS embedding:
-			aisCalc.setProperty(ActiveInfoStorageCalculatorViaMutualInfo.PROP_AUTO_EMBED_METHOD,
-					ActiveInfoStorageCalculatorViaMutualInfo.AUTO_EMBED_METHOD_MAX_CORR_AIS);
-		}
-		aisCalc.setProperty(ActiveInfoStorageCalculatorViaMutualInfo.PROP_K_SEARCH_MAX,
-				Integer.toString(k_search_max));
-		aisCalc.setProperty(ActiveInfoStorageCalculatorViaMutualInfo.PROP_TAU_SEARCH_MAX,
-				Integer.toString(tau_search_max));
-		
-		// Embed the destination:
-		if (debug) {
-			System.out.println("Starting embedding of destination:");
-		}
-		prepareAISCalculator(aisCalc, vectorOfDestinationTimeSeries, vectorOfValidityOfDestination);
-		// Set the auto-embedding parameters for the destination:
-		k = Integer.parseInt(aisCalc.getProperty(ActiveInfoStorageCalculator.K_PROP_NAME));
-		k_tau = Integer.parseInt(aisCalc.getProperty(ActiveInfoStorageCalculator.TAU_PROP_NAME));
-		if (debug) {
-			System.out.printf("Embedding parameters for destination set to k=%d,k_tau=%d\n",
-				k, k_tau);
-		}
-	
-		if (autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_RAGWITZ) ||
-				autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_MAX_CORR_AIS)) {
-			// Embed the source also:
-			if (debug) {
-				System.out.println("Starting embedding of source:");
-			}
-			prepareAISCalculator(aisCalc, vectorOfSourceTimeSeries, vectorOfValidityOfSource);
-			// Set the auto-embedding parameters for the source:
-			l = Integer.parseInt(aisCalc.getProperty(ActiveInfoStorageCalculator.K_PROP_NAME));
-			l_tau = Integer.parseInt(aisCalc.getProperty(ActiveInfoStorageCalculator.TAU_PROP_NAME));
-			if (debug) {
-				System.out.printf("Embedding parameters for source set to l=%d,l_tau=%d\n",
-					l, l_tau);
-			}
-
-		} else if (autoEmbeddingMethod.equalsIgnoreCase(AUTO_EMBED_METHOD_MAX_CORR_AIS_AND_TE)) {
-			if (debug) {
-				System.out.println("Starting embedding of source:");
-			}
-
-			double bestTE = Double.NEGATIVE_INFINITY;
-			int l_candidate_best = 1;
-			int l_tau_candidate_best = 1;
-
-			// Iterate over all possible source embeddings
-			for (int l_candidate = 1; l_candidate <= k_search_max; l_candidate++) {
-				for (int l_tau_candidate = 1; l_tau_candidate <= tau_search_max; l_tau_candidate++) {
-
-					// Use our internal CMI calculator in case it has any particular 
-					//  properties we need to have been set already
-					prepareCMICalculator(condMiCalc, k, k_tau, l_candidate, l_tau_candidate, delay);
-					double thisTE = condMiCalc.computeAverageLocalOfObservations();
-					thisTE -= computeAdditionalBiasToRemove();
-					
-					if (debug) {
-						System.out.printf("TE for l=%d, l_tau=%d is %.3f\n",
-								l_candidate, l_tau_candidate, thisTE);
-					}
-
-					if (thisTE > bestTE) {
-						// This parameter setting is the best so far:
-						bestTE = thisTE;
-						l_candidate_best = l_candidate;
-						l_tau_candidate_best = l_tau_candidate;
-					}
-					if (l_candidate == 1) {
-						// tau is irrelevant, so no point testing other values
-						break;
-					}
-				}
-			}
-			l = l_candidate_best;
-			l_tau = l_tau_candidate_best;
-			if (debug) {
-				System.out.printf("Embedding parameters for source set to l=%d,l_tau=%d\n",
-					l, l_tau);
-			}
-		}
-
-		// Now that embedding parameters are finalised:
-		startTimeForFirstDestEmbedding =
-				computeStartTimeForFirstDestEmbedding(k, k_tau, l, l_tau, delay);
+		// Empty implementation supplied by default.
 	}
 	
-	/**
-	 * Internal method to compute any additional bias correction in the underlying calculator
-	 * during auto-embedding in {@link #preFinaliseAddObservations()} if required.
-	 * 
-	 * @return additional bias correction to remove (will be zero if assumed to be already bias corrected).
-	 * @throws Exception 
-	 */
-	protected double computeAdditionalBiasToRemove() throws Exception {
-		// Default implementation does nothing
-		return 0;
-	}
-
 	@Override
 	public void finaliseAddObservations() throws Exception {
 		// Auto embed if required
 		preFinaliseAddObservations();
 
-		separateNumObservations = prepareCMICalculator(condMiCalc, k, k_tau, l, l_tau, delay);
-		
-		vectorOfSourceTimeSeries = null; // No longer required
-		vectorOfDestinationTimeSeries = null; // No longer required
-		vectorOfValidityOfSource = null;
-		vectorOfValidityOfDestination = null;
-	}
-
-	/**
-	 * Prepare the given pre-instantiated (and properties supplied)
-	 *  Active information storage calculator with the given data set,
-	 *  for a calculation of auto-embedding parameters.
-	 * 
-	 * @param aisCalc_in_use AIS calculator to supply
-	 * @param setOfTimeSeriesSamples set of time series samples for the calculation
-	 * @param setOfValidities set of time series of validity indications. Each can be a null array if all are valid
-	 * @throws Exception
-	 */
-	protected static void prepareAISCalculator(ActiveInfoStorageCalculator aisCalc,
-			Vector<double[]> setOfTimeSeriesSamples, Vector<boolean[]> setOfValidities) 
-					throws Exception {
-		
-		aisCalc.initialise();
-		aisCalc.startAddObservations();
-		Iterator<boolean[]> validityIterator = setOfValidities.iterator();
-		for (double[] timeSeries : setOfTimeSeriesSamples) {
-			boolean[] validity = validityIterator.next();
-			if (validity == null) {
-				aisCalc.addObservations(timeSeries);
-			} else {
-				aisCalc.addObservations(timeSeries, validity);
-			}
-		}
-		aisCalc.finaliseAddObservations();
-	}
-	
-	/**
-	 * Prepare the given pre-instantiated (and properties supplied)
-	 *  Conditional mutual information calculator with this data set,
-	 *  using the embedding parameters supplied.
-	 * This may be used in the final calculation, or by the auto-embedding 
-	 *  procedures, hence the use of method arguments rather than
-	 *  using the member variables directly.
-	 * 
-	 * @param condMiCalc_in_use conditional MI calculator to use
-	 * @param k_in_use k embedding dimension to use for target
-	 * @param k_tau_in_use target tau embedding delay to use
-	 * @param l_in_use l embedding dimension to use for source
-	 * @param l_tau_in_use source tau embedding delay to use
-	 * @param delay_in_use source-target delay to use
-	 * @return integer array of number of samples added for each time series pair in the sample set.
-	 * @throws Exception
-	 */
-	protected int[] prepareCMICalculator(
-			ConditionalMutualInfoCalculatorMultiVariate condMiCalc_in_use,
-			int k_in_use, int k_tau_in_use, int l_in_use, int l_tau_in_use,
-			int delay_in_use) throws Exception {
-
 		// Initialise the conditional MI calculator, including any auto-embedding length
-		condMiCalc_in_use.initialise(l_in_use, 1, k_in_use);
-		condMiCalc_in_use.startAddObservations();
+		condMiCalc.initialise(l, 1, k);
+		condMiCalc.startAddObservations();
 		// Send all of the observations through:
 		Iterator<double[]> destIterator = vectorOfDestinationTimeSeries.iterator();
 		Iterator<boolean[]> sourceValidityIterator = vectorOfValidityOfSource.iterator();
 		Iterator<boolean[]> destValidityIterator = vectorOfValidityOfDestination.iterator();
-		int[] separateNumObservationsArray = new int[vectorOfDestinationTimeSeries.size()];
+		separateNumObservations = new int[vectorOfDestinationTimeSeries.size()];
 		int setNum = 0;
 		for (double[] source : vectorOfSourceTimeSeries) {
 			double[] destination = destIterator.next();
@@ -909,24 +482,22 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 			int observationsAddedThisTime = 0;
 			if (sourceValidity == null) {
 				// Add the whole time-series
-				observationsAddedThisTime = addObservationsWithGivenParams(
-						condMiCalc_in_use, k_in_use, k_tau_in_use, l_in_use,
-						l_tau_in_use, delay_in_use, source, destination);
+				observationsAddedThisTime = addObservationsAfterParamsDetermined(source, destination);
 			} else {
-				observationsAddedThisTime = addObservationsWithGivenParams(
-						condMiCalc_in_use, k_in_use, k_tau_in_use, l_in_use,
-						l_tau_in_use, delay_in_use, source, destination,
+				observationsAddedThisTime = addObservationsAfterParamsDetermined(source, destination,
 						sourceValidity, destValidity);
 			}
-			separateNumObservationsArray[setNum++] = observationsAddedThisTime;
+			separateNumObservations[setNum++] = observationsAddedThisTime;
 		}
+		vectorOfSourceTimeSeries = null; // No longer required
+		vectorOfDestinationTimeSeries = null; // No longer required
+		vectorOfValidityOfSource = null;
+		vectorOfValidityOfDestination = null;
 		
 		// TODO do we need to throw an exception if there are no observations to add?
-		condMiCalc_in_use.finaliseAddObservations();
-		
-		return separateNumObservationsArray;
+		condMiCalc.finaliseAddObservations();
 	}
-	
+
 	@Override
 	public void setObservations(double[] source, double[] destination,
 			boolean[] sourceValid, boolean[] destValid) throws Exception {
@@ -950,29 +521,21 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 	 * <p>Made public so it can be used if one wants to compute the number of
 	 *  observations prior to setting the observations.</p>
 	 * 
-	 * @param k_in_use k embedding dimension to use for target
-	 * @param k_tau_in_use target tau embedding delay to use
-	 * @param l_in_use l embedding dimension to use for source
-	 * @param l_tau_in_use source tau embedding delay to use
-	 * @param delay_in_use source-target delay to use
 	 * @param sourceValid a time series (with indices the same as observations)
 	 *  indicating whether the entry in observations at that index is valid for the source; 
 	 * @param destValid as described for <code>sourceValid</code>
 	 * @return a vector for start and end time pairs of valid series
 	 *  of observations.
 	 */
-	public static Vector<int[]> computeStartAndEndTimePairs(
-			int k_in_use, int k_tau_in_use, int l_in_use, int l_tau_in_use,
-			int delay_in_use,
-			boolean[] sourceValid, boolean[] destValid) throws Exception {
+	public Vector<int[]> computeStartAndEndTimePairs(boolean[] sourceValid, boolean[] destValid) throws Exception {
 		
 		if (sourceValid.length != destValid.length) {
 			throw new Exception("Validity arrays must be of same length");
 		}
 		
-		int lengthOfDestPastRequired = (k_in_use-1)*k_tau_in_use + 1;
-		int lengthOfSourcePastRequired = (l_in_use-1)*l_tau_in_use + 1;
-		// int numSourcePointsBeforeDestStart = delay_in_use - 1 + lengthOfSourcePastRequired
+		int lengthOfDestPastRequired = (k-1)*k_tau + 1;
+		int lengthOfSourcePastRequired = (l-1)*l_tau + 1;
+		// int numSourcePointsBeforeDestStart = delay - 1 + lengthOfSourcePastRequired
 		//									- lengthOfDestPastRequired;
 
 		// Scan along the data avoiding invalid values
@@ -982,15 +545,12 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 		// Simple solution -- this takes more complexity in time, but is 
 		//  much faster to code:
 		boolean previousWasOk = false;
-		int startTimeForFirstDestEmbedding_in_use =
-				computeStartTimeForFirstDestEmbedding(k_in_use, k_tau_in_use, l_in_use,
-						l_tau_in_use, delay_in_use);
-		for (int t = startTimeForFirstDestEmbedding_in_use; t < destValid.length - 1; t++) {
+		for (int t = startTimeForFirstDestEmbedding; t < destValid.length - 1; t++) {
 			// Check the tuple with the history vector starting from
 			//  t and running backwards
 			if (previousWasOk) {
 				// Just check the very next values of each:
-				if (destValid[t + 1] && sourceValid[t + 1 - delay_in_use]) {
+				if (destValid[t + 1] && sourceValid[t + 1 - delay]) {
 					// We can continue adding to this sequence
 					continue;
 				} else {
@@ -1018,7 +578,7 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 				continue;
 			}
 			allOk = true;
-			for (int tBack = delay_in_use - 1; tBack < delay_in_use - 1 + lengthOfSourcePastRequired; tBack++) {
+			for (int tBack = delay - 1; tBack < delay - 1 + lengthOfSourcePastRequired; tBack++) {
 				if (!sourceValid[t - tBack]) {
 					allOk = false;
 					break;
@@ -1028,7 +588,7 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 				continue;
 			}
 			// Postcondition: We've got a first valid tuple:
-			startTime = t - startTimeForFirstDestEmbedding_in_use;
+			startTime = t - startTimeForFirstDestEmbedding;
 			previousWasOk = true;
 		}
 		// Now check if we were running a sequence and terminate it:

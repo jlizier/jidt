@@ -80,20 +80,6 @@ public interface ConditionalMutualInfoCalculatorMultiVariate
 	extends InfoMeasureCalculatorContinuous, EmpiricalNullDistributionComputer {
 
 	/**
-	 * Property name for 
-	 *  specifying whether the data is normalised or not (to mean 0,
-	 *  variance 1, for each of the multiple variables)
-	 *  before the calculation is made.
-	 */
-	public static final String PROP_NORMALISE = "NORMALISE";
-	/**
-	 * Property name for an amount of random Gaussian noise to be
-	 *  added to the data (default 0, except for Kraskov/KSG estimator
-	 *  where it is 1e-8, matching the MILCA toolkit)
-	 */
-	public static final String PROP_ADD_NOISE = "NOISE_LEVEL_TO_ADD";
-
-	/**
 	 * Initialise the calculator for (re-)use, clearing PDFs,
 	 * with the existing
 	 * (or default) values of parameters (except the numbers

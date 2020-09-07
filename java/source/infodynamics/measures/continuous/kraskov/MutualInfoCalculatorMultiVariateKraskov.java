@@ -18,8 +18,10 @@
 
 package infodynamics.measures.continuous.kraskov;
 
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.PriorityQueue;
+import java.util.Random;
 
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
 import infodynamics.measures.continuous.MutualInfoMultiVariateCommon;
@@ -28,7 +30,10 @@ import infodynamics.utils.KdTree;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.NearestNeighbourSearcher;
+import infodynamics.utils.NearestNeighbourSearcherInterface;
 import infodynamics.utils.NeighbourNodeData;
+import infodynamics.utils.ParsedProperties;
+import infodynamics.utils.PeriodicNearestNeighbourSearcher;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.NativeUtils;
 
@@ -91,6 +96,16 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
    */
   public final static String PROP_NORM_TYPE = "NORM_TYPE";
   /**
+   * Property name for whether to normalise the incoming data to 
+   * mean 0, standard deviation 1 (default true)
+   */
+  public static final String PROP_NORMALISE = "NORMALISE";
+  /**
+   * Property name for an amount of random Gaussian noise to be
+   *  added to the data (default is 1e-8, matching the MILCA toolkit).
+   */
+  public static final String PROP_ADD_NOISE = "NOISE_LEVEL_TO_ADD";
+  /**
    * Property name for a dynamics exclusion time window 
    * otherwise known as Theiler window (see Kantz and Schreiber).
    * Default is 0 which means no dynamic exclusion window.
@@ -118,6 +133,34 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
    */
   public static final String PROP_GPU_LIBRARY_PATH = "GPU_LIBRARY_PATH";
   
+  /**
+   * Property name for the boundary values of source data.
+   * 
+   * FIXME
+   */
+  public static final String PROP_BOUNDARY_SOURCE = "BOUNDARY_SOURCE";
+  
+  /**
+   * Property name for the boundary values of source data.
+   * 
+   * FIXME
+   */
+  public static final String PROP_BOUNDARY_DEST = "BOUNDARY_DEST";
+  
+  
+  
+  /**
+   * Whether to normalise the incoming data 
+   */
+  protected boolean normalise = true;
+  /**
+   * Whether to add an amount of random noise to the incoming data
+   */
+  protected boolean addNoise = true;
+  /**
+   * Amount of random Gaussian noise to add to the incoming data
+   */
+  protected double noiseLevel = (double) 1e-8;
   /**
    * Whether we use dynamic correlation exclusion
    */
@@ -150,20 +193,35 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
   protected boolean cudaLibraryLoaded = false;
   
   /**
+   * Whether we have boundary condition property for source/Destination.
+   */
+  protected boolean boundarySourceFlag = false;
+  protected boolean boundaryDestFlag = false;
+  
+  /**
+   * Boundary condition property for source/destionation.
+   */
+  protected double[] boundarySource = null;
+  protected double[] boundaryDest = null;
+  
+  
+  
+  
+  /**
    * protected k-d tree data structure (for fast nearest neighbour searches)
    *  representing the joint source-dest space
    */
-  protected KdTree kdTreeJoint;
+  protected NearestNeighbourSearcherInterface treeJoint;
   /**
    * protected data structure (for fast nearest neighbour searches)
    *  representing the source space
    */
-  protected NearestNeighbourSearcher nnSearcherSource;
+  protected NearestNeighbourSearcherInterface nnSearcherSource;
   /**
    * protected data structure (for fast nearest neighbour searches)
    *  representing the dest space
    */
-  protected NearestNeighbourSearcher nnSearcherDest;
+  protected NearestNeighbourSearcherInterface nnSearcherDest;
   
   /**
    * Constant for digamma(k), with k the number of nearest neighbours selected
@@ -179,14 +237,11 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
    */
   public MutualInfoCalculatorMultiVariateKraskov() {
     super();
-    // Switch on adding noise to the data by default for the KSG estimator
-    addNoise = true;
-    noiseLevel = (double) 1e-8;
   }
 
   @Override
   public void initialise(int sourceDimensions, int destDimensions) {
-    kdTreeJoint = null;
+    treeJoint = null;
     nnSearcherSource = null;
     nnSearcherDest = null;
     super.initialise(sourceDimensions, destDimensions);
@@ -206,9 +261,20 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
    *    working out the norms between the points in each marginal space.
    *    Options are defined by {@link KdTree#setNormType(String)} -
    *    default is {@link EuclideanUtils#NORM_MAX_NORM}.</li>
+   *  <li>{@link #PROP_NORMALISE} -- whether to normalise the incoming individual
+   *      variables to mean 0 and standard deviation 1 (true by default)</li>
    *  <li>{@link #PROP_DYN_CORR_EXCL_TIME} -- a dynamics exclusion time window,
    *      also known as Theiler window (see Kantz and Schreiber);
    *      default is 0 which means no dynamic exclusion window.</li>
+   *  <li>{@link #PROP_ADD_NOISE} -- a standard deviation for an amount of
+   *    random Gaussian noise to add to
+   *      each variable, to avoid having neighbourhoods with artificially
+   *      large counts. (We also accept "false" to indicate "0".)
+   *      The amount is added in after any normalisation,
+   *      so can be considered as a number of standard deviations of the data.
+   *      (Recommended by Kraskov. MILCA uses 1e-8; but adds in
+   *      a random amount of noise in [0,noiseLevel) ).
+   *      Default 1e-8 to match the noise order in MILCA toolkit.</li>
    *  <li>{@link #PROP_NUM_THREADS} -- the integer number of parallel threads
    *    to use in the computation. Can be passed as a string "USE_ALL"
    *      to use all available processors on the machine.
@@ -228,9 +294,20 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
       k = Integer.parseInt(propertyValue);
     } else if (propertyName.equalsIgnoreCase(PROP_NORM_TYPE)) {
       normType = KdTree.validateNormType(propertyValue);
+    } else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
+      normalise = Boolean.parseBoolean(propertyValue);
     } else if (propertyName.equalsIgnoreCase(PROP_DYN_CORR_EXCL_TIME)) {
       dynCorrExclTime = Integer.parseInt(propertyValue);
       dynCorrExcl = (dynCorrExclTime > 0);
+    } else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
+      if (propertyValue.equals("0") ||
+          propertyValue.equalsIgnoreCase("false")) {
+        addNoise = false;
+        noiseLevel = 0;
+      } else {
+        addNoise = true;
+        noiseLevel = Double.parseDouble(propertyValue);
+      }
     } else if (propertyName.equalsIgnoreCase(PROP_NUM_THREADS)) {
       if (propertyValue.equalsIgnoreCase(USE_ALL_THREADS)) {
         numThreads = Runtime.getRuntime().availableProcessors();
@@ -241,7 +318,23 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
       useGPU = Boolean.parseBoolean(propertyValue);
     } else if (propertyName.equalsIgnoreCase(PROP_GPU_LIBRARY_PATH)) {
       gpuLibraryPath = propertyValue;
-    } else {
+    } else if (propertyName.equalsIgnoreCase(PROP_BOUNDARY_SOURCE)) {
+    	if (propertyValue.equals("-1") || propertyValue.equals("") ||
+    	          propertyValue.equalsIgnoreCase("false")) {
+    		boundarySource = null;
+    	}else {
+    		boundarySource = ParsedProperties.
+    				parseStringArrayOfDoubles(propertyValue);
+    	}
+    }else if (propertyName.equalsIgnoreCase(PROP_BOUNDARY_DEST)) {
+    	if (propertyValue.equals("-1") ||  propertyValue.equals("") ||
+  	          propertyValue.equalsIgnoreCase("false")) {
+    		boundaryDest = null;
+    	}else {
+    		boundaryDest = ParsedProperties.
+    				parseStringArrayOfDoubles(propertyValue);
+  			}
+    }else {
       // No property was set here
       propertySet = false;
       // try the superclass:
@@ -273,15 +366,33 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
       return Integer.toString(k);
     } else if (propertyName.equalsIgnoreCase(PROP_NORM_TYPE)) {
       return KdTree.convertNormTypeToString(normType);
+    } else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
+      return Boolean.toString(normalise);
     } else if (propertyName.equalsIgnoreCase(PROP_DYN_CORR_EXCL_TIME)) {
       return Integer.toString(dynCorrExclTime);
+    } else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
+      return Double.toString(noiseLevel);
     } else if (propertyName.equalsIgnoreCase(PROP_NUM_THREADS)) {
       return Integer.toString(numThreads);
     } else if (propertyName.equalsIgnoreCase(PROP_USE_GPU)) {
         return Boolean.toString(useGPU);
     } else if (propertyName.equalsIgnoreCase(PROP_GPU_LIBRARY_PATH)) {
         return gpuLibraryPath;
-    } else {
+    } else if (propertyName.equalsIgnoreCase(PROP_BOUNDARY_SOURCE)) {
+    	if ((boundarySource == null) || (!boundarySourceFlag)) {
+    		return("false");
+    	}else {
+    		return (Arrays.toString(boundarySource))
+    				.replace("[", "").replace("]","");
+    		}
+    } else if (propertyName.equalsIgnoreCase(PROP_BOUNDARY_DEST)) {
+    	if ((boundaryDest == null) || (!boundaryDestFlag)){
+    		return("false");
+    	}else {
+    		return (Arrays.toString(boundaryDest))
+    				.replace("[", "").replace("]","");
+    		}
+    }else {
       // try the superclass:
       return super.getProperty(propertyName);
     }
@@ -294,6 +405,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
   public void finaliseAddObservations() throws Exception {
     // Allow the parent to generate the data for us first
     super.finaliseAddObservations();
+
     
     if (dynCorrExcl && addedMoreThanOneObservationSet) {
       // We have not properly implemented dynamic correlation exclusion for
@@ -309,6 +421,47 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
           k + ") and any dynamic correlation exclusion (" + dynCorrExclTime + ")");
     }
     
+//     Normalise the data if required
+    if (normalise) {
+    	checkForPeriodic();
+    	if (boundarySourceFlag) {
+    		for (int i = 0; i<boundarySource.length; i++) {
+    			if (boundarySource[i] <=0) {
+    				MatrixUtils.normalise(sourceObservations,i);
+    			}
+    		}
+    	}
+    	if (boundaryDestFlag) {
+    		for (int i = 0; i<boundaryDest.length; i++) {
+    			if (boundaryDest[i] <=0) {
+    				MatrixUtils.normalise(destObservations,i);
+    			}
+    		}
+    	}
+    	
+    	if ((!boundarySourceFlag) && (!boundaryDestFlag)) {
+	      // We can overwrite these since they're already
+	      //  a copy of the users' data.
+	      MatrixUtils.normalise(sourceObservations);
+	      MatrixUtils.normalise(destObservations);
+	    }
+    }
+    
+    if (addNoise) {
+      Random random = new Random();
+      // Add Gaussian noise of std dev noiseLevel to the data
+      for (int r = 0; r < sourceObservations.length; r++) {
+        for (int c = 0; c < dimensionsSource; c++) {
+          sourceObservations[r][c] +=
+              random.nextGaussian()*noiseLevel;
+        }
+        for (int c = 0; c < dimensionsDest; c++) {
+          destObservations[r][c] +=
+              random.nextGaussian()*noiseLevel;
+        }
+      }
+    }
+
     // Set the constants:
     digammaK = MathsUtils.digamma(k);
     digammaN = MathsUtils.digamma(totalObservations);
@@ -346,9 +499,9 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
     //  later reinstatement:
     // (don't need to save and reinstate kdTreeSource, since we're not
     //  altering the source data order).
-    KdTree originalKdTreeJoint = kdTreeJoint;
-    kdTreeJoint = null; // So that it is rebuilt for the new ordering
-    NearestNeighbourSearcher originalKdTreeDest = nnSearcherDest;
+    NearestNeighbourSearcherInterface originaltreeJoint = treeJoint;
+    treeJoint = null; // So that it is rebuilt for the new ordering
+    NearestNeighbourSearcherInterface originalKdTreeDest = nnSearcherDest;
     nnSearcherDest = null; // So that it is rebuilt for the new ordering
     double[][] originalData2 = destObservations;
     
@@ -359,7 +512,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
     
     // restore original variables:
     destObservations = originalData2;
-    kdTreeJoint = originalKdTreeJoint;
+    treeJoint = originaltreeJoint;
     nnSearcherDest = originalKdTreeDest;
     
     return newMI;
@@ -609,6 +762,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
    * to use these data structures)
    */
   protected void ensureKdTreesConstructed() throws Exception {
+	  checkForPeriodic();
     
     // We need to construct the k-d trees for use by the child
     //  classes. We check each tree for existence separately
@@ -616,20 +770,116 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
     // TODO can parallelise these -- best done within the kdTree --
     //  though it's unclear if there's much point given that
     //  the tree construction itself afterwards can't really be well parallelised.
-    if (kdTreeJoint == null) {
-      kdTreeJoint = new KdTree(new int[] {dimensionsSource, dimensionsDest},
+	  
+	  // Check for periodic boundary conditions.
+    if (treeJoint == null) {
+    	if (boundarySourceFlag || boundaryDestFlag) {
+    		treeJoint = (NearestNeighbourSearcherInterface) 
+    				PeriodicNearestNeighbourSearcher.create(
+    						MatrixUtils.appendColumns(
+    						sourceObservations,destObservations),
+    						MatrixUtils.append(
+    								boundarySource, boundaryDest));
+    	}else {
+      treeJoint = new KdTree(new int[] {dimensionsSource, dimensionsDest},
             new double[][][] {sourceObservations, destObservations});
-      kdTreeJoint.setNormType(normType);
+      ((NearestNeighbourSearcher) treeJoint).setNormType(normType);
+    	}
     }
+    
+    // Check for periodic boundary conditions.
     if (nnSearcherSource == null) {
-      nnSearcherSource = NearestNeighbourSearcher.create(sourceObservations);
-      nnSearcherSource.setNormType(normType);
+    	if (boundarySourceFlag) {
+    		nnSearcherSource = (NearestNeighbourSearcherInterface) 
+    				PeriodicNearestNeighbourSearcher.create(
+    						sourceObservations,boundarySource);
+    	}else {
+    		NearestNeighbourSearcher temp1 =NearestNeighbourSearcher.create(sourceObservations);
+    	      temp1.setNormType(normType);
+    	      nnSearcherSource = (NearestNeighbourSearcherInterface) temp1;
+    	}
     }
+    
+    // Check for periodic boundary conditions.
     if (nnSearcherDest == null) {
-      nnSearcherDest = NearestNeighbourSearcher.create(destObservations);
-      nnSearcherDest.setNormType(normType);
+    	if (boundaryDestFlag) {
+    		nnSearcherDest = (NearestNeighbourSearcherInterface) 
+    				PeriodicNearestNeighbourSearcher.create(
+    						destObservations,boundaryDest);
+    	}else {
+    	NearestNeighbourSearcher temp2 = NearestNeighbourSearcher.create(destObservations);
+    	temp2.setNormType(normType);
+    	nnSearcherDest = (NearestNeighbourSearcherInterface) temp2;
+    	}
     }
   }
+  
+  
+  /**
+   * First check if the input boundary arrays of source and dest
+   * are valid. Raise the corresponding flag if the boundary array
+   * is valid.
+   * 
+   * Then check if a valid boundary array size is equal to one. If 
+   * true, apply that boundary value to every dimension.
+   */
+  
+  protected void checkForPeriodic() {
+	  
+	  boundarySourceFlag=boundaryCheck(boundarySource);
+	  boundaryDestFlag  = boundaryCheck(boundaryDest);
+	  if (boundarySourceFlag || boundaryDestFlag) {
+		  if (boundarySourceFlag && (boundarySource.length == 1) && (dimensionsSource>1)) {
+			  double boundaryTemp = boundarySource[0];
+			  boundarySource = new double[dimensionsSource];
+			  for (int i =0 ; i < boundarySource.length; i++) {
+				  boundarySource[i] = boundaryTemp;
+			  }
+		  }
+		  
+		  if (boundaryDestFlag && (boundaryDest.length == 1)&&(dimensionsDest>1)) {
+			  double boundaryTemp = boundaryDest[0];
+			  boundaryDest = new double[dimensionsDest];
+			  for (int i =0 ; i < boundaryDest.length; i++) {
+				  boundaryDest[i] = boundaryTemp;
+			  }
+		  }
+	  }
+	  
+	  if (!boundarySourceFlag) {
+		  boundarySource = new double[dimensionsSource];
+		  for (int i =0 ; i < boundarySource.length; i++) {
+			  boundarySource[i] = -1;
+		  }
+	  }
+	  
+	  if (!boundaryDestFlag) {
+		  boundaryDest = new double[dimensionsDest];
+		  for (int i =0 ; i < boundaryDest.length; i++) {
+			  boundaryDest[i] = -1;
+		  }
+	  }
+  }
+  
+  /**
+   * check if the input boundary arrays of source and dest
+   * are valid.
+   * @param boundary Input boundary. Either source or destination.
+   */
+  protected boolean boundaryCheck(double[] boundary) {
+	  if (boundary != null) {
+		  for (int i =0; i<boundary.length; i++) {
+			  if (boundary[i]!=-1) {
+				  return true;
+			  }
+		  }
+	  }
+	  return false;
+  }
+  
+  
+  
+
 
   /**
    * Internal method to ensure that the Cuda native library has been correctly
@@ -648,10 +898,9 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
           System.load(gpuLibraryPath);
         }
       } catch (Throwable e) {
-        String errmsg = "GPU library not found. To compile GPU code set the enablegpu flag to true in build.xml, or run `ant gpu jar`.";
-        errmsg += "\nFor more information see the JIDT GPU wiki page: https://github.com/jlizier/jidt/wiki/GPU";
+        String errmsg = "GPU library not found. To compile GPU code set the enablegpu flag to true in build.xml";
         if (gpuLibraryPath.length() > 0) {
-          errmsg += "\n\nGPU library was not found in the path provided. Provide full path including library file name.";
+          errmsg += "\nGPU library was not found in the path provided. Provide full path including library file name.";
           errmsg += "\nExample: /home/johndoe/myfolder/libKraskov.so";
         }
         throw new Exception(errmsg);
@@ -936,7 +1185,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
         double[] sourceValueToPredict = sourceObservations[t];
         // Find kNNs of second variable
         PriorityQueue<NeighbourNodeData> nnPQ = 
-            nnSearcherDest.findKNearestNeighbours(kNNs, t, dynCorrExclTime);
+        		 ((NearestNeighbourSearcher) nnSearcherDest).findKNearestNeighbours(kNNs, t, dynCorrExclTime);
         double[] predictedValue = new double[dimensionsSource];
         for (NeighbourNodeData kthNnData : nnPQ) {
           // Retrieve the source value this corresponds to
@@ -957,7 +1206,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
         double[] destValueToPredict = destObservations[t];
         // Find kNNs of first variable
         PriorityQueue<NeighbourNodeData> nnPQ = 
-            nnSearcherSource.findKNearestNeighbours(kNNs, t, dynCorrExclTime);
+            ((NearestNeighbourSearcher) nnSearcherSource).findKNearestNeighbours(kNNs, t, dynCorrExclTime);
         double[] predictedValue = new double[dimensionsDest];
         for (NeighbourNodeData kthNnData : nnPQ) {
           // Retrieve the dest value this corresponds to
