@@ -331,8 +331,8 @@ public class ConditionalMutualInformationCalculatorDiscrete
 		double condMi = 0.0;
 		double condMiCont = 0.0;
 
-		max = 0;
-		min = 0;
+		max = Double.NEGATIVE_INFINITY;
+		min = Double.POSITIVE_INFINITY;
 		double meanSqLocals = 0;
 		for (int condVal = 0; condVal < condBase; condVal++) {
 			// compute p(cond)
@@ -375,6 +375,11 @@ public class ConditionalMutualInformationCalculatorDiscrete
 			}
 		}
 		
+		if (observations == 0) {
+			// We didn't really have any local values:
+			max = 0;
+			min = 0;
+		}
 		average = condMi;
 		std = Math.sqrt(meanSqLocals - average * average);
 		condMiComputed = true;
@@ -423,8 +428,8 @@ public class ConditionalMutualInformationCalculatorDiscrete
 
 		double[] localCondMi = new double[rows];
 		average = 0;
-		max = 0;
-		min = 0;
+		max = Double.NEGATIVE_INFINITY;
+		min = Double.POSITIVE_INFINITY;
 
 		int var1Val, var2Val, condVal;
 		double logTerm;
@@ -446,6 +451,11 @@ public class ConditionalMutualInformationCalculatorDiscrete
 
 		average = average/(double) rows;
 		condMiComputed = true;
+		if (observations == 0) {
+			// We didn't really have any local values:
+			max = 0;
+			min = 0;
+		}
 
 		return localCondMi;
 	}
