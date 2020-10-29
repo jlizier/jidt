@@ -275,10 +275,10 @@ public class KdTree extends NearestNeighbourSearcher {
 			// Could remove these since the code is now functional,
 			//  but may be better to leave them in just in case the code breaks:
 			if (leftIndex > leftStart + leftNumPoints) {
-				throw new RuntimeException("Exceeded expected number of points on left");
+				throw new RuntimeException("Exceeded expected number of points on left - likely had an NaN in the data");
 			}
 			if (rightIndex > rightStart + rightNumPoints) {
-				throw new RuntimeException("Exceeded expected number of points on right");
+				throw new RuntimeException("Exceeded expected number of points on right - likely had an NaN in the data");
 			}
 			// Update the pointer for the sorted indices for this dimension,
 			//  and keep the new temporary array
