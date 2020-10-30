@@ -444,7 +444,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 			// 3. Finally, reset our boolean array for its next use while we count n_z:
 			int n_z;
 			if (dimensionsCond == 0) {
-				n_z = totalObservations - 1; // - 1 to remove the point itself.
+				n_z = totalObservations; // All points are a match
 				// no need to reset the boolean array
 			} else { 
 				for (n_z = 0; indicesWithinRForConditionals[n_z] != -1; n_z++) {

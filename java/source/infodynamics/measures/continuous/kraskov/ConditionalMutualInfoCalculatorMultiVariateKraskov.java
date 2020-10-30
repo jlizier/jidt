@@ -454,7 +454,7 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 	 * @throws Exception
 	 */
 	protected double[] computeFromObservations(boolean returnLocals, double[][][] newObservations) throws Exception {
-		int N = var1Observations.length; // number of observations
+		int N = var1Observations.length; // number of observations for the PDFs
 		
 		double[] returnValues = null;
 		
@@ -462,7 +462,11 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
     int numTimePointsToComputeFor = (newObservations == null) ?
         N : newObservations[0].length;
     
-    if (useGPU) {
+    if (useGPU && (newObservations == null)) {
+    	System.out.println("Cannot use GPU for estimation based on new observations -- falling back to CPU calculation...");
+    }
+    
+    if (useGPU && (newObservations == null)) {
       returnValues = gpuComputeFromObservations(0, N, returnLocals);
     } else if (numThreads == 1) {
       // Single-threaded implementation:

@@ -18,13 +18,9 @@
 
 package infodynamics.measures.continuous.kraskov;
 
-import java.util.Calendar;
-
 import infodynamics.utils.ArrayFileReader;
-import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
-import infodynamics.utils.RandomGenerator;
 
 public class ConditionalMutualInfoMultiVariateTester
 	extends infodynamics.measures.continuous.ConditionalMutualInfoMultiVariateAbstractTester {
@@ -464,9 +460,10 @@ public class ConditionalMutualInfoMultiVariateTester
 			condMiCalc.setProperty(
 					ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_K,
 					Integer.toString(kNNs[ki]));
-			System.out.println("Main calc normalisation is " + condMiCalc.getProperty(condMiCalc.PROP_NORMALISE));
+			System.out.println("Main calc normalisation is " + condMiCalc.getProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NORMALISE));
 			condMiCalc.initialise(var1[0].length, var2[0].length, condVar[0].length);
 			condMiCalc.setObservations(var1, var2, condVar);
+			@SuppressWarnings("unused")
 			double miAverage = condMiCalc.computeAverageLocalOfObservations();
 			// Now compute as new observations:
 			condMiCalcForNew.setProperty(
@@ -475,13 +472,14 @@ public class ConditionalMutualInfoMultiVariateTester
 			// condMiCalcForNew.setProperty(
 			//		ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS,
 			//		"1");
-			System.out.println("New obs calc normalisation is " + condMiCalcForNew.getProperty(condMiCalc.PROP_NORMALISE));
+			System.out.println("New obs calc normalisation is " + condMiCalcForNew.getProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NORMALISE));
 			condMiCalcForNew.initialise(var1[0].length, var2[0].length, condVar[0].length);
 			condMiCalcForNew.setObservations(var1, var2, condVar);
 			// condMiCalc.setDebug(true);
 			//condMiCalcForNew.setDebug(true);
 			double[] newLocals = condMiCalcForNew.computeLocalUsingPreviousObservations(var1, var2, condVar);
 			//condMiCalcForNew.setDebug(false);
+			@SuppressWarnings("unused")
 			double averageFromNewObservations = MatrixUtils.mean(newLocals);
 			// We can't check this directly, so test each point individually:
 			for (int t = 0; t < data.length; t++) {
