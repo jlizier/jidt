@@ -322,7 +322,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
   public double computeAverageLocalOfObservations() throws Exception {
     // Compute the MI
     double startTime = Calendar.getInstance().getTimeInMillis();
-    lastAverage = computeFromObservations(false)[0];
+    lastAverage = computeFromObservations(false, null)[0];
     miComputed = true;
     if (debug) {
       Calendar rightNow2 = Calendar.getInstance();
@@ -355,7 +355,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
     // Generate a new re-ordered data2
     destObservations = MatrixUtils.extractSelectedTimePointsReusingArrays(originalData2, reordering);
     // Compute the MI
-    double newMI = computeFromObservations(false)[0];
+    double newMI = computeFromObservations(false, null)[0];
     
     // restore original variables:
     destObservations = originalData2;
@@ -384,21 +384,32 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
    * @throws Exception
    */
   public double[] computeLocalOfPreviousObservations() throws Exception {
-    double[] localValues = computeFromObservations(true);
+    double[] localValues = computeFromObservations(true, null);
     lastAverage = MatrixUtils.mean(localValues);
     miComputed = true;
     return localValues;
   }
 
-  /**
-   * This method, specified in {@link MutualInfoCalculatorMultiVariate}
-   * is not implemented yet here.
-   */
+  @Override
   public double[] computeLocalUsingPreviousObservations(double[][] states1, double[][] states2) throws Exception {
-    // TODO If implemented, will need to incorporate any time difference here.
-    // Will also need to handle normalisation of the incoming data
-    //  appropriately
-    throw new Exception("Local method not implemented yet");
+	// Do normalisation of the incoming data if required:
+	double[][] states1ToUse, states2ToUse;
+	if (normalise) {
+		states1ToUse = MatrixUtils.normaliseIntoNewArray(states1, sourceMeansBeforeNorm, sourceStdsBeforeNorm, 0, states1.length-timeDiff);
+		states2ToUse = MatrixUtils.normaliseIntoNewArray(states2, destMeansBeforeNorm, destStdsBeforeNorm, timeDiff, states2.length-timeDiff);
+	} else {
+		if (timeDiff > 0) {
+			states1ToUse = MatrixUtils.selectRows(states1, 0, states1.length-timeDiff);
+			states2ToUse = MatrixUtils.selectRows(states2, 0, states2.length-timeDiff);
+		} else {
+			states1ToUse = states1;
+			states2ToUse = states2;
+		}
+	}
+	// And call the algorithm:
+	double[] localValues = computeFromObservations(true,
+			new double[][][]{states1ToUse, states2ToUse});
+	return localValues;
   }
   
   /**
@@ -415,37 +426,52 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
    * 
    * @param returnLocals whether to return an array or local values, or else
    *  sums of these values
+   * @param newObservations set to null for computing for the observation set for the PDF, or pass in a new set
+   *  of observations to compute the average/locals for (using the existing observations to construct the PDF)
    * @return either the average MI, or array of local MI value, in nats not bits
    * @throws Exception
    */
-  protected double[] computeFromObservations(boolean returnLocals) throws Exception {
-    int N = sourceObservations.length; // number of observations
+  protected double[] computeFromObservations(boolean returnLocals, double[][][] newObservations) throws Exception {
+    int N = sourceObservations.length; // number of observations for the PDFs
     
     double[] returnValues = null;
     
-    if (useGPU) {
+    // How many time points are we averaging over?
+    int numTimePointsToComputeFor = (newObservations == null) ?
+        N : newObservations[0].length;
+    
+    if (useGPU && (newObservations == null)) {
+    	System.out.println("Cannot use GPU for estimation based on new observations -- falling back to CPU calculation...");
+    }
+    
+    if (useGPU && (newObservations == null)) {
       returnValues = gpuComputeFromObservations(0, N, returnLocals);
     } else if (numThreads == 1) {
       // Single-threaded implementation:
       ensureKdTreesConstructed();
 
-      returnValues = partialComputeFromObservations(0, N, returnLocals);
-      
+      if (newObservations == null) {
+          returnValues = partialComputeFromObservations(0, numTimePointsToComputeFor, returnLocals);
+        } else {
+          returnValues = partialComputeFromNewObservations(0, numTimePointsToComputeFor,
+              newObservations[0], newObservations[1], returnLocals);
+        }
+
     } else {
       // We're going multithreaded:
       ensureKdTreesConstructed();
 
       if (returnLocals) {
         // We're computing local MI
-        returnValues = new double[N];
+        returnValues = new double[numTimePointsToComputeFor];
       } else {
         // We're computing average MI
         returnValues = new double[MiKraskovThreadRunner.RETURN_ARRAY_LENGTH];
       }
       
       // Distribute the observations to the threads for the parallel processing
-      int lTimesteps = N / numThreads; // each thread gets the same amount of data
-      int res = N % numThreads; // the first thread gets the residual data
+      int lTimesteps = numTimePointsToComputeFor / numThreads; // each thread gets the same amount of data
+      int res = numTimePointsToComputeFor % numThreads; // the first thread gets the residual data
       if (debug) {
         System.out.printf("Computing Kraskov MI with %d threads (%d timesteps each, plus %d residual)\n",
             numThreads, lTimesteps, res);
@@ -459,7 +485,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
           System.out.println(t + ".Thread: from " + startTime +
               " to " + (startTime + numTimesteps)); // Trace Message
         }
-        runners[t] = new MiKraskovThreadRunner(this, startTime, numTimesteps, returnLocals);
+        runners[t] = new MiKraskovThreadRunner(this, startTime, numTimesteps, newObservations, returnLocals);
         tCalculators[t] = new Thread(runners[t]);
         tCalculators[t].start();
       }
@@ -488,18 +514,21 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
       return returnValues;
     } else {
       // Compute the average number of points within eps_x and eps_y
-      double averageDiGammas = returnValues[MiKraskovThreadRunner.INDEX_SUM_DIGAMMAS] / (double) N;
-      double avNx = returnValues[MiKraskovThreadRunner.INDEX_SUM_NX] / (double) N;
-      double avNy = returnValues[MiKraskovThreadRunner.INDEX_SUM_NY] / (double) N;
+      double averageDiGammas = returnValues[MiKraskovThreadRunner.INDEX_SUM_DIGAMMAS] / (double) numTimePointsToComputeFor;
+      double avNx = returnValues[MiKraskovThreadRunner.INDEX_SUM_NX] / (double) numTimePointsToComputeFor;
+      double avNy = returnValues[MiKraskovThreadRunner.INDEX_SUM_NY] / (double) numTimePointsToComputeFor;
       if (debug) {
         System.out.println(String.format("Average n_x=%.3f, Average n_y=%.3f", avNx, avNy));
       }
       
+      // Use digamma(N) normally, unless we're looking at new observations:
+      double digammaNToUse = (newObservations == null) ? digammaN : MathsUtils.digamma(totalObservations+1);
+      
       // Finalise the average result, depending on which algorithm we are implementing:
       if (isAlgorithm1) {
-        return new double[] { digammaK - averageDiGammas + digammaN };
+        return new double[] { digammaK - averageDiGammas + digammaNToUse };
       } else {
-        return new double[] { digammaK - (1.0 / (double)k) - averageDiGammas + digammaN };
+        return new double[] { digammaK - (1.0 / (double)k) - averageDiGammas + digammaNToUse };
       }
     }
   }
@@ -527,6 +556,37 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
    */
   protected abstract double[] partialComputeFromObservations(
       int startTimePoint, int numTimePoints, boolean returnLocals) throws Exception;
+
+	/**
+	 * Protected method to be used internally for threaded implementations.
+	 * This method implements the guts of each Kraskov algorithm, computing the number of 
+	 *  nearest neighbours in each dimension for a sub-set of the data points.
+	 *  It is intended to be called by one thread to work on that specific
+	 *  sub-set of the data.
+	 * In particular, this method differs from {@link #partialComputeFromObservations(int, int, boolean)}
+	 *  because it operates on a new set of observations (using the old set of observations for
+	 *  constructing the search spaces and PDFs)
+	 * 
+	 * <p>The method returns:<ol>
+	 *  <li>for average MIs (returnLocals == false), the relevant sums of digamma(n_x+1), digamma(n_y+1)
+	 *     for a partial set of the observations</li>
+	 *  <li>for local MIs (returnLocals == true), the array of local MI values</li>
+	 *  </ol>
+	 * 
+	 * @param startTimePoint start time for the partial set we examine
+	 * @param numTimePoints number of time points (including startTimePoint to examine)
+	 * @param newVar1Observations new time series of observations for variable 1
+	 * @param newVar2Observations new time series of observations for variable 2
+	 * @param returnLocals whether to return an array or local values, or else
+	 *  sums of these values
+     * @return an array of sum of digamma(n_x+1) and digamma(n_y+1), then
+     *  sum of n_x and finally sum of n_y (these latter two are for debugging purposes).
+	 * @throws Exception
+	 */
+	protected abstract double[] partialComputeFromNewObservations(
+			int startTimePoint, int numTimePoints,
+			double[][] newVar1Observations, double[][] newVar2Observations, 
+			boolean returnLocals) throws Exception;
 
   /**
    * Protected method to be used internally for GPU implementations.
@@ -791,6 +851,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
     protected MutualInfoCalculatorMultiVariateKraskov miCalc;
     protected int myStartTimePoint;
     protected int numberOfTimePoints;
+	protected double[][][] newObservations;
     protected boolean computeLocals;
     
     protected double[] returnValues = null;
@@ -804,11 +865,13 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
     public MiKraskovThreadRunner(
         MutualInfoCalculatorMultiVariateKraskov miCalc,
         int myStartTimePoint, int numberOfTimePoints,
+		double[][][] newObservations,
         boolean computeLocals) {
       this.miCalc = miCalc;
       this.myStartTimePoint = myStartTimePoint;
       this.numberOfTimePoints = numberOfTimePoints;
       this.computeLocals = computeLocals;
+      this.newObservations = newObservations;
     }
     
     /**
@@ -831,8 +894,17 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
      */
     public void run() {
       try {
-        returnValues = miCalc.partialComputeFromObservations(
-            myStartTimePoint, numberOfTimePoints, computeLocals);
+			if (newObservations == null) {
+				// Computing on existing observations
+				returnValues = miCalc.partialComputeFromObservations(
+						myStartTimePoint, numberOfTimePoints, computeLocals);
+			} else {
+				// Computing on new observations
+				returnValues = miCalc.partialComputeFromNewObservations(
+						myStartTimePoint, numberOfTimePoints,
+						newObservations[0], newObservations[1],
+						computeLocals);
+			}
       } catch (Exception e) {
         // Store the exception for later retrieval
         problem = e;

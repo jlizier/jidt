@@ -130,4 +130,84 @@ public class MutualInfoCalculatorMultiVariateKraskov2
 		}
 	}
 
+	@Override
+	protected double[] partialComputeFromNewObservations(int startTimePoint, int numTimePoints,
+			double[][] newVar1Observations, double[][] newVar2Observations, boolean returnLocals) throws Exception {
+
+		double startTime = Calendar.getInstance().getTimeInMillis();
+
+		double[] localMi = null;
+		if (returnLocals) {
+			localMi = new double[numTimePoints];
+		}
+		
+		// Constants:
+		double invK = 1.0 / (double)k;
+		
+		// Count the average number of points within eps_x and eps_y of each point
+		double sumDiGammas = 0;
+		double sumNx = 0;
+		double sumNy = 0;
+				
+		for (int t = startTimePoint; t < startTimePoint + numTimePoints; t++) {
+			// Compute eps_x and eps_y for this time step by
+			//  finding the kth closest neighbours for point t:
+			PriorityQueue<NeighbourNodeData> nnPQ =
+					kdTreeJoint.findKNearestNeighbours(k,
+							new double[][] {newVar1Observations[t], newVar2Observations[t]});
+
+			// Find eps_{x,y} as the maximum x and y norms amongst this set:
+			double eps_x = 0.0;
+			double eps_y = 0.0;
+			for (int j = 0; j < k; j++) {
+				// Take the furthest remaining of the nearest neighbours from the PQ:
+				NeighbourNodeData nnData = nnPQ.poll();
+				if (nnData.norms[0] > eps_x) {
+					eps_x = nnData.norms[0];
+				}
+				if (nnData.norms[1] > eps_y) {
+					eps_y = nnData.norms[1];
+				}
+			}
+			
+			// Count the number of points whose x distance is less
+			//  than or equal to eps_x, and whose y distance is less
+			//  than or equal to eps_y
+			int n_x = nnSearcherSource.countPointsWithinR(
+						new double[][] {newVar1Observations[t]},
+							eps_x, true);
+			int n_y = nnSearcherDest.countPointsWithinR(
+						new double[][] {newVar2Observations[t]},
+							eps_y, true);
+
+			sumNx += n_x;
+			sumNy += n_y;
+			// And take the digammas:
+			double digammaNx = MathsUtils.digamma(n_x);
+			double digammaNy = MathsUtils.digamma(n_y);
+			sumDiGammas += digammaNx + digammaNy;
+
+			if (returnLocals) {
+				// For new observations we're taking the probability counts over an extra point (no self-exclusion)
+				//  so we don't use digamma(N) but digamma(N+1)
+				localMi[t-startTimePoint] = digammaK - invK - digammaNx - digammaNy + MathsUtils.digamma(totalObservations+1);
+			}
+		}
+
+		if (debug) {
+			Calendar rightNow2 = Calendar.getInstance();
+			long endTime = rightNow2.getTimeInMillis();
+			System.out.println("Subset " + startTimePoint + ":" +
+					(startTimePoint + numTimePoints) + " Calculation time: " +
+					((endTime - startTime)/1000.0) + " sec" );
+		}
+		
+		// Select what to return:
+		if (returnLocals) {
+			return localMi;
+		} else {
+			return new double[] {sumDiGammas, sumNx, sumNy};
+		}
+	}
+
 }

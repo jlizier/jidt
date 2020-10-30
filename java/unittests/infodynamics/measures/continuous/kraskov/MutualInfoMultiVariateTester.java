@@ -19,6 +19,7 @@
 package infodynamics.measures.continuous.kraskov;
 
 import infodynamics.utils.ArrayFileReader;
+import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 
 public class MutualInfoMultiVariateTester
@@ -462,5 +463,102 @@ public class MutualInfoMultiVariateTester
 
 	}
 
+	/**
+	 * Unit test for MI on new observations.
+	 * We can test this against the calculator itself. If we send in the original data set as new observations,
+	 *  we can recreate the neighbour counts (plus one) by setting K to 1 larger (to account for the data point itself), and
+	 *  account for the change in bias. 
+	 * 
+	 * @throws Exception
+	 */
+	public void testMultivariateCondMIForNewObservations() throws Exception {
+		
+		ArrayFileReader afr = new ArrayFileReader("demos/data/4ColsPairedOneStepNoisyDependence-1.txt");
+		double[][] data = afr.getDouble2DMatrix();
+		// RandomGenerator rg = new RandomGenerator();
+		//double[][] data = rg.generateNormalData(50, 4, 0, 1);
+
+		// Use various Kraskov k nearest neighbours parameter
+		int[] kNNs = {4, 10, 15};
+		
+		System.out.println("Kraskov MI testing new Observations:");
+		
+		for (int alg = 1; alg < 3; alg++) {
+			for (int ki = 0; ki < kNNs.length; ki++) {
+				MutualInfoCalculatorMultiVariateKraskov miCalc = getNewCalc(alg);
+				MutualInfoCalculatorMultiVariateKraskov miCalcForNew = getNewCalc(alg);
+				// Let it normalise by default
+				// And no noise addition to protect the integrity of our neighbour counts under both techniques here:
+				miCalc.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "0");
+				miCalcForNew.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "0");
+				double[][] var1 = MatrixUtils.selectColumns(data, new int[] {0});
+				double[][] var2 = MatrixUtils.selectColumns(data, new int[] {1});
+				
+				// Compute MI(0;1|2,3) :
+				miCalc.setProperty(
+						MutualInfoCalculatorMultiVariateKraskov.PROP_K,
+						Integer.toString(kNNs[ki]));
+				System.out.println("Main calc normalisation is " + miCalc.getProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_NORMALISE));
+				miCalc.initialise(var1[0].length, var2[0].length);
+				miCalc.setObservations(var1, var2);
+				@SuppressWarnings("unused")
+				double miAverage = miCalc.computeAverageLocalOfObservations();
+				// Now compute as new observations:
+				miCalcForNew.setProperty(
+						MutualInfoCalculatorMultiVariateKraskov.PROP_K,
+						Integer.toString(kNNs[ki] + 1)); // Using K = K + 1
+				// condMiCalcForNew.setProperty(
+				//		MutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS,
+				//		"1");
+				System.out.println("New obs calc normalisation is " + miCalcForNew.getProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_NORMALISE));
+				miCalcForNew.initialise(var1[0].length, var2[0].length);
+				miCalcForNew.setObservations(var1, var2);
+				// condMiCalc.setDebug(true);
+				//condMiCalcForNew.setDebug(true);
+				double[] newLocals = miCalcForNew.computeLocalUsingPreviousObservations(var1, var2);
+				//condMiCalcForNew.setDebug(false);
+				@SuppressWarnings("unused")
+				double averageFromNewObservations = MatrixUtils.mean(newLocals);
+				// We can't check this directly, so test each point individually:
+				for (int t = 0; t < data.length; t++) {
+					double[] originalNeighbourCounts = miCalc.partialComputeFromObservations(t, 1, false);
+					// Need to normalise the data before passing it in here -- this is
+					//  what is happening inside computeLocalUsingPreviousObservations above
+					double[] newObsNeighbourCounts = miCalcForNew.partialComputeFromNewObservations(
+							t, 1,
+							MatrixUtils.normaliseIntoNewArray(var1),
+							MatrixUtils.normaliseIntoNewArray(var2), false);
+					// Now check each return count in the array:
+					if (originalNeighbourCounts[1] != newObsNeighbourCounts[1] - 1) {
+						System.out.println("Assertion failure for t=" + t + ": expected " + originalNeighbourCounts[1] +
+								" from original, plus 1, but got " + newObsNeighbourCounts[1]);
+						System.out.print("Actual raw data was: ");
+						MatrixUtils.printArray(System.out, data[0]);
+					}
+					assertEquals(originalNeighbourCounts[1], newObsNeighbourCounts[1] - 1); // Nx should be 1 higher
+					assertEquals(originalNeighbourCounts[2], newObsNeighbourCounts[2] - 1); // Ny should be 1 higher
+					// Now check the local value at each point using these verified counts:
+					double newLocalValue;
+					if (alg == 1) {
+						newLocalValue = miCalcForNew.digammaK -
+							MathsUtils.digamma((int) newObsNeighbourCounts[1] + 1) -
+							MathsUtils.digamma((int) newObsNeighbourCounts[2] + 1) +
+							MathsUtils.digamma(miCalcForNew.getNumObservations() + 1); // correct digammaN for new samples
+					} else {
+						newLocalValue = miCalcForNew.digammaK -
+							(double) 1 / (double) miCalcForNew.k -
+							MathsUtils.digamma((int) newObsNeighbourCounts[1]) -
+							MathsUtils.digamma((int) newObsNeighbourCounts[2]) +
+							MathsUtils.digamma(miCalcForNew.getNumObservations() + 1); // correct digammaN for new samples
+					}
+					if (Math.abs(newLocalValue - newLocals[t]) > 0.00000001) {
+						System.out.printf("t=%d: Assertion failed: computed local was %.5f, local from nn counts was %.5f\n",
+								t, newLocals[t], newLocalValue);
+					}
+					assertEquals(newLocalValue, newLocals[t], 0.00000001);
+				}
+			}
+		}
+	}
 }
 

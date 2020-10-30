@@ -2554,8 +2554,17 @@ public class MatrixUtils {
 	 * @param matrix 2D matrix of doubles
 	 */
 	public static double[][] normaliseIntoNewArray(double[][] matrix, double[] means, double[] stds) {
+		return normaliseIntoNewArray(matrix, means, stds, 0, matrix.length);		
+	}
+
+	/**
+	 * Normalises the elements along each column of the matrix
+	 * 
+	 * @param matrix 2D matrix of doubles
+	 */
+	public static double[][] normaliseIntoNewArray(double[][] matrix, double[] means, double[] stds, int startRow, int rows) {
 		double[][] newMatrix = new double[matrix.length][matrix[0].length];
-		for (int r = 0; r < newMatrix.length; r++) {
+		for (int r = startRow; r < startRow + rows; r++) {
 			for (int c = 0; c < newMatrix[r].length; c++) {
 				newMatrix[r][c] = matrix[r][c] - means[c];
 				if (!Double.isInfinite(1.0 /  stds[c])) {
