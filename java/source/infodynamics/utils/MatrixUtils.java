@@ -1581,6 +1581,84 @@ public class MatrixUtils {
 	}
 
 	/**
+	 * Extract the required columns from the matrix
+	 * 
+	 * @param matrix
+	 * @param fromCol
+	 * @param cols
+	 * @return
+	 */
+	public static int[][] selectColumns(int matrix[][],
+			int fromCol, int cols) {
+		int[][] data = new int[matrix.length][cols];
+		for (int r = 0; r < matrix.length; r++) {
+			for (int cIndex = 0; cIndex < cols; cIndex++) {
+				data[r][cIndex] = matrix[r][cIndex + fromCol];
+			}
+		}
+		return data;
+	}
+
+	/**
+	 * Extract the required columns from the matrix
+	 * 
+	 * @param matrix
+	 * @param columns
+	 * @return
+	 */
+	public static int[][] selectColumns(int matrix[][], int columns[]) {
+		int[][] data = new int[matrix.length][columns.length];
+		for (int r = 0; r < matrix.length; r++) {
+			for (int cIndex = 0; cIndex < columns.length; cIndex++) {
+				data[r][cIndex] = matrix[r][columns[cIndex]];
+			}
+		}
+		return data;
+	}
+
+	/**
+	 * Extract the required columns from the matrix
+	 * 
+	 * @param matrix
+	 * @param includeColumnFlags
+	 * @return
+	 */
+	public static int[][] selectColumns(int matrix[][], boolean includeColumnFlags[]) {
+		Vector<Integer> v = new Vector<Integer>();
+
+		for (int i = 0; i < includeColumnFlags.length; i++) {
+			if (includeColumnFlags[i]) {
+				v.add(i);
+			}
+		}
+		int[][] data = new int[matrix.length][v.size()];
+		for (int r = 0; r < matrix.length; r++) {
+			for (int outputColumnIndex = 0; outputColumnIndex < v.size(); outputColumnIndex++) {
+				int outputColumn = v.get(outputColumnIndex);
+				data[r][outputColumnIndex] = matrix[r][outputColumn];
+			}
+		}
+		return data;
+	}
+
+	/**
+	 * Extract the required columns from the matrix
+	 * 
+	 * @param matrix
+	 * @param columns
+	 * @return
+	 */
+	public static int[][] selectColumns(int matrix[][], List<Integer> columns) {
+		int[][] data = new int[matrix.length][columns.size()];
+		for (int r = 0; r < matrix.length; r++) {
+			for (int cIndex = 0; cIndex < columns.size(); cIndex++) {
+				data[r][cIndex] = matrix[r][columns.get(cIndex)];
+			}
+		}
+		return data;
+	}
+
+	/**
 	 * Extract the required rows from the matrix
 	 * 
 	 * @param matrix 2D data array
