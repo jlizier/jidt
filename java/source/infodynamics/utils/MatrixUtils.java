@@ -820,6 +820,51 @@ public class MatrixUtils {
 	}
 
 	/**
+	 * Multiplies all items in an array times a constant value
+	 * 
+	 * @param array
+	 * @param value
+	 * @return array * constant value
+	 */
+	public static int[] multiply(int[] array, int value) throws Exception {
+		int[] returnValues = new int[array.length];
+		for (int i = 0; i < returnValues.length; i++) {
+			returnValues[i] = array[i] * value;
+		}
+		return returnValues;
+	}
+
+	/**
+	 * Multiplies all items in an array times a constant value
+	 * 
+	 * @param array
+	 * @param value
+	 * @return array * constant value
+	 */
+	public static double[] multiply(int[] array, double value) throws Exception {
+		double[] returnValues = new double[array.length];
+		for (int i = 0; i < returnValues.length; i++) {
+			returnValues[i] = array[i] * value;
+		}
+		return returnValues;
+	}
+
+	/**
+	 * Multiplies all items in an array times a constant value
+	 * 
+	 * @param array
+	 * @param value
+	 * @return array * constant value
+	 */
+	public static double[] multiply(double[] array, double value) throws Exception {
+		double[] returnValues = new double[array.length];
+		for (int i = 0; i < returnValues.length; i++) {
+			returnValues[i] = array[i] * value;
+		}
+		return returnValues;
+	}
+
+	/**
 	 * Return the matrix product A x B
 	 * 
 	 * @param A mxn matrix
