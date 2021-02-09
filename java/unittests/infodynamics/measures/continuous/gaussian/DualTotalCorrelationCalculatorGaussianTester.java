@@ -95,7 +95,7 @@ public class DualTotalCorrelationCalculatorGaussianTester extends TestCase {
     double dtc = dtcCalc.computeAverageLocalOfObservations();
     double[] dtcLocal = dtcCalc.computeLocalOfPreviousObservations();
 
-    System.out.printf("Average was %.5f\n", dtc);
+    System.out.printf("Average was %.5f%n", dtc);
 
     assertEquals(dtc, MatrixUtils.mean(dtcLocal), 0.00001);
   }

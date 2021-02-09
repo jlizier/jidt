@@ -405,7 +405,7 @@ public abstract class MultiVariateInfoMeasureCalculatorKraskov
       int lTimesteps = totalObservations / numThreads; // each thread gets the same amount of data
       int res = totalObservations % numThreads; // the first thread gets the residual data
       if (debug) {
-        System.out.printf("Computing Kraskov Multi-Info with %d threads (%d timesteps each, plus %d residual)\n",
+        System.out.printf("Computing Kraskov Multi-Info with %d threads (%d timesteps each, plus %d residual)%n",
             numThreads, lTimesteps, res);
       }
       Thread[] tCalculators = new Thread[numThreads];

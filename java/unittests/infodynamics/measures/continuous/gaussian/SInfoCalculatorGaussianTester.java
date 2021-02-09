@@ -92,7 +92,7 @@ public class SInfoCalculatorGaussianTester extends TestCase {
     double sinfo = sCalc.computeAverageLocalOfObservations();
     double[] sLocal = sCalc.computeLocalOfPreviousObservations();
 
-    System.out.printf("Average was %.5f\n", sinfo);
+    System.out.printf("Average was %.5f%n", sinfo);
 
     assertEquals(sinfo, MatrixUtils.mean(sLocal), 0.00001);
   }

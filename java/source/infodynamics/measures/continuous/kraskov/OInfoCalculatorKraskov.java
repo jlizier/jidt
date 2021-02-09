@@ -120,7 +120,7 @@ public class OInfoCalculatorKraskov
 
         if (debug) {
           // Only tracking this for debugging purposes: 
-          System.out.printf("t=%d, d=%d, n_small=%d, n_big=%d, sumF=%.3f\n",
+          System.out.printf("t=%d, d=%d, n_small=%d, n_big=%d, sumF=%.3f%n",
             t, d, n_small, n_big, sumF);
         }
 

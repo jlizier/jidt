@@ -118,7 +118,7 @@ public class OInfoCalculatorGaussianTester extends TestCase {
     double oinfo = oCalc.computeAverageLocalOfObservations();
     double[] oLocal = oCalc.computeLocalOfPreviousObservations();
 
-    System.out.printf("Average was %.5f\n", oinfo);
+    System.out.printf("Average was %.5f%n", oinfo);
 
     assertEquals(oinfo, MatrixUtils.mean(oLocal), 0.00001);
   }
