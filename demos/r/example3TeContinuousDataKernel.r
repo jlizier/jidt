@@ -60,5 +60,6 @@ nullDist <- .jcall(teCalc,"Linfodynamics/utils/EmpiricalMeasurementDistribution;
 		"computeSignificance", 100L)
 cat("Null distribution for unrelated source and destination",
     "(i.e. the bias) has mean", .jcall(nullDist, "D", "getMeanOfDistribution"),
-    "bits and standard deviation", .jcall(nullDist, "D", "getStdOfDistribution"), "\n")
+    "bits and standard deviation", .jcall(nullDist, "D", "getStdOfDistribution"),
+    ", while the above measurement is beaten by a proportion of", nullDist$pValue, "of the null distribution\n")
 
