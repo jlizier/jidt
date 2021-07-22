@@ -274,6 +274,9 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 		vectorOfDestinationSpikeTimes.add(destination);
 	}
 
+
+	
+	
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.spiking.TransferEntropyCalculatorSpiking#finaliseAddObservations()
 	 */
@@ -366,6 +369,37 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 		}
 	}
 
+	protected void makeEmbeddingsAtPoints(double[] pointsAtWhichToMakeEmbeddings, double[] sourceSpikeTimes, double[] destSpikeTimes,
+					      Vector<double[][]> targetEmbeddings, Vector<double[][]> sourceEmbeddings) {
+		System.out.println("foo");
+
+		int embedding_point_index = 0;
+		int most_recent_dest_index = k;
+		int most_recent_source_index = l;
+
+		// Make sure that the first point at which an embedding is made has enough preceding spikes in both source and
+		// target for embeddings to be made.
+		while (pointsAtWhichToMakeEmbeddings[embedding_point_index] < destSpikeTimes[most_recent_dest_index] |
+		       pointsAtWhichToMakeEmbeddings[embedding_point_index] < sourceSpikeTimes[most_recent_source_index]) {
+			embedding_point_index++;
+		}
+
+		// Move the dest index forward to be at the spike just behind where the first embedding will be made
+		while (destSpikeTimes[most_recent_dest_index] < pointsAtWhichToMakeEmbeddings[embedding_point_index]) {
+			most_recent_dest_index++;
+		}
+		most_recent_dest_index--;
+		// Do the same for the source index
+		while (sourceSpikeTimes[most_recent_source_index] < pointsAtWhichToMakeEmbeddings[embedding_point_index]) {
+			most_recent_source_index++;
+		}
+		most_recent_source_index--;
+
+		System.out.println(most_recent_dest_index + " " + most_recent_source_index + " " +  embedding_point_index);
+		System.out.println(destSpikeTimes[most_recent_dest_index] + " " + sourceSpikeTimes[most_recent_source_index] + " " +
+				   pointsAtWhichToMakeEmbeddings[embedding_point_index]);
+	}
+
 	protected void processEventsFromSpikingTimeSeries(double[] sourceSpikeTimes, double[] destSpikeTimes,
 							  int timeSeriesIndex, Vector<double[][]>[] eventTimings, 
 							  Vector<double[][]> destPastAndNextTimings, Vector<Integer> eventTypeLocator,
@@ -374,12 +408,26 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 							  Vector<double[][]> targetEmbeddingsFromSamples, Vector<double[][]> sourceEmbeddingsFromSamples)
 		throws Exception {
 		// addObservationsAfterParamsDetermined(sourceSpikeTimes, destSpikeTimes);
-
-		System.out.println("foo");
 		
 		// First sort the spike times in case they were not properly in ascending order:
 		Arrays.sort(sourceSpikeTimes);
 		Arrays.sort(destSpikeTimes);
+
+
+		// New
+		int NUM_SAMPLES = 1000;
+		double sample_lower_bound = Arrays.stream(sourceSpikeTimes).min().getAsDouble();
+		double sample_upper_bound = Arrays.stream(sourceSpikeTimes).max().getAsDouble();
+		double[] randomSampleTimes = new double[NUM_SAMPLES];
+		Random rand = new Random();
+		for (int i = 0; i < randomSampleTimes.length; i++) {
+			randomSampleTimes[i] = sample_lower_bound + rand.nextDouble() * (sample_upper_bound - sample_lower_bound);
+		}
+		// End New
+
+
+		makeEmbeddingsAtPoints(destSpikeTimes, sourceSpikeTimes, destSpikeTimes, targetEmbeddingsFromSpikes, sourceEmbeddingsFromSpikes);
+		makeEmbeddingsAtPoints(randomSampleTimes, sourceSpikeTimes, destSpikeTimes, targetEmbeddingsFromSamples, sourceEmbeddingsFromSamples);
 		
 		// Scan to find the indices by which we have k and l spikes for dest and source
 		//  respectively		
@@ -523,15 +571,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 			System.out.printf("Finished processing %d source-target events for observation set %d\n", numEvents, timeSeriesIndex);
 		}
 
-		// New
-		int NUM_SAMPLES = 1000;
-		double sample_lower_bound = Arrays.stream(sourceSpikeTimes).min().getAsDouble();
-		double sample_upper_bound = Arrays.stream(sourceSpikeTimes).max().getAsDouble();
-		double[] randomSampleTimes = new double[NUM_SAMPLES];
-		Random rand = new Random();
-		for (int i = 0; i < randomSampleTimes.length; i++) {
-			randomSampleTimes[i] = sample_lower_bound + rand.nextDouble() * (sample_upper_bound - sample_lower_bound);
-		}
+		
 		
 		// // Scan to find the indices by which we have k and l spikes for dest and source
 		// //  respectively		
