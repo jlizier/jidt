@@ -58,7 +58,7 @@ teCalcClass = JPackage("infodynamics.measures.spiking.integration").TransferEntr
 teCalc = teCalcClass()
 teCalc.setProperty("NORMALISE", "true") # Normalise the individual variables
 teCalc.initialise(1) # Use history length 1 (Schreiber k=1)
-teCalc.setProperty("k", "4") # Use Kraskov parameter K=4 for 4 nearest points
+teCalc.setProperty("knns", "4") # Use Kraskov parameter K=4 for 4 nearest points
 # # Perform calculation with correlated source:
 teCalc.setObservations(JArray(JDouble, 1)(sourceArray), JArray(JDouble, 1)(destArray))
 result = teCalc.computeAverageLocalOfObservations()
