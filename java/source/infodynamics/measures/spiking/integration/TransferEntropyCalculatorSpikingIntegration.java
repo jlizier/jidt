@@ -384,20 +384,46 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 			embedding_point_index++;
 		}
 
-		// Move the dest index forward to be at the spike just behind where the first embedding will be made
-		while (destSpikeTimes[most_recent_dest_index] < pointsAtWhichToMakeEmbeddings[embedding_point_index]) {
-			most_recent_dest_index++;
-		}
-		most_recent_dest_index--;
-		// Do the same for the source index
-		while (sourceSpikeTimes[most_recent_source_index] < pointsAtWhichToMakeEmbeddings[embedding_point_index]) {
-			most_recent_source_index++;
-		}
-		most_recent_source_index--;
+		// Loop through the points at which embeddings need to be made
+		for (;embedding_point_index < pointsAtWhichToMakeEmbeddings.length; embedding_point_index++) {
 
-		System.out.println(most_recent_dest_index + " " + most_recent_source_index + " " +  embedding_point_index);
-		System.out.println(destSpikeTimes[most_recent_dest_index] + " " + sourceSpikeTimes[most_recent_source_index] + " " +
-				   pointsAtWhichToMakeEmbeddings[embedding_point_index]);
+			// Advance the tracker of the most recent dest index
+			while (most_recent_dest_index < destSpikeTimes.length) {				
+				// Case where we will not be able to evaluate the following else if
+				if (most_recent_dest_index == destSpikeTimes.length - 2) {
+					// The final spike is still behind the current embedding point, so advance
+					if (destSpikeTimes[most_recent_dest_index + 1] <
+					    pointsAtWhichToMakeEmbeddings[embedding_point_index]) {
+						most_recent_dest_index += 1;
+					}
+					break;
+				} else if (destSpikeTimes[most_recent_dest_index + 1] < pointsAtWhichToMakeEmbeddings[embedding_point_index]) {
+					most_recent_dest_index++;
+				} else {
+					break;
+				}
+			}
+			// Do the same for the most recent source index
+			while (most_recent_source_index < sourceSpikeTimes.length) {				
+				// Case where we will not be able to evaluate the following else if
+				if (most_recent_source_index == sourceSpikeTimes.length - 2) {
+					// The final spike is still behind the current embedding point, so advance
+					if (sourceSpikeTimes[most_recent_source_index + 1] <
+					    pointsAtWhichToMakeEmbeddings[embedding_point_index]) {
+						most_recent_source_index += 1;
+					}
+					break;
+				} else if (sourceSpikeTimes[most_recent_source_index + 1] < pointsAtWhichToMakeEmbeddings[embedding_point_index]) {
+					most_recent_source_index++;
+				} else {
+					break;
+				}
+			}
+
+			System.out.println(most_recent_dest_index + " " + most_recent_source_index + " " +  embedding_point_index);
+			System.out.println(destSpikeTimes[most_recent_dest_index] + " " + sourceSpikeTimes[most_recent_source_index] + " " +
+					   pointsAtWhichToMakeEmbeddings[embedding_point_index]);
+		}
 	}
 
 	protected void processEventsFromSpikingTimeSeries(double[] sourceSpikeTimes, double[] destSpikeTimes,
@@ -423,6 +449,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 		for (int i = 0; i < randomSampleTimes.length; i++) {
 			randomSampleTimes[i] = sample_lower_bound + rand.nextDouble() * (sample_upper_bound - sample_lower_bound);
 		}
+		Arrays.sort(randomSampleTimes);
 		// End New
 
 
