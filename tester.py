@@ -58,8 +58,8 @@ teCalcClass = JPackage("infodynamics.measures.spiking.integration").TransferEntr
 teCalc = teCalcClass()
 teCalc.setProperty("NORMALISE", "true") # Normalise the individual variables
 teCalc.initialise(1) # Use history length 1 (Schreiber k=1)
-teCalc.setProperty("k", "2")
-teCalc.setProperty("l", "2") 
+teCalc.setProperty("k_HISTORY", "2")
+teCalc.setProperty("l_HISTORY", "2") 
 teCalc.setProperty("knns", "4") # Use Kraskov parameter K=4 for 4 nearest points
 # # Perform calculation with correlated source:
 teCalc.setObservations(JArray(JDouble, 1)(sourceArray), JArray(JDouble, 1)(destArray))

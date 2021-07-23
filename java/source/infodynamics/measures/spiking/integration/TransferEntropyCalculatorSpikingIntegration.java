@@ -72,10 +72,10 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 	 *  destination only
 	 */
 
-	Vector<double[][]> targetEmbeddingsFromSpikes = null;
-	Vector<double[][]> sourceEmbeddingsFromSpikes = null;
-	Vector<double[][]> targetEmbeddingsFromSamples = null;
-	Vector<double[][]> sourceEmbeddingsFromSamples = null;
+	Vector<double[]> targetEmbeddingsFromSpikes = null;
+	Vector<double[]> sourceEmbeddingsFromSpikes = null;
+	Vector<double[]> targetEmbeddingsFromSamples = null;
+	Vector<double[]> sourceEmbeddingsFromSamples = null;
 	
 	
 	Vector<double[][]> destPastAndNextTimings = null;
@@ -298,10 +298,10 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 		numEventsPerObservationSet = new Vector<Integer>();
 
 		// New
-		targetEmbeddingsFromSpikes = new Vector<double[][]>();
-		sourceEmbeddingsFromSpikes = new Vector<double[][]>();
-		targetEmbeddingsFromSamples = new Vector<double[][]>();
-		sourceEmbeddingsFromSamples = new Vector<double[][]>();
+		targetEmbeddingsFromSpikes = new Vector<double[]>();
+		sourceEmbeddingsFromSpikes = new Vector<double[]>();
+		targetEmbeddingsFromSamples = new Vector<double[]>();
+		sourceEmbeddingsFromSamples = new Vector<double[]>();
 		
 		// Send all of the observations through:
 		Iterator<double[]> sourceIterator = vectorOfSourceSpikeTimes.iterator();
@@ -315,6 +315,10 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 							   eventTypeLocator, eventIndexLocator, numEventsPerObservationSet,
 							   targetEmbeddingsFromSpikes, sourceEmbeddingsFromSpikes,
 							   targetEmbeddingsFromSamples, sourceEmbeddingsFromSamples);
+		}
+
+		for (int i = 0; i < 5; i++) {
+			System.out.println(Arrays.toString(targetEmbeddingsFromSpikes.elementAt(i)));
 		}
 		
 		// Now we have collected all the events.
@@ -370,8 +374,10 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 	}
 
 	protected void makeEmbeddingsAtPoints(double[] pointsAtWhichToMakeEmbeddings, double[] sourceSpikeTimes, double[] destSpikeTimes,
-					      Vector<double[][]> targetEmbeddings, Vector<double[][]> sourceEmbeddings) {
-		System.out.println("foo");
+					      Vector<double[]> targetEmbeddings, Vector<double[]> sourceEmbeddings) {
+		//System.out.println("foo");
+
+		Random random = new Random();
 
 		int embedding_point_index = 0;
 		int most_recent_dest_index = k;
@@ -388,41 +394,58 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 		for (;embedding_point_index < pointsAtWhichToMakeEmbeddings.length; embedding_point_index++) {
 
 			// Advance the tracker of the most recent dest index
-			while (most_recent_dest_index < destSpikeTimes.length) {				
-				// Case where we will not be able to evaluate the following else if
-				if (most_recent_dest_index == destSpikeTimes.length - 2) {
-					// The final spike is still behind the current embedding point, so advance
-					if (destSpikeTimes[most_recent_dest_index + 1] <
-					    pointsAtWhichToMakeEmbeddings[embedding_point_index]) {
-						most_recent_dest_index += 1;
-					}
-					break;
-				} else if (destSpikeTimes[most_recent_dest_index + 1] < pointsAtWhichToMakeEmbeddings[embedding_point_index]) {
+			while (most_recent_dest_index < (destSpikeTimes.length - 1)) {				
+				if (destSpikeTimes[most_recent_dest_index + 1] < pointsAtWhichToMakeEmbeddings[embedding_point_index]) {
 					most_recent_dest_index++;
 				} else {
 					break;
 				}
 			}
 			// Do the same for the most recent source index
-			while (most_recent_source_index < sourceSpikeTimes.length) {				
-				// Case where we will not be able to evaluate the following else if
-				if (most_recent_source_index == sourceSpikeTimes.length - 2) {
-					// The final spike is still behind the current embedding point, so advance
-					if (sourceSpikeTimes[most_recent_source_index + 1] <
-					    pointsAtWhichToMakeEmbeddings[embedding_point_index]) {
-						most_recent_source_index += 1;
-					}
-					break;
-				} else if (sourceSpikeTimes[most_recent_source_index + 1] < pointsAtWhichToMakeEmbeddings[embedding_point_index]) {
+			while (most_recent_source_index < (sourceSpikeTimes.length - 1)) {				
+				if (sourceSpikeTimes[most_recent_source_index + 1] < pointsAtWhichToMakeEmbeddings[embedding_point_index]) {
 					most_recent_source_index++;
 				} else {
 					break;
 				}
 			}
 
-			System.out.println(most_recent_dest_index + " " + most_recent_source_index + " " +  embedding_point_index);
-			System.out.println(destSpikeTimes[most_recent_dest_index] + " " + sourceSpikeTimes[most_recent_source_index] + " " +
-					   pointsAtWhichToMakeEmbeddings[embedding_point_index]);
+			//System.out.println(most_recent_dest_index + " " + most_recent_source_index + " " +  embedding_point_index);
+			//System.out.println(destSpikeTimes[most_recent_dest_index] + " " + sourceSpikeTimes[most_recent_source_index] + " " +
+			//			   pointsAtWhichToMakeEmbeddings[embedding_point_index]);
+		//System.out.println(k + " " + l);
+
+			double[] destPast = new double[k];
+			double[] sourcePast = new double[l];
+			destPast[0] = pointsAtWhichToMakeEmbeddings[embedding_point_index] -
+					destSpikeTimes[most_recent_dest_index];
+			sourcePast[0] = pointsAtWhichToMakeEmbeddings[embedding_point_index] -
+					sourceSpikeTimes[most_recent_source_index];
+			if (addNoise) {
+				destPast[0] += random.nextGaussian()*noiseLevel;
+				sourcePast[0] += random.nextGaussian()*noiseLevel;
+			}
+			for (int i = 1; i < k; i++) {
+				destPast[i] = destSpikeTimes[most_recent_dest_index - i + 1] -
+						destSpikeTimes[most_recent_dest_index - i];
+				if (addNoise) {
+					destPast[i - 1] += random.nextGaussian()*noiseLevel;
+				}
+			}
+			for (int i = 1; i < l; i++) {
+				sourcePast[i] = sourceSpikeTimes[most_recent_source_index - i + 1] -
+						sourceSpikeTimes[most_recent_source_index - i];
+				if (addNoise) {
+					sourcePast[i - 1] += random.nextGaussian()*noiseLevel;
+				}
+			}
+
+			//System.out.println(Arrays.toString(destPast));
+			//System.out.println(Arrays.toString(sourcePast));
+			//System.out.println();
+
+			targetEmbeddings.add(destPast);
+			sourceEmbeddings.add(sourcePast);
 		}
 	}
 
@@ -430,8 +453,8 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 							  int timeSeriesIndex, Vector<double[][]>[] eventTimings, 
 							  Vector<double[][]> destPastAndNextTimings, Vector<Integer> eventTypeLocator,
 							  Vector<Integer> eventIndexLocator, Vector<Integer> numEventsPerObservationSet,
-							  Vector<double[][]> targetEmbeddingsFromSpikes, Vector<double[][]> sourceEmbeddingsFromSpikes,
-							  Vector<double[][]> targetEmbeddingsFromSamples, Vector<double[][]> sourceEmbeddingsFromSamples)
+							  Vector<double[]> targetEmbeddingsFromSpikes, Vector<double[]> sourceEmbeddingsFromSpikes,
+							  Vector<double[]> targetEmbeddingsFromSamples, Vector<double[]> sourceEmbeddingsFromSamples)
 		throws Exception {
 		// addObservationsAfterParamsDetermined(sourceSpikeTimes, destSpikeTimes);
 		
@@ -455,6 +478,8 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 
 		makeEmbeddingsAtPoints(destSpikeTimes, sourceSpikeTimes, destSpikeTimes, targetEmbeddingsFromSpikes, sourceEmbeddingsFromSpikes);
 		makeEmbeddingsAtPoints(randomSampleTimes, sourceSpikeTimes, destSpikeTimes, targetEmbeddingsFromSamples, sourceEmbeddingsFromSamples);
+
+		
 		
 		// Scan to find the indices by which we have k and l spikes for dest and source
 		//  respectively		
