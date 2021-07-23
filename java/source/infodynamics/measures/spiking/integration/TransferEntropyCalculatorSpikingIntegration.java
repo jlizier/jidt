@@ -76,7 +76,11 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 	Vector<double[]> sourceEmbeddingsFromSpikes = null;
 	Vector<double[]> targetEmbeddingsFromSamples = null;
 	Vector<double[]> sourceEmbeddingsFromSamples = null;
-	
+
+	protected KdTree kdTreeJointAtSpikes = null;
+	protected KdTree kdTreeJointAtSamples = null;
+	protected KdTree kdTreeConditioningAtSpikes = null;
+	protected KdTree kdTreeConditioningAtSamples = null;
 	
 	Vector<double[][]> destPastAndNextTimings = null;
 	/**
@@ -141,7 +145,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements
     /**
 	 * Whether to add an amount of random noise to the incoming data
 	 */
-	protected boolean addNoise = true;
+	protected boolean addNoise = false;
 	/**
 	 * Amount of random Gaussian noise to add to the incoming data
 	 */
@@ -317,8 +321,13 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 							   targetEmbeddingsFromSamples, sourceEmbeddingsFromSamples);
 		}
 
+		double[][] arrayedTargetEmbeddingsFromSpikes = new double[targetEmbeddingsFromSpikes.size()][k];
+		for (int i = 0; i < targetEmbeddingsFromSpikes.size(); i++) {
+			arrayedTargetEmbeddingsFromSpikes[i] = targetEmbeddingsFromSpikes.elementAt(i);
+		}
+
 		for (int i = 0; i < 5; i++) {
-			System.out.println(Arrays.toString(targetEmbeddingsFromSpikes.elementAt(i)));
+			System.out.println(arrayedTargetEmbeddingsFromSpikes[i][0] + " " + arrayedTargetEmbeddingsFromSpikes[i][1]);
 		}
 		
 		// Now we have collected all the events.
@@ -385,8 +394,8 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 
 		// Make sure that the first point at which an embedding is made has enough preceding spikes in both source and
 		// target for embeddings to be made.
-		while (pointsAtWhichToMakeEmbeddings[embedding_point_index] < destSpikeTimes[most_recent_dest_index] |
-		       pointsAtWhichToMakeEmbeddings[embedding_point_index] < sourceSpikeTimes[most_recent_source_index]) {
+		while (pointsAtWhichToMakeEmbeddings[embedding_point_index] <= destSpikeTimes[most_recent_dest_index] |
+		       pointsAtWhichToMakeEmbeddings[embedding_point_index] <= sourceSpikeTimes[most_recent_source_index]) {
 			embedding_point_index++;
 		}
 
