@@ -73,9 +73,9 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 	 */
 
 	Vector<double[]> targetEmbeddingsFromSpikes = null;
-	Vector<double[]> sourceEmbeddingsFromSpikes = null;
+	Vector<double[]> jointEmbeddingsFromSpikes = null;
 	Vector<double[]> targetEmbeddingsFromSamples = null;
-	Vector<double[]> sourceEmbeddingsFromSamples = null;
+	Vector<double[]> jointEmbeddingsFromSamples = null;
 
 	protected KdTree kdTreeJointAtSpikes = null;
 	protected KdTree kdTreeJointAtSamples = null;
@@ -145,7 +145,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements
     /**
 	 * Whether to add an amount of random noise to the incoming data
 	 */
-	protected boolean addNoise = false;
+	protected boolean addNoise = true;
 	/**
 	 * Amount of random Gaussian noise to add to the incoming data
 	 */
@@ -303,9 +303,9 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 
 		// New
 		targetEmbeddingsFromSpikes = new Vector<double[]>();
-		sourceEmbeddingsFromSpikes = new Vector<double[]>();
+		jointEmbeddingsFromSpikes = new Vector<double[]>();
 		targetEmbeddingsFromSamples = new Vector<double[]>();
-		sourceEmbeddingsFromSamples = new Vector<double[]>();
+		jointEmbeddingsFromSamples = new Vector<double[]>();
 		
 		// Send all of the observations through:
 		Iterator<double[]> sourceIterator = vectorOfSourceSpikeTimes.iterator();
@@ -317,18 +317,39 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 			processEventsFromSpikingTimeSeries(sourceSpikeTimes, destSpikeTimes,
 							   timeSeriesIndex, eventTimings, destPastAndNextTimings, 
 							   eventTypeLocator, eventIndexLocator, numEventsPerObservationSet,
-							   targetEmbeddingsFromSpikes, sourceEmbeddingsFromSpikes,
-							   targetEmbeddingsFromSamples, sourceEmbeddingsFromSamples);
+							   targetEmbeddingsFromSpikes, jointEmbeddingsFromSpikes,
+							   targetEmbeddingsFromSamples, jointEmbeddingsFromSamples);
 		}
 
 		double[][] arrayedTargetEmbeddingsFromSpikes = new double[targetEmbeddingsFromSpikes.size()][k];
+		double[][] arrayedJointEmbeddingsFromSpikes = new double[targetEmbeddingsFromSpikes.size()][k];
 		for (int i = 0; i < targetEmbeddingsFromSpikes.size(); i++) {
 			arrayedTargetEmbeddingsFromSpikes[i] = targetEmbeddingsFromSpikes.elementAt(i);
+			arrayedJointEmbeddingsFromSpikes[i] = jointEmbeddingsFromSpikes.elementAt(i);
+		}
+		double[][] arrayedTargetEmbeddingsFromSamples = new double[targetEmbeddingsFromSamples.size()][k];
+		double[][] arrayedJointEmbeddingsFromSamples = new double[targetEmbeddingsFromSamples.size()][k];
+		for (int i = 0; i < targetEmbeddingsFromSamples.size(); i++) {
+			arrayedTargetEmbeddingsFromSamples[i] = targetEmbeddingsFromSamples.elementAt(i);
+			arrayedJointEmbeddingsFromSamples[i] = jointEmbeddingsFromSamples.elementAt(i);
 		}
 
 		for (int i = 0; i < 5; i++) {
-			System.out.println(arrayedTargetEmbeddingsFromSpikes[i][0] + " " + arrayedTargetEmbeddingsFromSpikes[i][1]);
+			System.out.println(arrayedTargetEmbeddingsFromSamples[i][0] + " " + arrayedTargetEmbeddingsFromSamples[i][1]);
 		}
+
+		kdTreeJointAtSpikes = new KdTree(
+						 new int[] {k + l},
+						 new double[][][] {arrayedJointEmbeddingsFromSpikes});
+		kdTreeJointAtSamples = new KdTree(
+						 new int[] {k + l},
+						 new double[][][] {arrayedJointEmbeddingsFromSamples});
+		kdTreeConditioningAtSpikes = new KdTree(
+						 new int[] {k},
+						 new double[][][] {arrayedTargetEmbeddingsFromSpikes});
+		kdTreeConditioningAtSamples = new KdTree(
+						 new int[] {k},
+						 new double[][][] {arrayedTargetEmbeddingsFromSamples});
 		
 		// Now we have collected all the events.
 		// Load up the search structures:
@@ -383,7 +404,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 	}
 
 	protected void makeEmbeddingsAtPoints(double[] pointsAtWhichToMakeEmbeddings, double[] sourceSpikeTimes, double[] destSpikeTimes,
-					      Vector<double[]> targetEmbeddings, Vector<double[]> sourceEmbeddings) {
+					      Vector<double[]> targetEmbeddings, Vector<double[]> jointEmbeddings) {
 		//System.out.println("foo");
 
 		Random random = new Random();
@@ -425,36 +446,42 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 		//System.out.println(k + " " + l);
 
 			double[] destPast = new double[k];
-			double[] sourcePast = new double[l];
+			double[] jointPast = new double[k + l];
 			destPast[0] = pointsAtWhichToMakeEmbeddings[embedding_point_index] -
 					destSpikeTimes[most_recent_dest_index];
-			sourcePast[0] = pointsAtWhichToMakeEmbeddings[embedding_point_index] -
+			jointPast[0] = pointsAtWhichToMakeEmbeddings[embedding_point_index] -
+					destSpikeTimes[most_recent_dest_index];
+			jointPast[k] = pointsAtWhichToMakeEmbeddings[embedding_point_index] -
 					sourceSpikeTimes[most_recent_source_index];
 			if (addNoise) {
 				destPast[0] += random.nextGaussian()*noiseLevel;
-				sourcePast[0] += random.nextGaussian()*noiseLevel;
+				jointPast[0] += random.nextGaussian()*noiseLevel;
+				jointPast[k] += random.nextGaussian()*noiseLevel;
 			}
 			for (int i = 1; i < k; i++) {
 				destPast[i] = destSpikeTimes[most_recent_dest_index - i + 1] -
 						destSpikeTimes[most_recent_dest_index - i];
+				jointPast[i] = destSpikeTimes[most_recent_dest_index - i + 1] -
+						destSpikeTimes[most_recent_dest_index - i];
 				if (addNoise) {
-					destPast[i - 1] += random.nextGaussian()*noiseLevel;
+					destPast[i] += random.nextGaussian()*noiseLevel;
+					jointPast[i] += random.nextGaussian()*noiseLevel;
 				}
 			}
 			for (int i = 1; i < l; i++) {
-				sourcePast[i] = sourceSpikeTimes[most_recent_source_index - i + 1] -
+				jointPast[k + i] = sourceSpikeTimes[most_recent_source_index - i + 1] -
 						sourceSpikeTimes[most_recent_source_index - i];
 				if (addNoise) {
-					sourcePast[i - 1] += random.nextGaussian()*noiseLevel;
+					jointPast[k + i] += random.nextGaussian()*noiseLevel;
 				}
 			}
 
 			//System.out.println(Arrays.toString(destPast));
-			//System.out.println(Arrays.toString(sourcePast));
+			//System.out.println(Arrays.toString(jointPast));
 			//System.out.println();
 
 			targetEmbeddings.add(destPast);
-			sourceEmbeddings.add(sourcePast);
+			jointEmbeddings.add(jointPast);
 		}
 	}
 
@@ -462,8 +489,8 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 							  int timeSeriesIndex, Vector<double[][]>[] eventTimings, 
 							  Vector<double[][]> destPastAndNextTimings, Vector<Integer> eventTypeLocator,
 							  Vector<Integer> eventIndexLocator, Vector<Integer> numEventsPerObservationSet,
-							  Vector<double[]> targetEmbeddingsFromSpikes, Vector<double[]> sourceEmbeddingsFromSpikes,
-							  Vector<double[]> targetEmbeddingsFromSamples, Vector<double[]> sourceEmbeddingsFromSamples)
+							  Vector<double[]> targetEmbeddingsFromSpikes, Vector<double[]> jointEmbeddingsFromSpikes,
+							  Vector<double[]> targetEmbeddingsFromSamples, Vector<double[]> jointEmbeddingsFromSamples)
 		throws Exception {
 		// addObservationsAfterParamsDetermined(sourceSpikeTimes, destSpikeTimes);
 		
@@ -473,7 +500,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 
 
 		// New
-		int NUM_SAMPLES = 1000;
+		int NUM_SAMPLES = sourceSpikeTimes.length;
 		double sample_lower_bound = Arrays.stream(sourceSpikeTimes).min().getAsDouble();
 		double sample_upper_bound = Arrays.stream(sourceSpikeTimes).max().getAsDouble();
 		double[] randomSampleTimes = new double[NUM_SAMPLES];
@@ -485,8 +512,8 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 		// End New
 
 
-		makeEmbeddingsAtPoints(destSpikeTimes, sourceSpikeTimes, destSpikeTimes, targetEmbeddingsFromSpikes, sourceEmbeddingsFromSpikes);
-		makeEmbeddingsAtPoints(randomSampleTimes, sourceSpikeTimes, destSpikeTimes, targetEmbeddingsFromSamples, sourceEmbeddingsFromSamples);
+		makeEmbeddingsAtPoints(destSpikeTimes, sourceSpikeTimes, destSpikeTimes, targetEmbeddingsFromSpikes, jointEmbeddingsFromSpikes);
+		makeEmbeddingsAtPoints(randomSampleTimes, sourceSpikeTimes, destSpikeTimes, targetEmbeddingsFromSamples, jointEmbeddingsFromSamples);
 
 		
 		
@@ -786,11 +813,45 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 				(vectorOfDestinationSpikeTimes.size() > 1);
 	}
 
+	private double max_neighbour_distance(PriorityQueue<NeighbourNodeData> nnPQ) {
+		double max_val = -1e9;
+		while (nnPQ.peek() != null) {
+			NeighbourNodeData nnData = nnPQ.poll();
+			if (nnData.norms[0] > max_val) {
+				max_val = nnData.norms[0];
+			}
+		}
+		return max_val;
+	}
+
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.spiking.TransferEntropyCalculatorSpiking#computeAverageLocalOfObservations()
 	 */
 	@Override
 	public double computeAverageLocalOfObservations() throws Exception {
+
+		double currentSum = 0;
+		for (int i = 0; i < targetEmbeddingsFromSpikes.size(); i++) {
+
+			PriorityQueue<NeighbourNodeData> nnPQJointSpikes =
+				kdTreeJointAtSpikes.findKNearestNeighbours(Knns + 1, new double[][] {jointEmbeddingsFromSpikes.elementAt(i)});
+			PriorityQueue<NeighbourNodeData> nnPQJointSamples =
+				 kdTreeJointAtSamples.findKNearestNeighbours(Knns, new double[][] {jointEmbeddingsFromSpikes.elementAt(i)});
+			PriorityQueue<NeighbourNodeData> nnPQConditioningSpikes =
+				 kdTreeConditioningAtSpikes.findKNearestNeighbours(Knns + 1, new double[][] {targetEmbeddingsFromSpikes.elementAt(i)});
+			PriorityQueue<NeighbourNodeData> nnPQConditioningSamples =
+				 kdTreeConditioningAtSamples.findKNearestNeighbours(Knns, new double[][] {targetEmbeddingsFromSpikes.elementAt(i)});
+
+			double radiusJointSpikes = max_neighbour_distance(nnPQJointSpikes);
+			double radiusJointSamples = max_neighbour_distance(nnPQJointSamples);
+			double radiusConditioningSpikes = max_neighbour_distance(nnPQConditioningSpikes);
+			double radiusConditioningSamples = max_neighbour_distance(nnPQConditioningSamples);
+			
+			currentSum += (- Math.log(radiusJointSpikes) + Math.log(radiusJointSamples)
+					+ Math.log(radiusConditioningSpikes) - Math.log(radiusConditioningSamples));
+		}
+		currentSum /= targetEmbeddingsFromSpikes.size();
+		System.out.println("New estimate " + currentSum);
 		
 		int numberOfEvents = eventTypeLocator.size();
 		

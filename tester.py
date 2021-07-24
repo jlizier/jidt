@@ -42,10 +42,12 @@ sourceArray = [random.normalvariate(0,1) for r in range(numObservations)]
 destArray = [0] + [sum(pair) for pair in zip([covariance*y for y in sourceArray[0:numObservations-1]], \
                                              [(1-covariance)*y for y in [random.normalvariate(0,1) for r in range(numObservations-1)]] ) ]
 
-sourceArray = 1e3*np.random.random(int(1e3))
+sourceArray = 1e5*np.random.random(int(1e5))
 sourceArray.sort()
-destArray = 1e3*np.random.random(int(1e3))
-destArray.sort()
+#destArray = 1e5*np.random.random(int(1e5))
+#destArray.sort()
+destArray = sourceArray + 1
+destArray += np.random.normal(scale = 0.01, size = destArray.shape)
 
 # Uncorrelated source array:
 sourceArray2 = [random.normalvariate(0,1) for r in range(numObservations)]
