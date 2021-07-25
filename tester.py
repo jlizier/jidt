@@ -101,8 +101,6 @@ print("Canonical example")
 teCalc.setProperty("k_HISTORY", "2")
 teCalc.setProperty("l_HISTORY", "1") 
 
-
-
 results_canonical = np.zeros(NUM_REPS)
 for i in range(NUM_REPS):
         event_train_x, event_train_y = generate_canonical_example_processes(NUM_SPIKES)

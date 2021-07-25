@@ -29,10 +29,6 @@ import infodynamics.utils.UnivariateNearestNeighbourSearcher;
 public class TransferEntropyCalculatorSpikingIntegration implements
 		TransferEntropyCalculatorSpiking {
 
-        protected final static boolean USE_POINT_ITSELF  = false;
-        protected final static boolean TRIM_RADII  = false;
-        protected final static boolean USE_SAME_RADII  = false;
-
 	/**
 	 * Number of past destination spikes to consider (akin to embedding length)
 	 */
@@ -57,15 +53,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 	 */
 	protected Vector<double[]> vectorOfDestinationSpikeTimes = null;
 		
-	// constants for indexing our data storage
-	protected final static int NEXT_DEST = 0;
-	protected final static int NEXT_SOURCE = 1;
-	protected final static int NEXT_POSSIBILITIES = 2;
 
-	/**
-	 * Cache of the timing data for each new observed spiking event in both the source
-	 *  and destination
-	 */
 	Vector<double[][]>[] eventTimings = null;
 	/**
 	 * Cache of the timing data for each new observed spiking event for the
