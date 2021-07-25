@@ -847,10 +847,11 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 			double radiusConditioningSpikes = max_neighbour_distance(nnPQConditioningSpikes);
 			double radiusConditioningSamples = max_neighbour_distance(nnPQConditioningSamples);
 			
-			currentSum += (- Math.log(radiusJointSpikes) + Math.log(radiusJointSamples)
-					+ Math.log(radiusConditioningSpikes) - Math.log(radiusConditioningSamples));
+			currentSum += ((k + l) * (- Math.log(radiusJointSpikes) + Math.log(radiusJointSamples))
+				       + k * (Math.log(radiusConditioningSpikes) - Math.log(radiusConditioningSamples)));
 		}
-		currentSum /= targetEmbeddingsFromSpikes.size();
+		currentSum /= (vectorOfDestinationSpikeTimes.elementAt(0)[vectorOfDestinationSpikeTimes.elementAt(0).length - 1]
+			       - vectorOfDestinationSpikeTimes.elementAt(0)[0]);
 		System.out.println("New estimate " + currentSum);
 		
 		int numberOfEvents = eventTypeLocator.size();

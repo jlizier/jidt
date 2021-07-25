@@ -49,6 +49,43 @@ sourceArray.sort()
 destArray = sourceArray + 1
 destArray += np.random.normal(scale = 0.01, size = destArray.shape)
 
+
+RATE_Y = 1.0
+NUM_Y_eventS = 1e5
+RATE_X_MAX = 10
+event_train_y = []
+event_train_x = []
+
+event_train_x.append(0)
+
+event_train_y = np.random.uniform(0, int(NUM_Y_eventS / RATE_Y), int(NUM_Y_eventS))
+event_train_y.sort()
+
+most_recent_y_index = 0
+previous_x_candidate = 0
+while most_recent_y_index < (len(event_train_y) - 1):
+
+        this_x_candidate = previous_x_candidate + random.expovariate(RATE_X_MAX)
+
+        while most_recent_y_index < (len(event_train_y) - 1) and this_x_candidate > event_train_y[most_recent_y_index + 1]:
+                most_recent_y_index += 1
+
+        delta_t = this_x_candidate - event_train_y[most_recent_y_index]
+
+        rate = 0
+
+        if delta_t > 1:
+                rate = 0.5
+        else:
+                rate = 0.5 + 5.0 * math.exp(-50 * (delta_t - 0.5)**2) - 5.0 * math.exp(-50 * (0.5)**2)
+        if random.random() < rate/float(RATE_X_MAX):
+                event_train_x.append(this_x_candidate)
+        previous_x_candidate = this_x_candidate
+
+event_train_x.sort()
+sourceArray = event_train_y
+destArray = event_train_x
+
 # Uncorrelated source array:
 sourceArray2 = [random.normalvariate(0,1) for r in range(numObservations)]
 # Create a TE calculator and run it:
@@ -60,8 +97,8 @@ teCalcClass = JPackage("infodynamics.measures.spiking.integration").TransferEntr
 teCalc = teCalcClass()
 teCalc.setProperty("NORMALISE", "true") # Normalise the individual variables
 teCalc.initialise(1) # Use history length 1 (Schreiber k=1)
-teCalc.setProperty("k_HISTORY", "2")
-teCalc.setProperty("l_HISTORY", "2") 
+teCalc.setProperty("k_HISTORY", "3")
+teCalc.setProperty("l_HISTORY", "1") 
 teCalc.setProperty("knns", "4") # Use Kraskov parameter K=4 for 4 nearest points
 # # Perform calculation with correlated source:
 teCalc.setObservations(JArray(JDouble, 1)(sourceArray), JArray(JDouble, 1)(destArray))
