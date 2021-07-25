@@ -26,97 +26,88 @@ import math
 import os
 import numpy as np
 
+
+NUM_REPS = 10
+NUM_SPIKES = int(1e4)
+
+# Params for canonical example generation
+RATE_Y = 1.0
+RATE_X_MAX = 10
+
+
+
+def generate_canonical_example_processes(num_y_events):
+        event_train_x = []
+        event_train_x.append(0)
+
+        event_train_y = np.random.uniform(0, int(num_y_events / RATE_Y), int(num_y_events))
+        event_train_y.sort()
+
+        most_recent_y_index = 0
+        previous_x_candidate = 0
+        while most_recent_y_index < (len(event_train_y) - 1):
+
+                this_x_candidate = previous_x_candidate + random.expovariate(RATE_X_MAX)
+
+                while most_recent_y_index < (len(event_train_y) - 1) and this_x_candidate > event_train_y[most_recent_y_index + 1]:
+                        most_recent_y_index += 1
+
+                delta_t = this_x_candidate - event_train_y[most_recent_y_index]
+
+                rate = 0
+
+                if delta_t > 1:
+                        rate = 0.5
+                else:
+                        rate = 0.5 + 5.0 * math.exp(-50 * (delta_t - 0.5)**2) - 5.0 * math.exp(-50 * (0.5)**2)
+                if random.random() < rate/float(RATE_X_MAX):
+                        event_train_x.append(this_x_candidate)
+                previous_x_candidate = this_x_candidate
+
+        event_train_x.sort()
+        event_train_y.sort()
+
+        return event_train_x, event_train_y
+
 # Change location of jar to match yours (we assume script is called from demos/python):
 jarLocation = os.path.join(os.getcwd(), "infodynamics.jar");
 if (not(os.path.isfile(jarLocation))):
 	exit("infodynamics.jar not found (expected at " + os.path.abspath(jarLocation) + ") - are you running from demos/python?")
 # Start the JVM (add the "-Xmx" option with say 1024M if you get crashes due to not enough memory space)
 startJVM(getDefaultJVMPath(), "-ea", "-Djava.class.path=" + jarLocation)
-
-# Generate some random normalised data.
-numObservations = 1000
-covariance=0.4
-# Source array of random normals:
-sourceArray = [random.normalvariate(0,1) for r in range(numObservations)]
-# Destination array of random normals with partial correlation to previous value of sourceArray
-destArray = [0] + [sum(pair) for pair in zip([covariance*y for y in sourceArray[0:numObservations-1]], \
-                                             [(1-covariance)*y for y in [random.normalvariate(0,1) for r in range(numObservations-1)]] ) ]
-
-sourceArray = 1e5*np.random.random(int(1e5))
-sourceArray.sort()
-#destArray = 1e5*np.random.random(int(1e5))
-#destArray.sort()
-destArray = sourceArray + 1
-destArray += np.random.normal(scale = 0.01, size = destArray.shape)
-
-
-RATE_Y = 1.0
-NUM_Y_eventS = 1e5
-RATE_X_MAX = 10
-event_train_y = []
-event_train_x = []
-
-event_train_x.append(0)
-
-event_train_y = np.random.uniform(0, int(NUM_Y_eventS / RATE_Y), int(NUM_Y_eventS))
-event_train_y.sort()
-
-most_recent_y_index = 0
-previous_x_candidate = 0
-while most_recent_y_index < (len(event_train_y) - 1):
-
-        this_x_candidate = previous_x_candidate + random.expovariate(RATE_X_MAX)
-
-        while most_recent_y_index < (len(event_train_y) - 1) and this_x_candidate > event_train_y[most_recent_y_index + 1]:
-                most_recent_y_index += 1
-
-        delta_t = this_x_candidate - event_train_y[most_recent_y_index]
-
-        rate = 0
-
-        if delta_t > 1:
-                rate = 0.5
-        else:
-                rate = 0.5 + 5.0 * math.exp(-50 * (delta_t - 0.5)**2) - 5.0 * math.exp(-50 * (0.5)**2)
-        if random.random() < rate/float(RATE_X_MAX):
-                event_train_x.append(this_x_candidate)
-        previous_x_candidate = this_x_candidate
-
-event_train_x.sort()
-sourceArray = event_train_y
-destArray = event_train_x
-
-# Uncorrelated source array:
-sourceArray2 = [random.normalvariate(0,1) for r in range(numObservations)]
-# Create a TE calculator and run it:
-#teCalcClass = JPackage("infodynamics.measures.continuous.kraskov").TransferEntropyCalculatorKraskov
 teCalcClass = JPackage("infodynamics.measures.spiking.integration").TransferEntropyCalculatorSpikingIntegration
-
-
-
 teCalc = teCalcClass()
-teCalc.setProperty("NORMALISE", "true") # Normalise the individual variables
-teCalc.initialise(1) # Use history length 1 (Schreiber k=1)
-teCalc.setProperty("k_HISTORY", "3")
+teCalc.setProperty("knns", "4") 
+
+print("Independent Poisson Processes")
+teCalc.setProperty("k_HISTORY", "1")
 teCalc.setProperty("l_HISTORY", "1") 
-teCalc.setProperty("knns", "4") # Use Kraskov parameter K=4 for 4 nearest points
-# # Perform calculation with correlated source:
-teCalc.setObservations(JArray(JDouble, 1)(sourceArray), JArray(JDouble, 1)(destArray))
-result = teCalc.computeAverageLocalOfObservations()
-# # Note that the calculation is a random variable (because the generated
-# #  data is a set of random variables) - the result will be of the order
-# #  of what we expect, but not exactly equal to it; in fact, there will
-# #  be a large variance around it.
-# # Expected correlation is expected covariance / product of expected standard deviations:
-# #  (where square of destArray standard dev is sum of squares of std devs of
-# #  underlying distributions)
-# corr_expected = covariance / (1 * math.sqrt(covariance**2 + (1-covariance)**2));
-print("TE result %.4f nats" % \
-     (result,))
-# # Perform calculation with uncorrelated source:
-# teCalc.initialise() # Initialise leaving the parameters the same
-# teCalc.setObservations(JArray(JDouble, 1)(sourceArray2), JArray(JDouble, 1)(destArray))
-# result2 = teCalc.computeAverageLocalOfObservations()
-# print("TE result %.4f nats; expected to be close to 0 nats for these uncorrelated Gaussians" % result2)
+
+results_poisson = np.zeros(NUM_REPS)
+for i in range(NUM_REPS):
+        sourceArray = NUM_SPIKES*np.random.random(NUM_SPIKES)
+        sourceArray.sort()
+        destArray = NUM_SPIKES*np.random.random(NUM_SPIKES)
+        destArray.sort()
+
+        teCalc.setObservations(JArray(JDouble, 1)(sourceArray), JArray(JDouble, 1)(destArray))
+        result = teCalc.computeAverageLocalOfObservations()
+        print("TE result %.4f nats" % (result,))
+        results_poisson[i] = result
+print("Summary: mean ", np.mean(results_poisson), " std dev ", np.std(results_poisson))
 
 
+print("Canonical example")
+teCalc.setProperty("k_HISTORY", "2")
+teCalc.setProperty("l_HISTORY", "1") 
+
+
+
+results_canonical = np.zeros(NUM_REPS)
+for i in range(NUM_REPS):
+        event_train_x, event_train_y = generate_canonical_example_processes(NUM_SPIKES)
+        teCalc.setObservations(JArray(JDouble, 1)(event_train_y), JArray(JDouble, 1)(event_train_x))
+        result = teCalc.computeAverageLocalOfObservations()
+        results_canonical[i] = result
+        print("TE result %.4f nats" % (result,))
+print("Summary: mean ", np.mean(results_canonical), " std dev ", np.std(results_canonical))
