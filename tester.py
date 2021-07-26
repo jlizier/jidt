@@ -27,7 +27,7 @@ import os
 import numpy as np
 
 
-NUM_REPS = 10
+NUM_REPS = 20
 NUM_SPIKES = int(1e4)
 
 # Params for canonical example generation

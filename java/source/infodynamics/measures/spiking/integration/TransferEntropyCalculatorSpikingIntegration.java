@@ -53,13 +53,6 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 	 */
 	protected Vector<double[]> vectorOfDestinationSpikeTimes = null;
 		
-
-	Vector<double[][]>[] eventTimings = null;
-	/**
-	 * Cache of the timing data for each new observed spiking event for the
-	 *  destination only
-	 */
-
 	Vector<double[]> targetEmbeddingsFromSpikes = null;
 	Vector<double[]> jointEmbeddingsFromSpikes = null;
 	Vector<double[]> targetEmbeddingsFromSamples = null;
@@ -70,67 +63,14 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 	protected KdTree kdTreeConditioningAtSpikes = null;
 	protected KdTree kdTreeConditioningAtSamples = null;
 	
-	Vector<double[][]> destPastAndNextTimings = null;
-	/**
-	 * Cache of the type of event for each new observed spiking event in both the source
-	 *  and destination (i.e. which spiked next)
-	 */	
-	Vector<Integer> eventTypeLocator = null;
-	/**
-	 * Cache for each new observed spiking event of which index it has in the vector
-	 *  of spiking events of the same type
-	 */
-	Vector<Integer> eventIndexLocator = null;
-	/**
-	 * Cache for each time-series of observed spiking events of how many
-	 *  observations were in that set.  
-	 */
-	Vector<Integer> numEventsPerObservationSet = null;
-
-	/**
-	 * KdTrees for searching the joint past spaces and time to next spike,
-	 *  for each possibility of which spiked next
-	 */
-	protected KdTree[] kdTreesJoint = null;
-
-	/**
-	 * KdTrees for searching the joint past spaces,
-	 *  for each possibility of which spiked next
-	 */
-	protected KdTree[] kdTreesSourceDestHistories = null;
-
-	/**
-	 * KdTrees for searching the past destination space and time to next spike
-	 */
-	protected KdTree kdTreeDestNext = null;
-
-	/**
-	 * KdTrees for searching the past destination space
-	 */
-	protected KdTree kdTreeDestHistory = null;
-
-	/**
-	 * NN searcher for the time to next spike space only, if required
-	 */
-	protected UnivariateNearestNeighbourSearcher nnSearcherDestTimeToNextSpike = null;
-
-	/**
-	 * Property name for the number of nearest neighbours to search
-	 */
 	public static final String KNNS_PROP_NAME = "Knns";
 
-	/**
-	 * Property name for adjusting the search radius for the next spike such that 
-	 *  it does not cover negative times (with respect to the previous spike, being either
-	 *  source or destination spike)
-	 */
-	public static final String TRIM_TO_POS_PROP_NAME = "TRIM_RANGE_TO_POS_TIMES";
 	/**
 	 * Property name for an amount of random Gaussian noise to be
 	 *  added to the data (default is 1e-8, matching the MILCA toolkit).
 	 */
 	public static final String PROP_ADD_NOISE = "NOISE_LEVEL_TO_ADD";
-    /**
+	/**
 	 * Whether to add an amount of random noise to the incoming data
 	 */
 	protected boolean addNoise = true;
@@ -193,8 +133,6 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 			l = Integer.parseInt(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(KNNS_PROP_NAME)) {
 			Knns = Integer.parseInt(propertyValue);
-		} else if (propertyName.equalsIgnoreCase(TRIM_TO_POS_PROP_NAME)) {
-			trimToPosNextSpikeTimes = Boolean.parseBoolean(propertyValue);
 	    } else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
 	        if (propertyValue.equals("0") ||
 	            propertyValue.equalsIgnoreCase("false")) {
@@ -225,8 +163,6 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 			return Integer.toString(l);
 		} else if (propertyName.equalsIgnoreCase(KNNS_PROP_NAME)) {
 			return Integer.toString(Knns);
-		} else if (propertyName.equalsIgnoreCase(TRIM_TO_POS_PROP_NAME)) {
-			return Boolean.toString(trimToPosNextSpikeTimes);
 	    } else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
 	        return Double.toString(noiseLevel);
 		} else {
@@ -266,9 +202,6 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 		vectorOfDestinationSpikeTimes.add(destination);
 	}
 
-
-	
-	
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.spiking.TransferEntropyCalculatorSpiking#finaliseAddObservations()
 	 */
@@ -285,15 +218,12 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 		int timeSeriesIndex = 0;
 		for (double[] destSpikeTimes : vectorOfDestinationSpikeTimes) {
 			double[] sourceSpikeTimes = sourceIterator.next();
-			timeSeriesIndex++;
-			
 			processEventsFromSpikingTimeSeries(sourceSpikeTimes, destSpikeTimes,
-							   timeSeriesIndex, eventTimings, destPastAndNextTimings, 
-							   eventTypeLocator, eventIndexLocator, numEventsPerObservationSet,
 							   targetEmbeddingsFromSpikes, jointEmbeddingsFromSpikes,
 							   targetEmbeddingsFromSamples, jointEmbeddingsFromSamples);
 		}
 
+		// Convert the vectors to arrays so that they can be put in the trees
 		double[][] arrayedTargetEmbeddingsFromSpikes = new double[targetEmbeddingsFromSpikes.size()][k];
 		double[][] arrayedJointEmbeddingsFromSpikes = new double[targetEmbeddingsFromSpikes.size()][k + l];
 		for (int i = 0; i < targetEmbeddingsFromSpikes.size(); i++) {
@@ -371,38 +301,33 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 					destSpikeTimes[most_recent_dest_index];
 			jointPast[k] = pointsAtWhichToMakeEmbeddings[embedding_point_index] -
 					sourceSpikeTimes[most_recent_source_index];
-			if (addNoise) {
-				destPast[0] += random.nextGaussian()*noiseLevel;
-				jointPast[0] += random.nextGaussian()*noiseLevel;
-				jointPast[k] += random.nextGaussian()*noiseLevel;
-			}
+			
 			for (int i = 1; i < k; i++) {
 				destPast[i] = destSpikeTimes[most_recent_dest_index - i + 1] -
 						destSpikeTimes[most_recent_dest_index - i];
 				jointPast[i] = destSpikeTimes[most_recent_dest_index - i + 1] -
 						destSpikeTimes[most_recent_dest_index - i];
-				if (addNoise) {
-					destPast[i] += random.nextGaussian()*noiseLevel;
-					jointPast[i] += random.nextGaussian()*noiseLevel;
-				}
 			}
 			for (int i = 1; i < l; i++) {
 				jointPast[k + i] = sourceSpikeTimes[most_recent_source_index - i + 1] -
 						sourceSpikeTimes[most_recent_source_index - i];
-				if (addNoise) {
-					jointPast[k + i] += random.nextGaussian()*noiseLevel;
-				}
 			}
 
+			if (addNoise) {
+				for (int i = 0; i < k; i++) {
+					destPast[i] += random.nextGaussian()*noiseLevel;
+				}
+				for (int i = 0; i < l; i++) {
+					jointPast[i] += random.nextGaussian()*noiseLevel;
+				}
+			}
+			
 			targetEmbeddings.add(destPast);
 			jointEmbeddings.add(jointPast);
 		}
 	}
 
 	protected void processEventsFromSpikingTimeSeries(double[] sourceSpikeTimes, double[] destSpikeTimes,
-							  int timeSeriesIndex, Vector<double[][]>[] eventTimings, 
-							  Vector<double[][]> destPastAndNextTimings, Vector<Integer> eventTypeLocator,
-							  Vector<Integer> eventIndexLocator, Vector<Integer> numEventsPerObservationSet,
 							  Vector<double[]> targetEmbeddingsFromSpikes, Vector<double[]> jointEmbeddingsFromSpikes,
 							  Vector<double[]> targetEmbeddingsFromSamples, Vector<double[]> jointEmbeddingsFromSamples)
 		throws Exception {
@@ -412,18 +337,14 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 		Arrays.sort(sourceSpikeTimes);
 		Arrays.sort(destSpikeTimes);
 
-
-		// New
-		int NUM_SAMPLES = sourceSpikeTimes.length;
 		double sample_lower_bound = Arrays.stream(sourceSpikeTimes).min().getAsDouble();
 		double sample_upper_bound = Arrays.stream(sourceSpikeTimes).max().getAsDouble();
-		double[] randomSampleTimes = new double[NUM_SAMPLES];
+		double[] randomSampleTimes = new double[sourceSpikeTimes.length];
 		Random rand = new Random();
 		for (int i = 0; i < randomSampleTimes.length; i++) {
 			randomSampleTimes[i] = sample_lower_bound + rand.nextDouble() * (sample_upper_bound - sample_lower_bound);
 		}
 		Arrays.sort(randomSampleTimes);
-		// End New
 
 		makeEmbeddingsAtPoints(destSpikeTimes, sourceSpikeTimes, destSpikeTimes, targetEmbeddingsFromSpikes, jointEmbeddingsFromSpikes);
 		makeEmbeddingsAtPoints(randomSampleTimes, sourceSpikeTimes, destSpikeTimes, targetEmbeddingsFromSamples, jointEmbeddingsFromSamples);
@@ -475,9 +396,9 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 			currentSum += ((k + l) * (- Math.log(radiusJointSpikes) + Math.log(radiusJointSamples))
 				       + k * (Math.log(radiusConditioningSpikes) - Math.log(radiusConditioningSamples)));
 		}
+		// Normalise by time
 		currentSum /= (vectorOfDestinationSpikeTimes.elementAt(0)[vectorOfDestinationSpikeTimes.elementAt(0).length - 1]
 			       - vectorOfDestinationSpikeTimes.elementAt(0)[0]);
-		
 		return currentSum;
 	}
 
@@ -527,5 +448,4 @@ public class TransferEntropyCalculatorSpikingIntegration implements
 		// TODO Auto-generated method stub
 		return 0;
 	}
-
 }
