@@ -337,7 +337,7 @@ public class KdTree extends NearestNeighbourSearcher {
 				double difference = x1[d] - x2[d];
 				distance += difference * difference;
 			}
-			return distance;
+			return Math.sqrt(distance);
 		}
 	}
 
@@ -359,6 +359,7 @@ public class KdTree extends NearestNeighbourSearcher {
 	 */
 	public final static double normWithAbort(double[] x1, double[] x2,
 			double limit, int normToUse) {
+
 		double distance = 0.0;
 		switch (normToUse) {
 		case EuclideanUtils.NORM_MAX_NORM:
@@ -379,15 +380,17 @@ public class KdTree extends NearestNeighbourSearcher {
 			return distance;
 		// case EuclideanUtils.NORM_EUCLIDEAN_SQUARED:
 		default:
+			// Limit is often r, so must square
+			limit = limit * limit;
 			// Inlined from {@link EuclideanUtils}:
 			for (int d = 0; d < x1.length; d++) {
 				double difference = x1[d] - x2[d];
 				distance += difference * difference;
 				if (distance > limit) {
-						return Double.POSITIVE_INFINITY;
+					return Double.POSITIVE_INFINITY;
 				}
 			}
-			return distance;
+			return Math.sqrt(distance);
 		}
 	}
 
@@ -1305,9 +1308,10 @@ public class KdTree extends NearestNeighbourSearcher {
 		if (normTypeToUse == EuclideanUtils.NORM_MAX_NORM) {
 			absDistOnThisDim = (distOnThisDim > 0) ? distOnThisDim : - distOnThisDim;
 		} else {
+			absDistOnThisDim = (distOnThisDim > 0) ? distOnThisDim : - distOnThisDim;
 			// norm type is EuclideanUtils#NORM_EUCLIDEAN_SQUARED
 			// Track the square distance
-			absDistOnThisDim = distOnThisDim * distOnThisDim;
+			//absDistOnThisDim = distOnThisDim;
 		}
 		
 		if ((node.indexOfThisPoint != sampleIndex) &&
@@ -2053,7 +2057,7 @@ public class KdTree extends NearestNeighbourSearcher {
 			KdTreeNode node, int level, double r, boolean allowEqualToR,
 			boolean[] isWithinR, int[] indicesWithinR,
 			int nextIndexInIndicesWithinR) {
-		
+		//System.out.println("foo");
 		// Point to the correct array for the data at this level
 		int currentDim = level % totalDimensions;
 		double[][] data = dimensionToArray[currentDim];
@@ -2068,9 +2072,9 @@ public class KdTree extends NearestNeighbourSearcher {
 		if (normTypeToUse == EuclideanUtils.NORM_MAX_NORM) {
 			absDistOnThisDim = (distOnThisDim > 0) ? distOnThisDim : - distOnThisDim;
 		} else {
+			absDistOnThisDim = (distOnThisDim > 0) ? distOnThisDim : - distOnThisDim;
 			// norm type is EuclideanUtils#NORM_EUCLIDEAN_SQUARED
 			// Track the square distance
-			absDistOnThisDim = distOnThisDim * distOnThisDim;
 		}
 		
 		if ((absDistOnThisDim <  r) ||
