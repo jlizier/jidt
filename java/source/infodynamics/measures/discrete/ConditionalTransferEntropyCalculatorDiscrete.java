@@ -92,7 +92,7 @@ import infodynamics.utils.RandomGenerator;
  *  "Local information transfer as a spatiotemporal filter for complex systems"</a>
  *  Physical Review E 77, 026110, 2008.</li>
  *  <li>J. T. Lizier, M. Prokopenko and A. Zomaya,
- *  <a href=http://dx.doi.org/10.1063/1.3486801">
+ *  <a href="http://dx.doi.org/10.1063/1.3486801">
  *  "Information modification and particle collisions in distributed computation"</a>
  *  Chaos 20, 3, 037109 (2010).</li>
  * </ul>
