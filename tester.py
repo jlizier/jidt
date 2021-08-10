@@ -27,8 +27,8 @@ import os
 import numpy as np
 
 
-NUM_REPS = 5
-NUM_SPIKES = int(5e3)
+NUM_REPS = 2
+NUM_SPIKES = int(2e3)
 NUM_OBSERVATIONS = 2
 
 # Params for canonical example generation
@@ -99,6 +99,8 @@ for i in range(NUM_REPS):
         teCalc.finaliseAddObservations();
         result = teCalc.computeAverageLocalOfObservations()
         print("TE result %.4f nats" % (result,))
+        sig = teCalc.computeSignificance(10, result)
+        print(sig.pValue)
         results_poisson[i] = result
 print("Summary: mean ", np.mean(results_poisson), " std dev ", np.std(results_poisson))
 
@@ -111,59 +113,67 @@ print("Summary: mean ", np.mean(results_poisson), " std dev ", np.std(results_po
 teCalc = teCalcClass()
 teCalc.setProperty("knns", "4")
 print("Noisy copy zero TE")
-teCalc.setProperty("COND_EMBED_LENGTHS", "2")
+teCalc.setProperty("COND_EMBED_LENGTHS", "1")
 teCalc.setProperty("k_HISTORY", "2")
-teCalc.setProperty("l_HISTORY", "2")
+teCalc.setProperty("l_HISTORY", "1")
+#teCalc.setProperty("NORM_TYPE", "MAX_NORM")
 
 results_noisy_zero = np.zeros(NUM_REPS)
 for i in range(NUM_REPS):
         teCalc.startAddObservations()
         for j in range(NUM_OBSERVATIONS):
-                condArray = NUM_SPIKES*np.random.random((1, NUM_SPIKES))
+                condArray = np.ones((1, NUM_SPIKES)) + 0.05 * np.random.random((1, NUM_SPIKES))
+                condArray = np.cumsum(condArray, axis = 1)
                 condArray.sort(axis = 1)
-                sourceArray = condArray[0, :] + 0.25 + 0.1 * np.random.normal(size = condArray.shape[1])
+                sourceArray = condArray[0, :] + 0.25 + 0.05 * np.random.normal(size = condArray.shape[1])
                 sourceArray.sort()
-                destArray = condArray[0, :] + 0.5 + 0.1 * np.random.normal(size = condArray.shape[1])
+                destArray = condArray[0, :] + 0.5 + 0.05 * np.random.normal(size = condArray.shape[1])
                 destArray.sort()
                 teCalc.addObservations(JArray(JDouble, 1)(sourceArray), JArray(JDouble, 1)(destArray), JArray(JDouble, 2)(condArray))
         teCalc.finaliseAddObservations();
         result = teCalc.computeAverageLocalOfObservations()
         print("TE result %.4f nats" % (result,))
-        results_poisson[i] = result
-print("Summary: mean ", np.mean(results_poisson), " std dev ", np.std(results_poisson))
+        sig = teCalc.computeSignificance(10, result)
+        print(sig.pValue)
+        results_noisy_zero[i] = result
+print("Summary: mean ", np.mean(results_noisy_zero), " std dev ", np.std(results_noisy_zero))
 
 
 
 teCalc = teCalcClass()
 teCalc.setProperty("knns", "4")
 print("Noisy copy non-zero TE")
-teCalc.setProperty("COND_EMBED_LENGTHS", "2")
+teCalc.setProperty("COND_EMBED_LENGTHS", "1")
 teCalc.setProperty("k_HISTORY", "2")
-teCalc.setProperty("l_HISTORY", "2")
+teCalc.setProperty("l_HISTORY", "1")
+#teCalc.setProperty("NORM_TYPE", "MAX_NORM") 
 
-results_noisy_zero = np.zeros(NUM_REPS)
+results_noisy_non_zero = np.zeros(NUM_REPS)
 for i in range(NUM_REPS):
         teCalc.startAddObservations()
         for j in range(NUM_OBSERVATIONS):
-                sourceArray = NUM_SPIKES*np.random.random(NUM_SPIKES)
+                sourceArray = np.ones((1, NUM_SPIKES)) + 0.05 * np.random.random((1, NUM_SPIKES))
+                sourceArray = np.cumsum(sourceArray)
                 sourceArray.sort()
-                condArray = sourceArray + 0.25 + 0.1 * np.random.normal(size = sourceArray.shape)
+                condArray = sourceArray + 0.25 + 0.05 * np.random.normal(size = sourceArray.shape)
                 condArray.sort()
                 condArray = np.expand_dims(condArray, 0)
-                destArray = sourceArray + 0.5 + 0.1 * np.random.normal(size = sourceArray.shape)
+                destArray = sourceArray + 0.5 + 0.05 * np.random.normal(size = sourceArray.shape)
                 destArray.sort()
                 teCalc.addObservations(JArray(JDouble, 1)(sourceArray), JArray(JDouble, 1)(destArray), JArray(JDouble, 2)(condArray))
         teCalc.finaliseAddObservations();
         result = teCalc.computeAverageLocalOfObservations()
         print("TE result %.4f nats" % (result,))
-        results_poisson[i] = result
-print("Summary: mean ", np.mean(results_poisson), " std dev ", np.std(results_poisson))
+        sig = teCalc.computeSignificance(10, result)
+        print(sig.pValue)
+        results_noisy_non_zero[i] = result
+print("Summary: mean ", np.mean(results_noisy_non_zero), " std dev ", np.std(results_noisy_zero))
 
 print("Canonical example")
 teCalc = teCalcClass()
 teCalc.setProperty("knns", "4")
-teCalc.setProperty("k_HISTORY", "2")
-teCalc.setProperty("l_HISTORY", "1")
+teCalc.setProperty("k_HISTORY", "1")
+teCalc.setProperty("l_HISTORY", "2")
 #teCalc.setProperty("NUM_SAMPLES_MULTIPLIER", "1")
 #teCalc.setProperty("NORM_TYPE", "MAX_NORM") 
 
@@ -174,4 +184,6 @@ for i in range(NUM_REPS):
         result = teCalc.computeAverageLocalOfObservations()
         results_canonical[i] = result
         print("TE result %.4f nats" % (result,))
+        sig = teCalc.computeSignificance(10, result)
+        print(sig.pValue)
 print("Summary: mean ", np.mean(results_canonical), " std dev ", np.std(results_canonical))
