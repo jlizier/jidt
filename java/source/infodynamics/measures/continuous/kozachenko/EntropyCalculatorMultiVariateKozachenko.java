@@ -99,11 +99,6 @@ public class EntropyCalculatorMultiVariateKozachenko
 	protected boolean debug = false;
 
   /**
-   * Property name for whether to normalise the incoming data to 
-   * mean 0, standard deviation 1 (default true)
-   */
-  public static final String PROP_NORMALISE = "NORMALISE";
-  /**
    * Property name for an amount of random Gaussian noise to be
    *  added to the data (default is 1e-8, matching the MILCA toolkit).
    */
@@ -376,7 +371,34 @@ public class EntropyCalculatorMultiVariateKozachenko
 	 */
 	@Override
 	public double[] computeLocalUsingPreviousObservations(double[][] states) throws Exception {
-		throw new Exception("Local method for other data not implemented");
+		double sdTermHere = sdTerm(totalObservations, dimensions);
+		double emConstHere = eulerMascheroniTerm(totalObservations);
+		double constantToAddIn = sdTermHere + emConstHere;
+		
+		double[] minDistance = EuclideanUtils.computeMinEuclideanDistances(rawData);
+		double entropy = 0.0;
+		double[] localEntropy = new double[rawData.length];
+		if (debug) {
+			System.out.println("t,\tminDist,\tlogMinDist,\tlocal,\tsum");
+		}
+		for (int t = 0; t < rawData.length; t++) {
+			localEntropy[t] = Math.log(2.0 * minDistance[t]) * (double) dimensions;
+			// using natural units
+			// localEntropy[t] /= Math.log(2);
+			localEntropy[t] += constantToAddIn;
+			entropy += localEntropy[t];
+			if (debug) {
+				System.out.println(t + ",\t" + 
+						minDistance[t] + ",\t" +
+						Math.log(minDistance[t]) + ",\t" +
+						localEntropy[t] + ",\t" +
+						entropy);
+			}
+		}
+		entropy /= (double) totalObservations;
+		lastAverage = entropy;
+		lastLocalEntropy = localEntropy;
+		return localEntropy;
 	}
 
 	/**
