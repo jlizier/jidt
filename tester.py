@@ -30,6 +30,7 @@ import numpy as np
 NUM_REPS = 2
 NUM_SPIKES = int(2e3)
 NUM_OBSERVATIONS = 2
+NUM_SURROGATES = 10
 
 # Params for canonical example generation
 RATE_Y = 1.0
@@ -80,9 +81,10 @@ teCalcClass = JPackage("infodynamics.measures.spiking.integration").TransferEntr
 teCalc = teCalcClass()
 teCalc.setProperty("knns", "4")
 print("Independent Poisson Processes")
-teCalc.setProperty("COND_EMBED_LENGTHS", "2,2")
-teCalc.setProperty("k_HISTORY", "2")
-teCalc.setProperty("l_HISTORY", "2")
+teCalc.setProperty("DEST_PAST_INTERVALS", "1,2")
+teCalc.setProperty("SOURCE_PAST_INTERVALS", "1,2")
+teCalc.appendConditionalIntervals(JArray(JInt, 1)([1, 2]))
+teCalc.appendConditionalIntervals(JArray(JInt, 1)([1, 2]))
 teCalc.setProperty("NORM_TYPE", "MAX_NORM") 
 
 results_poisson = np.zeros(NUM_REPS)
@@ -99,23 +101,17 @@ for i in range(NUM_REPS):
         teCalc.finaliseAddObservations();
         result = teCalc.computeAverageLocalOfObservations()
         print("TE result %.4f nats" % (result,))
-        sig = teCalc.computeSignificance(10, result)
+        sig = teCalc.computeSignificance(NUM_SURROGATES, result)
         print(sig.pValue)
         results_poisson[i] = result
 print("Summary: mean ", np.mean(results_poisson), " std dev ", np.std(results_poisson))
 
-
-
-
-
-
-
 teCalc = teCalcClass()
 teCalc.setProperty("knns", "4")
 print("Noisy copy zero TE")
-teCalc.setProperty("COND_EMBED_LENGTHS", "1")
-teCalc.setProperty("k_HISTORY", "2")
-teCalc.setProperty("l_HISTORY", "1")
+#teCalc.appendConditionalIntervals(JArray(JInt, 1)([1]))
+teCalc.setProperty("DEST_PAST_INTERVALS", "1")
+teCalc.setProperty("SOURCE_PAST_INTERVALS", "1")
 #teCalc.setProperty("NORM_TYPE", "MAX_NORM")
 
 results_noisy_zero = np.zeros(NUM_REPS)
@@ -129,11 +125,12 @@ for i in range(NUM_REPS):
                 sourceArray.sort()
                 destArray = condArray[0, :] + 0.5 + 0.05 * np.random.normal(size = condArray.shape[1])
                 destArray.sort()
-                teCalc.addObservations(JArray(JDouble, 1)(sourceArray), JArray(JDouble, 1)(destArray), JArray(JDouble, 2)(condArray))
+                #teCalc.addObservations(JArray(JDouble, 1)(sourceArray), JArray(JDouble, 1)(destArray), JArray(JDouble, 2)(condArray))
+                teCalc.addObservations(JArray(JDouble, 1)(sourceArray), JArray(JDouble, 1)(destArray))
         teCalc.finaliseAddObservations();
         result = teCalc.computeAverageLocalOfObservations()
         print("TE result %.4f nats" % (result,))
-        sig = teCalc.computeSignificance(10, result)
+        sig = teCalc.computeSignificance(NUM_SURROGATES, result)
         print(sig.pValue)
         results_noisy_zero[i] = result
 print("Summary: mean ", np.mean(results_noisy_zero), " std dev ", np.std(results_noisy_zero))
@@ -143,9 +140,9 @@ print("Summary: mean ", np.mean(results_noisy_zero), " std dev ", np.std(results
 teCalc = teCalcClass()
 teCalc.setProperty("knns", "4")
 print("Noisy copy non-zero TE")
-teCalc.setProperty("COND_EMBED_LENGTHS", "1")
-teCalc.setProperty("k_HISTORY", "2")
-teCalc.setProperty("l_HISTORY", "1")
+teCalc.appendConditionalIntervals(JArray(JInt, 1)([1]))
+teCalc.setProperty("DEST_PAST_INTERVALS", "1,2")
+teCalc.setProperty("SOURCE_PAST_INTERVALS", "1")
 #teCalc.setProperty("NORM_TYPE", "MAX_NORM") 
 
 results_noisy_non_zero = np.zeros(NUM_REPS)
@@ -164,7 +161,7 @@ for i in range(NUM_REPS):
         teCalc.finaliseAddObservations();
         result = teCalc.computeAverageLocalOfObservations()
         print("TE result %.4f nats" % (result,))
-        sig = teCalc.computeSignificance(10, result)
+        sig = teCalc.computeSignificance(NUM_SURROGATES, result)
         print(sig.pValue)
         results_noisy_non_zero[i] = result
 print("Summary: mean ", np.mean(results_noisy_non_zero), " std dev ", np.std(results_noisy_zero))
@@ -172,8 +169,8 @@ print("Summary: mean ", np.mean(results_noisy_non_zero), " std dev ", np.std(res
 print("Canonical example")
 teCalc = teCalcClass()
 teCalc.setProperty("knns", "4")
-teCalc.setProperty("k_HISTORY", "1")
-teCalc.setProperty("l_HISTORY", "2")
+teCalc.setProperty("DEST_PAST_INTERVALS", "1,2")
+teCalc.setProperty("SOURCE_PAST_INTERVALS", "1")
 #teCalc.setProperty("NUM_SAMPLES_MULTIPLIER", "1")
 #teCalc.setProperty("NORM_TYPE", "MAX_NORM") 
 
@@ -184,6 +181,6 @@ for i in range(NUM_REPS):
         result = teCalc.computeAverageLocalOfObservations()
         results_canonical[i] = result
         print("TE result %.4f nats" % (result,))
-        sig = teCalc.computeSignificance(10, result)
+        sig = teCalc.computeSignificance(NUM_SURROGATES, result)
         print(sig.pValue)
 print("Summary: mean ", np.mean(results_canonical), " std dev ", np.std(results_canonical))
