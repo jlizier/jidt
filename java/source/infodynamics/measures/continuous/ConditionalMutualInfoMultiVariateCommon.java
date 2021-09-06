@@ -205,12 +205,12 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	 * <p>Valid property names, and what their
 	 * values should represent, include:</p>
 	 * <ul>
-	 *  	<li>{@link #PROP_NORMALISE} - whether to normalise the individual
+	 *   <li>{@link #PROP_NORMALISE} - whether to normalise the individual
 	 *      variables to mean 0, standard deviation 1
 	 *      (true by default, except for child class
 	 *      {@link infodynamics.measures.continuous.gaussian.ConditionalMutualInfoCalculatorMultiVariateGaussian}
 	 *      for which this property is false and cannot be altered)</li>
-	 *      <li>{@link #PROP_ADD_NOISE} -- a standard deviation for an amount of
+	 *   <li>{@link #PROP_ADD_NOISE} -- a standard deviation for an amount of
 	 *  	random Gaussian noise to add to
 	 *      each variable, to avoid having neighbourhoods with artificially
 	 *      large counts. (We also accept "false" to indicate "0".)
@@ -355,16 +355,20 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	public void addObservations(double[] var1, double[] var2,
 			double[] cond) throws Exception {
 		if ((dimensionsVar1 != 1) || (dimensionsVar2 != 1) ||
-				(dimensionsCond != 1)) {
+				((dimensionsCond != 1) && (dimensionsCond != 0))) {
 			throw new Exception("The number of dimensions for each variable (having been initialised to " +
 					dimensionsVar1 + ", " + dimensionsVar2 + " & " +
-					dimensionsCond + ") can only be 1 when " +
+					dimensionsCond + ") can only be 1 (or 0 for conditional) when " +
 					"the univariate addObservations(double[],double[],double[]) and " + 
 					"setObservations(double[],double[],double[]) methods are called");
 		}
+		double[][] reshapedConditional = null;
+		if (dimensionsCond == 1) {
+			reshapedConditional = MatrixUtils.reshape(cond, cond.length, 1);
+		}
 		addObservations(MatrixUtils.reshape(var1, var1.length, 1),
 						MatrixUtils.reshape(var2, var2.length, 1),
-						MatrixUtils.reshape(cond, cond.length, 1));
+						reshapedConditional);
 
 	}
 	
@@ -592,7 +596,7 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		//  instead of just the zeros that we should otherwise get).
 		miSurrogateCalculator.setProperty(PROP_NORMALISE, "false");
 		miSurrogateCalculator.setProperty(PROP_ADD_NOISE, "0");
-
+		
 		double[] surrogateMeasurements = new double[numPermutationsToCheck];
 		
 		// Now compute the MI for each set of shuffled data:
