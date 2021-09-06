@@ -46,17 +46,24 @@
 % - debug - turn on various debug messages
 % - seedOrState (optional) - if a scalar, it is the state input for the random number generator (so one can repeat CA investigations for the same initial state).
 %                          - if a vector, it is the initial state for the CA (must be of length cells)
+% - alterProbability (optional, default 0) - defines stochastic probability of altering the value in the update of any given cell
 %
 % Outputs:
 % - caStates - a run, from random initial conditions, of a CA of the given parameters.
 % - ruleTable - the lookup table for each neighbourhood configuration, constructed from the rule number
 % - executedRules - which CA rule was executed for every cell update that occurred for the CA.
 
-function [caStates, ruleTable, executedRules] = runCA(neighbourhood, base, rule, cells, steps, debug, seedOrState)
+function [caStates, ruleTable, executedRules] = runCA(neighbourhood, base, rule, cells, steps, debug, seedOrState, alterProbability)
 
 	% Check arguments:
 	ca = [];
-	if (nargin >= 7)
+	if (nargin < 8) || isempty(alterProbability)
+		alterProbability = 0;
+	end
+	if (nargin < 7)
+		seedOrState = [];
+	end
+	if (~isempty(seedOrState))
 		if (isscalar(seedOrState))
 			% User has supplied seed for the random number generator:
 			fprintf('Generating initial random CA state from seed %d\n', seedOrState);
@@ -72,13 +79,13 @@ function [caStates, ruleTable, executedRules] = runCA(neighbourhood, base, rule,
 	else
 		fprintf('Generating initial random CA state\n');
 	end
-	if (nargin < 6)
+	if (nargin < 6) || isempty(debug)
 		debug = false;
 	end
-	if (nargin < 5)
+	if (nargin < 5) || isempty(steps)
 		steps = 100;
 	end
-	if (nargin < 4)
+	if (nargin < 4) || isempty(cells)
 		cells = 100;
 	end
 	if (nargin < 3)
@@ -205,6 +212,19 @@ function [caStates, ruleTable, executedRules] = runCA(neighbourhood, base, rule,
 		% Need to add 1 to the ruleToRun because of the indexing starting from 1 not 0.
 		ca = ruleTable(ruleToRun + 1)';
 		
+		% Check whether any of the CA states should be altered
+		if (alterProbability > 0)
+			% Could code this in a faster way, but won't matter too much
+			for c = 1 : cells
+				if (rand() < alterProbability)
+					% Alter this cell
+					chooseFrom = 0:(base-1);
+					chooseFrom(ca(c)+1) = []; % Remove the current value as an option so that we change this one
+					ca(c) = chooseFrom(randsample(length(chooseFrom), 1));
+				end
+			end
+		end
+
 		if (debug)
 			ca
 		end
