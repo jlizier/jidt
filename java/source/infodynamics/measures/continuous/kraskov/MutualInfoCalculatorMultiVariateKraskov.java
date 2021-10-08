@@ -440,7 +440,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
     int numTimePointsToComputeFor = (newObservations == null) ?
         N : newObservations[0].length;
     
-    if (useGPU && (newObservations == null)) {
+    if (useGPU && (newObservations != null)) {
     	System.out.println("Cannot use GPU for estimation based on new observations -- falling back to CPU calculation...");
     }
     
