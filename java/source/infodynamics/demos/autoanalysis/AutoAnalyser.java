@@ -937,8 +937,8 @@ public abstract class AutoAnalyser extends JFrame
 					}
 				} else {
 					for (int i=0; i < numVariables; i++) {
-						pythonCode.append(variableColNumLabels[i].toLowerCase() + " = data[:," +
-								singleCalcColumns[i] + "]\n");
+						pythonCode.append(variableColNumLabels[i].toLowerCase() + " = JArray(JDouble, 1)(data[:," +
+								singleCalcColumns[i] + "].tolist())\n");
 					}
 				}
 				pythonCode.append("\n");
@@ -1134,7 +1134,7 @@ public abstract class AutoAnalyser extends JFrame
 						matlabCode.append(matlabPrefix + variableColNumLabels[i].toLowerCase() +
 								" = octaveToJavaDoubleArray(data(:, " + columnVariables[i] + "));\n");
 						pythonCode.append(pythonPrefix + variableColNumLabels[i].toLowerCase() +
-								" = data[:, " + columnVariables[i] + "]\n");						
+								" = JArray(JDouble, 1)(data[:, " + columnVariables[i] + "].tolist())\n");						
 					}
 				}
 				javaCode.append("\n");
