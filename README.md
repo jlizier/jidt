@@ -24,7 +24,9 @@ JIDT is distributed under the [GNU GPL v3 license](http://www.gnu.org/licenses/g
 1. [Demos](../../wiki/Demos) are included with the full distribution, including a [GUI app](../../wiki/AutoAnalyser) for automatic analysis and code generation (see picture below), [simple java demos](../../wiki/SimpleJavaExamples) and [cellular automata (CA) demos](../../wiki/CellularAutomataDemos).
     1. These Java tools can easily be used in [Matlab/Octave](../../wiki/OctaveMatlabExamples), [Python](../../wiki/PythonExamples), [R](../../wiki/R_Examples), [Julia](../../wiki/JuliaExamples) and [Clojure](../../wiki/Clojure_Examples)! (click on each language here for examples)
 
-![Computing in the GUI app image](https://raw.githubusercontent.com/jlizier/jidt/master/web/AutoAnalyserGUI-2-Compute.png)
+[![Computing in the GUI app image](https://raw.githubusercontent.com/jlizier/jidt/master/web/AutoAnalyserGUI-2-Compute.png)](../../wiki/AutoAnalyser)
+
+[![Course and video lectures](https://raw.githubusercontent.com/jlizier/jidt/master/web/YouTubePlaylist.png)](../../wiki/Course)
 
 For further information or announcements:
  * Join our discussion group: http://groups.google.com/d/forum/jidt-discuss
