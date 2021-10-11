@@ -10,13 +10,17 @@ JIDT includes implementations:
  * using various types of estimators (e.g. _Kraskov-Stögbauer-Grassberger estimators_, _box-kernel estimation_, _linear-Gaussian_),
 as described in full at [ImplementedMeasures](../../wiki/ImplementedMeasures).
 
+JIDT is easy to use:
+ * It ships with a **GUI application** -- the [AutoAnalyser](../../wiki/AutoAnalyser), see picture below -- to facilitate point-and-click analysis, as well as code template generation for more complex analysis.
+ * We provide **short video lectures** and corresponding slides in a (beta) [Course](../../wiki/Course) on how to understand using information-theoretic tools to analyse complex systems, and to implement such analysis with JIDT.
+
 JIDT is distributed under the [GNU GPL v3 license](http://www.gnu.org/licenses/gpl.html) (or later).
 
 # Getting started
 
 1. [Download](../../wiki/Downloads) and [Installation](../../wiki/Installation) is very easy!
     1. _Quick start_: take a `git clone` or download the latest [v1.5 full distribution](http://lizier.me/joseph/software/jidt/download.php?file=infodynamics-dist-1.5.zip) (suitable for all platforms) and see the readme.txt file therein.
-1. [Documentation](../../wiki/Documentation) including: the paper describing JIDT at [arXiv:1408.3270](http://arxiv.org/abs/1408.3270) (distributed with the toolkit), a [Tutorial](../../wiki/Tutorial), and [Javadocs (v1.5 here)](http://lizier.me/joseph/software/jidt/javadocs/v1.5/);
+1. [Documentation](../../wiki/Documentation) including: the paper describing JIDT at [arXiv:1408.3270](http://arxiv.org/abs/1408.3270) (distributed with the toolkit), a (beta) [Course](../../wiki/Course) including short video lectures and a shorter [Tutorial](../../wiki/Tutorial), and [Javadocs (v1.5 here)](http://lizier.me/joseph/software/jidt/javadocs/v1.5/);
 1. [Demos](../../wiki/Demos) are included with the full distribution, including a [GUI app](../../wiki/AutoAnalyser) for automatic analysis and code generation (see picture below), [simple java demos](../../wiki/SimpleJavaExamples) and [cellular automata (CA) demos](../../wiki/CellularAutomataDemos).
     1. These Java tools can easily be used in [Matlab/Octave](../../wiki/OctaveMatlabExamples), [Python](../../wiki/PythonExamples), [R](../../wiki/R_Examples), [Julia](../../wiki/JuliaExamples) and [Clojure](../../wiki/Clojure_Examples)! (click on each language here for examples)
 
