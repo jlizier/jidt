@@ -21,6 +21,9 @@ package infodynamics.measures.discrete;
 import infodynamics.utils.EmpiricalNullDistributionComputer;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
+import infodynamics.utils.AnalyticMeasurementDistribution;
+import infodynamics.utils.AnalyticNullDistributionComputer;
+import infodynamics.utils.ChiSquareMeasurementDistribution;
 import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.RandomGenerator;
 
@@ -80,8 +83,6 @@ import infodynamics.utils.RandomGenerator;
  * TODO Add methods for passing in single time series.
  * This is done for addObservations, but not other routines.
  * 
- * TODO Implement AnalyticNullDistributionComputer
- * 
  * <p><b>References:</b><br/>
  * <ul>
  * 	<li>T. Schreiber, <a href="http://dx.doi.org/10.1103/PhysRevLett.85.461">
@@ -106,7 +107,7 @@ import infodynamics.utils.RandomGenerator;
  */
 public class ConditionalTransferEntropyCalculatorDiscrete
 	extends ContextOfPastMeasureCalculatorDiscrete 
-	implements EmpiricalNullDistributionComputer {
+	implements EmpiricalNullDistributionComputer, AnalyticNullDistributionComputer {
 
 	protected int base_others = 0; // base of the conditional variables
 	protected int base_power_num_others = 0;
@@ -122,6 +123,11 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 	 *  (needs to account for k previous steps)
 	 */
 	protected int startObservationTime = 1;
+	
+	/**
+	 * Tracks whether the measure has been computed since the last initialisation
+	 */
+	protected boolean estimateComputed = false;
 	
 	/**
 	 * User was formerly forced to create new instances through this factory method.
@@ -264,6 +270,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 			MatrixUtils.fill(destPastOthersCount, 0);
 			MatrixUtils.fill(pastOthersCount, 0);
 		}
+		estimateComputed = false;
 	}
 	
 	@Override
@@ -622,6 +629,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 		
 		average = te;
 		std = Math.sqrt(meanSqLocals - average * average);
+		estimateComputed = true;
 		return te;
 	}
 	
@@ -717,6 +725,17 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 		return measDistribution;
 	}
 	
+	@Override
+	public AnalyticMeasurementDistribution computeSignificance()
+			throws Exception {
+		if (!estimateComputed) {
+			computeAverageLocalOfObservations();
+		}
+		return new ChiSquareMeasurementDistribution(average,
+				observations,
+				(base - 1)*(base - 1)*(base_power_k*base_power_num_others));
+	}
+
 	/**
 	 * Computes local conditional transfer entropy for the given
 	 *  states, using pdfs built up from observations previously
