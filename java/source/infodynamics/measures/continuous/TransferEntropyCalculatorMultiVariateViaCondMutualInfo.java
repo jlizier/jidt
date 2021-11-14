@@ -257,6 +257,30 @@ public class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
  		super.setObservations(source, destination);
 	}
 
+ 	@Override
+	public void setObservations(double[] source, double[][] destination)
+			throws Exception {
+ 		if (sourceDimensions != 1) {
+ 			throw new Exception("Cannot call the partially univariate addObservations if you " +
+ 					"have initialised with dimension > 1 for source");
+ 		}
+		startAddObservations();
+		addObservations(source, destination);
+		finaliseAddObservations();
+	}
+
+ 	@Override
+	public void setObservations(double[][] source, double[] destination)
+			throws Exception {
+ 		if (destDimensions != 1) {
+ 			throw new Exception("Cannot call the partially univariate addObservations if you " +
+ 					"have initialised with dimension > 1 for dest");
+ 		}
+		startAddObservations();
+		addObservations(source, destination);
+		finaliseAddObservations();
+	}
+
 	@Override
  	public void startAddObservations() {
  		if ((sourceDimensions == 1) && (destDimensions == 1)) {
@@ -291,6 +315,34 @@ public class TransferEntropyCalculatorMultiVariateViaCondMutualInfo
  					"have initialised with dimension > 1 for either source or destination");
  		}
  		super.addObservations(source, destination);
+ 	}
+
+ 	/* (non-Javadoc)
+ 	 * @see infodynamics.measures.continuous.ChannelCalculatorMultiVariate#addObservations(double[], double[][])
+ 	 */
+ 	@Override
+ 	public void addObservations(double[] source, double[][] destination) throws Exception {
+ 
+ 		if (sourceDimensions != 1) {
+ 			throw new Exception("Cannot call the partially univariate addObservations if you " +
+ 					"have initialised with dimension > 1 for source");
+ 		}
+		addObservations(MatrixUtils.reshape(source, source.length, 1),
+				destination);
+ 	}
+
+ 	/* (non-Javadoc)
+ 	 * @see infodynamics.measures.continuous.ChannelCalculatorMultiVariate#addObservations(double[][], double[])
+ 	 */
+ 	@Override
+ 	public void addObservations(double[][] source, double[] destination) throws Exception {
+ 
+ 		if (destDimensions != 1) {
+ 			throw new Exception("Cannot call the partially univariate addObservations if you " +
+ 					"have initialised with dimension > 1 for dest");
+ 		}
+		addObservations(source,
+				MatrixUtils.reshape(destination, destination.length, 1));
  	}
 
  	/* (non-Javadoc)

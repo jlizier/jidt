@@ -274,6 +274,30 @@ public class TransferEntropyCalculatorMultiVariateKernel
 		finaliseAddObservations();
 	}
 	
+ 	@Override
+	public void setObservations(double[] source, double[][] destination)
+			throws Exception {
+ 		if (sourceDimensions != 1) {
+ 			throw new Exception("Cannot call the partially univariate addObservations if you " +
+ 					"have initialised with dimension > 1 for source");
+ 		}
+		startAddObservations();
+		addObservations(source, destination);
+		finaliseAddObservations();
+	}
+
+ 	@Override
+	public void setObservations(double[][] source, double[] destination)
+			throws Exception {
+ 		if (destDimensions != 1) {
+ 			throw new Exception("Cannot call the partially univariate addObservations if you " +
+ 					"have initialised with dimension > 1 for dest");
+ 		}
+		startAddObservations();
+		addObservations(source, destination);
+		finaliseAddObservations();
+	}
+	
 	@Override
 	public void setObservations(double[][] source, double[][] destination,
 			boolean[] sourceValid, boolean[] destValid) throws Exception {
@@ -357,6 +381,32 @@ public class TransferEntropyCalculatorMultiVariateKernel
 		}
 		vectorOfJointSourceObservations.add(source);
 		vectorOfJointDestinationObservations.add(destination);
+	}
+
+	@Override
+	public void addObservations(double[] source, double[][] destination) throws Exception {
+		
+		if (sourceDimensions != 1) {
+			throw new Exception("The number of source dimensions (having been initialised to " +
+					sourceDimensions + ") can only be 1 when " +
+					"the partially univariate addObservations(double[],double[][]) and " + 
+					"setObservations(double[],double[][]) methods are called");
+		}
+		addObservations(MatrixUtils.reshape(source, source.length, 1),
+						destination);
+	}
+	
+	@Override
+	public void addObservations(double[][] source, double[] destination) throws Exception {
+		
+		if (destDimensions != 1) {
+			throw new Exception("The number of dest dimensions (having been initialised to " +
+					destDimensions + ") can only be 1 when " +
+					"the partially univariate addObservations(double[][],double[]) and " + 
+					"setObservations(double[][],double[]) methods are called");
+		}
+		addObservations(source,
+				MatrixUtils.reshape(destination, destination.length, 1));
 	}
 	
 	@Override

@@ -283,6 +283,20 @@ public abstract class MutualInfoMultiVariateCommon implements
 	}
 	
 	@Override
+	public void setObservations(double[] source, double[][] destination) throws Exception {
+		startAddObservations();
+		addObservations(source, destination);
+		finaliseAddObservations();
+	}
+
+	@Override
+	public void setObservations(double[][] source, double[] destination) throws Exception {
+		startAddObservations();
+		addObservations(source, destination);
+		finaliseAddObservations();
+	}
+
+	@Override
 	public void startAddObservations() {
 		vectorOfSourceObservations = new Vector<double[][]>();
 		vectorOfDestinationObservations = new Vector<double[][]>();
@@ -351,6 +365,32 @@ public abstract class MutualInfoMultiVariateCommon implements
 		addObservations(source, destination);
 	}
 
+	@Override
+	public void addObservations(double[] source, double[][] destination) throws Exception {
+		
+		if (dimensionsSource != 1) {
+			throw new Exception("The number of source dimensions (having been initialised to " +
+					dimensionsSource + ") can only be 1 when " +
+					"the partially univariate addObservations(double[],double[][]) and " + 
+					"setObservations(double[],double[][]) methods are called");
+		}
+		addObservations(MatrixUtils.reshape(source, source.length, 1),
+						destination);
+	}
+	
+	@Override
+	public void addObservations(double[][] source, double[] destination) throws Exception {
+		
+		if (dimensionsDest != 1) {
+			throw new Exception("The number of dest dimensions (having been initialised to " +
+					dimensionsDest + ") can only be 1 when " +
+					"the partially univariate addObservations(double[][],double[]) and " + 
+					"setObservations(double[][],double[]) methods are called");
+		}
+		addObservations(source,
+				MatrixUtils.reshape(destination, destination.length, 1));
+	}
+	
 	public void addObservations(double[][] source, double[][] destination,
 			int startTime, int numTimeSteps) throws Exception {
 		if (vectorOfSourceObservations == null) {

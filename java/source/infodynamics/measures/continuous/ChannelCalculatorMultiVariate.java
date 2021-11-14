@@ -74,6 +74,46 @@ public interface ChannelCalculatorMultiVariate extends ChannelCalculatorCommon {
 	public void setObservations(double[][] source, double[][] destination) throws Exception;
 
 	/**
+	 * Sets a single series from which to compute the PDF for the channel measure --
+	 * available ONLY if sourceDimensions was initialised
+	 * to 1.
+	 * Cannot be called in conjunction with other methods for setting/adding
+	 * observations.
+	 * 
+	 * <p>The supplied series are certainly (multivariate) time-series for time-series measures
+	 * such as transfer entropy, however may be simply a set of separate observations
+	 * for the mutual information without a time interpretation.
+	 * 
+	 * @param source series of univariate observations for the source variable
+	 *  (first index is time or observation index, second is variable number)
+	 * @param destination series of multivariate observations for the destination variable
+	 *  (first index is time or observation index, second is variable number).
+	 *  Length must match <code>source</code>, and their indices must correspond.
+	 * @throws Exception
+	 */
+	public void setObservations(double[] source, double[][] destination) throws Exception;
+
+	/**
+	 * Sets a single series from which to compute the PDF for the channel measure --
+	 * available ONLY if destDimensions was initialised
+	 * to 1.
+	 * Cannot be called in conjunction with other methods for setting/adding
+	 * observations.
+	 * 
+	 * <p>The supplied series are certainly (multivariate) time-series for time-series measures
+	 * such as transfer entropy, however may be simply a set of separate observations
+	 * for the mutual information without a time interpretation.
+	 * 
+	 * @param source series of multivariate observations for the source variable
+	 *  (first index is time or observation index, second is variable number)
+	 * @param destination series of univariate observations for the destination variable
+	 *  (first index is time or observation index, second is variable number).
+	 *  Length must match <code>source</code>, and their indices must correspond.
+	 * @throws Exception
+	 */
+	public void setObservations(double[][] source, double[] destination) throws Exception;
+
+	/**
 	 * Sets a single pair of univariate series from which to compute the PDF for the channel measure --
 	 * available ONLY if both sourceDimensions and destDimensions were initialised
 	 * to 1.
@@ -125,6 +165,60 @@ public interface ChannelCalculatorMultiVariate extends ChannelCalculatorCommon {
 	 * @throws Exception
 	 */
 	public void addObservations(double[][] source, double[][] destination) throws Exception;
+	
+	/**
+	 * <p>Adds a new set of observations to update the PDFs with - is
+	 * intended to be called multiple times.
+	 * Available ONLY if sourceDimensions was initialised to 1.
+	 * Must be called after {@link #startAddObservations()}; call
+	 * {@link #finaliseAddObservations()} once all observations have
+	 * been supplied.</p>
+	 * 
+	 * <p><b>Important:</b> this does not append these observations to the previously
+	 *  supplied observations, but treats them independently - i.e. measurements
+	 *  such as the transfer entropy will not join them up to examine k
+	 *  consecutive values in time.</p>
+	 *  
+	 * <p>Note that the arrays source and destination must not be over-written by the user
+	 *  until after finaliseAddObservations() has been called
+	 *  (they are not copied by this method necessarily, but the method
+	 *  may simply hold a pointer to them).</p>
+	 * 
+	 * @param source series of uniivariate observations for the source variable
+	 *  (first index is time or observation index, second is variable number)
+	 * @param destination series of multivariate observations for the destination variable
+	 *  (first index is time or observation index, second is variable number).
+	 *  Length must match <code>source</code>, and their indices must correspond.
+	 * @throws Exception
+	 */
+	public void addObservations(double[] source, double[][] destination) throws Exception;
+	
+	/**
+	 * <p>Adds a new set of observations to update the PDFs with - is
+	 * intended to be called multiple times.
+	 * Available ONLY if destDimensions was initialised to 1.
+	 * Must be called after {@link #startAddObservations()}; call
+	 * {@link #finaliseAddObservations()} once all observations have
+	 * been supplied.</p>
+	 * 
+	 * <p><b>Important:</b> this does not append these observations to the previously
+	 *  supplied observations, but treats them independently - i.e. measurements
+	 *  such as the transfer entropy will not join them up to examine k
+	 *  consecutive values in time.</p>
+	 *  
+	 * <p>Note that the arrays source and destination must not be over-written by the user
+	 *  until after finaliseAddObservations() has been called
+	 *  (they are not copied by this method necessarily, but the method
+	 *  may simply hold a pointer to them).</p>
+	 * 
+	 * @param source series of multivariate observations for the source variable
+	 *  (first index is time or observation index, second is variable number)
+	 * @param destination series of uniivariate observations for the destination variable
+	 *  (first index is time or observation index, second is variable number).
+	 *  Length must match <code>source</code>, and their indices must correspond.
+	 * @throws Exception
+	 */
+	public void addObservations(double[][] source, double[] destination) throws Exception;
 	
 	/**
 	 * <p>Adds a new set of univariate observations to update the PDFs with.
