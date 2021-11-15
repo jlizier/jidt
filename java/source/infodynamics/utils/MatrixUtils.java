@@ -820,6 +820,51 @@ public class MatrixUtils {
 	}
 
 	/**
+	 * Multiplies all items in an array times a constant value
+	 * 
+	 * @param array
+	 * @param value
+	 * @return array * constant value
+	 */
+	public static int[] multiply(int[] array, int value) throws Exception {
+		int[] returnValues = new int[array.length];
+		for (int i = 0; i < returnValues.length; i++) {
+			returnValues[i] = array[i] * value;
+		}
+		return returnValues;
+	}
+
+	/**
+	 * Multiplies all items in an array times a constant value
+	 * 
+	 * @param array
+	 * @param value
+	 * @return array * constant value
+	 */
+	public static double[] multiply(int[] array, double value) throws Exception {
+		double[] returnValues = new double[array.length];
+		for (int i = 0; i < returnValues.length; i++) {
+			returnValues[i] = array[i] * value;
+		}
+		return returnValues;
+	}
+
+	/**
+	 * Multiplies all items in an array times a constant value
+	 * 
+	 * @param array
+	 * @param value
+	 * @return array * constant value
+	 */
+	public static double[] multiply(double[] array, double value) throws Exception {
+		double[] returnValues = new double[array.length];
+		for (int i = 0; i < returnValues.length; i++) {
+			returnValues[i] = array[i] * value;
+		}
+		return returnValues;
+	}
+
+	/**
 	 * Return the matrix product A x B
 	 * 
 	 * @param A mxn matrix
@@ -1527,6 +1572,84 @@ public class MatrixUtils {
 	 */
 	public static double[][] selectColumns(double matrix[][], List<Integer> columns) {
 		double[][] data = new double[matrix.length][columns.size()];
+		for (int r = 0; r < matrix.length; r++) {
+			for (int cIndex = 0; cIndex < columns.size(); cIndex++) {
+				data[r][cIndex] = matrix[r][columns.get(cIndex)];
+			}
+		}
+		return data;
+	}
+
+	/**
+	 * Extract the required columns from the matrix
+	 * 
+	 * @param matrix
+	 * @param fromCol
+	 * @param cols
+	 * @return
+	 */
+	public static int[][] selectColumns(int matrix[][],
+			int fromCol, int cols) {
+		int[][] data = new int[matrix.length][cols];
+		for (int r = 0; r < matrix.length; r++) {
+			for (int cIndex = 0; cIndex < cols; cIndex++) {
+				data[r][cIndex] = matrix[r][cIndex + fromCol];
+			}
+		}
+		return data;
+	}
+
+	/**
+	 * Extract the required columns from the matrix
+	 * 
+	 * @param matrix
+	 * @param columns
+	 * @return
+	 */
+	public static int[][] selectColumns(int matrix[][], int columns[]) {
+		int[][] data = new int[matrix.length][columns.length];
+		for (int r = 0; r < matrix.length; r++) {
+			for (int cIndex = 0; cIndex < columns.length; cIndex++) {
+				data[r][cIndex] = matrix[r][columns[cIndex]];
+			}
+		}
+		return data;
+	}
+
+	/**
+	 * Extract the required columns from the matrix
+	 * 
+	 * @param matrix
+	 * @param includeColumnFlags
+	 * @return
+	 */
+	public static int[][] selectColumns(int matrix[][], boolean includeColumnFlags[]) {
+		Vector<Integer> v = new Vector<Integer>();
+
+		for (int i = 0; i < includeColumnFlags.length; i++) {
+			if (includeColumnFlags[i]) {
+				v.add(i);
+			}
+		}
+		int[][] data = new int[matrix.length][v.size()];
+		for (int r = 0; r < matrix.length; r++) {
+			for (int outputColumnIndex = 0; outputColumnIndex < v.size(); outputColumnIndex++) {
+				int outputColumn = v.get(outputColumnIndex);
+				data[r][outputColumnIndex] = matrix[r][outputColumn];
+			}
+		}
+		return data;
+	}
+
+	/**
+	 * Extract the required columns from the matrix
+	 * 
+	 * @param matrix
+	 * @param columns
+	 * @return
+	 */
+	public static int[][] selectColumns(int matrix[][], List<Integer> columns) {
+		int[][] data = new int[matrix.length][columns.size()];
 		for (int r = 0; r < matrix.length; r++) {
 			for (int cIndex = 0; cIndex < columns.size(); cIndex++) {
 				data[r][cIndex] = matrix[r][columns.get(cIndex)];
