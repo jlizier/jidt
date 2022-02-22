@@ -86,14 +86,14 @@ public class GPUPerformanceTester extends TestCase {
     startTime = Calendar.getInstance().getTimeInMillis();
     miCalc.initialise(1,1);
     miCalc.setObservations(source, dest);
-    cpu_val = miCalc.computeSignificance(nb_surrogates).getMeanOfDistribution();
+    cpu_val = miCalc.computeSignificance(nb_surrogates).actualValue;
     cpu_duration = Calendar.getInstance().getTimeInMillis() - startTime;
 
     miCalc.setProperty("USE_GPU", "true");
     miCalc.initialise(1,1);
     startTime = Calendar.getInstance().getTimeInMillis();
     miCalc.setObservations(source, dest);
-    gpu_val = miCalc.computeSignificance(nb_surrogates).getMeanOfDistribution();
+    gpu_val = miCalc.computeSignificance(nb_surrogates).actualValue;
     gpu_duration = Calendar.getInstance().getTimeInMillis() - startTime;
 
     assertEquals(cpu_val, gpu_val, 0.0001);
@@ -124,12 +124,12 @@ public class GPUPerformanceTester extends TestCase {
       return;
     }
 
-    int timeSteps = 10000;
+    int timeSteps = 1000;
 		RandomGenerator rg = new RandomGenerator();
 		double[] source = rg.generateNormalData(timeSteps, 0, 1);
 		double[] dest = rg.generateNormalData(timeSteps, 0, 1);
 
-    compareGPUPerformance(source, dest, "Random low-dimensional data");
+    compareGPUPerformanceSurrogates(source, dest, 150, "Random low-dimensional data");
 
     return;
   }

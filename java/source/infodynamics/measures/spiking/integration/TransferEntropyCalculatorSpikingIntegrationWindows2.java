@@ -723,33 +723,33 @@ public class TransferEntropyCalculatorSpikingIntegrationWindows2 implements
 
 		//kdTreeDestNext.setNormType(3);
 		
-		nnPQ =
-		    kdTreeDestNext.findKNearestNeighbours(
-								   Knns, eventIndexWithinType);
+		// nnPQ =
+		//     kdTreeDestNext.findKNearestNeighbours(
+		// 						   Knns, eventIndexWithinType);
 			
-		// Find eps_{x,y,z} as the maximum x, y and z norms amongst this set:
-		radius_sourcePast = 0.0;
-		radius_destPast = 0.0;
-		radius_destNext = 0.0;
-		radius_destNext_sampleIndex = -1;
-		radius_max = 0;
-		for (int j = 0; j < Knns; j++) {
-		    // Take the furthest remaining of the nearest neighbours from the PQ:
-		    NeighbourNodeData nnData = nnPQ.poll();
-		    /*if (nnData.norms[0] > radius_sourcePast) {
-			radius_sourcePast = nnData.norms[0];
-			}*/
-		    if (nnData.norms[0] > radius_destPast) {
-			radius_destPast = nnData.norms[0];
-		    }
-		    if (nnData.norms[1] > radius_destNext) {
-			radius_destNext = nnData.norms[1];
-			radius_destNext_sampleIndex = nnData.sampleIndex;
-		    }
-		    if(nnData.distance > radius_max) {
-			radius_max = nnData.distance;
-		    }
-		}
+		// // Find eps_{x,y,z} as the maximum x, y and z norms amongst this set:
+		// radius_sourcePast = 0.0;
+		// radius_destPast = 0.0;
+		// radius_destNext = 0.0;
+		// radius_destNext_sampleIndex = -1;
+		// radius_max = 0.0;
+		// for (int j = 0; j < Knns; j++) {
+		//     // Take the furthest remaining of the nearest neighbours from the PQ:
+		//     NeighbourNodeData nnData = nnPQ.poll();
+		//     /*if (nnData.norms[0] > radius_sourcePast) {
+		// 	radius_sourcePast = nnData.norms[0];
+		// 	}*/
+		//     if (nnData.norms[0] > radius_destPast) {
+		// 	radius_destPast = nnData.norms[0];
+		//     }
+		//     if (nnData.norms[1] > radius_destNext) {
+		// 	radius_destNext = nnData.norms[1];
+		// 	radius_destNext_sampleIndex = nnData.sampleIndex;
+		//     }
+		//     if(nnData.distance > radius_max) {
+		// 	radius_max = nnData.distance;
+		//     }
+		// }
 
 		//radius_max = Math.max(radius_destPast, radius_destNext);
 		
@@ -834,8 +834,8 @@ public class TransferEntropyCalculatorSpikingIntegrationWindows2 implements
 	    double rawRateGivenSourceAndDest = (double) Knns / timeInWindowWithMatchingJointHistories;
 	    double rawRateGivenDest = (double) countOfDestNextMatched / timeInWindowWithMatchingDestHistory;
 	    // Attempt at bias correction:
-	    double logRateGivenSourceAndDestCorrected = -Math.log(timeInWindowWithMatchingJointHistories);
-	    double logRateGivenDestCorrected = -Math.log(timeInWindowWithMatchingDestHistory);
+	    double logRateGivenSourceAndDestCorrected = MathsUtils.digamma(Knns) - Math.log(timeInWindowWithMatchingJointHistories);
+	    double logRateGivenDestCorrected = MathsUtils.digamma(countOfDestNextMatched) - Math.log(timeInWindowWithMatchingDestHistory);
 	    //System.out.println(logRateGivenSourceAndDestCorrected + " " + logRateGivenDestCorrected);
 	    //============================
 			

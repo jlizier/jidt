@@ -14,11 +14,11 @@ JIDT is distributed under the [GNU GPL v3 license](http://www.gnu.org/licenses/g
 
 # Getting started
 
- 1. [Download](../../wiki/Downloads) and [Installation](../../wiki/Installation) is very easy!
-   1. _Quick start_: download the latest [v1.4 full distribution](http://lizier.me/joseph/software/jidt/download.php?file=infodynamics-dist-1.4.zip) (suitable for all platforms) and see the readme.txt file therein.
- 1. [Documentation](../../wiki/Documentation) including: the paper describing JIDT at [arXiv:1408.3270](http://arxiv.org/abs/1408.3270) (distributed with the toolkit), a [Tutorial](../../wiki/Tutorial), and [Javadocs (v1.4 here)](http://lizier.me/joseph/software/jidt/javadocs/v1.4/);
- 1. [Demos](../../wiki/Demos) are included with the full distribution, including a [GUI app](../../wiki/AutoAnalyser) for automatic analysis and code generation (see picture below), [simple java demos](../../wiki/SimpleJavaExamples) and [cellular automata (CA) demos](../../wiki/CellularAutomataDemos).
-  1. These Java tools can easily be used in [Matlab/Octave](../../wiki/OctaveMatlabExamples), [Python](../../wiki/PythonExamples), [R](../../wiki/R_Examples), [Julia](../../wiki/JuliaExamples) and [Clojure](../../wiki/Clojure_Examples)! (click on each language here for examples)
+1. [Download](../../wiki/Downloads) and [Installation](../../wiki/Installation) is very easy!
+    1. _Quick start_: take a `git clone` or download the latest [v1.5 full distribution](http://lizier.me/joseph/software/jidt/download.php?file=infodynamics-dist-1.5.zip) (suitable for all platforms) and see the readme.txt file therein.
+1. [Documentation](../../wiki/Documentation) including: the paper describing JIDT at [arXiv:1408.3270](http://arxiv.org/abs/1408.3270) (distributed with the toolkit), a [Tutorial](../../wiki/Tutorial), and [Javadocs (v1.5 here)](http://lizier.me/joseph/software/jidt/javadocs/v1.5/);
+1. [Demos](../../wiki/Demos) are included with the full distribution, including a [GUI app](../../wiki/AutoAnalyser) for automatic analysis and code generation (see picture below), [simple java demos](../../wiki/SimpleJavaExamples) and [cellular automata (CA) demos](../../wiki/CellularAutomataDemos).
+    1. These Java tools can easily be used in [Matlab/Octave](../../wiki/OctaveMatlabExamples), [Python](../../wiki/PythonExamples), [R](../../wiki/R_Examples), [Julia](../../wiki/JuliaExamples) and [Clojure](../../wiki/Clojure_Examples)! (click on each language here for examples)
 
 ![Computing in the GUI app image](https://raw.githubusercontent.com/jlizier/jidt/master/web/AutoAnalyserGUI-2-Compute.png)
 
@@ -38,6 +38,16 @@ And please [let me know](mailto:joseph.lizier_AT_gmail.com) about any publicatio
 See other [PublicationsUsingThisToolkit](../../wiki/PublicationsUsingThisToolkit).
 
 # News
+
+_26/11/2018_ - New jar and full distribution files available for **release v1.5**; Changes for v1.5 include:
+Added GPU (cuda) capability for KSG Conditional Mutual Information calculator (proper documentation to come), brief [wiki page](../../wiki/GPU) and unit tests included;
+Added auto-embedding for TE/AIS with multivariate KSG, and univariate and multivariate Gaussian estimator (plus unit tests), for Ragwitz criteria and Maximum bias-corrected AIS, and also added Maximum bias corrected AIS and TE to handle source embedding as well;
+Kozachenko entropy estimator adds noise to data by default;
+Added bias-correction property to Gaussian and Kernel estimators for MI and conditional MI, including with surrogates (only option for kernel);
+Enabled use of different bases for different variables in MI discrete estimator;
+All new above features enabled in AutoAnalyser;
+Added drop-down menus for parameters in AutoAnalyser;
+Included long-form lecture slides in course folder;
 
 _26/11/2017_ - New jar and full distribution files available for **release v1.4**; Changes for v1.4 include:
 Major expansion of functionality for AutoAnalysers: adding Launcher applet and capability to double click jar to launch, added Entropy, CMI, CTE and AIS AutoAnalysers, also added binned estimator type, added all variables/pairs analysis, added statistical significance analysis, and ensured functionality of generated Python code with Python3;

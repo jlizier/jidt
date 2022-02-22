@@ -275,10 +275,10 @@ public class KdTree extends NearestNeighbourSearcher {
 			// Could remove these since the code is now functional,
 			//  but may be better to leave them in just in case the code breaks:
 			if (leftIndex > leftStart + leftNumPoints) {
-				throw new RuntimeException("Exceeded expected number of points on left");
+				throw new RuntimeException("Exceeded expected number of points on left - likely had an NaN in the data");
 			}
 			if (rightIndex > rightStart + rightNumPoints) {
-				throw new RuntimeException("Exceeded expected number of points on right");
+				throw new RuntimeException("Exceeded expected number of points on right - likely had an NaN in the data");
 			}
 			// Update the pointer for the sorted indices for this dimension,
 			//  and keep the new temporary array
@@ -1384,19 +1384,19 @@ public class KdTree extends NearestNeighbourSearcher {
 	}
 	
 	@Override
-	public void findPointsWithinR(int sampleIndex,
+	public int findPointsWithinR(int sampleIndex,
 			double r, boolean allowEqualToR, boolean[] isWithinR,
 			int[] indicesWithinR) {
 		if (rootNode == null) {
 			indicesWithinR[0] = -1;
-			return;
+			return 0;
 		}
 		int currentIndexInIndicesWithinR =
 				findPointsWithinR(sampleIndex,
 				rootNode, 0, r, allowEqualToR, isWithinR,
 				indicesWithinR, 0);
 		indicesWithinR[currentIndexInIndicesWithinR] = -1;
-		return;
+		return currentIndexInIndicesWithinR;
 	}
 
 	/**
@@ -2510,20 +2510,21 @@ public class KdTree extends NearestNeighbourSearcher {
 	 * @param allowEqualToR if true, then count points at radius r also, otherwise only those strictly within r
 	 * @param isWithinR the array MUST be passed in with all points set to false initially, and is returned indicating whether each sample was found to be within r of that at sampleIndex.
 	 * @param indicesWithinR a list of array indices for points marked as true in isWithinR, terminated with a -1 value.
+	 * @return the number of points found to match
 	 */
-	public void findPointsWithinRs(int sampleIndex,
+	public int findPointsWithinRs(int sampleIndex,
 			double[] rs, int dynCorrExclTime, boolean allowEqualToR,
 			boolean[] isWithinR, int[] indicesWithinR) {
 		if (rootNode == null) {
 			indicesWithinR[0] = -1;
-			return;
+			return 0;
 		}
 		int currentIndexInIndicesWithinR =
 				findPointsWithinRs(sampleIndex,
 				rootNode, 0, rs, dynCorrExclTime, allowEqualToR, isWithinR,
 				indicesWithinR, 0);
 		indicesWithinR[currentIndexInIndicesWithinR] = -1;
-		return;
+		return currentIndexInIndicesWithinR;
 	}
 
 	/**

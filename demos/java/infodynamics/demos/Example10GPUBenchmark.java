@@ -67,9 +67,10 @@ public class Example10GPUBenchmark {
     miCalc.setProperty("k", "4");
     miCalc.initialise(src[0].length, tgt[0].length);
     miCalc.setObservations(src, tgt);
+    int nb_surrogates = 150;
     double[] timeAndValue = new double[2];
     long startTime = System.nanoTime();
-    timeAndValue[1] = miCalc.computeAverageLocalOfObservations();
+    timeAndValue[1] = miCalc.computeSignificance(nb_surrogates).actualValue;
     timeAndValue[0] = (System.nanoTime() - startTime)/1000000.0;
     return timeAndValue;
   }

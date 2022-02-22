@@ -326,8 +326,9 @@ public abstract class NearestNeighbourSearcher {
 	 *  found to be within r of that at sampleIndex.
 	 * @param indicesWithinR a list of array indices
 	 *  for points marked as true in isWithinR, terminated with a -1 value.
+	 * @return the number of matching points found
 	 */
-	public abstract void findPointsWithinR(
+	public abstract int findPointsWithinR(
 			int sampleIndex, double r,
 			boolean allowEqualToR, boolean[] isWithinR, int[] indicesWithinR);
 
