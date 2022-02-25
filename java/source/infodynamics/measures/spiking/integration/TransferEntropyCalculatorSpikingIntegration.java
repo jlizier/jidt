@@ -119,6 +119,15 @@ public class TransferEntropyCalculatorSpikingIntegration implements TransferEntr
 	 */
 	protected double noiseLevel = (double) 1e-8;
 
+        /**
+	 * Whether to use the jittered sampling approach. Useful for bursty spike trains. Explained in methods section of
+	 * doi.org/10.1101/2021.06.29.450432
+	 */
+        protected boolean jitteredSamplesForSurrogates = false;
+        public static final String DO_JITTERED_SAMPLING_PROP_NAME = "DO_JITTERED_SAMPLING";
+        protected double jitteredSamplingNoiseLevel = 1;
+        public static final String JITTERED_SAMPLING_NOISE_LEVEL = "JITTERED_SAMPLING_NOISE_LEVEL";
+
 	/**
 	 * Stores whether we are in debug mode
 	 */
@@ -233,6 +242,10 @@ public class TransferEntropyCalculatorSpikingIntegration implements TransferEntr
 			}
 		} else if (propertyName.equalsIgnoreCase(KNNS_PROP_NAME)) {
 			Knns = Integer.parseInt(propertyValue);
+		} else if (propertyName.equalsIgnoreCase(DO_JITTERED_SAMPLING_PROP_NAME)) {
+		        jitteredSamplesForSurrogates = Boolean.parseBoolean(propertyValue);
+		} else if (propertyName.equalsIgnoreCase(JITTERED_SAMPLING_NOISE_LEVEL)) {
+		        jitteredSamplingNoiseLevel = Double.parseDouble(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_K_PERM)) {
 			kPerm = Integer.parseInt(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
@@ -397,7 +410,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements TransferEntr
 			}
 			processEventsFromSpikingTimeSeries(sourceSpikeTimes, destSpikeTimes, conditionalSpikeTimes, conditioningEmbeddingsFromSpikes,
 							   jointEmbeddingsFromSpikes, conditioningEmbeddingsFromSamples, jointEmbeddingsFromSamples,
-							   numSamplesMultiplier);
+							   numSamplesMultiplier, false);
 		}
 
 
@@ -588,18 +601,18 @@ public class TransferEntropyCalculatorSpikingIntegration implements TransferEntr
 	}
 
 	protected double[] generateRandomSampleTimes(double[] sourceSpikeTimes, double[] destSpikeTimes, double[][] conditionalSpikeTimes,
-						   double actualNumSamplesMultiplier, int firstTargetIndexOfEmbedding) {
+						     double actualNumSamplesMultiplier, int firstTargetIndexOfEmbedding, boolean doJitteredSampling) {
 
 		double sampleLowerBound = destSpikeTimes[firstTargetIndexOfEmbedding];
 		double sampleUpperBound = destSpikeTimes[destSpikeTimes.length - 1];
 		int num_samples = (int) Math.round(actualNumSamplesMultiplier * (destSpikeTimes.length - firstTargetIndexOfEmbedding + 1));
 		double[] randomSampleTimes = new double[num_samples];
 		Random rand = new Random();
-		boolean doCellCulture = true;
-		if (doCellCulture) {
+		if (doJitteredSampling) {
+		    //System.out.println("jittering " + jitteredSamplingNoiseLevel);
 			for (int i = 0; i < randomSampleTimes.length; i++) {
 				randomSampleTimes[i] = destSpikeTimes[firstTargetIndexOfEmbedding + (i % (destSpikeTimes.length - firstTargetIndexOfEmbedding - 1))]
-					+ 200 * (rand.nextDouble() - 0.5);
+					+ jitteredSamplingNoiseLevel * (rand.nextDouble() - 0.5);
 				//randomSampleTimes[i] = -1.0;
 				if ((randomSampleTimes[i] > sampleUpperBound) || (randomSampleTimes[i] < sampleLowerBound)) {
 					randomSampleTimes[i] = sampleLowerBound + rand.nextDouble() * (sampleUpperBound - sampleLowerBound);
@@ -622,12 +635,13 @@ public class TransferEntropyCalculatorSpikingIntegration implements TransferEntr
 	protected void processEventsFromSpikingTimeSeries(double[] sourceSpikeTimes, double[] destSpikeTimes, double[][] conditionalSpikeTimes,
 							  Vector<double[]> conditioningEmbeddingsFromSpikes, Vector<double[]> jointEmbeddingsFromSpikes,
 							  Vector<double[]> conditioningEmbeddingsFromSamples, Vector<double[]> jointEmbeddingsFromSamples,
-							  double actualNumSamplesMultiplier)
+							  double actualNumSamplesMultiplier, boolean doJitteredSampling)
 			throws Exception {
 
 		int firstTargetIndexOfEmbedding = getFirstDestIndex(sourceSpikeTimes, destSpikeTimes, conditionalSpikeTimes, true);
 		double[] randomSampleTimes = generateRandomSampleTimes(sourceSpikeTimes, destSpikeTimes, conditionalSpikeTimes,
-								       actualNumSamplesMultiplier, firstTargetIndexOfEmbedding);
+								       actualNumSamplesMultiplier, firstTargetIndexOfEmbedding,
+								       doJitteredSampling);
 
 		makeEmbeddingsAtPoints(destSpikeTimes, firstTargetIndexOfEmbedding, sourceSpikeTimes, destSpikeTimes, conditionalSpikeTimes,
 				       conditioningEmbeddingsFromSpikes, jointEmbeddingsFromSpikes);
@@ -637,12 +651,13 @@ public class TransferEntropyCalculatorSpikingIntegration implements TransferEntr
 
 	protected void processEventsFromSpikingTimeSeries(double[] sourceSpikeTimes, double[] destSpikeTimes, double[][] conditionalSpikeTimes,
 							  Vector<double[]> conditioningEmbeddingsFromSamples, Vector<double[]> jointEmbeddingsFromSamples,
-							  double actualNumSamplesMultiplier)
+							  double actualNumSamplesMultiplier, boolean doJitteredSampling)
 			throws Exception {
 
 		int firstTargetIndexOfEmbedding = getFirstDestIndex(sourceSpikeTimes, destSpikeTimes, conditionalSpikeTimes, false);
 		double[] randomSampleTimes = generateRandomSampleTimes(sourceSpikeTimes, destSpikeTimes, conditionalSpikeTimes,
-								       actualNumSamplesMultiplier, firstTargetIndexOfEmbedding);
+								       actualNumSamplesMultiplier, firstTargetIndexOfEmbedding,
+								       doJitteredSampling);
 		makeEmbeddingsAtPoints(randomSampleTimes, 0, sourceSpikeTimes, destSpikeTimes, conditionalSpikeTimes,
 				       conditioningEmbeddingsFromSamples, jointEmbeddingsFromSamples);
 	}
@@ -850,9 +865,15 @@ public class TransferEntropyCalculatorSpikingIntegration implements TransferEntr
 				} else {
 					conditionalSpikeTimes = new double[][] {};
 				}
-				processEventsFromSpikingTimeSeries(sourceSpikeTimes, destSpikeTimes, conditionalSpikeTimes,
-								   resampledConditioningEmbeddingsFromSamples, resampledJointEmbeddingsFromSamples,
-								   surrogateNumSamplesMultiplier);
+				if (jitteredSamplesForSurrogates) {
+				    processEventsFromSpikingTimeSeries(sourceSpikeTimes, destSpikeTimes, conditionalSpikeTimes,
+								       resampledConditioningEmbeddingsFromSamples, resampledJointEmbeddingsFromSamples,
+								       surrogateNumSamplesMultiplier, true);
+				} else {
+				    processEventsFromSpikingTimeSeries(sourceSpikeTimes, destSpikeTimes, conditionalSpikeTimes,
+								       resampledConditioningEmbeddingsFromSamples, resampledJointEmbeddingsFromSamples,
+								       surrogateNumSamplesMultiplier, false);
+				}
 			}
 			// Convert the vectors to arrays so that they can be put in the trees
 			double[][] arrayedResampledConditioningEmbeddingsFromSamples = new double[resampledConditioningEmbeddingsFromSamples.size()][numDestPastIntervals];
