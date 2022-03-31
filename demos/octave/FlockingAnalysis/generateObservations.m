@@ -35,7 +35,7 @@ function [D, Dpast, S, RelSourcePos, safeDynamicCorrelationExclusionSamples] = g
 %%  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 %%
 
-% Call internal utility to put filename lists in a common format
+% Call utility to put filename lists in a common format
 files = processFilenames(properties.files);
 
 % initialize series for storing the samples:
@@ -452,28 +452,6 @@ function [diff] = angleDifferencePiOn2(angleA, angleB)
 		diff = pi/2 - (diff - pi/2);
 	elseif (diff < -pi/2)
 		diff = -pi/2 + (-pi/2 - diff);
-	end
-end
-
-% Turns the fileList into a cell array of file names. The fileList can be either:
-% a. a cell array of file names, e.g.: {'file1.xlsx', 'file2.xlsx'}
-% b. a call to ls or ls with an argument, e.g. ls('*.xlsx')
-% c. a space or tab separated character row vector of file names
-% d. a character matrix of filenames (each filename on a separate row)
-function fileCellArray = processFilenames(fileList)
-	if (iscell(fileList))
-		% We're done already:
-		fileCellArray = fileList;
-	elseif (isvector(fileList))
-		% We have a row vector of space/tab separate filenames:
-		fileCellArray = strsplit(strtrim(fileList)); % extra strtrim to remove trailing \n's
-	elseif (ismatrix(fileList))
-		fileCellArray = {};
-		for r = 1 : size(fileList, 1)
-			fileCellArray{r} = strtrim(fileList(r,:));
-		end
-	else
-		error('fileList appears to be of an incorrect format\n');
 	end
 end
 

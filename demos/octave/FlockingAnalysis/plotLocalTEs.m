@@ -4,7 +4,7 @@ function plotLocalTEs(properties)
 % Author: Joseph T. Lizier, 2019
 %
 % Inputs:
-% - properties (required) - object with properties for the calculations,
+% - properties - object with properties for the calculations,
 %   with sub-members as specificied in the loadProperties.m file. If not supplied
 %   the properties are loaded from loadProperties.m
 
@@ -66,8 +66,8 @@ function plotLocalTEs(properties)
 	else
 		distXY = relDistance;
 	end
-	distInFront = distXY .* cos(relTheta);
-	distToLeft = distXY .* sin(relTheta);
+	distInFront = distXY .* cos(relTheta); % X coordinate
+	distToLeft = distXY .* sin(relTheta); % Y coordinate
 	
 	% Plot where all the raw positions are:
 	%  Will need to turn this off when we have too many
@@ -98,6 +98,8 @@ function plotLocalTEs(properties)
 		% Plot the TE in distance-phi plane
 		makePolarBinnedPlot(relPhi, relDistance, localTranEntropy, 12, 10, true, true);
 		title('Average TE in each bin (r, \phi)');
+		xlabel('r_{XY} [mm]');
+		ylabel('z [mm]');
 	end
 end
 
