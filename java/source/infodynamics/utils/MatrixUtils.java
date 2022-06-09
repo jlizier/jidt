@@ -4866,9 +4866,16 @@ public class MatrixUtils {
 			compartmentSize = (int)((double)(i+1)*(double)(data.length)/(double)numBins)-1;
 			// System.out.println(compartmentSize);
 			cutOffValues[i]=tempData[compartmentSize];
+			// If there are NaNs in the data (which there shouldn't be, they get sorted into the max positions.
+			// Deal with this by assigning the max actual data value to the first bin that encounters this
+			// (if there are others, they won't get any points. User should not be supplying NaNs anyway.
+			if (Double.isNaN(cutOffValues[i])) {
+				cutOffValues[i] = MatrixUtils.max(data);
+			}
 		}
 		
-		for (int i=0;i<data.length;i++){				
+		for (int i=0;i<data.length;i++){
+			newData[i] = numBins-1; // Initialise to the maximum, which will catch any NaNs (which shouldn't be here anyway)
 			for(int m=0;m<numBins;m++){
 				if (data[i] <= cutOffValues[m]){
 					newData[i] = m;
