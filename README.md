@@ -19,7 +19,7 @@ JIDT is distributed under the [GNU GPL v3 license](http://www.gnu.org/licenses/g
 # Getting started
 
 1. [Download](../../wiki/Downloads) and [Installation](../../wiki/Installation) is very easy!
-    1. _Quick start_: take a `git clone` or download the latest [v1.5 full distribution](http://lizier.me/joseph/software/jidt/download.php?file=infodynamics-dist-1.5.zip) (suitable for all platforms) and see the readme.txt file therein.
+    1. _Quick start_: take a `git clone` (then build via [AntScripts](../../wiki/AntScripts)) OR download the latest [v1.5 full distribution](http://lizier.me/joseph/software/jidt/download.php?file=infodynamics-dist-1.5.zip) (suitable for all platforms) and see the readme.txt file therein.
 1. [Documentation](../../wiki/Documentation) including: the paper describing JIDT at [arXiv:1408.3270](http://arxiv.org/abs/1408.3270) (distributed with the toolkit), a (beta) [Course](../../wiki/Course) including short video lectures and a shorter [Tutorial](../../wiki/Tutorial), and [Javadocs (v1.5 here)](http://lizier.me/joseph/software/jidt/javadocs/v1.5/);
 1. [Demos](../../wiki/Demos) are included with the full distribution, including a [GUI app](../../wiki/AutoAnalyser) for automatic analysis and code generation (see picture below), [simple java demos](../../wiki/SimpleJavaExamples) and [cellular automata (CA) demos](../../wiki/CellularAutomataDemos).
     1. These Java tools can easily be used in [Matlab/Octave](../../wiki/OctaveMatlabExamples), [Python](../../wiki/PythonExamples), [R](../../wiki/R_Examples), [Julia](../../wiki/JuliaExamples) and [Clojure](../../wiki/Clojure_Examples)! (click on each language here for examples)
