@@ -466,7 +466,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
         returnValues = new double[numTimePointsToComputeFor];
       } else {
         // We're computing average MI
-        returnValues = new double[MiKraskovThreadRunner.RETURN_ARRAY_LENGTH];
+        returnValues = new double[MiKraskovThreadRunner.RETURN_ARRAY_LENGTH_MI];
       }
       
       // Distribute the observations to the threads for the parallel processing
@@ -504,7 +504,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
               returnValues, runners[t].myStartTimePoint, runners[t].numberOfTimePoints);
         } else {
           // We're computing the average MI, keep the running sums of digammas and counts
-          MatrixUtils.addInPlace(returnValues, runners[t].getReturnValues());
+          MatrixUtils.addInPlace(returnValues, runners[t].getReturnValues(), MiKraskovThreadRunner.RETURN_ARRAY_LENGTH_MI);
         }
       }
     }
@@ -533,6 +533,57 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
     }
   }
   
+  /**
+   * Use the same nearest neighbour searches to return a KL-based 
+   * conditional entropy, sharing the neighbour search radius.
+   * With reference to the KSG paper, this takes the KL-based estimator for H(X) (eqn 22) and adds it to the negative of MI.
+   * It should also be noted that if the variables are normalised, this changes the absolute values of the entropies,
+   *  and they become relative to normalised variables.
+   * Since this is a side-method for this estimator, it is currently is only implemented single threaded on CPU.
+   * It should also be considered experimental - this will eventually be moved to its own estimator.
+   * 
+   * @return the average conditional entropy of variable1 given variable2 in nats (not bits!)
+   */
+  public double computeAverageConditionalEntropy() throws Exception {
+    // Compute the MI
+    double startClockTime = Calendar.getInstance().getTimeInMillis();
+    double conditionalEntropy = 0.0;
+    conditionalEntropy = computeFromObservations(false, null)[0];
+    
+    int N = sourceObservations.length; // number of observations for the PDFs
+    
+    // Single-threaded implementation:
+    ensureKdTreesConstructed();
+    double avDigammaCond = 0;
+    double avLog2xkNNDist = 0;
+    for (int t = 0; t < N; t++) {
+    	// For this sample only:
+    	double[] returnValues = partialComputeFromObservations(t, 1, false);
+    	int n_y = (int) returnValues[MiKraskovThreadRunner.INDEX_SUM_NY];
+    	if (isAlgorithm1) {
+    		avDigammaCond += MathsUtils.digamma(n_y+1);
+    	} else {
+    		avDigammaCond += MathsUtils.digamma(n_y);
+    	}
+    	double doublekNNDist = returnValues[MiKraskovThreadRunner.INDEX_SUM_2X_NEIGH_DIST];
+    	avLog2xkNNDist += Math.log(doublekNNDist);
+    }
+    avDigammaCond /= (double) N;
+    avLog2xkNNDist *= (double) dimensionsSource / (double) N;
+    if (isAlgorithm1) {
+    	conditionalEntropy = -digammaK + avDigammaCond + avLog2xkNNDist;
+    } else {
+    	conditionalEntropy = -digammaK + (1.0 / (double)k) + avDigammaCond + avLog2xkNNDist;
+    }
+    
+    if (debug) {
+      Calendar rightNow2 = Calendar.getInstance();
+      long endTime = rightNow2.getTimeInMillis();
+      System.out.println("Calculation time: " + ((endTime - startClockTime)/1000.0) + " sec" );
+    }
+    return conditionalEntropy;
+  }
+
   /**
    * Protected method to be used internally for threaded implementations.
    * This method implements the guts of each Kraskov algorithm, computing the number of 
@@ -860,7 +911,9 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
     public static final int INDEX_SUM_DIGAMMAS = 0;
     public static final int INDEX_SUM_NX = 1;
     public static final int INDEX_SUM_NY = 2;
-    public static final int RETURN_ARRAY_LENGTH = 3;
+    public static final int INDEX_SUM_2X_NEIGH_DIST = 3; // Not used by GPU, and only read for conditional entropy
+    public static final int RETURN_ARRAY_LENGTH_MI = 3;
+    public static final int RETURN_ARRAY_LENGTH = 4;
 
     public MiKraskovThreadRunner(
         MutualInfoCalculatorMultiVariateKraskov miCalc,

@@ -71,6 +71,7 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 		double sumDiGammas = 0;
 		double sumNx = 0;
 		double sumNy = 0;
+		double sum2xkNNDist = 0;
 				
 		for (int t = startTimePoint; t < startTimePoint + numTimePoints; t++) {
 			// Compute eps for this time step by
@@ -89,6 +90,7 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 			int n_y = nnSearcherDest.countPointsStrictlyWithinR(
 							t, kthNnData.distance, dynCorrExclTime);
 
+			sum2xkNNDist += kthNnData.distance + kthNnData.distance;
 			sumNx += n_x;
 			sumNy += n_y;
 			// And take the digammas:
@@ -116,7 +118,7 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 		if (returnLocals) {
 			return localMi;
 		} else {
-			return new double[] {sumDiGammas, sumNx, sumNy};
+			return new double[] {sumDiGammas, sumNx, sumNy, sum2xkNNDist};
 		}
 	}
 

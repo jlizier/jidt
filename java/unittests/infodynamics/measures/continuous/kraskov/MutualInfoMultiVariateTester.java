@@ -560,5 +560,97 @@ public class MutualInfoMultiVariateTester
 			}
 		}
 	}
+
+	/**
+	 * Test the experimental conditional entropy method
+	 *  on random Gaussians
+	 * 
+	 * @throws Exception if file not found 
+	 * 
+	 */
+	public void testConditionalEntropyforNoisyIndependentVariablesFromFile() throws Exception {
+		
+		// We'll just take the first two columns from this data set
+		// Works well on 10ColsRandomGaussian-1.txt because it is Gaussian
+		ArrayFileReader afr = new ArrayFileReader("demos/data/10ColsRandomGaussian-1.txt");
+		double[][] data = afr.getDouble2DMatrix();
+		
+		// When normalising the marginals to std dev 1, we know that entropy of the marginal
+		//  is expected to be:
+		double expected_Hx = 0.5 * Math.log(2.0 * Math.PI * Math.E);
+		
+		System.out.println("Kraskov comparison - conditional entropy");
+		
+		MutualInfoCalculatorMultiVariateKraskov miCalc = getNewCalc(1);
+		
+		miCalc.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "0"); // Need consistency for unit tests
+		
+		int[] numSamplesToCheck = new int[] {1000, 3000, 5000, data.length};
+		double conditionalEnt = 0, expected_H_X_given_Y = 0;
+		for (int ni = 0; ni < numSamplesToCheck.length; ni++) {
+			miCalc.initialise(1, 1);
+			miCalc.setObservations(
+					MatrixUtils.selectRowsAndColumns(data, 0, numSamplesToCheck[ni], 0, 1),
+					MatrixUtils.selectRowsAndColumns(data, 0, numSamplesToCheck[ni], 1, 1));
+			miCalc.setDebug(true);
+			double mi = miCalc.computeAverageLocalOfObservations();
+			miCalc.setDebug(false);
+			conditionalEnt = miCalc.computeAverageConditionalEntropy();
+			expected_H_X_given_Y = -mi + expected_Hx;
+			
+			System.out.printf("k=%s: Average MI %.8f; Average H(X|Y) = %.8f (expected %.8f) from %d samples\n",
+					miCalc.getProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_K), mi,
+					conditionalEnt, expected_H_X_given_Y, miCalc.getNumObservations());
+		}
+		// Only check the assertion on the full data set:
+		assertEquals(expected_H_X_given_Y, conditionalEnt, 0.01);
+
+	}
+
+	/**
+	 * Test the experimental conditional entropy method
+	 *  on random coupled uniform variables
+	 * 
+	 * @throws Exception if file not found 
+	 * 
+	 */
+	public void testConditionalEntropyforNoisyDependentVariablesFromFile() throws Exception {
+		
+		// We'll just take the first two columns from this data set
+		// We'll use 4ColsPairedNoisyDependence where first column is randomly distributed
+		//  on 0..1 and third adds some noise to that.
+		ArrayFileReader afr = new ArrayFileReader("demos/data/4ColsPairedNoisyDependence-1.txt");
+		double[][] data = afr.getDouble2DMatrix();
+		
+		// When the marginal x is uniformly distributed on 0..1, we know that entropy of the marginal
+		//  is expected to be 0 -- when we don't normalise the variables!
+		double expected_Hx = 0;
+		
+		System.out.println("Kraskov comparison - conditional entropy");
+		
+		MutualInfoCalculatorMultiVariateKraskov miCalc = getNewCalc(1);
+		
+		miCalc.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "0"); // Need consistency for unit tests
+		miCalc.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_NORMALISE, "false"); // Need to avoid normalising for the expected value to hold
+		
+		int[] numSamplesToCheck = new int[] {1000, 2000, data.length};
+		double conditionalEnt = 0, expected_H_X_given_Y = 0;
+		for (int ni = 0; ni < numSamplesToCheck.length; ni++) {
+			miCalc.initialise(1, 1);
+			miCalc.setObservations(
+					MatrixUtils.selectRowsAndColumns(data, 0, numSamplesToCheck[ni], 0, 1),
+					MatrixUtils.selectRowsAndColumns(data, 0, numSamplesToCheck[ni], 2, 1));
+			double mi = miCalc.computeAverageLocalOfObservations();
+			conditionalEnt = miCalc.computeAverageConditionalEntropy();
+			expected_H_X_given_Y = -mi + expected_Hx;
+			
+			System.out.printf("k=%s: Average MI %.8f; Average H(X|Y) = %.8f (expected %.8f) from %d samples\n",
+					miCalc.getProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_K), mi,
+					conditionalEnt, expected_H_X_given_Y, miCalc.getNumObservations());
+		}
+		// Only check the assertion on the full data set:
+		assertEquals(expected_H_X_given_Y, conditionalEnt, 0.02);
+
+	}
 }
 

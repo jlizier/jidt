@@ -615,7 +615,8 @@ public class MatrixUtils {
 	}
 
 	/**
-	 * Adds two arrays together, returning the result in input1
+	 * Adds two arrays together, returning the result in input1.
+	 * Requires the two arrays to be of equal length.
 	 * 
 	 * @param input1
 	 * @param input2
@@ -624,7 +625,18 @@ public class MatrixUtils {
 		if (input1.length != input2.length) {
 			throw new Exception("Lengths of arrays are not equal");
 		}
-		for (int i = 0; i < input1.length; i++) {
+		addInPlace(input1, input2, input1.length);
+	}
+
+	/**
+	 * Adds two arrays together, returning the result in input1.
+	 * Adds only the first length items.
+	 * 
+	 * @param input1
+	 * @param input2
+	 */
+	public static void addInPlace(double[] input1, double[] input2, int length) throws Exception {
+		for (int i = 0; i < length; i++) {
 			input1[i] = input1[i] + input2[i];
 		}
 	}

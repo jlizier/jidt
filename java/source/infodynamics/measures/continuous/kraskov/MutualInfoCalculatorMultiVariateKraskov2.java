@@ -73,6 +73,7 @@ public class MutualInfoCalculatorMultiVariateKraskov2
 		double sumDiGammas = 0;
 		double sumNx = 0;
 		double sumNy = 0;
+		double sum2xkNNDist = 0;
 				
 		for (int t = startTimePoint; t < startTimePoint + numTimePoints; t++) {
 			// Compute eps_x and eps_y for this time step by
@@ -94,6 +95,7 @@ public class MutualInfoCalculatorMultiVariateKraskov2
 				}
 			}
 			
+			sum2xkNNDist += eps_x + eps_x;
 			// Count the number of points whose x distance is less
 			//  than or equal to eps_x, and whose y distance is less
 			//  than or equal to eps_y
@@ -126,7 +128,7 @@ public class MutualInfoCalculatorMultiVariateKraskov2
 		if (returnLocals) {
 			return localMi;
 		} else {
-			return new double[] {sumDiGammas, sumNx, sumNy};
+			return new double[] {sumDiGammas, sumNx, sumNy, sum2xkNNDist};
 		}
 	}
 
