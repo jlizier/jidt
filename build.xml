@@ -43,17 +43,17 @@
 
 	<!-- Compile the java toolkit -->
 	<target name="compile" depends="init" description="compile the source">
-		<!-- Compile to Java 6 to provide compatibility for users with older JREs.
+		<!-- Compile to Java 7 to provide compatibility for users with older JREs.
 		     Caveat: The flags here only check the language compatibility, but
-		     may still use newer libraries which may cause issues for users with JDK 6.
-		     Indeed, one gets the warning: "bootstrap class path not set in conjunction with -source 1.6"
+		     may still use newer libraries which may cause issues for users with JDK 7.
+		     Indeed, one gets the warning: "bootstrap class path not set in conjunction with -source 1.7"
 		     To fix this, one would use the bootstrap classpath to point our JDK to an rt.jar
-		     for Java 6. 
-		     At this stage, I'm sure I'm not using new library calls from Java 7/8, so we can
-		     ignore the warning, and I don't want to bother installing Java 7 just to compile
+		     for Java 7. 
+		     At this stage, I'm sure I'm not using new library calls from Java 8+, so we can
+		     ignore the warning, and I don't want to bother installing newer Java just to compile
 		     like this. I'll endeavour not to use JDK 8 libraries so as not to cause
 		     any issues here ... -->
-		<javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false" target="1.6" source="1.6" encoding="UTF8">
+		<javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false" target="1.7" source="1.7" encoding="UTF8">
 			<classpath refid="apache-classpath"/>
 		</javac>
 
@@ -177,7 +177,7 @@
 	<!-- Compile and jar the toolkit with debug symbols -->
 	<target name="debug" depends="init" description="compile and jar with debug symbols">
 		<echo message="Compiling for debug"/>
-		<javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false" target="1.6" source="1.6" debug="true">
+		<javac srcdir="${src}" destdir="${bin}" includeAntRuntime="false" target="1.7" source="1.7" debug="true">
 			<classpath refid="apache-classpath"/>
 		</javac>
 
