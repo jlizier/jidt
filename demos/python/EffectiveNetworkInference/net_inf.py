@@ -9,23 +9,39 @@ import pickle
 import copy
 import sys
 
+# net_type_name is useful if you are iterating over multiple files with different network types.
+# Looking at the definition of SPIKES_FILE_NAME and OUTPUT_FILE_PREFIX will imply what the purpose of
+# these command line arguments is. 
 net_type_name = sys.argv[1]
 num_spikes_string = sys.argv[2]
 repeat_num_string = sys.argv[3]
 target_index_string = sys.argv[4]
 
+# The number of surrogates to create for each significance test of a TE value
 NUM_SURROGATES_PER_TE_VAL = 100
+# The p level below which the null hypothesis will be rejected.
 P_LEVEL = 0.05
+# The number of nearest neighbours to consider in the TE estimation.
 KNNS = 10
+# The number of random sample points laid down will be NUM_SAMPLES_MULTIPLIER * length_of_target_train
 NUM_SAMPLES_MULTIPLIER = 5.0
 #SURROGATE_NUM_SAMPLES_MULTIPLIER = 5.0
+# As above, but for the creation of surrogates
 SURROGATE_NUM_SAMPLES_MULTIPLIER = 5.0
+# The number of nearest neighbours to consider when using the local permutation method to create surrogates
 K_PERM = 20
+# The level of the noise to add to the random sample points used in creating surrogates 
 JITTERING_LEVEL = 2000
 
+# When MAX_NUM_SECOND_INTERVALS sources have 2 or more history intervals added into the conditioning set, the inference stops
 MAX_NUM_SECOND_INTERVALS = 2
+# Exclude target spikes beyond this number
 MAX_NUM_TARGET_SPIKES = int(num_spikes_string)
+# The spikes file with the below name is expected to contain a single pickled Python list. This list contains numpy arrays. Each
+# numpy array contains the spike times of each candidate target.
 SPIKES_FILE_NAME = "spikes_LIF_" + net_type_name + "_" + repeat_num_string + ".pk"
+# The ground truth file of the below name is expected to contain a single pickled Python list. This list contains tuples of the format(source, target).
+# source and target are integers of the indices of true connections.
 GROUND_TRUTH_FILE_NAME = "connections_LIF_"+ net_type_name + "_" + repeat_num_string + ".pk"
 OUTPUT_FILE_PREFIX = "results/inferred_sources_target_2_" + net_type_name + "_" + num_spikes_string + "_" + repeat_num_string + "_" + target_index_string
 LOG_FILE_NAME = "logs/" + net_type_name + "_" + num_spikes_string + "_" + repeat_num_string +  "_" + target_index_string + ".log"
