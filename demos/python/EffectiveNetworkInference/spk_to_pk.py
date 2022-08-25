@@ -1,3 +1,6 @@
+# This script converts CSV files of spike times (e.g. from the Wagenaar data set) into
+#  pickle files of spike times in the format that the net_inf.py script expects
+
 import numpy as np
 import pickle
 import sys
