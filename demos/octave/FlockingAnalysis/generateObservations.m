@@ -107,7 +107,7 @@ for fileIndex = 1:length(files)
 			% The following sometimes breaks I think if too many Nans
 			[acfHeading, lags] = autocorr(headingXY(2:end,f) - headingXY(1:end-1,f), 'NumLags', numLags);
 		catch ME
-			fprintf('ACF Heading broke for file %d fish %d\n', fileIndex, f);
+			fprintf('ACF Heading broke for file %d fish %d: either you need to install the Econometrics toolbox or there are too many NaNs in the file\n', fileIndex, f);
 			continue;
 		end
 		acfHeadingsDecayTime(f) = numLags;
@@ -120,7 +120,7 @@ for fileIndex = 1:length(files)
 		try
 			[acfSpeed, lags] = autocorr(speed(:,f), 'NumLags', numLags);
 		catch ME
-			fprintf('ACF Speed broke for file %d fish %d\n', fileIndex, f);
+			fprintf('ACF Speed broke for file %d fish %d: either you need to install the Econometrics toolbox or there are too many NaNs in the file\n', fileIndex, f);
 			continue;
 		end
 		acfSpeedDecayTime(f) = numLags;
