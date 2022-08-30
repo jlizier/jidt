@@ -89,6 +89,7 @@ properties.includeSourcePositionInTransfer = false;
 % Do we take relative source heading and position with respect to dest heading at that same
 %  time point (true, this is what we did for Crosato paper) or with respect
 %  to dest heading just previous to state update (false)?
+% UPDATE THIS COMMENT TO MAKE MORE SENSE. Ash and Liss say false is more biologically realistic
 properties.sourceWrtSameDestTime = true;
 
 % JIDT location:
@@ -101,7 +102,7 @@ properties.estimator = 'kraskov';
 
 % Properties for JIDT estimators:
 properties.jidt.kNNs = 4; % Number of nearest neighbours for Kraskov algorithm: just use 4 (default)
-properties.jidt.autoDynamicCorrelationExclusion = true; % Exclude nearest neighbours from at least the same target transition from being included in counts for TE
+properties.jidt.autoDynamicCorrelationExclusion = true; % Exclude nearest neighbours from at least the same target transition from being included in counts for TE. This requires the Econometrics Toolbox in Matlan in order to call autocorr. Set to false if you don't have that to avoid this being called.
 
 properties.aisNumSurrogates = 0; % Number of surrogate calculations to run for AIS (just to see the noise floor. 0 means skip)
 properties.teNumSurrogates = 0; % Number of surrogate calculations to run for TE (just to see the noise floor. 0 means skip)
