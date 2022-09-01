@@ -785,11 +785,11 @@ public abstract class AutoAnalyser extends JFrame
 		String jarLocation, pythonDemosLocation, matlabDemosLocation;
 		try {
 			File jarLocationFile = new File(jidtFolder + "infodynamics.jar");
-			jarLocation = jarLocationFile.getCanonicalPath();
+			jarLocation = jarLocationFile.getCanonicalPath().replace("\\", "\\\\");
 			File pythonDemosLocationFile = new File(pathToAutoAnalyserDir + "../python");
-			pythonDemosLocation = pythonDemosLocationFile.getCanonicalPath();
+			pythonDemosLocation = pythonDemosLocationFile.getCanonicalPath().replace("\\", "\\\\");
 			File matlabDemosLocationFile = new File(pathToAutoAnalyserDir + "../octave");
-			matlabDemosLocation = matlabDemosLocationFile.getCanonicalPath();
+			matlabDemosLocation = matlabDemosLocationFile.getCanonicalPath().replace("\\", "\\\\");
 		} catch (IOException ioex) {
 			JOptionPane.showMessageDialog(this,
 					ioex.getMessage());
