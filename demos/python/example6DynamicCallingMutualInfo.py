@@ -92,7 +92,7 @@ miCalc = miCalcClass()
 # a. Initialise the calculator for a univariate calculation:
 miCalc.initialise(1, 1)
 # b. Supply the observations to compute the PDFs from:
-miCalc.setObservations(univariateSeries1, univariateSeries2)
+miCalc.setObservations(JArray(JDouble, 1)(univariateSeries1.tolist()), JArray(JDouble, 1)(univariateSeries2.tolist()))
 # c. Make the MI calculation:
 miUnivariateValue = miCalc.computeAverageLocalOfObservations()
 
@@ -103,7 +103,7 @@ miUnivariateValue = miCalc.computeAverageLocalOfObservations()
 #   to use the required number of dimensions for each variable:
 miCalc.initialise(len(jointVariable1Columns), len(jointVariable2Columns))
 # b. Supply the observations to compute the PDFs from:
-miCalc.setObservations(jointVariable1, jointVariable2)
+miCalc.setObservations(JArray(JDouble, 2)(jointVariable1.tolist()), JArray(JDouble, 2)(jointVariable2.tolist()))
 # c. Make the MI calculation:
 miJointValue = miCalc.computeAverageLocalOfObservations()
 
