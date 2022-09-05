@@ -255,7 +255,12 @@ public class ConditionalMutualInfoCalculatorMultiVariateWithDiscreteKraskov
 		averageDiGammas /= (double) N;
 		averageInverseCountInJointXZ /= (double) N;
 		averageInverseCountInJointYZ /= (double) N;
-		condMi = MathsUtils.digamma(k) - 2.0 / (double) k + 
+		// TODO Have changed the 2/k to 1/k here, since the correction should be (m-1)/k for m continuous variables
+		// (as written for the MI estimator).
+		// Early testing when this was still 2/k seems to bear this out - as those results were
+		//  incorrectly low by 1/k.
+		// Need to fully test this properly.
+		condMi = MathsUtils.digamma(k) - 1.0 / (double) k + 
 				averageDiGammas + averageInverseCountInJointXZ +
 				averageInverseCountInJointYZ;
 		miComputed = true;
