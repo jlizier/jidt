@@ -40,7 +40,8 @@ import infodynamics.utils.ParsedProperties;
  * This implementation of the estimator does not implement dynamic exclusion windows. Such windows make sure
  * that history embeddings that overlap are not considered in nearest-neighbour searches (as this breaks the
  * independece assumption). Getting dynamic exclusion windows working will probably require modifications to the
- * KdTree class.
+ * KdTree class (or may be do-able with existing KdTree class if excluding based on nearest target spikes
+ * rather than in terms of timing)
  */
 public class TransferEntropyCalculatorSpikingIntegration implements TransferEntropyCalculatorSpiking {
 
