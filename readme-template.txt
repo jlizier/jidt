@@ -1,7 +1,9 @@
 Java Information Dynamics Toolkit (JIDT)
 Copyright (C) 2012-2014 Joseph T. Lizier
 Copyright (C) 2014-2016 Joseph T. Lizier and Ipek Özdemir
-Copyright (C) 2017-     Joseph T. Lizier, Ipek Özdemir and Pedro Mediano
+Copyright (C) 2016-2019 Joseph T. Lizier, Ipek Özdemir and Pedro Mediano
+Copyright (C) 2019-2022 Joseph T. Lizier, Ipek Özdemir, Pedro Mediano, Emanuele Crosato, Sooraj Sekhar and Oscar Huaigu Xu
+Copyright (C) 2022-     Joseph T. Lizier, Ipek Özdemir, Pedro Mediano, Emanuele Crosato, Sooraj Sekhar, Oscar Huaigu Xu and David Shorten
 
 Version @VERSION@ (see release notes below)
 
@@ -133,6 +135,17 @@ Notices for this software are found in the notices/JAMA directory.
 ===============
  Release notes
 ===============
+
+v1.6 5/9/2022
+-------------
+(after 889 commits recorded by github, repository as at https://github.com/jlizier/jidt/tree/d750a737bea2a8b1f33b7cd0ad167ec999d907ef save for this file update)
+Adding Flocking/Schooling/Swarming demo;
+Included Pedro's code on IIT and O-/S-Information measures;
+Spiking TE estimator added from David;
+Fixed up AutoAnalyser to work well for Python3 and numpy;
+Links to lecture videos included in the beta wiki for the course;
+Added rudimentary effective network inference (simplified version of the IDTxl full algorithm) in demos/octave/EffectiveNetworkInference;
+
 
 v1.5 26/11/2018
 ---------------

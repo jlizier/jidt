@@ -45,6 +45,14 @@ See other [PublicationsUsingThisToolkit](../../wiki/PublicationsUsingThisToolkit
 
 # News
 
+_5/09/2022_ - New full distribution files available for **release v1.6**; Changes for v1.6 include:
+Adding Flocking/Schooling/Swarming demo;
+Included Pedro's code on IIT and O-/S-Information measures;
+Spiking TE estimator added from David;
+Fixed up AutoAnalyser to work well for Python3 and numpy;
+Links to lecture videos included in the beta wiki for the course;
+Added rudimentary effective network inference (simplified version of the IDTxl full algorithm) in demos/octave/EffectiveNetworkInference;
+
 _26/11/2018_ - New jar and full distribution files available for **release v1.5**; Changes for v1.5 include:
 Added GPU (cuda) capability for KSG Conditional Mutual Information calculator (proper documentation to come), brief [wiki page](../../wiki/GPU) and unit tests included;
 Added auto-embedding for TE/AIS with multivariate KSG, and univariate and multivariate Gaussian estimator (plus unit tests), for Ragwitz criteria and Maximum bias-corrected AIS, and also added Maximum bias corrected AIS and TE to handle source embedding as well;

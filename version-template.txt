@@ -1,6 +1,9 @@
-Java Information Dynamics Toolkit
+Java Information Dynamics Toolkit (JIDT)
 Copyright (C) 2012-2014 Joseph T. Lizier
 Copyright (C) 2014-2016 Joseph T. Lizier and Ipek Özdemir
+Copyright (C) 2016-2019 Joseph T. Lizier, Ipek Özdemir and Pedro Mediano
+Copyright (C) 2019-2022 Joseph T. Lizier, Ipek Özdemir, Pedro Mediano, Emanuele Crosato, Sooraj Sekhar and Oscar Huaigu Xu
+Copyright (C) 2022-     Joseph T. Lizier, Ipek Özdemir, Pedro Mediano, Emanuele Crosato, Sooraj Sekhar, Oscar Huaigu Xu and David Shorten
 
 Version @VERSION@
 

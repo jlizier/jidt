@@ -5,7 +5,7 @@
 	</description>
 	
 	<!-- set global properties for this build -->
-	<property name="version" value="1.5"/>
+	<property name="version" value="1.6"/>
 	<property name="mainfilename" value="infodynamics"/>
 	<property name="jarplainname" value="${mainfilename}.jar" />
 	<property name="jarversiondistnamezip" value="${mainfilename}-jar-${version}.zip" />
