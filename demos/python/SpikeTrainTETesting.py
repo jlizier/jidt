@@ -1,6 +1,6 @@
 ##
 ##  Java Information Dynamics Toolkit (JIDT)
-##  Copyright (C) 2012, Joseph T. Lizier
+##  Copyright (C) 2022, David P. Shorten, Joseph T. Lizier
 ##  
 ##  This program is free software: you can redistribute it and/or modify
 ##  it under the terms of the GNU General Public License as published by
@@ -16,9 +16,7 @@
 ##  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ##
 
-# = Example 4 - Transfer entropy on continuous data using Kraskov estimators =
-
-# Simple transfer entropy (TE) calculation on continuous-valued data using the Kraskov-estimator TE calculator.
+# Transfer entropy (TE) calculation on generated spike train data using the continuous-time TE estimator.
 
 from jpype import *
 import random
