@@ -52,8 +52,8 @@ print("For random source, result should be close to 0 bits: %.4f" % teCalc.compu
 # Next, demonstrate how to do this with a numpy array
 teCalc.initialise()
 # Create the numpy arrays:
-sourceNumpy = numpy.array(sourceArray, dtype=numpy.int)
-destNumpy = numpy.array(destArray, dtype=numpy.int)
+sourceNumpy = numpy.array(sourceArray, dtype=int)
+destNumpy = numpy.array(destArray, dtype=int)
 # The above can be passed straight through to JIDT in python 2:
 # teCalc.addObservations(sourceNumpy, destNumpy)
 # But you need to do this in python 3:
