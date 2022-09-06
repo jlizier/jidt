@@ -1,4 +1,4 @@
-function [x,y] = loadxls3d(filename, properties)
+function [x,y] = loadxls2d(filename, properties)
 % loadxls2d loads 2D fish data from an xls file where time increases down the
 %  rows and then across the columns we have 2 x,y position columns for each 
 %  fish in turn, i.e.:
