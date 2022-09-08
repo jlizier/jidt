@@ -811,7 +811,7 @@ public abstract class AutoAnalyser extends JFrame
 		pythonCode.append("# Add JIDT jar library to the path\n");
 		pythonCode.append("jarLocation = \"" + jarLocation + "\"\n");
 		pythonCode.append("# Start the JVM (add the \"-Xmx\" option with say 1024M if you get crashes due to not enough memory space)\n");
-		pythonCode.append("startJVM(getDefaultJVMPath(), \"-ea\", \"-Djava.class.path=\" + jarLocation)\n\n");
+		pythonCode.append("startJVM(getDefaultJVMPath(), \"-ea\", \"-Djava.class.path=\" + jarLocation, convertStrings=True)\n\n");
 		// 3. Matlab:
 		StringBuffer matlabCode = new StringBuffer();
 		matlabCode.append("% Add JIDT jar library to the path, and disable warnings that it's already there:\n");
