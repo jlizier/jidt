@@ -118,7 +118,7 @@ if (isfield(properties, 'kRange') || isfield(properties, 'tauRange'))
 	properties.tau = maxAIStau;
 	properties.ais = maxAIS;
 	properties.destSamplesOnly = false;
-	fprintf('*** Optmised k=%d and tau=%d (giving AIS=%.4f)\n', properties.k, ...
+	fprintf('*** Optmised k=%d and tau=%d (giving AIS=%.4f - see above for null distribution for these parameters)\n', properties.k, ...
 		properties.tau, properties.ais);
 else
 	% Hard coded embedding parameters: compute the AIS to be saved anyway :
@@ -140,6 +140,15 @@ else
 	fprintf('*** Hard-coded values for k=%d and tau=%d to be used (giving AIS=%.4f)\n', properties.k, ...
 		properties.tau, properties.ais);
 end
+% Check whether to continue to TE calculations:
+if (~isfield(properties, 'computeAISOnly'))
+	properties.computeAISOnly = false;
+end
+if (properties.computeAISOnly)
+    fprintf('Finishing after AIS calculation only, as requested.\n');
+    return;
+end
+
 
 % Step 2: automatically select the correct lag if required:
 teNumSurrogates = properties.teNumSurrogates; % Store this for later, turn it off now

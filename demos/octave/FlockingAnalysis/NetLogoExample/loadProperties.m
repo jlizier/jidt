@@ -106,3 +106,6 @@ properties.jidt.autoDynamicCorrelationExclusion = true; % Exclude nearest neighb
 
 properties.aisNumSurrogates = 0; % Number of surrogate calculations to run for AIS (just to see the noise floor. 0 means skip)
 properties.teNumSurrogates = 0; % Number of surrogate calculations to run for TE (just to see the noise floor. 0 means skip)
+
+% Exit the analysis after calculating the AIS (i.e. don't compute TE)
+properties.computeAISOnly = false;
