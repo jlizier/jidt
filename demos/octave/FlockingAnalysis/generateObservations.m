@@ -145,7 +145,7 @@ for fileIndex = 1:length(files)
 	if (acfTime > maxAcfTime)
 		maxAcfTime = acfTime;
 	end
-	fprintf('ACF time of %d from heading %d and speed %d\n', acfTime, maxAcfHeadingsDecayTime, maxAcfSpeedDecayTime);
+	fprintf('ACF time of %d from heading %.2f and speed %.2f\n', acfTime, maxAcfHeadingsDecayTime, maxAcfSpeedDecayTime);
 
 	% Initialising destPastSample is only important in terms of ensuring it is a row vector.
 	%  If we have 3D data, the vector will get padded out to the appropriate length with the first sample below.

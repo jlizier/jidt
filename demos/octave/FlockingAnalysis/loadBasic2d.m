@@ -1,9 +1,11 @@
 function [posX,posY] = loadBasic2d(dataFileName, properties)
 % This script loads the raw data from a .txt file,
 % preprocesses the data and save it as a .mat file.
-% The txt data is assumed to have timestamp in column 1,
-%  then fish 1's X and Y coordinates in columns 2 and 3, 
-%  then fish 2's X and Y coordinates in columns 4 and 5, 
+% The txt data is assumed to have early columns with other data
+%  (e.g. a timestamp in column 1), with the fish coordinates
+%  starting from properties.loadBasic2d.startColumn (defaults to 2)
+%  with fish 1's X and Y coordinates in the first of those columns (defaults to 2 and 3), 
+%  then fish 2's X and Y coordinates in the next of those columns (defaults to 4 and 5), 
 %  and so on.
 
 %%
@@ -40,7 +42,14 @@ data = load(dataFileName);
 
 %%% FORMAT DATA IN A MORE CONVENIENT WAY %%%
 
-numFish = (size(data,2)-1) ./ 2; % number of fish (we know it from the raw data)
+if (nargin == 1) || (~isfield(properties, 'loadBasic2d'))
+    % Assume the first column is a datestamp
+    properties.loadBasic2d.startColumn = 2;
+end
+startCol = properties.loadBasic2d.startColumn;
+colsToSkip = startCol - 1;
+
+numFish = (size(data,2)-colsToSkip) ./ 2; % number of fish (we know it from the raw data)
 numCycles = size(data,1); % number of time steps (we also know it)
 fprintf('Number of fish %d and cycles %d\n', numFish, numCycles);
 
@@ -52,8 +61,8 @@ posY = nan(numCycles,numFish);
 % fill the position tables
 for f = 1 : numFish % cycle over all fish
     % copy into new variables
-    posX(:,f) = data(:,2+(f-1)*2);
-    posY(:,f) = data(:,3+(f-1)*2);
+    posX(:,f) = data(:,startCol+(f-1)*2);
+    posY(:,f) = data(:,startCol+1+(f-1)*2);
 end
 
 % display to check
