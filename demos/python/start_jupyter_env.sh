@@ -20,9 +20,21 @@
 # Start the python environment (stored in folder $folder) with jpype1, numpy and others installed
 # and then launch jupyter
 
-source start_env.sh
+# Name of folder to use and python commands
+folder=jpype_env
 
-echo "Started virtual environment, now starting jupyter ..."
+# enter the environment
+source $folder/bin/activate
+
+if [[ "$VIRTUAL_ENV" != "" ]]
+then
+  echo "Started virtual environment, now starting jupyter ..."
+else
+  echo "Virtual environment not started, exiting"
+  # Try return first in case this script was sourced.
+  return 1 2>/dev/null
+  exit 1
+fi
 
 cd ../..
 jupyter notebook

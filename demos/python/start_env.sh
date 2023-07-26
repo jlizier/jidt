@@ -26,7 +26,9 @@ folder=jpype_env
 source $folder/bin/activate
 if [ $? -ne 0 ]; then
     echo "Virtual environment unable to be activated" >&2
-    return 3 # Need return instead of exit since we're running via source
+    # Try return first in case this script was sourced.
+    return 3 2>/dev/null
+    exit 3
 else
     echo "Python environment from $folder started and activated."
 fi
