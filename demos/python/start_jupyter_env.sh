@@ -18,23 +18,12 @@
 ##
 
 # Start the python environment (stored in folder $folder) with jpype1, numpy and others installed
+# and then launch jupyter
 
-# Name of folder to use and python commands
-folder=jpype_env
+source start_env.sh
 
-# enter the environment
-source $folder/bin/activate
-if [ $? -ne 0 ]; then
-    echo "Virtual environment unable to be activated" >&2
-    return 3 # Need return instead of exit since we're running via source
-else
-    echo "Python environment from $folder started and activated."
-fi
+echo "Started virtual environment, now starting jupyter ..."
 
-echo
-echo "Make sure you called this script as: source start_env.sh"
-echo
-echo "If you called it like that, you will have your python environment activated."
-echo "If you just called ./start_env.sh go back and run again as above"
-echo
+cd ../..
+jupyter notebook
 

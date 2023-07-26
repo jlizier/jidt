@@ -24,29 +24,60 @@ folder=jpype_env
 pythonCmd=python3
 pipCmd=pip3
 
-# Create a python environment (stored in folder ) with jpype1 installed
+# First make sure that the virtualenv package is installed.
+$pipCmd show virtualenv > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+    echo "virtualenv already installed, proceeding"
+else
+    echo "installing virtualenv with $pipCmd ...".
+    # On ubuntu, one could also install via the main package manager, e.g. sudo apt-get install python3-venv (I think this takes care of the followng anyway, but am unsure)
+    $pythonCmd -m pip install --user virtualenv
+    if [ $? -ne 0 ]; then
+        echo "pip install of virtualenv failed"
+        exit 1
+    else
+        echo "pip install of virtualenv succeeded"
+    fi
+fi
+
+# Create a python environment (stored in folder $folder)
 $pythonCmd -m venv $folder
+if [ $? -ne 0 ]; then
+    # Virtual environment creation did not work:
+    echo "Virtual environment creation did not work." >&2
+    echo "If you are on ubuntu you should now run: sudo apt-get install python3-venv" >&2
+    echo "Then run this script again" >&2
+    exit 2
+else
+    echo "Virtual environment created in $folder"
+fi
 
 # enter the environment
 source $folder/bin/activate
+if [ $? -ne 0 ]; then
+    echo "Virtual environment unable to be activated" >&2
+    exit 3
+else
+    echo "Python environment started and activated."
+    echo "Beginning pip installations for the environment"
+fi
 
-echo "Python environment started and activated"
-
-# install jpype1, numpy and scipy (does not matter if they are already installed)
+# install jpype1 and numpy (does not matter if they are already installed)
 $pipCmd install jpype1
 $pipCmd install numpy
 
 echo
 echo "Jpype1 and numpy installed - you have a functional installation."
 echo
-echo "Now trying scipy matplotlib, but they are optional..."
+echo "Now trying scipy, matplotlib and jupyter, but they are optional..."
 echo
 
 $pipCmd install scipy
 $pipCmd install matplotlib
+$pipCmd install jupyter
 
 echo
-echo "Scipy matplotlib installed"
+echo "Scipy, matplotlib and jupyter installed"
 echo
 
 deactivate
