@@ -31,6 +31,10 @@ if (nargin < 3)
 	refreshRate = 0.1;
 end
 
+if (nargin < 4)
+	zoomIn = true;
+end
+
 % load preprocessed data using the function specified in properties.loadScript
 if (properties.data3d)
 	[x,y,z] = feval(properties.loadScript, dataFileName, properties);

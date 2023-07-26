@@ -81,11 +81,11 @@ if (isfield(properties, 'kRange') || isfield(properties, 'tauRange'))
 	maxAIStau = properties.tauRange(1);
 	aisForKAndTau = zeros(length(properties.kRange), length(properties.tauRange));
 	kIndex = 0;
-	tauIndex = 0;
 	for k = properties.kRange
 		kIndex = kIndex + 1;
 		properties.k = k;
 		minTau = min(properties.tauRange);
+    	tauIndex = 0;
 		for tau = properties.tauRange
 			tauIndex = tauIndex + 1;
 			if ((k == 1) && (tau > minTau))
