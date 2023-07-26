@@ -49,23 +49,23 @@ LOG_FILE_NAME = "logs/" + net_type_name + "_" + num_spikes_string + "_" + repeat
 log = open(LOG_FILE_NAME, "w")
 sys.stdout = log
 
-def prepare_conditional_trains(calc_object, cond_set):
+def prepare_conditional_trains(calc_object, cond_set, spikes):
         cond_trains = []
         calc_object.clearConditionalIntervals()
         if len(cond_set) > 0:
                 for key in cond_set.keys():
                         cond_trains.append(spikes[key])
-                        teCalc.appendConditionalIntervals(JArray(JInt, 1)(cond_set[key]))
+                        calc_object.appendConditionalIntervals(JArray(JInt, 1)(cond_set[key]))
         return cond_trains
 
-def set_target_embeddings(embedding_list):
+def set_target_embeddings(embedding_list, calc_object):
         if len(embedding_list) > 0:
                 embedding_string = str(embedding_list[0])
                 for i in range(2, len(embedding_list)):
                         embedding_string += "," + str(embedding_list[i])
-                teCalc.setProperty("DEST_PAST_INTERVALS", embedding_string)
+                calc_object.setProperty("DEST_PAST_INTERVALS", embedding_string)
         else:
-                teCalc.setProperty("DEST_PAST_INTERVALS", "")
+                calc_object.setProperty("DEST_PAST_INTERVALS", "")
 
 
 target_index = int(target_index_string)                
@@ -100,7 +100,7 @@ next_target_interval = 2
 still_significant = True
 print("**** Determining target embedding set ****\n")
 while still_significant:
-        set_target_embeddings(target_embedding_set)
+        set_target_embeddings(target_embedding_set, teCalc)
         teCalc.setProperty("SOURCE_PAST_INTERVALS", str(next_target_interval))
         teCalc.startAddObservations()
         teCalc.addObservations(JArray(JDouble, 1)(spikes[target_index]), JArray(JDouble, 1)(spikes[target_index]))
@@ -136,7 +136,7 @@ while still_significant:
         for key in cond_set.keys():
                 print("source", key, "intervals", cond_set[key])
         print("\nEstimating TE on candidate sources")
-        cond_trains = prepare_conditional_trains(teCalc, cond_set)
+        cond_trains = prepare_conditional_trains(teCalc, cond_set, spikes)
         TE_vals = np.zeros(next_interval_for_each_candidate.shape[0])
         debiased_TE_vals = -1 * np.ones(next_interval_for_each_candidate.shape[0])
         surrogate_vals = -1 * np.ones((next_interval_for_each_candidate.shape[0], NUM_SURROGATES_PER_TE_VAL))
@@ -218,7 +218,7 @@ while not everything_significant:
                 else:
                         cond_set_minus_candidate.pop(candidate_source)
                 teCalc.setProperty("SOURCE_PAST_INTERVALS", str(cond_set[candidate_source][-1]))
-                cond_trains = prepare_conditional_trains(teCalc, cond_set_minus_candidate)
+                cond_trains = prepare_conditional_trains(teCalc, cond_set_minus_candidate, spikes)
                 teCalc.startAddObservations()
                 if len(cond_set_minus_candidate) > 0:
                         teCalc.addObservations(JArray(JDouble, 1)(spikes[candidate_source]), JArray(JDouble, 1)(spikes[target_index]), JArray(JDouble, 2)(cond_trains))
