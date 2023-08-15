@@ -1240,7 +1240,7 @@ public abstract class AutoAnalyser extends JFrame
 					extraFormatTerms + "result" + statSigFormatTerms + ");\n");
 			// 2. Python
 			pythonCode.append("\n" + pythonPrefix + "print(\"" + resultsPrefixString +
-					"%.4f " + units + resultsSuffixString + "\" %\n    " + pythonPrefix + "(" +
+					"%.4f " + units + resultsSuffixString + "\" %\\\n    " + pythonPrefix + "(" +
 					extraFormatTerms + "result" + statSigFormatTerms + "))\n");
 			// 3. Matlab
 			matlabCode.append("\n" + matlabPrefix + "fprintf('" + resultsPrefixString +
