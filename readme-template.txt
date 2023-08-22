@@ -136,6 +136,12 @@ Notices for this software are found in the notices/JAMA directory.
  Release notes
 ===============
 
+v1.6.1 22/8/2023
+-------------
+(after 909 commits recorded by github, repository as at https://github.com/jlizier/jidt/tree/90baf68ee7332e15030447b44d262a0fc54773f6 save for this file update)
+Minor updates to supporting use in Python, including virtual environments;
+Minor tweaks to fish schooling examples (mostly comments)
+
 v1.6 5/9/2022
 -------------
 (after 889 commits recorded by github, repository as at https://github.com/jlizier/jidt/tree/d750a737bea2a8b1f33b7cd0ad167ec999d907ef save for this file update)
