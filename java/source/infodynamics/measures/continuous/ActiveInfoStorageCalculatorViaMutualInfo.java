@@ -258,7 +258,7 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	 * 	   and embedding delay ({@link #TAU_PROP_NAME}). Default is {@link #AUTO_EMBED_METHOD_NONE} meaning
 	 * 	   values are set manually; other accepted values include: {@link #AUTO_EMBED_METHOD_RAGWITZ} for use
 	 * 		of the Ragwitz criteria and {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS} for using
-	 * 		the maz bias-corrected AIS criteria (both searching up to {@link #PROP_K_SEARCH_MAX} and 
+	 * 		the max bias-corrected AIS criteria (both searching up to {@link #PROP_K_SEARCH_MAX} and 
 	 * 		{@link #PROP_TAU_SEARCH_MAX}, as outlined by Garland et al. in the references list above).
 	 * 		Use of any value other than {@link #AUTO_EMBED_METHOD_NONE}
 	 * 		will lead to any previous settings for k and tau (via e.g. {@link #initialise(int, int)} or

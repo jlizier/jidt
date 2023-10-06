@@ -159,6 +159,40 @@ public class ConditionalMutualInfoMultiVariateTester extends
 				condMi, 0.0000000001);
 	}
 	
+	public void testNoConditional() throws Exception {
+		ArrayFileReader afr = new ArrayFileReader("demos/data/4ColsPairedOneStepNoisyDependence-1.txt");
+		double[][] data = afr.getDouble2DMatrix();
+		double[] source = MatrixUtils.selectColumn(data, 1);
+		double[] dest = MatrixUtils.selectColumn(data, 2);
+		
+		// Set up the value we expect from MI:
+		MutualInfoCalculatorMultiVariateGaussian miCalc =
+				new MutualInfoCalculatorMultiVariateGaussian();
+		miCalc.initialise(1, 1);
+		miCalc.setObservations(source, dest);	
+		double mi = miCalc.computeAverageLocalOfObservations();
+		
+		// Now compute via CMI calculator with null passed:
+		ConditionalMutualInfoCalculatorMultiVariateGaussian condMiCalc =
+				new ConditionalMutualInfoCalculatorMultiVariateGaussian();
+		condMiCalc.initialise(1, 1, 0);
+		condMiCalc.setObservations(source, dest, null);	
+		double condMi = condMiCalc.computeAverageLocalOfObservations();
+		assertEquals(mi, condMi, 0.000001);
+
+		// Now compute via CMI calculator with dummy column passed:
+		condMiCalc.initialise(1, 1, 0);
+		condMiCalc.setObservations(source, dest, MatrixUtils.selectColumn(data, 3));	
+		condMi = condMiCalc.computeAverageLocalOfObservations();
+		assertEquals(mi, condMi, 0.000001);
+
+		// Now compute via CMI calculator with empty column passed (all as 2D):
+		condMiCalc.initialise(1, 1, 0);
+		condMiCalc.setObservations(MatrixUtils.selectColumns(data, 1, 1), MatrixUtils.selectColumns(data, 2, 1), new double[1000][0]);	
+		condMi = condMiCalc.computeAverageLocalOfObservations();
+		assertEquals(mi, condMi, 0.000001);
+	}
+	
 	public void testBiasCorrectionDoesNotChangeAnalyticPValue() throws Exception {
 		ConditionalMutualInfoCalculatorMultiVariateGaussian cmiCalc =
 				new ConditionalMutualInfoCalculatorMultiVariateGaussian();
@@ -189,7 +223,7 @@ public class ConditionalMutualInfoMultiVariateTester extends
 		ChiSquareMeasurementDistribution distroBiasCorrected = cmiCalc.computeSignificance();
 		assertEquals(avBiasCorrected, distroBiasCorrected.actualValue, 0.0000001);
 		// And now check that the pValues are unchanged whether we bias correct or not:
-		assertEquals(distroNotBiasCorrected.pValue, distroBiasCorrected.pValue);
+		assertEquals(distroNotBiasCorrected.pValue, distroBiasCorrected.pValue, 0.0000001);
 	}
 
 	protected int timeStepsDepCheck = 100;
@@ -395,7 +429,7 @@ public class ConditionalMutualInfoMultiVariateTester extends
 		//  - both dimensions are copied
 		double[][] sourceData = rg.generateNormalData(timeStepsDepCheck, dimensions,
 				0, 1);
-		double[][] condData = rg.generateNormalData(timeStepsDepCheck, dimensions,
+		double[][] condData = rg.generateNormalData(timeStepsDepCheck, conditionalDims,
 				0, 1);
 		double[][] destData = MatrixUtils.arrayCopy(condData);
 
@@ -447,4 +481,5 @@ public class ConditionalMutualInfoMultiVariateTester extends
 		condMiCalc.setObservations(MatrixUtils.selectColumns(destData, 0, 1), sourceData, condData);
 		assertTrue(Double.isInfinite(condMiCalc.computeAverageLocalOfObservations()));
 	}
+	
 }
