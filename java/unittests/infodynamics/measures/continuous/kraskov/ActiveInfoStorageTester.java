@@ -5,6 +5,7 @@ import java.util.Arrays;
 import infodynamics.measures.continuous.ActiveInfoStorageCalculator;
 import infodynamics.utils.ArrayFileReader;
 import infodynamics.utils.MatrixUtils;
+import infodynamics.utils.RandomGenerator;
 import junit.framework.TestCase;
 
 public class ActiveInfoStorageTester extends TestCase {
@@ -116,4 +117,74 @@ public class ActiveInfoStorageTester extends TestCase {
 				ais.getProperty(ActiveInfoStorageCalculator.TAU_PROP_NAME), differentNNResult);
 	}
 	
-}
+	/**
+	 * Test that observationSetIndices and observationStartTimePoints 
+	 * for the underlying MI estimator are written properly
+	 * 
+	 * @throws Exception 
+	 */
+	@SuppressWarnings("static-access")
+	public void testObservationSetIndices() throws Exception {
+		
+		int timeSteps = 1000;
+		
+		ActiveInfoStorageCalculatorKraskov aisCalc = 
+				new ActiveInfoStorageCalculatorKraskov();
+		RandomGenerator rg = new RandomGenerator();
+		double[] data = rg.generateNormalData(timeSteps, 0, 1);
+		aisCalc.initialise();
+		
+		// First check that for a simple single observation set everything works:
+		aisCalc.setObservations(data);
+
+		int[] observationSetIds = aisCalc.getObservationSetIndices();
+		int[] timeSeriesIndices = aisCalc.getObservationTimePoints();
+		assert(observationSetIds.length == timeSteps - 1);
+		for (int t = 0; t < timeSteps - 1; t++) {
+			assertEquals(observationSetIds[t], 0);
+			assertEquals(timeSeriesIndices[t], 1 + t); // Should be offset by 1 for k history
+		}
+		
+		// Now add the same one twice:
+		aisCalc.initialise();
+		aisCalc.startAddObservations();
+		aisCalc.addObservations(data);
+		aisCalc.addObservations(data);
+		aisCalc.finaliseAddObservations();
+		observationSetIds = aisCalc.getObservationSetIndices();
+		timeSeriesIndices = aisCalc.getObservationTimePoints();
+		assert(observationSetIds.length == 2*timeSteps - 2);
+		for (int t = 0; t < timeSteps - 1; t++) {
+			assertEquals(observationSetIds[t], 0);
+			assertEquals(timeSeriesIndices[t], 1 + t);
+		}
+		for (int t = 0; t < timeSteps - 1; t++) {
+			assertEquals(observationSetIds[timeSteps - 1 + t], 1);
+			assertEquals(timeSeriesIndices[timeSteps - 1 + t], 1 + t);
+		}
+		
+		// Now add NUM_SEGMENTS segments:
+		int NUM_SEGMENTS = 10;
+		aisCalc.setProperty(aisCalc.K_PROP_NAME, "3");
+		aisCalc.setProperty(aisCalc.TAU_PROP_NAME, "3");
+		aisCalc.initialise();
+		aisCalc.startAddObservations();
+		for (int r = 0; r < NUM_SEGMENTS; r++) {
+			aisCalc.addObservations(rg.generateNormalData(timeSteps, 0, 1));
+		}
+		aisCalc.finaliseAddObservations();
+		observationSetIds = aisCalc.getObservationSetIndices();
+		timeSeriesIndices = aisCalc.getObservationTimePoints();
+		int k = Integer.valueOf(aisCalc.getProperty(aisCalc.K_PROP_NAME)); // In case we change to autoembedding above
+		int tau = Integer.valueOf(aisCalc.getProperty(aisCalc.TAU_PROP_NAME));
+		System.out.printf("Embedding dimension %d and delay %d\n", k, tau);
+		assert(observationSetIds.length == (timeSteps - (k - 1)*tau - 1) * NUM_SEGMENTS);
+		int t = 0;
+		for (int r = 0; r < NUM_SEGMENTS; r++) {
+			for (int i = 0; i < timeSteps - (k-1)*tau - 1; i++) {
+				assertEquals(observationSetIds[t], r);
+				assertEquals(timeSeriesIndices[t], (k-1)*tau + 1 + i);
+				t++;
+			}
+		}
+	}}

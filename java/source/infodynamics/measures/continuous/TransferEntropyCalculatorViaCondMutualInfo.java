@@ -149,6 +149,12 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 	protected Vector<boolean[]> vectorOfValidityOfDestination;
 
 	/**
+	 * Store the time index at which we were asked to start taking time-series
+	 *  observations for each  observation set.
+	 */
+	protected Vector<Integer> vectorOfOffsetsInTimeSeries;
+	
+	/**
 	 * Array of the number of observations added by each separate call to
 	 * {@link #addObservations(double[], double[])}, in order of which those calls
 	 * were made. This is returned by {@link #getSeparateNumObservations()}
@@ -352,6 +358,7 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 		vectorOfDestinationTimeSeries = null;
 		vectorOfValidityOfSource = null;
 		vectorOfValidityOfDestination = null;
+		vectorOfOffsetsInTimeSeries = null;
 		separateNumObservations = new int[] {};
 	}
 
@@ -502,21 +509,37 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 	}
 
 	@Override
+	public void setObservations(double[] source, double[] destination,
+			boolean[] sourceValid, boolean[] destValid) throws Exception {
+		
+		startAddObservations();
+		addObservations(source, destination, sourceValid, destValid);
+		finaliseAddObservations();
+	}
+
+	@Override
 	public void startAddObservations() {
 		vectorOfSourceTimeSeries = new Vector<double[]>();
 		vectorOfDestinationTimeSeries = new Vector<double[]>();
 		vectorOfValidityOfSource = new Vector<boolean[]>();
 		vectorOfValidityOfDestination = new Vector<boolean[]>();
+		vectorOfOffsetsInTimeSeries = new Vector<Integer>();
 	}
 	
 	@Override
 	public void addObservations(double[] source, double[] destination)
+			throws Exception {
+		addObservationsParsed(source, destination, 0); // No offset here
+	}
+
+	protected void addObservationsParsed(double[] source, double[] destination, int startTimeStep)
 			throws Exception {
 		// Store these observations in our vectors for now
 		vectorOfSourceTimeSeries.add(source);
 		vectorOfDestinationTimeSeries.add(destination);
 		vectorOfValidityOfSource.add(null); // All observations were valid
 		vectorOfValidityOfDestination.add(null); // All observations were valid
+		vectorOfOffsetsInTimeSeries.add(startTimeStep);
 	}
 
 	/**
@@ -536,6 +559,7 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 		vectorOfDestinationTimeSeries.add(destination);
 		vectorOfValidityOfSource.add(sourceValid); // All observations were valid
 		vectorOfValidityOfDestination.add(destValid); // All observations were valid
+		vectorOfOffsetsInTimeSeries.add(0); // no offset here
 	}
 
 	/**
@@ -554,6 +578,8 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 	 * @param delay_in_use source-target delay to use
 	 * @param source time series of source observations
 	 * @param destination time series of destination observations
+	 * @param observationSetIndex which observation set these samples came from
+	 * @param offsetInOriginalTimeSeries offset of the samples in their original time series
 	 * @return the number of observations added
 	 * @throws Exception
 	 */
@@ -561,7 +587,8 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 			ConditionalMutualInfoCalculatorMultiVariate condMiCalc_in_use,
 			int k_in_use, int k_tau_in_use, int l_in_use, int l_tau_in_use,
 			int delay_in_use,
-			double[] source, double[] destination) throws Exception {
+			double[] source, double[] destination,
+			int observationSetIndex, int offsetInOriginalTimeSeries) throws Exception {
 		if (source.length != destination.length) {
 			throw new Exception(String.format("Source and destination lengths (%d and %d) must match!",
 					source.length, destination.length));
@@ -587,7 +614,8 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 				MatrixUtils.makeDelayEmbeddingVector(source, l_in_use, l_tau_in_use,
 						startTimeForFirstDestEmbedding_in_use + 1 - delay_in_use,
 						source.length - startTimeForFirstDestEmbedding_in_use - 1);
-		condMiCalc_in_use.addObservations(currentSourcePastVectors, currentDestNextVectors, currentDestPastVectors);
+		condMiCalc_in_use.addObservationsTrackObservationIDs(currentSourcePastVectors, currentDestNextVectors, currentDestPastVectors,
+				observationSetIndex, offsetInOriginalTimeSeries + startTimeForFirstDestEmbedding_in_use + 1);
 		return destination.length - startTimeForFirstDestEmbedding_in_use - 1;
 	}
 
@@ -615,6 +643,7 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 	 * 	the source at that index is valid.
 	 * @param destValid array (with indices the same as destination) indicating whether
 	 * 	the destination at that index is valid.
+	 * @param observationSetIndex which observation set these samples came from
 	 * @return total number of observations added 
 	 * @throws Exception
 	 */
@@ -623,7 +652,8 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 			int k_in_use, int k_tau_in_use, int l_in_use, int l_tau_in_use,
 			int delay_in_use,
 			double[] source, double[] destination,
-			boolean[] sourceValid, boolean[] destValid) throws Exception {
+			boolean[] sourceValid, boolean[] destValid,
+			int observationSetIndex) throws Exception {
 		
 		// Compute the start and end time pairs using our embedding parameters:
 		Vector<int[]> startAndEndTimePairs =
@@ -638,7 +668,8 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 					condMiCalc_in_use, k_in_use, k_tau_in_use, l_in_use,
 					l_tau_in_use, delay_in_use,
 					MatrixUtils.select(source, startTime, endTime - startTime + 1),
-					MatrixUtils.select(destination, startTime, endTime - startTime + 1));
+					MatrixUtils.select(destination, startTime, endTime - startTime + 1),
+					observationSetIndex, startTime);
 		}
 		return totalObservationsAdded;
 	}
@@ -654,8 +685,8 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 			// There are not enough observations given the arguments here
 			throw new Exception("Not enough observations to set here given startTime and numTimeSteps parameters");
 		}
-		addObservations(MatrixUtils.select(source, startTime, numTimeSteps),
-					    MatrixUtils.select(destination, startTime, numTimeSteps));
+		addObservationsParsed(MatrixUtils.select(source, startTime, numTimeSteps),
+					    MatrixUtils.select(destination, startTime, numTimeSteps), startTime);
 	}
 
 	/**
@@ -841,6 +872,7 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 		vectorOfDestinationTimeSeries = null; // No longer required
 		vectorOfValidityOfSource = null;
 		vectorOfValidityOfDestination = null;
+		vectorOfOffsetsInTimeSeries = null;
 	}
 
 	/**
@@ -900,6 +932,7 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 		Iterator<double[]> destIterator = vectorOfDestinationTimeSeries.iterator();
 		Iterator<boolean[]> sourceValidityIterator = vectorOfValidityOfSource.iterator();
 		Iterator<boolean[]> destValidityIterator = vectorOfValidityOfDestination.iterator();
+		Iterator<Integer> offsetsInTimeSeriesIterator = vectorOfOffsetsInTimeSeries.iterator();
 		int[] separateNumObservationsArray = new int[vectorOfDestinationTimeSeries.size()];
 		int setNum = 0;
 		for (double[] source : vectorOfSourceTimeSeries) {
@@ -911,12 +944,12 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 				// Add the whole time-series
 				observationsAddedThisTime = addObservationsWithGivenParams(
 						condMiCalc_in_use, k_in_use, k_tau_in_use, l_in_use,
-						l_tau_in_use, delay_in_use, source, destination);
+						l_tau_in_use, delay_in_use, source, destination, setNum, offsetsInTimeSeriesIterator.next());
 			} else {
 				observationsAddedThisTime = addObservationsWithGivenParams(
 						condMiCalc_in_use, k_in_use, k_tau_in_use, l_in_use,
 						l_tau_in_use, delay_in_use, source, destination,
-						sourceValidity, destValidity);
+						sourceValidity, destValidity, setNum);
 			}
 			separateNumObservationsArray[setNum++] = observationsAddedThisTime;
 		}
@@ -927,20 +960,6 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 		return separateNumObservationsArray;
 	}
 	
-	@Override
-	public void setObservations(double[] source, double[] destination,
-			boolean[] sourceValid, boolean[] destValid) throws Exception {
-		
-		startAddObservations();
-		// Add these observations and the indication of their validity
-		//  for later analysis:
-		vectorOfSourceTimeSeries.add(source);
-		vectorOfDestinationTimeSeries.add(destination);
-		vectorOfValidityOfSource.add(sourceValid);
-		vectorOfValidityOfDestination.add(destValid);
-		finaliseAddObservations();
-	}
-
 	/**
 	 * Compute a vector of start and end pairs of time points, between which we have
 	 *  valid series of both source and destinations. (I.e. all points within the
@@ -1131,6 +1150,22 @@ public class TransferEntropyCalculatorViaCondMutualInfo implements
 		return separateNumObservations;
 	}
 	
+	/**
+	 * Retrieve an array indicating which observation set each sample came from
+	 * @return
+	 */
+	public int[] getObservationSetIndices() {
+		return condMiCalc.getObservationSetIndices();
+	}
+
+	/**
+	 * Retrieve an array indicating which time index within its observation set that sample came from
+	 * @return
+	 */
+	public int[] getObservationTimePoints() {
+		return condMiCalc.getObservationTimePoints();
+	}
+
 	@Override
 	public boolean getAddedMoreThanOneObservationSet() {
 		return condMiCalc.getAddedMoreThanOneObservationSet();

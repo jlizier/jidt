@@ -97,6 +97,12 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	protected Vector<boolean[]> vectorOfValidityOfObservations;
 
 	/**
+	 * Store the time index at which we were asked to start taking time-series
+	 *  observations for each  observation set.
+	 */
+	protected Vector<Integer> vectorOfOffsetsInTimeSeries;
+
+	/**
 	 * Property name for the auto-embedding method. Defaults to {@link #AUTO_EMBED_METHOD_NONE}.
 	 * Other valid values are {@link #AUTO_EMBED_METHOD_RAGWITZ} or
 	 * {@link #AUTO_EMBED_METHOD_MAX_CORR_AIS}
@@ -242,6 +248,7 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 		this.tau = tau;
 		vectorOfObservationTimeSeries = null;
 		vectorOfValidityOfObservations = null;
+		vectorOfOffsetsInTimeSeries = null;
 	}
 
 	/**
@@ -367,12 +374,25 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	}
 
 	/* (non-Javadoc)
+	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#setObservations(double[], boolean[])
+	 */
+	@Override
+	public void setObservations(double[] observations, boolean[] valid)
+			throws Exception {
+		startAddObservations();
+		// Add these observations and the indication of their validity
+		addObservations(observations, valid);
+		finaliseAddObservations();
+	}
+
+	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#startAddObservations()
 	 */
 	@Override
 	public void startAddObservations() {
 		vectorOfObservationTimeSeries = new Vector<double[]>();
 		vectorOfValidityOfObservations = new Vector<boolean[]>();
+		vectorOfOffsetsInTimeSeries = new Vector<Integer>();
 	}
 
 	/* (non-Javadoc)
@@ -380,9 +400,15 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	 */
 	@Override
 	public void addObservations(double[] observations) throws Exception {
+		addObservationsParsed(observations, 0);
+	}
+	
+	protected void addObservationsParsed(double[] observations, int startTimeStep)
+			throws Exception {
 		// Store these observations in our vector for now
 		vectorOfObservationTimeSeries.add(observations);
 		vectorOfValidityOfObservations.add(null); // All observations were valid
+		vectorOfOffsetsInTimeSeries.add(startTimeStep);
 	}
 	
 	/* (non-Javadoc)
@@ -393,6 +419,7 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 		// Store these observations in our vector for now
 		vectorOfObservationTimeSeries.add(observations);
 		vectorOfValidityOfObservations.add(valid); // All observations were valid
+		vectorOfOffsetsInTimeSeries.add(0); // no offset here
 	}
 
 	/**
@@ -403,10 +430,13 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	 * @param k_in_use k embedding dimension to use
 	 * @param tau_in_use tau embedding delay to use
 	 * @param observations time series of observations
+	 * @param observationSetIndex which observation set these samples came from
+	 * @param offsetInOriginalTimeSeries offset of the samples in their original time series
 	 * @throws Exception
 	 */
 	protected void addObservationsWithGivenParams(MutualInfoCalculatorMultiVariate miCalc_in_use,
-			int k_in_use, int tau_in_use, double[] observations) throws Exception {
+			int k_in_use, int tau_in_use, double[] observations,
+			int observationSetIndex, int offsetInOriginalTimeSeries) throws Exception {
 		if (observations.length - (k_in_use-1)*tau_in_use - 1 <= 0) {
 			// There are no observations to add here
 			// Don't throw an exception, do nothing since more observations
@@ -419,7 +449,8 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 		double[][] currentDestNextVectors =
 				MatrixUtils.makeDelayEmbeddingVector(observations, 1, (k_in_use-1)*tau_in_use + 1,
 						observations.length - (k_in_use-1)*tau_in_use - 1);
-		miCalc_in_use.addObservations(currentDestPastVectors, currentDestNextVectors);
+		miCalc_in_use.addObservationsTrackObservationIDs(currentDestPastVectors, currentDestNextVectors,
+				observationSetIndex, offsetInOriginalTimeSeries + (k_in_use-1)*tau_in_use + 1);
 	}
 	
 	/**
@@ -436,10 +467,12 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	 *  whether the entry in observations at that index is valid; we only take vectors
 	 *  as samples to add to the observation set where all points in the time series
 	 *  (even between points in the embedded k-vector with embedding delays) are valid.
+	 * @param observationSetIndex which observation set these samples came from
 	 * @throws Exception
 	 */
 	protected void addObservationsWithGivenParams(MutualInfoCalculatorMultiVariate miCalc_in_use,
-			int k_in_use, int tau_in_use, double[] observations, boolean[] valid) throws Exception {
+			int k_in_use, int tau_in_use, double[] observations, boolean[] valid,
+			int observationSetIndex) throws Exception {
 		
 		// compute the start and end times using our determined embedding parameters:
 		Vector<int[]> startAndEndTimePairs = computeStartAndEndTimePairs(k_in_use, tau_in_use, valid);
@@ -448,7 +481,8 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 			int startTime = timePair[0];
 			int endTime = timePair[1];
 			addObservationsWithGivenParams(miCalc_in_use, k_in_use, tau_in_use,
-					MatrixUtils.select(observations, startTime, endTime - startTime + 1));
+					MatrixUtils.select(observations, startTime, endTime - startTime + 1),
+					observationSetIndex, startTime);
 		}
 	}
 	
@@ -458,7 +492,7 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	@Override
 	public void addObservations(double[] observations, int startTime,
 			int numTimeSteps) throws Exception {
-		addObservations(MatrixUtils.select(observations, startTime, numTimeSteps));
+		addObservationsParsed(MatrixUtils.select(observations, startTime, numTimeSteps), startTime);
 	}
 
 	/**
@@ -616,6 +650,7 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 		
 		vectorOfObservationTimeSeries = null; // No longer required
 		vectorOfValidityOfObservations = null;
+		vectorOfOffsetsInTimeSeries = null;
 	}
 
 	/**
@@ -639,34 +674,25 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 		miCalc_in_use.startAddObservations();
 		// Send all of the observations through:
 		Iterator<boolean[]> validityIterator = vectorOfValidityOfObservations.iterator();
+		Iterator<Integer> offsetsInTimeSeriesIterator = vectorOfOffsetsInTimeSeries.iterator();
+		int setNum = 0;
 		for (double[] observations : vectorOfObservationTimeSeries) {
 			boolean[] validity = validityIterator.next();
 			if (validity == null) {
 				// Add the whole time-series
 				addObservationsWithGivenParams(miCalc_in_use, k_in_use,
-						tau_in_use, observations);
+						tau_in_use, observations,
+						setNum, offsetsInTimeSeriesIterator.next());
 			} else {
 				addObservationsWithGivenParams(miCalc_in_use, k_in_use,
-						tau_in_use, observations, validity);
+						tau_in_use, observations, validity, setNum);
 			}
+			setNum++;
 		}
 		// TODO do we need to throw an exception if there are no observations to add?
 		miCalc_in_use.finaliseAddObservations();
 	}
 	
-	/* (non-Javadoc)
-	 * @see infodynamics.measures.continuous.ActiveInfoStorageCalculator#setObservations(double[], boolean[])
-	 */
-	@Override
-	public void setObservations(double[] observations, boolean[] valid)
-			throws Exception {
-		startAddObservations();
-		// Add these observations and the indication of their validity
-		vectorOfObservationTimeSeries.add(observations);
-		vectorOfValidityOfObservations.add(valid);
-		finaliseAddObservations();
-	}
-
 	/**
 	 * Compute a vector of start and end pairs of time points, between which we have
 	 *  valid series of observations.
@@ -854,5 +880,21 @@ public class ActiveInfoStorageCalculatorViaMutualInfo implements
 	@Override
 	public int getNumObservations() throws Exception {
 		return miCalc.getNumObservations();
+	}
+
+	/**
+	 * Retrieve an array indicating which observation set each sample came from
+	 * @return
+	 */
+	public int[] getObservationSetIndices() {
+		return miCalc.getObservationSetIndices();
+	}
+
+	/**
+	 * Retrieve an array indicating which time index within its observation set that sample came from
+	 * @return
+	 */
+	public int[] getObservationTimePoints() {
+		return miCalc.getObservationTimePoints();
 	}
 }

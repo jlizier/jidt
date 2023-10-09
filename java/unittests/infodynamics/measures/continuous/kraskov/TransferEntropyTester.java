@@ -737,4 +737,76 @@ public class TransferEntropyTester
 			assertEquals(correctL, optimisedL);
 	  }
 
+	/**
+	 * Test that observationSetIndices and observationStartTimePoints 
+	 * for the underlying CMI estimator are written properly
+	 * 
+	 * @throws Exception 
+	 */
+	@SuppressWarnings("static-access")
+	public void testObservationSetIndices() throws Exception {
+		
+		int timeSteps = 1000;
+		
+		TransferEntropyCalculatorKraskov teCalc = 
+				new TransferEntropyCalculatorKraskov();
+		RandomGenerator rg = new RandomGenerator();
+		double[] source = rg.generateNormalData(timeSteps, 0, 1);
+		double[] target = rg.generateNormalData(timeSteps, 0, 1);
+		teCalc.initialise();
+		
+		// First check that for a simple single observation set everything works:
+		teCalc.setObservations(source, target);
+
+		int[] observationSetIds = teCalc.getObservationSetIndices();
+		int[] timeSeriesIndices = teCalc.getObservationTimePoints();
+		assert(observationSetIds.length == timeSteps - 1);
+		for (int t = 0; t < timeSteps - 1; t++) {
+			assertEquals(observationSetIds[t], 0);
+			assertEquals(timeSeriesIndices[t], 1 + t); // Should be offset by 1 for k history
+		}
+		
+		// Now add the same one twice:
+		teCalc.initialise();
+		teCalc.startAddObservations();
+		teCalc.addObservations(source, target);
+		teCalc.addObservations(source, target);
+		teCalc.finaliseAddObservations();
+		observationSetIds = teCalc.getObservationSetIndices();
+		timeSeriesIndices = teCalc.getObservationTimePoints();
+		assert(observationSetIds.length == 2*timeSteps - 2);
+		for (int t = 0; t < timeSteps - 1; t++) {
+			assertEquals(observationSetIds[t], 0);
+			assertEquals(timeSeriesIndices[t], 1 + t);
+		}
+		for (int t = 0; t < timeSteps - 1; t++) {
+			assertEquals(observationSetIds[timeSteps - 1 + t], 1);
+			assertEquals(timeSeriesIndices[timeSteps - 1 + t], 1 + t);
+		}
+		
+		// Now add NUM_SEGMENTS segments:
+		int NUM_SEGMENTS = 10;
+		teCalc.setProperty(teCalc.K_PROP_NAME, "3");
+		teCalc.setProperty(teCalc.K_TAU_PROP_NAME, "3");
+		teCalc.initialise();
+		teCalc.startAddObservations();
+		for (int r = 0; r < NUM_SEGMENTS; r++) {
+			teCalc.addObservations(rg.generateNormalData(timeSteps, 0, 1), rg.generateNormalData(timeSteps, 0, 1));
+		}
+		teCalc.finaliseAddObservations();
+		observationSetIds = teCalc.getObservationSetIndices();
+		timeSeriesIndices = teCalc.getObservationTimePoints();
+		int k = Integer.valueOf(teCalc.getProperty(teCalc.K_PROP_NAME)); // In case we change to autoembedding above
+		int tau = Integer.valueOf(teCalc.getProperty(teCalc.K_TAU_PROP_NAME));
+		System.out.printf("Embedding dimension %d and delay %d\n", k, tau);
+		assert(observationSetIds.length == (timeSteps - (k - 1)*tau - 1) * NUM_SEGMENTS);
+		int t = 0;
+		for (int r = 0; r < NUM_SEGMENTS; r++) {
+			for (int i = 0; i < timeSteps - (k-1)*tau - 1; i++) {
+				assertEquals(observationSetIds[t], r);
+				assertEquals(timeSeriesIndices[t], (k-1)*tau + 1 + i);
+				t++;
+			}
+		}
+	}
 }
