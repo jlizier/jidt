@@ -21,6 +21,7 @@ package infodynamics.measures.continuous.kraskov;
 import infodynamics.utils.ArrayFileReader;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
+import infodynamics.utils.RandomGenerator;
 
 public class MutualInfoMultiVariateTester
 	extends infodynamics.measures.continuous.MutualInfoMultiVariateAbstractTester {
@@ -652,5 +653,78 @@ public class MutualInfoMultiVariateTester
 		assertEquals(expected_H_X_given_Y, conditionalEnt, 0.02);
 
 	}
+	
+	/**
+	 * Test that observationSetIndices and observationStartTimePoints are written properly
+	 * 
+	 * @throws Exception 
+	 */
+	public void testObservationSetIndices() throws Exception {
+		
+		int dimensions = 1;
+		int timeSteps = 100;
+		
+		MutualInfoCalculatorMultiVariateKraskov miCalc = getNewCalc(1);
+		miCalc.initialise(dimensions, dimensions);
+		
+		// generate some random data
+		RandomGenerator rg = new RandomGenerator();
+		double[][] sourceData = rg.generateNormalData(timeSteps, dimensions,
+				0, 1);
+		double[][] destData = rg.generateNormalData(timeSteps, dimensions,
+				0, 1);
+		
+		// First check that for a simple single observation set everything works:
+		miCalc.setObservations(sourceData, destData);
+
+		int[] observationSetIds = miCalc.getObservationSetIndices();
+		int[] timeSeriesIndices = miCalc.getObservationTimePoints();
+		assert(observationSetIds.length == timeSteps);
+		for (int t = 0; t < timeSteps; t++) {
+			assertEquals(observationSetIds[t], 0);
+			assertEquals(timeSeriesIndices[t], t);
+		}
+		
+		// Now add the same one twice:
+		miCalc.initialise(dimensions, dimensions);
+		miCalc.startAddObservations();
+		miCalc.addObservations(sourceData, destData);
+		miCalc.addObservations(sourceData, destData);
+		miCalc.finaliseAddObservations();
+		observationSetIds = miCalc.getObservationSetIndices();
+		timeSeriesIndices = miCalc.getObservationTimePoints();
+		assert(observationSetIds.length == 2*timeSteps);
+		for (int t = 0; t < timeSteps; t++) {
+			assertEquals(observationSetIds[t], 0);
+			assertEquals(timeSeriesIndices[t], t);
+		}
+		for (int t = 0; t < timeSteps; t++) {
+			assertEquals(observationSetIds[timeSteps + t], 1);
+			assertEquals(timeSeriesIndices[timeSteps + t], t);
+		}
+		
+		// Now add NUM_SEGMENTS randomly chosen segments:
+		int NUM_SEGMENTS = 10;
+		int maxLength = 10;
+		int[] startPoints = rg.generateRandomInts(NUM_SEGMENTS, timeSteps - maxLength);
+		int[] lengthsMinus1 = rg.generateRandomInts(NUM_SEGMENTS, maxLength - 1); // ensures we don't add segments of length 0
+		miCalc.initialise(dimensions, dimensions);
+		miCalc.startAddObservations();
+		for (int r = 0; r < NUM_SEGMENTS; r++) {
+			miCalc.addObservations(sourceData, destData, startPoints[r], lengthsMinus1[r]+1);
+		}
+		miCalc.finaliseAddObservations();
+		observationSetIds = miCalc.getObservationSetIndices();
+		timeSeriesIndices = miCalc.getObservationTimePoints();
+		assert(observationSetIds.length == MatrixUtils.sum(lengthsMinus1) + NUM_SEGMENTS);
+		int t = 0;
+		for (int r = 0; r < NUM_SEGMENTS; r++) {
+			for (int i = 0; i < lengthsMinus1[r]+1; i++) {
+				assertEquals(observationSetIds[t], r);
+				assertEquals(timeSeriesIndices[t], startPoints[r] + i);
+				t++;
+			}
+		}
+	}	
 }
 

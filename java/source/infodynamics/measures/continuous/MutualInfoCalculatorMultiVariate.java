@@ -93,6 +93,25 @@ public interface MutualInfoCalculatorMultiVariate
 	public static final String PROP_ADD_NOISE = "NOISE_LEVEL_TO_ADD";
 
 	/**
+	 * <p>As per {@link #addObservations(double[][], double[][])};
+     *  but also includes parameters to track which observation set
+     *  the samples came from. Intended to only be used by other 
+     *  estimator classes here and not by users directly.</p>
+	 * 
+	 * @param source multivariate observations for variable 1
+	 *  (first index is time or observation index, second is variable number)
+	 * @param destination multivariate observations for variable 2
+	 *  (first index is time or observation index, second is variable number)
+	 *  Length must match <code>source</code>, and their indices must correspond.
+	 * @param observationSetIndexToUse which set of observations these came fmor
+	 * @param startTimeIndex which was the first time index of these
+	 *  samples within that observation set.
+	 * @throws Exception
+	 */
+	public void addObservationsTrackObservationIDs(double[][] source, double[][] destination,
+			int observationSetIndexToUse, int startTimeIndex) throws Exception;
+
+	/**
 	 * Compute the mutual information if the observations of the
 	 * first variable (source)
 	 * were ordered as per the ordering specified in newOrdering.
@@ -130,4 +149,18 @@ public interface MutualInfoCalculatorMultiVariate
 	 * @throws Exception for invalid property values
 	 */
 	public String getProperty(String propertyName) throws Exception;
+
+	/**
+	 * Retrieve an array indicating which observation set each sample came from
+	 * 
+	 * @return array of integers
+	 */
+	public int[] getObservationSetIndices();
+
+	/**
+	 * Retrieve an array indicating which time index within its observation set that sample came from
+	 * 
+	 * @return array of integers
+	 */
+	public int[] getObservationTimePoints();
 }

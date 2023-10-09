@@ -23,6 +23,7 @@ import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.RandomGenerator;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.Vector;
@@ -87,6 +88,16 @@ public abstract class MutualInfoMultiVariateCommon implements
 	protected double[] destStdsBeforeNorm;
 
 	/**
+	 * Track which observation set each sample came from
+	 */
+	protected int[] observationSetIndices;
+
+	/**
+	 * Track which sample index within an observation set that each sample came from
+	 */
+	protected int[] observationTimePoints;
+
+	/**
 	 * Total number of observations supplied.
 	 * Only valid after {@link #finaliseAddObservations()} is called.
 	 */
@@ -128,6 +139,22 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 */
 	protected Vector<double[][]> vectorOfDestinationObservations;
 	/**
+	 * Tracks separate (time-series) observation sets
+	 *  we are taking samples from
+	 */
+	protected int observationSetIndex = 0;
+	/**
+	 * Storage for which observation set each
+	 *  block of samples comes from
+	 */
+	protected Vector<Integer> vectorOfObservationSetIndices;
+	/**
+	 * Storage for start time point for the observation
+	 *  set within its block of samples
+	 */
+	protected Vector<Integer> vectorOfObservationStartTimePoints;
+
+	/**
 	 * Whether the user has supplied more than one (disjoint) set of samples
 	 */
 	protected boolean addedMoreThanOneObservationSet;
@@ -163,6 +190,11 @@ public abstract class MutualInfoMultiVariateCommon implements
 		sourceStdsBeforeNorm = null;
 		destMeansBeforeNorm = null;
 		destStdsBeforeNorm = null;
+		observationSetIndices = null;
+		observationTimePoints = null;
+		observationSetIndex = 0;
+		vectorOfObservationSetIndices = null;
+		vectorOfObservationStartTimePoints = null;
 		addedMoreThanOneObservationSet = false;
 	}
 
@@ -297,13 +329,53 @@ public abstract class MutualInfoMultiVariateCommon implements
 	}
 
 	@Override
+	public void setObservations(double[][] source, double[][] destination,
+			boolean[] sourceValid, boolean[] destValid) throws Exception {
+		startAddObservations();
+		addObservations(source, destination, sourceValid, destValid);
+		finaliseAddObservations();
+	}
+	
+	@Override
+	public void setObservations(double[] source, double[] destination,
+			boolean[] sourceValid, boolean[] destValid) throws Exception {
+
+		if ((dimensionsDest != 1) || (dimensionsSource != 1)) {
+			throw new Exception("The number of source and dest dimensions (having been initialised to " +
+					dimensionsSource + " and " + dimensionsDest + ") can only be 1 when " +
+					"the univariate addObservations(double[],double[]) and " + 
+					"setObservations(double[],double[]) methods are called");
+		}
+		setObservations(MatrixUtils.reshape(source, source.length, 1),
+				MatrixUtils.reshape(destination, destination.length, 1),
+				sourceValid, destValid);
+	}
+	
+	@Override
+	public void setObservations(double[][] source, double[][] destination,
+			boolean[][] sourceValid, boolean[][] destValid) throws Exception {
+
+		boolean[] allSourceValid = MatrixUtils.andRows(sourceValid);
+		boolean[] allDestValid = MatrixUtils.andRows(destValid);
+		setObservations(source, destination, allSourceValid, allDestValid);
+	}
+
+	@Override
 	public void startAddObservations() {
 		vectorOfSourceObservations = new Vector<double[][]>();
 		vectorOfDestinationObservations = new Vector<double[][]>();
+		vectorOfObservationSetIndices = new Vector<Integer>();
+		vectorOfObservationStartTimePoints = new Vector<Integer>();
 	}
 	
 	@Override
 	public void addObservations(double[][] source, double[][] destination) throws Exception {
+		// Use the current observationSetIndex and increment for next use:
+		addObservationsTrackObservationIDs(source, destination, observationSetIndex++, 0);
+	}
+	
+	public void addObservationsTrackObservationIDs(double[][] source, double[][] destination,
+			int observationSetIndexToUse, int startTimeIndex) throws Exception {
 		if (vectorOfSourceObservations == null) {
 			// startAddObservations was not called first
 			throw new RuntimeException("User did not call startAddObservations before addObservations");
@@ -326,6 +398,8 @@ public abstract class MutualInfoMultiVariateCommon implements
 		}
 		vectorOfSourceObservations.add(source);
 		vectorOfDestinationObservations.add(destination);
+		vectorOfObservationSetIndices.add(observationSetIndexToUse);
+		vectorOfObservationStartTimePoints.add(startTimeIndex);
 	}
 
 	/**
@@ -391,8 +465,14 @@ public abstract class MutualInfoMultiVariateCommon implements
 				MatrixUtils.reshape(destination, destination.length, 1));
 	}
 	
+	@Override
 	public void addObservations(double[][] source, double[][] destination,
 			int startTime, int numTimeSteps) throws Exception {
+		addObservations(source, destination, startTime, numTimeSteps, observationSetIndex++);
+	}
+	
+	protected void addObservations(double[][] source, double[][] destination,
+			int startTime, int numTimeSteps, int observationSetIndexToUse) throws Exception {
 		if (vectorOfSourceObservations == null) {
 			// startAddObservations was not called first
 			throw new RuntimeException("User did not call startAddObservations before addObservations");
@@ -403,12 +483,12 @@ public abstract class MutualInfoMultiVariateCommon implements
 		}
 		double[][] sourceToAdd = new double[numTimeSteps][];
 		System.arraycopy(source, startTime, sourceToAdd, 0, numTimeSteps);
-		vectorOfSourceObservations.add(sourceToAdd);
 		double[][] destToAdd = new double[numTimeSteps][];
 		System.arraycopy(destination, startTime, destToAdd, 0, numTimeSteps);
-		vectorOfDestinationObservations.add(destToAdd);
+		addObservationsTrackObservationIDs(sourceToAdd, destToAdd, observationSetIndexToUse, startTime);
 	}
 
+	@Override
 	public void addObservations(double[] source, double[] destination,
 			int startTime, int numTimeSteps) throws Exception {
 		
@@ -423,8 +503,14 @@ public abstract class MutualInfoMultiVariateCommon implements
 						startTime, numTimeSteps);
 	}
 
-
-	public void setObservations(double[][] source, double[][] destination,
+	public void addObservations(double[] source, double[] destination,
+			boolean[] sourceValid, boolean[] destValid) throws Exception {
+		addObservations(MatrixUtils.reshape(source, source.length, 1),
+				MatrixUtils.reshape(destination, destination.length, 1),
+				sourceValid, destValid);
+	}
+	
+	public void addObservations(double[][] source, double[][] destination,
 			boolean[] sourceValid, boolean[] destValid) throws Exception {
 		
 		Vector<int[]> startAndEndTimePairs = computeStartAndEndTimePairs(sourceValid, destValid);
@@ -434,32 +520,18 @@ public abstract class MutualInfoMultiVariateCommon implements
 		for (int[] timePair : startAndEndTimePairs) {
 			int startTime = timePair[0];
 			int endTime = timePair[1];
-			addObservations(source, destination, startTime, endTime - startTime + 1);
+			addObservations(source, destination, startTime, endTime - startTime + 1, observationSetIndex);
 		}
+		observationSetIndex++;
 		finaliseAddObservations();
 	}
 
-	@Override
-	public void setObservations(double[] source, double[] destination,
-			boolean[] sourceValid, boolean[] destValid) throws Exception {
-
-		if ((dimensionsDest != 1) || (dimensionsSource != 1)) {
-			throw new Exception("The number of source and dest dimensions (having been initialised to " +
-					dimensionsSource + " and " + dimensionsDest + ") can only be 1 when " +
-					"the univariate addObservations(double[],double[]) and " + 
-					"setObservations(double[],double[]) methods are called");
-		}
-		setObservations(MatrixUtils.reshape(source, source.length, 1),
-				MatrixUtils.reshape(destination, destination.length, 1),
-				sourceValid, destValid);
-	}
-	
-	public void setObservations(double[][] source, double[][] destination,
+	public void addObservations(double[][] source, double[][] destination,
 			boolean[][] sourceValid, boolean[][] destValid) throws Exception {
-
+		
 		boolean[] allSourceValid = MatrixUtils.andRows(sourceValid);
 		boolean[] allDestValid = MatrixUtils.andRows(destValid);
-		setObservations(source, destination, allSourceValid, allDestValid);
+		addObservations(source, destination, allSourceValid, allDestValid);
 	}
 
 	/**
@@ -482,11 +554,15 @@ public abstract class MutualInfoMultiVariateCommon implements
 		}
 		destObservations = new double[totalObservations][dimensionsDest];
 		sourceObservations = new double[totalObservations][dimensionsSource];
+		observationSetIndices = new int[totalObservations];
+		observationTimePoints = new int[totalObservations];
 		
 		// Construct the joint vectors from the given observations
 		//  (removing redundant data which is outside any timeDiff)
 		int startObservation = 0;
 		Iterator<double[][]> iterator = vectorOfDestinationObservations.iterator();
+		Iterator<Integer> iteratorObsSetIndices = vectorOfObservationSetIndices.iterator();
+		Iterator<Integer> iteratorObsStartTimePoints = vectorOfObservationStartTimePoints.iterator();
 		for (double[][] source : vectorOfSourceObservations) {
 			double[][] destination = iterator.next();
 			// Copy the data from these given observations into our master 
@@ -497,7 +573,14 @@ public abstract class MutualInfoMultiVariateCommon implements
 			MatrixUtils.arrayCopy(destination, timeDiff, 0,
 					destObservations, startObservation, 0,
 					destination.length - timeDiff, dimensionsDest);
-			startObservation += destination.length - timeDiff;
+			int numNewObservations = destination.length - timeDiff;
+			// And update which observation set and time index each sample came from:
+			Arrays.fill(observationSetIndices, startObservation, startObservation + numNewObservations, iteratorObsSetIndices.next());
+			int firstTimeSampleId = iteratorObsStartTimePoints.next(); // This is the first sample of the source; storing the time index for destination below.
+			for (int i = 0; i < numNewObservations; i++) {
+				observationTimePoints[startObservation + i] = firstTimeSampleId + timeDiff + i;
+			}
+			startObservation += numNewObservations;
 		}
 		if (vectorOfSourceObservations.size() > 1) {
 			addedMoreThanOneObservationSet = true;
@@ -834,4 +917,14 @@ public abstract class MutualInfoMultiVariateCommon implements
 		}
 		return startAndEndTimePairs;
 	}	
+
+	@Override
+	public int[] getObservationSetIndices() {
+		return observationSetIndices;
+	}
+
+	@Override
+	public int[] getObservationTimePoints() {
+		return observationTimePoints;
+	}
 }
