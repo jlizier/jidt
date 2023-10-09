@@ -114,6 +114,20 @@ public class KdTree extends NearestNeighbourSearcher {
 	}
 	
 	/**
+	 * Construct the k-d tree from a set of double[][] data.
+	 * 
+	 * @param data a double[][] 2D data set, first indexed
+	 *  by time, second index by variable number.
+	 * @param observationSetIndices array indicating for each sample which 
+	 *  observation set is came from (only used for dynamic correlation exclusion)
+	 * @param observationTimePoints array indicating for each sample which
+	 *  time index it had in the observation set it came from
+	 */
+	public KdTree(double[][] data, int[] observationSetIndices, int[] observationTimePoints) {
+		this(new int[] {data[0].length}, new double[][][] {data}, observationSetIndices, observationTimePoints);
+	}
+
+	/**
 	 * Construct the k-d tree from a <b>set</b> of double[][] data,
 	 * considered jointly.
 	 * 
@@ -126,7 +140,29 @@ public class KdTree extends NearestNeighbourSearcher {
 	 *   within this data set)
 	 */
 	public KdTree(int[] dimensions, double[][][] data) {
-				
+		this(dimensions, data, null, null);
+	}
+	
+	/**
+	 * Construct the k-d tree from a <b>set</b> of double[][] data,
+	 * considered jointly.
+	 * 
+	 * @param dimensions an array of dimensions for each
+	 *  of the 2D data sets.
+	 * @param data an array of double[][] 2D data sets
+	 *  for each data[i]
+	 *  (where i is the main variable number within data, then
+	 *   after that the first index is sample number, second is dimension
+	 *   within this data set)
+	 * @param observationSetIndices array indicating for each sample which 
+	 *  observation set is came from (only used for dynamic correlation exclusion).
+	 *  null means only a single observation set used
+	 * @param observationTimePoints array indicating for each sample which
+	 *  time index it had in the observation set it came from
+	 *  null means only a single observation set used
+	 */
+	public KdTree(int[] dimensions, double[][][] data, int[] observationSetIndices, int[] observationTimePoints) {
+			
 		this.originalDataSets = data;
 		int numObservations = data[0].length;
 				
@@ -183,6 +219,18 @@ public class KdTree extends NearestNeighbourSearcher {
 		rootNode = constructKdTree(0, 0, numObservations, masterSortedArrayIndices);
 		// And destroy the temporary storage of sorted array indices:
 		masterSortedArrayIndices = null;
+		
+		if (observationSetIndices == null) {
+			// observationSetIndices and observationTimePoints are
+			//  not supplied, so by default we assume only the one observation set:
+			observationSetIndices = new int[numObservations];
+			observationTimePoints = new int[numObservations];
+			for (int n = 0; n < numObservations; n++) {
+				observationTimePoints[n] = n;
+			}
+		}
+		this.observationSetIndices = observationSetIndices;
+		this.observationTimePoints = observationTimePoints;
 	}
 
 	/**
@@ -667,7 +715,7 @@ public class KdTree extends NearestNeighbourSearcher {
 	 * @param sampleIndex sample index in the data to find a nearest neighbour
 	 *  for
 	 * @param dynCorrExclTime size of dynamic correlation exclusion time window
-	 *  on either side of sampleIndex. 0 means exclude only sampleIndex itself.
+	 *  on either side of sampleIndex in the same observation set. 0 means exclude only sampleIndex itself.
 	 * @param node node to start searching from in the kd-tree. Cannot be null
 	 * @param level which level we're currently at in the tree
 	 * @param currentKBest a PriorityQueue of NeighbourNodeData objects
@@ -700,8 +748,8 @@ public class KdTree extends NearestNeighbourSearcher {
 		//  (will not throw an Exception if the PQ is empty)
 		NeighbourNodeData furthestCached = currentKBest.peek();
 		
-		if (((node.indexOfThisPoint - sampleIndex > dynCorrExclTime)
-			|| (node.indexOfThisPoint - sampleIndex < -dynCorrExclTime)) &&
+		if (((observationSetIndices[node.indexOfThisPoint] != observationSetIndices[sampleIndex])
+			|| (Math.abs(observationTimePoints[node.indexOfThisPoint] - observationTimePoints[sampleIndex]) > dynCorrExclTime)) &&
 			((currentKBest.size() < K) || (absDistOnThisDim < furthestCached.distance))) {
 			// Preliminary check says we need to compute the full distance
 			//  to use or at least to check if it should be 
@@ -1073,7 +1121,8 @@ public class KdTree extends NearestNeighbourSearcher {
 			absDistOnThisDim = distOnThisDim * distOnThisDim;
 		}
 		
-		if ((Math.abs(node.indexOfThisPoint - sampleIndex) > dynCorrExclTime) &&
+		if (((observationSetIndices[node.indexOfThisPoint] != observationSetIndices[sampleIndex])
+				|| (Math.abs(observationTimePoints[node.indexOfThisPoint] - observationTimePoints[sampleIndex]) > dynCorrExclTime)) &&
 			((absDistOnThisDim <  r) ||
 			 ( allowEqualToR && (absDistOnThisDim == r)))) {
 			// Preliminary check says we need to compute the full distance
@@ -1591,7 +1640,8 @@ public class KdTree extends NearestNeighbourSearcher {
 			absDistOnThisDim = distOnThisDim * distOnThisDim;
 		}
 		
-		if ((Math.abs(node.indexOfThisPoint - sampleIndex) > dynCorrExclTime) &&
+		if (((observationSetIndices[node.indexOfThisPoint] != observationSetIndices[sampleIndex]) ||
+				(Math.abs(observationTimePoints[node.indexOfThisPoint] - observationTimePoints[sampleIndex]) > dynCorrExclTime)) &&
 			((absDistOnThisDim <  r) ||
 			 ( allowEqualToR && (absDistOnThisDim == r)))) {
 			// Preliminary check says we need to compute the full distance
@@ -1738,7 +1788,8 @@ public class KdTree extends NearestNeighbourSearcher {
 			absDistOnThisDim = distOnThisDim * distOnThisDim;
 		}
 		
-		if ((Math.abs(node.indexOfThisPoint - sampleIndex) > dynCorrExclTime) &&
+		if (((observationSetIndices[node.indexOfThisPoint] != observationSetIndices[sampleIndex]) ||
+				(Math.abs(observationTimePoints[node.indexOfThisPoint] - observationTimePoints[sampleIndex]) > dynCorrExclTime)) &&
 			((absDistOnThisDim <  r) ||
 			 ( allowEqualToR && (absDistOnThisDim == r)))) {
 			// Preliminary check says we need to compute the full distance
@@ -1912,7 +1963,8 @@ public class KdTree extends NearestNeighbourSearcher {
 		}
 		
 		if (testResultsForGivenVariable[node.indexOfThisPoint] &&
-			(Math.abs(node.indexOfThisPoint - sampleIndex) > dynCorrExclTime) &&
+			((observationSetIndices[node.indexOfThisPoint] != observationSetIndices[sampleIndex]) ||
+					(Math.abs(observationTimePoints[node.indexOfThisPoint] - observationTimePoints[sampleIndex]) > dynCorrExclTime)) &&
 			((absDistOnThisDim <  r) ||
 			 ( allowEqualToR && (absDistOnThisDim == r)))) {
 			// Preliminary check says we need to compute the full distance
@@ -2574,7 +2626,8 @@ public class KdTree extends NearestNeighbourSearcher {
 			absDistOnThisDim = distOnThisDim * distOnThisDim;
 		}
 		
-		if ((Math.abs(node.indexOfThisPoint - sampleIndex) > dynCorrExclTime) &&
+		if (((observationSetIndices[node.indexOfThisPoint] != observationSetIndices[sampleIndex]) || 
+				(Math.abs(observationTimePoints[node.indexOfThisPoint] - observationTimePoints[sampleIndex]) > dynCorrExclTime)) &&
 			((absDistOnThisDim <  rs[variableNumber]) ||
 			 ( allowEqualToR && (absDistOnThisDim == rs[variableNumber])))) {
 			// Preliminary check says we need to compute the full distance

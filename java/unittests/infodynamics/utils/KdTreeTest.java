@@ -422,6 +422,72 @@ public class KdTreeTest extends TestCase {
 		}
 	}
 
+	public void testFindKNearestNeighboursWithExclusionWindowAndMultiDataSets() throws Exception {
+		int dimension = 4;
+		int numSamplesPerSet = 400;
+		int numSets = 5;
+		int exclusionWindow = 50;
+		
+		for (int K = 1; K < 5; K++) {
+			double[][] data = rg.generateNormalData(numSamplesPerSet*numSets, dimension, 0, 1);
+			int[] obsSetIds = new int[numSamplesPerSet*numSets];
+			int[] timeIndicesInSets = new int[numSamplesPerSet*numSets];
+			int ti = 0;
+			for (int s = 0; s < numSets; s++) {
+				for (int s2 = 0; s2 < numSamplesPerSet; s2++) {
+					obsSetIds[ti] = s;
+					timeIndicesInSets[ti] = s2;
+					ti++;
+				}
+			}
+			
+			long startTime = Calendar.getInstance().getTimeInMillis();
+			KdTree kdTree = new KdTree(data, obsSetIds, timeIndicesInSets);
+			long endTimeTree = Calendar.getInstance().getTimeInMillis();
+			System.out.printf("Tree of %d points for %d NNs constructed in: %.3f sec\n",
+					data.length, K, ((double) (endTimeTree - startTime)/1000.0));
+			
+			EuclideanUtils normCalculator = new EuclideanUtils(EuclideanUtils.NORM_MAX_NORM);
+			startTime = Calendar.getInstance().getTimeInMillis();
+			for (int t = 0; t < data.length; t++) {
+				PriorityQueue<NeighbourNodeData> nnPQ =
+						kdTree.findKNearestNeighbours(K, t, exclusionWindow);
+				assertTrue(nnPQ.size() == K);
+				// Now find the K nearest neighbours with a naive all-pairs comparison
+				double[][] distancesAndIndices = new double[data.length][2];
+				for (int t2 = 0; t2 < data.length; t2++) {
+					boolean inDifferentSets = ((t / numSamplesPerSet) != (t2 / numSamplesPerSet));
+					if (inDifferentSets || (Math.abs(t2 - t) > exclusionWindow)) {
+						distancesAndIndices[t2][0] = normCalculator.norm(data[t], data[t2]);
+					} else {
+						distancesAndIndices[t2][0] = Double.POSITIVE_INFINITY;
+					}
+					distancesAndIndices[t2][1] = t2;
+				}
+				int[] timeStepsOfKthMins =
+						MatrixUtils.kMinIndices(distancesAndIndices, 0, K);
+				for (int i = 0; i < K; i++) {
+					// Check that the ith nearest neighbour matches for each method.
+					// Note that these two method provide a different sorting order
+					NeighbourNodeData nnData = nnPQ.poll();
+					if (timeStepsOfKthMins[K - 1 - i] != nnData.sampleIndex) {
+						// We have an error:
+						System.out.printf("Erroneous match between indices %d (expected) " +
+						 " and %d\n", timeStepsOfKthMins[K - 1 - i], nnData.sampleIndex);
+					}
+					assertEquals(timeStepsOfKthMins[K - 1 - i], nnData.sampleIndex);
+					// And check that none of the nearest neighbours were within the window
+					//  and from the same data set
+					boolean inDifferentSets = ((t / numSamplesPerSet) != (nnData.sampleIndex / numSamplesPerSet));
+					assertTrue(inDifferentSets || (Math.abs(nnData.sampleIndex - t) > exclusionWindow));
+				}
+			}		
+			long endTimeValidate = Calendar.getInstance().getTimeInMillis();
+			System.out.printf("All %d nearest neighbours found in: %.3f sec\n",
+					K, ((double) (endTimeValidate - startTime)/1000.0));
+		}
+	}
+
 	public void testFindKNearestNeighboursForSeparateArrays() throws Exception {
 		int variables = 3;
 		int dimensionsPerVariable = 3;

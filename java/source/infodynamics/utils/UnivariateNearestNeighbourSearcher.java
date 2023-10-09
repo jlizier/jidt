@@ -63,15 +63,25 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 	protected double[] sortedValues = null;
 	
 	public UnivariateNearestNeighbourSearcher(double[][] data) throws Exception {
+		this(data, null, null);
+	}
+	
+	public UnivariateNearestNeighbourSearcher(double[][] data,
+			int[] observationSetIndices, int[] observationTimePoints) throws Exception {
 		// Ideally we would not call the constructor until after the following check,
 		//  but the constructor must come first in Java.
-		this(MatrixUtils.selectColumn(data, 0));
+		this(MatrixUtils.selectColumn(data, 0), observationSetIndices, observationTimePoints);
 		if (data[0].length != 1) {
 			throw new Exception("Cannot define UnivariateNearestNeighbourSearcher for multivariate data");
 		}
 	}
-	
+
 	public UnivariateNearestNeighbourSearcher(double[] data) throws Exception {
+		this(data, null, null);
+	}
+	
+	public UnivariateNearestNeighbourSearcher(double[] data,
+			int[] observationSetIndices, int[] observationTimePoints) throws Exception {
 		this.originalDataSet = data;
 		numObservations = data.length;
 		if (numObservations <= 1) {
@@ -102,6 +112,18 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 		for (int i = 0; i < numObservations; i++) {
 			sortedValues[i] = originalDataSet[sortedArrayIndices[i]];
 		}
+
+		if (observationSetIndices == null) {
+			// observationSetIndices and observationTimePoints are
+			//  not supplied, so by default we assume only the one observation set:
+			observationSetIndices = new int[numObservations];
+			observationTimePoints = new int[numObservations];
+			for (int n = 0; n < numObservations; n++) {
+				observationTimePoints[n] = n;
+			}
+		}
+		this.observationSetIndices = observationSetIndices;
+		this.observationTimePoints = observationTimePoints;
 	}
 
 	/**
@@ -252,7 +274,8 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 				lowerCandidate >= 0;
 				lowerCandidate--) {
 			indexOfLowerCandidate = sortedArrayIndices[lowerCandidate];
-			if (Math.abs(sampleIndex - indexOfLowerCandidate) > dynCorrExclTime) {
+			if ((observationSetIndices[sampleIndex] != observationSetIndices[indexOfLowerCandidate]) || 
+					(Math.abs(observationTimePoints[sampleIndex] - observationTimePoints[indexOfLowerCandidate]) > dynCorrExclTime)) {
 				// This sample is outside the dynamic correlation exclusion window
 				break;
 			}
@@ -266,7 +289,8 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 				upperCandidate <= numObservations - 1;
 				upperCandidate++) {
 			indexOfUpperCandidate = sortedArrayIndices[upperCandidate];
-			if (Math.abs(sampleIndex - indexOfUpperCandidate) > dynCorrExclTime) {
+			if ((observationSetIndices[sampleIndex] != observationSetIndices[indexOfUpperCandidate]) ||
+					(Math.abs(observationTimePoints[sampleIndex] - observationTimePoints[indexOfUpperCandidate]) > dynCorrExclTime)) {
 				// This sample is outside the dynamic correlation exclusion window
 				break;
 			}
@@ -301,7 +325,8 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 						upperCandidate <= numObservations - 1;
 						upperCandidate++) {
 					indexOfUpperCandidate = sortedArrayIndices[upperCandidate];
-					if (Math.abs(sampleIndex - indexOfUpperCandidate) > dynCorrExclTime) {
+					if ((observationSetIndices[sampleIndex] != observationSetIndices[indexOfUpperCandidate]) ||
+							(Math.abs(observationTimePoints[sampleIndex] - observationTimePoints[indexOfUpperCandidate]) > dynCorrExclTime)) {
 						// This sample is outside the dynamic correlation exclusion window
 						break;
 					}
@@ -317,7 +342,8 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 						lowerCandidate >= 0;
 						lowerCandidate--) {
 					indexOfLowerCandidate = sortedArrayIndices[lowerCandidate];
-					if (Math.abs(sampleIndex - indexOfLowerCandidate) > dynCorrExclTime) {
+					if ((observationSetIndices[sampleIndex] != observationSetIndices[indexOfLowerCandidate]) || 
+							(Math.abs(observationTimePoints[sampleIndex] - observationTimePoints[indexOfLowerCandidate]) > dynCorrExclTime)) {
 						// This sample is outside the dynamic correlation exclusion window
 						break;
 					}
@@ -474,7 +500,8 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 		int indexInSortedArray = indicesInSortedArray[sampleIndex];
 		// Check the points with smaller data values first:
 		for (int i = indexInSortedArray - 1; i >= 0; i--) {
-			if (Math.abs(sampleIndex - sortedArrayIndices[i]) <= dynCorrExclTime) {
+			if ((observationSetIndices[sampleIndex] == observationSetIndices[sortedArrayIndices[i]]) &&
+					(Math.abs(observationTimePoints[sampleIndex] - observationTimePoints[sortedArrayIndices[i]]) <= dynCorrExclTime)) {
 				// Can't count this point, but keep checking:
 				continue;
 			}
@@ -490,7 +517,8 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 		}
 		// Next check the points with larger data values:
 		for (int i = indexInSortedArray + 1; i < numObservations; i++) {
-			if (Math.abs(sampleIndex - sortedArrayIndices[i]) <= dynCorrExclTime) {
+			if ((observationSetIndices[sampleIndex] == observationSetIndices[sortedArrayIndices[i]]) &&
+					(Math.abs(observationTimePoints[sampleIndex] - observationTimePoints[sortedArrayIndices[i]]) <= dynCorrExclTime)) {
 				// Can't count this point, but keep checking:
 				continue;
 			}
@@ -747,7 +775,8 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 		int indexInSortedArray = indicesInSortedArray[sampleIndex];
 		// Check the points with smaller data values first:
 		for (int i = indexInSortedArray - 1; i >= 0; i--) {
-			if (Math.abs(sampleIndex - sortedArrayIndices[i]) <= dynCorrExclTime) {
+			if ((observationSetIndices[sampleIndex] == observationSetIndices[sortedArrayIndices[i]]) &&
+					(Math.abs(observationTimePoints[sampleIndex] - observationTimePoints[sortedArrayIndices[i]]) <= dynCorrExclTime)) {
 				// Can't count this point, but keep checking:
 				continue;
 			}
@@ -764,7 +793,8 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 		}
 		// Next check the points with larger data values:
 		for (int i = indexInSortedArray + 1; i < numObservations; i++) {
-			if (Math.abs(sampleIndex - sortedArrayIndices[i]) <= dynCorrExclTime) {
+			if ((observationSetIndices[sampleIndex] == observationSetIndices[sortedArrayIndices[i]]) &&
+					(Math.abs(observationTimePoints[sampleIndex] - observationTimePoints[sortedArrayIndices[i]]) <= dynCorrExclTime)) {
 				// Can't count this point, but keep checking:
 				continue;
 			}
@@ -793,7 +823,8 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 		int indexInSortedArray = indicesInSortedArray[sampleIndex];
 		// Check the points with smaller data values first:
 		for (int i = indexInSortedArray - 1; i >= 0; i--) {
-			if (Math.abs(sampleIndex - sortedArrayIndices[i]) <= dynCorrExclTime) {
+			if ((observationSetIndices[sampleIndex] == observationSetIndices[sortedArrayIndices[i]]) &&
+					(Math.abs(observationTimePoints[sampleIndex] - observationTimePoints[sortedArrayIndices[i]]) <= dynCorrExclTime)) {
 				// Can't count this point, but keep checking:
 				continue;
 			}
@@ -812,7 +843,8 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 		}
 		// Next check the points with larger data values:
 		for (int i = indexInSortedArray + 1; i < numObservations; i++) {
-			if (Math.abs(sampleIndex - sortedArrayIndices[i]) <= dynCorrExclTime) {
+			if ((observationSetIndices[sampleIndex] == observationSetIndices[sortedArrayIndices[i]]) &&
+					(Math.abs(observationTimePoints[sampleIndex] - observationTimePoints[sortedArrayIndices[i]]) <= dynCorrExclTime)) {
 				// Can't count this point, but keep checking:
 				continue;
 			}
@@ -868,7 +900,8 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 		// Check the points with smaller data values first:
 		for (int i = indexInSortedArray - 1; i >= 0; i--) {
 			if (!additionalCriteria[sortedArrayIndices[i]] || 
-					(Math.abs(sampleIndex - sortedArrayIndices[i]) <= dynCorrExclTime)) {
+					((observationSetIndices[sampleIndex] == observationSetIndices[sortedArrayIndices[i]]) &&
+							(Math.abs(observationTimePoints[sampleIndex] - observationTimePoints[sortedArrayIndices[i]]) <= dynCorrExclTime))) {
 				// Can't count this point, but keep checking:
 				continue;
 			}
@@ -889,7 +922,8 @@ public class UnivariateNearestNeighbourSearcher extends NearestNeighbourSearcher
 		// Next check the points with larger data values:
 		for (int i = indexInSortedArray + 1; i < numObservations; i++) {
 			if (!additionalCriteria[sortedArrayIndices[i]] || 
-					(Math.abs(sampleIndex - sortedArrayIndices[i]) <= dynCorrExclTime)) {
+					((observationSetIndices[sampleIndex] == observationSetIndices[sortedArrayIndices[i]]) &&
+							(Math.abs(observationTimePoints[sampleIndex] - observationTimePoints[sortedArrayIndices[i]]) <= dynCorrExclTime))) {
 				// Can't count this point, but keep checking:
 				continue;
 			}

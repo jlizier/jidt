@@ -41,6 +41,19 @@ public abstract class NearestNeighbourSearcher {
 	protected int normTypeToUse = EuclideanUtils.NORM_MAX_NORM;
 
 	/**
+	 * observationSetIndices is an array indicating for each sample which 
+	 *  observation set is came from (only used for dynamic correlation exclusion).
+	 *  null means only a single observation set used
+	 */
+	protected int[] observationSetIndices;
+	/**
+	 * observationTimePoints is an array indicating for each sample which
+	 *  time index it had in the observation set it came from
+	 *  null means only a single observation set used
+	 */
+	protected int[] observationTimePoints;
+
+	/**
 	 * Factory method to construct the searcher from a set of double[][] data.
 	 * This will return a {@link KdTree} or if the data is univaraite
 	 * (i.e. only one column) a {@link UnivariateNearestNeighbourSearcher}
@@ -51,17 +64,37 @@ public abstract class NearestNeighbourSearcher {
 	public static NearestNeighbourSearcher create(double[][] data)
 			throws Exception {
 		
+		return create(data, null, null);
+	}
+	
+	/**
+	 * Factory method to construct the searcher from a set of double[][] data.
+	 * This will return a {@link KdTree} or if the data is univaraite
+	 * (i.e. only one column) a {@link UnivariateNearestNeighbourSearcher}
+	 * 
+	 * @param data a double[][] 2D data set, first indexed
+	 *  by time, second index by variable number.
+	 * @param observationSetIndices array indicating for each sample which 
+	 *  observation set is came from (only used for dynamic correlation exclusion)
+	 * @param observationTimePoints array indicating for each sample which
+	 *  time index it had in the observation set it came from
+	 */
+	public static NearestNeighbourSearcher create(double[][] data,
+			int[] observationSetIndices, int[] observationTimePoints)
+			throws Exception {
+		
 		if ((data == null) || (data[0].length == 0)) {
 			// We have null data:
 			return null;
 		} else if (data[0].length == 1) {
 			// We have univariate data:
-			return new UnivariateNearestNeighbourSearcher(MatrixUtils.selectColumn(data, 0));
+			return new UnivariateNearestNeighbourSearcher(MatrixUtils.selectColumn(data, 0),
+					observationSetIndices, observationTimePoints);
 		} else {
-			return new KdTree(data);
+			return new KdTree(data, observationSetIndices, observationTimePoints);
 		}
 	}
-	
+
 	/**
 	 * Factory method to construct the searcher from a set of double[][][] data.
 	 * 
@@ -71,11 +104,29 @@ public abstract class NearestNeighbourSearcher {
 	public static NearestNeighbourSearcher create(int[] dimensions, double[][][] data)
 			throws Exception {
 		
+		return create(dimensions, data, null, null);
+	}
+	
+	/**
+	 * Factory method to construct the searcher from a set of double[][][] data.
+	 * 
+	 * @param data an array of double[][] 2D data sets, first indexed
+	 *  by time, second index by variable number.
+	 * @param observationSetIndices array indicating for each sample which 
+	 *  observation set is came from (only used for dynamic correlation exclusion)
+	 * @param observationTimePoints array indicating for each sample which
+	 *  time index it had in the observation set it came from
+	 */
+	public static NearestNeighbourSearcher create(int[] dimensions, double[][][] data,
+			int[] observationSetIndices, int[] observationTimePoints)
+			throws Exception {
+		
 		if ((dimensions.length == 1) && (dimensions[0] == 1)) {
 			// We have univariate data:
-			return new UnivariateNearestNeighbourSearcher(MatrixUtils.selectColumn(data[0], 0));
+			return new UnivariateNearestNeighbourSearcher(MatrixUtils.selectColumn(data[0], 0),
+					observationSetIndices, observationTimePoints);
 		} else {
-			return new KdTree(dimensions, data);
+			return new KdTree(dimensions, data, observationSetIndices, observationTimePoints);
 		}
 	}
 	
