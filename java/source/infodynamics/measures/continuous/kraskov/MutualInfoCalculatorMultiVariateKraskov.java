@@ -295,13 +295,6 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
     // Allow the parent to generate the data for us first
     super.finaliseAddObservations();
     
-    if (dynCorrExcl && addedMoreThanOneObservationSet) {
-      // We have not properly implemented dynamic correlation exclusion for
-      //  multiple observation sets, so throw an error
-      throw new RuntimeException("Addition of multiple observation sets is not currently " +
-          "supported with property " + PROP_DYN_CORR_EXCL_TIME + " set");
-    }
-    
     if (totalObservations <= k + 2*dynCorrExclTime) {
       throw new Exception("There are less observations provided (" +
           totalObservations +
@@ -729,15 +722,18 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
     //  the tree construction itself afterwards can't really be well parallelised.
     if (kdTreeJoint == null) {
       kdTreeJoint = new KdTree(new int[] {dimensionsSource, dimensionsDest},
-            new double[][][] {sourceObservations, destObservations});
+            new double[][][] {sourceObservations, destObservations},
+            observationSetIndices, observationTimePoints);
       kdTreeJoint.setNormType(normType);
     }
     if (nnSearcherSource == null) {
-      nnSearcherSource = NearestNeighbourSearcher.create(sourceObservations);
+      nnSearcherSource = NearestNeighbourSearcher.create(sourceObservations,
+    		  observationSetIndices, observationTimePoints);
       nnSearcherSource.setNormType(normType);
     }
     if (nnSearcherDest == null) {
-      nnSearcherDest = NearestNeighbourSearcher.create(destObservations);
+      nnSearcherDest = NearestNeighbourSearcher.create(destObservations,
+    		  observationSetIndices, observationTimePoints);
       nnSearcherDest.setNormType(normType);
     }
   }

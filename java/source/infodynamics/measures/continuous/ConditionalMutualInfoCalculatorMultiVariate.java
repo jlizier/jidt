@@ -301,6 +301,28 @@ public interface ConditionalMutualInfoCalculatorMultiVariate
 			int startTime, int numTimeSteps) throws Exception;
 
 	/**
+	 * <p>As per {@link #addObservations(double[][], double[][], duoble[][])};
+     *  but also includes parameters to track which observation set
+     *  the samples came from. Intended to only be used by other 
+     *  estimator classes here and not by users directly.</p>
+	 * 
+	 * @param var1 multivariate observations for variable 1
+	 *  (first index is time or observation index, second is variable number)
+	 * @param var2 multivariate observations for variable 2
+	 *  (first index is time or observation index, second is variable number)
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @param cond multivariate observations for the conditional
+	 *  (first index is time or observation index, second is variable number)
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @param observationSetIndexToUse which set of observations these came fmor
+	 * @param startTimeIndex which was the first time index of these
+	 *  samples within that observation set.
+	 * @throws Exception
+	 */
+	public void addObservationsTrackObservationIDs(double[][] var1, double[][] var2, double[][] cond,
+			int observationSetIndexToUse, int startTimeIndex) throws Exception;
+
+	/**
 	 * Signal that the observations are now all added, PDFs can now be constructed.
 	 * 
 	 * @throws Exception 
@@ -454,4 +476,17 @@ public interface ConditionalMutualInfoCalculatorMultiVariate
 	 */
 	public boolean getAddedMoreThanOneObservationSet();
 
+	/**
+	 * Retrieve an array indicating which observation set each sample came from
+	 * 
+	 * @return array of integers
+	 */
+	public int[] getObservationSetIndices();
+
+	/**
+	 * Retrieve an array indicating which time index within its observation set that sample came from
+	 * 
+	 * @return array of integers
+	 */
+	public int[] getObservationTimePoints();
 }

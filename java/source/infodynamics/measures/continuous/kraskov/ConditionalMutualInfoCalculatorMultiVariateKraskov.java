@@ -313,13 +313,6 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 		// Allow the parent to generate the data for us first
 		super.finaliseAddObservations();
 		
-		if (dynCorrExcl && addedMoreThanOneObservationSet) {
-			// We have not properly implemented dynamic correlation exclusion for
-			//  multiple observation sets, so throw an error
-			throw new RuntimeException("Addition of multiple observation sets is not currently " +
-					"supported with property " + PROP_DYN_CORR_EXCL_TIME + " set");
-		}
-		
 		if (totalObservations <= k + 2*dynCorrExclTime) {
 			throw new Exception("There are less observations provided (" +
 					totalObservations +
@@ -725,35 +718,41 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
     if (kdTreeJoint == null) {
       kdTreeJoint = new KdTree(
           new int[] {dimensionsVar1, dimensionsVar2, dimensionsCond},
-          new double[][][] {var1Observations, var2Observations, condObservations});
+          new double[][][] {var1Observations, var2Observations, condObservations},
+          observationSetIndices, observationTimePoints);
       kdTreeJoint.setNormType(normType);
     }
     if (dimensionsVar1 > 1) {
       if (kdTreeVar1Conditional == null) {
         kdTreeVar1Conditional = new KdTree(
             new int[] {dimensionsVar1, dimensionsCond},
-            new double[][][] {var1Observations, condObservations});
+            new double[][][] {var1Observations, condObservations},
+            observationSetIndices, observationTimePoints);
         kdTreeVar1Conditional.setNormType(normType);
       } 
     } else { // Univariate variable 1, so we'll search its space alone as this is faster
       if (uniNNSearcherVar1 == null) {
-        uniNNSearcherVar1 = new UnivariateNearestNeighbourSearcher(var1Observations);
+        uniNNSearcherVar1 = new UnivariateNearestNeighbourSearcher(var1Observations,
+                observationSetIndices, observationTimePoints);
       }
     }
     if (dimensionsVar2 > 1) {
       if (kdTreeVar2Conditional == null) {
         kdTreeVar2Conditional = new KdTree(
             new int[] {dimensionsVar2, dimensionsCond},
-            new double[][][] {var2Observations, condObservations});
+            new double[][][] {var2Observations, condObservations},
+            observationSetIndices, observationTimePoints);
         kdTreeVar2Conditional.setNormType(normType);
       }
     } else { // Univariate variable 2, so we'll search its space alone as this is faster
       if (uniNNSearcherVar2 == null) {
-        uniNNSearcherVar2 = new UnivariateNearestNeighbourSearcher(var2Observations);
+        uniNNSearcherVar2 = new UnivariateNearestNeighbourSearcher(var2Observations,
+                observationSetIndices, observationTimePoints);
       }
     }
     if ((nnSearcherConditional == null) && (dimensionsCond > 0)) {
-      nnSearcherConditional = NearestNeighbourSearcher.create(condObservations);
+      nnSearcherConditional = NearestNeighbourSearcher.create(condObservations,
+              observationSetIndices, observationTimePoints);
       nnSearcherConditional.setNormType(normType);
     }
   }

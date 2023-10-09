@@ -22,6 +22,7 @@ import infodynamics.utils.EmpiricalMeasurementDistribution;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.RandomGenerator;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.Vector;
@@ -83,6 +84,16 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	protected double[][] condObservations;
 
 	/**
+	 * Track which observation set each sample came from
+	 */
+	protected int[] observationSetIndices;
+
+	/**
+	 * Track which sample index within an observation set that each sample came from
+	 */
+	protected int[] observationTimePoints;
+	
+	/**
 	 * Total number of observations supplied.
 	 * Only valid after {@link #finaliseAddObservations()} is called.
 	 */
@@ -119,6 +130,21 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	 * {@link #addObservations(double[][], double[][], double[][])} etc
 	 */
 	protected Vector<double[][]> vectorOfCondObservations;
+	/**
+	 * Tracks separate (time-series) observation sets
+	 *  we are taking samples from
+	 */
+	protected int observationSetIndex = 0;
+	/**
+	 * Storage for which observation set each
+	 *  block of samples comes from
+	 */
+	protected Vector<Integer> vectorOfObservationSetIndices;
+	/**
+	 * Storage for start time point for the observation
+	 *  set within its block of samples
+	 */
+	protected Vector<Integer> vectorOfObservationStartTimePoints;
 	
 	/**
 	 * Whether the user has added more than one disjoint observation set
@@ -188,6 +214,11 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		var1Observations = null;
 		var2Observations = null;
 		condObservations = null;
+		observationSetIndices = null;
+		observationTimePoints = null;
+		observationSetIndex = 0;
+		vectorOfObservationSetIndices = null;
+		vectorOfObservationStartTimePoints = null;
 		addedMoreThanOneObservationSet = false;
 		var1Means = null;
 		var1Stds = null;
@@ -300,15 +331,46 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	}
 	
 	@Override
+	public void setObservations(double[][] var1, double[][] var2,
+			double[][] cond,
+			boolean[] var1Valid, boolean[] var2Valid,
+			boolean[] condValid) throws Exception {
+		
+		startAddObservations();
+		addObservations(var1, var2, cond, var1Valid, var2Valid, condValid);
+		finaliseAddObservations();
+	}
+
+	@Override
+	public void setObservations(double[][] var1, double[][] var2,
+			double[][] cond,
+			boolean[][] var1Valid, boolean[][] var2Valid,
+			boolean[][] condValid) throws Exception {
+
+		startAddObservations();
+		addObservations(var1, var2, cond, var1Valid, var2Valid, condValid);
+		finaliseAddObservations();
+	}
+
+	@Override
 	public void startAddObservations() {
 		vectorOfVar1Observations = new Vector<double[][]>();
 		vectorOfVar2Observations = new Vector<double[][]>();
 		vectorOfCondObservations = new Vector<double[][]>();
+		vectorOfObservationSetIndices = new Vector<Integer>();
+		vectorOfObservationStartTimePoints = new Vector<Integer>();
 	}
 	
 	@Override
 	public void addObservations(double[][] var1, double[][] var2,
 			double[][] cond) throws Exception {
+		// Use the current observationSetIndex and increment for next use:
+		addObservationsTrackObservationIDs(var1, var2, cond, observationSetIndex++, 0);
+	}
+	
+	@Override
+	public void addObservationsTrackObservationIDs(double[][] var1, double[][] var2,
+			double[][] cond, int observationSetIndexToUse, int startTimeIndex) throws Exception {
 		if (vectorOfVar1Observations == null) {
 			// startAddObservations was not called first
 			throw new RuntimeException("User did not call startAddObservations before addObservations");
@@ -333,6 +395,8 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		vectorOfVar1Observations.add(var1);
 		vectorOfVar2Observations.add(var2);
 		vectorOfCondObservations.add(cond);
+		vectorOfObservationSetIndices.add(observationSetIndexToUse);
+		vectorOfObservationStartTimePoints.add(startTimeIndex);
 		if (vectorOfVar1Observations.size() > 1) {
 			addedMoreThanOneObservationSet = true;
 		}
@@ -389,6 +453,12 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	public void addObservations(double[][] var1, double[][] var2,
 			double[][] cond,
 			int startTime, int numTimeSteps) throws Exception {
+		addObservations(var1, var2, cond, startTime, numTimeSteps, observationSetIndex++);
+	}
+	
+	protected void addObservations(double[][] var1, double[][] var2,
+			double[][] cond,
+			int startTime, int numTimeSteps, int observationSetIndexToUse) throws Exception {
 		if (vectorOfVar1Observations == null) {
 			// startAddObservations was not called first
 			throw new RuntimeException("User did not call startAddObservations before addObservations");
@@ -402,15 +472,14 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 			condToAdd = new double[numTimeSteps][];
 			System.arraycopy(cond, startTime, condToAdd, 0, numTimeSteps);
 		}
-		addObservations(var1ToAdd, var2ToAdd, condToAdd);
+		addObservationsTrackObservationIDs(var1ToAdd, var2ToAdd, condToAdd, observationSetIndexToUse, startTime);
 	}
 
-	@Override
-	public void setObservations(double[][] var1, double[][] var2,
+	public void addObservations(double[][] var1, double[][] var2,
 			double[][] cond,
 			boolean[] var1Valid, boolean[] var2Valid,
 			boolean[] condValid) throws Exception {
-		
+
 		Vector<int[]> startAndEndTimePairs =
 				computeStartAndEndTimePairs(var1Valid, var2Valid, condValid);
 		
@@ -419,23 +488,22 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		for (int[] timePair : startAndEndTimePairs) {
 			int startTime = timePair[0];
 			int endTime = timePair[1];
-			addObservations(var1, var2, cond, startTime, endTime - startTime + 1);
+			addObservations(var1, var2, cond, startTime, endTime - startTime + 1, observationSetIndex);
 		}
+		observationSetIndex++;
 		finaliseAddObservations();
 	}
-
-	@Override
-	public void setObservations(double[][] var1, double[][] var2,
+	
+	public void addObservations(double[][] var1, double[][] var2,
 			double[][] cond,
 			boolean[][] var1Valid, boolean[][] var2Valid,
 			boolean[][] condValid) throws Exception {
-
 		boolean[] allVar1Valid = MatrixUtils.andRows(var1Valid);
 		boolean[] allVar2Valid = MatrixUtils.andRows(var2Valid);
 		boolean[] allCondValid = MatrixUtils.andRows(condValid);
-		setObservations(var1, var2, cond, allVar1Valid, allVar2Valid, allCondValid);
+		addObservations(var1, var2, cond, allVar1Valid, allVar2Valid, allCondValid);
 	}
-
+	
 	/**
 	 * Signal that the observations are now all added, PDFs can now be constructed.
 	 * 
@@ -458,10 +526,14 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		var1Observations = new double[totalObservations][dimensionsVar1];
 		var2Observations = new double[totalObservations][dimensionsVar2];
 		condObservations = new double[totalObservations][dimensionsCond];
+		observationSetIndices = new int[totalObservations];
+		observationTimePoints = new int[totalObservations];
 		
 		int startObservation = 0;
 		Iterator<double[][]> iteratorVar2 = vectorOfVar2Observations.iterator();
 		Iterator<double[][]> iteratorCond = vectorOfCondObservations.iterator();
+		Iterator<Integer> iteratorObsSetIndices = vectorOfObservationSetIndices.iterator();
+		Iterator<Integer> iteratorObsStartTimePoints = vectorOfObservationStartTimePoints.iterator();
 		for (double[][] var1 : vectorOfVar1Observations) {
 			double[][] var2 = iteratorVar2.next();
 			double[][] cond = iteratorCond.next();
@@ -478,6 +550,12 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 					condObservations, startObservation, 0,
 					cond.length, dimensionsCond);
 			} // else we can do nothing there
+			// And update which observation set and time index each sample came from:
+			Arrays.fill(observationSetIndices, startObservation, startObservation+var1.length, iteratorObsSetIndices.next());
+			int firstTimeSampleId = iteratorObsStartTimePoints.next();
+			for (int i = 0; i < var1.length; i++) {
+				observationTimePoints[startObservation + i] = firstTimeSampleId + i;
+			}
 			startObservation += var2.length;
 		}
 		
@@ -763,4 +841,13 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		return addedMoreThanOneObservationSet;
 	}	
 
+	@Override
+	public int[] getObservationSetIndices() {
+		return observationSetIndices;
+	}
+
+	@Override
+	public int[] getObservationTimePoints() {
+		return observationTimePoints;
+	}
 }
