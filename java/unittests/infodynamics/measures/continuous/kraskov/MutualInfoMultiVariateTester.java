@@ -725,6 +725,81 @@ public class MutualInfoMultiVariateTester
 				t++;
 			}
 		}
-	}	
+	}
+
+	/**
+	 * Test the MI values returned, and that we can basically turn dyn corr excl
+	 *  off by adding each data point in separately
+	 * @throws Exception 
+	 */
+	public void testDynCorrExclAndSetIndices2() throws Exception {
+		int nForEach = 100;
+		double[] x = new double[nForEach * 4];
+		double[] y = new double[nForEach * 4];
+		
+		int k = 4; // Make sure this is even
+		int exclWindow = 2; // Make sure this is capped by k/2. Leave this at 2 - these of the code assumes this
+		
+		int segment = 0;
+		for (int rx = 0; rx < 2; rx++) {
+			for (int ry = 0; ry < 2; ry++) {
+				for (int t = 0; t < nForEach; t++) {
+					// x and y coordinate will be == t % nForEach when rx==0 or ry==0,
+					//  else we will push them up by nForEach*2..
+					// So we will basically have diagonal lines in four quadrants.
+					x[segment*nForEach + t] = t + ((rx == 1) ? nForEach*2 : 0);
+					y[segment*nForEach + t] = t + ((ry == 1) ? nForEach*2 : 0);
+				}
+				segment++;
+			}
+		}
+		// We're going to set kNNs to be even, so that the nearest neighbours must be 
+		//  the kNN closest points on the same line segement. n_x and n_y will be 2*(kNN) + 1 respectively with algorithm 2,
+		//  since they will include the kNN in the same line segment (>= than the kNNth), plus the 
+		//  corresponding point and it's kNNs in the segment with the same x or y range.
+		// So we have:
+		double expectedMIWithoutDynCorrExcl = MathsUtils.digamma(k) - 1.0 / (double)k - 2*MathsUtils.digamma(2*k+1) + MathsUtils.digamma(nForEach*4);
+		// But if we turn on dynamic correlation exclusion, say for 2 points, then the kNNs will now step outside the previous k
+		//  and the kernel widths for n_x and n_y will be wider by approx 2x the exclusion window size.
+		// For points not on the edges, n_x and n_y will increase by 2x the exclusion window size up to k/2 since they
+		//  will include this many more points in the corresponding segments.
+		// For points near the edges, n_x and n_y will increase only by 1x the exclusion window on one side (where it doesn't abut the edge), and the amount of the 
+		//  exclusion window that includes points on the other side.
+		// The maths we're using here just assumes that the window is size 2 to make coding it fast (we're not going to bother changing it)
+		double expectedMIWithDynCorrExcl =
+				(double) ((nForEach-4) * 4) / (double) (nForEach * 4) * (MathsUtils.digamma(k) - 1.0 / (double)k - 2*MathsUtils.digamma(2*k+1+2*exclWindow) + MathsUtils.digamma(nForEach*4)) +
+				(double) ((2) * 4) / (double) (nForEach * 4) * (MathsUtils.digamma(k) - 1.0 / (double)k - 2*MathsUtils.digamma(2*k+1+exclWindow + exclWindow-1) + MathsUtils.digamma(nForEach*4)) +
+				(double) ((2) * 4) / (double) (nForEach * 4) * (MathsUtils.digamma(k) - 1.0 / (double)k - 2*MathsUtils.digamma(2*k+1+exclWindow + exclWindow-2) + MathsUtils.digamma(nForEach*4));
+		
+		MutualInfoCalculatorMultiVariateKraskov miCalc = getNewCalc(2);
+		miCalc.setProperty(miCalc.PROP_K, Integer.toString(k));
+		miCalc.setProperty(miCalc.PROP_ADD_NOISE, Integer.toString(0)); // Need to noise so that our analytic results hold
+
+		// First check that for a simple single observation set everything works:
+		miCalc.initialise(1, 1);
+		miCalc.setObservations(x, y);
+		double miWithoutDynCorrExcl = miCalc.computeAverageLocalOfObservations();
+		assertEquals(expectedMIWithoutDynCorrExcl, miWithoutDynCorrExcl, 0.00001);
+
+		// Now turn dynamic correlation exclusion on:
+		miCalc.setProperty(miCalc.PROP_DYN_CORR_EXCL_TIME, Integer.toString(exclWindow));
+		// miCalc.setProperty(miCalc.PROP_NUM_THREADS, Integer.toString(1)); // To simplify debugging
+		miCalc.initialise(1, 1);
+		miCalc.setObservations(x, y);
+		double miWithDynCorrExcl = miCalc.computeAverageLocalOfObservations();
+		assertEquals(expectedMIWithDynCorrExcl, miWithDynCorrExcl, 0.00001);
+
+		// This time, we leave dynamic correlation exclusion turned on, but add each sample as
+		// a separate data set -- this will serve to effectively turn dynamic correlation exclusion off again!
+		// Gives a good test that exclusion only considers points within the same data set.
+		miCalc.initialise(1, 1);
+		miCalc.startAddObservations();
+		for (int t = 0; t < x.length; t++) {
+			miCalc.addObservations(new double[] {x[t]}, new double[] {y[t]});
+		}
+		miCalc.finaliseAddObservations();
+		double miWithDynCorrExclAndSeperateSets = miCalc.computeAverageLocalOfObservations();
+		assertEquals(expectedMIWithoutDynCorrExcl, miWithDynCorrExclAndSeperateSets, 0.00001);
+	}
 }
 
