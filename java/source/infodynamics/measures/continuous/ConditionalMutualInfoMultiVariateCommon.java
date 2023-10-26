@@ -287,8 +287,7 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	}
 
 	@Override
-	public void setObservations(double[][] var1, double[][] var2,
-			double[][] cond) throws Exception {
+	public void setObservations(double[][] var1, double[][] var2, double[][] cond) throws Exception {
 		startAddObservations();
 		addObservations(var1, var2, cond);
 		finaliseAddObservations();
@@ -297,7 +296,8 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 
 	/**
 	 * A non-overloaded method signature for setObservations with 2D arguments, as there have been
-	 *  some problems calling overloaded versions of setObservations from jpype. 
+	 *  some problems calling overloaded versions of setObservations from python jpype.
+	 *  Resolved if one follows the AutoAnalyser generated code, but left for back compatibility.
 	 * 
 	 * @param var1
 	 * @param var2
@@ -309,8 +309,55 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	}
 
 	@Override
-	public void setObservations(double[] var1, double[] var2,
-			double[] cond) throws Exception {
+	public void setObservations(double[] var1, double[] var2, double[] cond) throws Exception {
+		startAddObservations();
+		addObservations(var1, var2, cond);
+		finaliseAddObservations();
+		addedMoreThanOneObservationSet = false;
+	}
+
+	@Override
+	public void setObservations(double[][] var1, double[] var2, double[] cond) throws Exception {
+		startAddObservations();
+		addObservations(var1, var2, cond);
+		finaliseAddObservations();
+		addedMoreThanOneObservationSet = false;
+	}
+
+	@Override
+	public void setObservations(double[] var1, double[][] var2, double[] cond) throws Exception {
+		startAddObservations();
+		addObservations(var1, var2, cond);
+		finaliseAddObservations();
+		addedMoreThanOneObservationSet = false;
+	}
+
+	@Override
+	public void setObservations(double[] var1, double[] var2, double[][] cond) throws Exception {
+		startAddObservations();
+		addObservations(var1, var2, cond);
+		finaliseAddObservations();
+		addedMoreThanOneObservationSet = false;
+	}
+
+	@Override
+	public void setObservations(double[] var1, double[][] var2, double[][] cond) throws Exception {
+		startAddObservations();
+		addObservations(var1, var2, cond);
+		finaliseAddObservations();
+		addedMoreThanOneObservationSet = false;
+	}
+
+	@Override
+	public void setObservations(double[][] var1, double[] var2, double[][] cond) throws Exception {
+		startAddObservations();
+		addObservations(var1, var2, cond);
+		finaliseAddObservations();
+		addedMoreThanOneObservationSet = false;
+	}
+
+	@Override
+	public void setObservations(double[][] var1, double[][] var2, double[] cond) throws Exception {
 		startAddObservations();
 		addObservations(var1, var2, cond);
 		finaliseAddObservations();
@@ -319,7 +366,8 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 
 	/**
 	 * A non-overloaded method signature for setObservations with 1D arguments, as there have been
-	 *  some problems calling overloaded versions of setObservations from jpype. 
+	 *  some problems calling overloaded versions of setObservations from python jpype.
+	 *  Resolved if one follows the AutoAnalyser generated code, but left for back compatibility.
 	 * 
 	 * @param var1
 	 * @param var2
@@ -428,6 +476,7 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		}
 		double[][] reshapedConditional = null;
 		if (dimensionsCond == 1) {
+			// This won't execute if dimensionsCond == 0
 			reshapedConditional = MatrixUtils.reshape(cond, cond.length, 1);
 		}
 		addObservations(MatrixUtils.reshape(var1, var1.length, 1),
@@ -436,6 +485,110 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 
 	}
 	
+	@Override
+	public void addObservations(double[][] var1, double[] var2,
+			double[] cond) throws Exception {
+		if ((dimensionsVar2 != 1) ||
+				((dimensionsCond != 1) && (dimensionsCond != 0))) {
+			throw new Exception("The number of dimensions for variables var2 and cond (having been initialised to " +
+					dimensionsVar2 + " & " +
+					dimensionsCond + ") can only be 1 (or 0 for conditional) when " +
+					"the addObservations(double[][],double[],double[]) and " + 
+					"setObservations(double[][],double[],double[]) methods are called");
+		}
+		double[][] reshapedConditional = null;
+		if (dimensionsCond == 1) {
+			// This won't execute if dimensionsCond == 0
+			reshapedConditional = MatrixUtils.reshape(cond, cond.length, 1);
+		}
+		addObservations(var1,
+						MatrixUtils.reshape(var2, var2.length, 1),
+						reshapedConditional);
+	}
+
+	@Override
+	public void addObservations(double[] var1, double[][] var2,
+			double[] cond) throws Exception {
+		if ((dimensionsVar1 != 1) ||
+				((dimensionsCond != 1) && (dimensionsCond != 0))) {
+			throw new Exception("The number of dimensions for variables var1 and cond (having been initialised to " +
+					dimensionsVar1 + " & " +
+					dimensionsCond + ") can only be 1 (or 0 for conditional) when " +
+					"the addObservations(double[],double[][],double[]) and " + 
+					"setObservations(double[],double[][],double[]) methods are called");
+		}
+		double[][] reshapedConditional = null;
+		if (dimensionsCond == 1) {
+			// This won't execute if dimensionsCond == 0
+			reshapedConditional = MatrixUtils.reshape(cond, cond.length, 1);
+		}
+		addObservations(MatrixUtils.reshape(var1, var1.length, 1),
+						var2,
+						reshapedConditional);
+	}
+
+	@Override
+	public void addObservations(double[] var1, double[] var2,
+			double[][] cond) throws Exception {
+		if ((dimensionsVar1 != 1) || (dimensionsVar2 != 1)) {
+			throw new Exception("The number of dimensions for variables var1 and var2 (having been initialised to " +
+					dimensionsVar1 + " & " +
+					dimensionsVar2 + ") can only be 1 when " +
+					"the addObservations(double[],double[],double[][]) and " + 
+					"setObservations(double[],double[],double[][]) methods are called");
+		}
+		addObservations(MatrixUtils.reshape(var1, var1.length, 1),
+						MatrixUtils.reshape(var2, var2.length, 1),
+						cond);
+	}
+
+	@Override
+	public void addObservations(double[] var1, double[][] var2,
+			double[][] cond) throws Exception {
+		if (dimensionsVar1 != 1) {
+			throw new Exception("The number of dimensions for variable var1 (having been initialised to " +
+					dimensionsVar1 + ") can only be 1 when " +
+					"the addObservations(double[],double[][],double[][]) and " + 
+					"setObservations(double[],double[][],double[][]) methods are called");
+		}
+		addObservations(MatrixUtils.reshape(var1, var1.length, 1),
+						var2,
+						cond);
+	}
+
+	@Override
+	public void addObservations(double[][] var1, double[] var2,
+			double[][] cond) throws Exception {
+		if (dimensionsVar2 != 1) {
+			throw new Exception("The number of dimensions for variable var2 (having been initialised to " +
+					dimensionsVar2 + ") can only be 1 when " +
+					"the addObservations(double[][],double[],double[][]) and " + 
+					"setObservations(double[][],double[],double[][]) methods are called");
+		}
+		addObservations(var1,
+						MatrixUtils.reshape(var2, var2.length, 1),
+						cond);
+	}
+
+	@Override
+	public void addObservations(double[][] var1, double[][] var2,
+			double[] cond) throws Exception {
+		if ((dimensionsCond != 1) && (dimensionsCond != 0)) {
+			throw new Exception("The number of dimensions for variable cond (having been initialised to " +
+					dimensionsCond + ") can only be 1 or 0 when " +
+					"the addObservations(double[][],double[][],double[]) and " + 
+					"setObservations(double[][],double[][],double[]) methods are called");
+		}
+		double[][] reshapedConditional = null;
+		if (dimensionsCond == 1) {
+			// This won't execute if dimensionsCond == 0
+			reshapedConditional = MatrixUtils.reshape(cond, cond.length, 1);
+		}
+		addObservations(var1,
+						var2,
+						reshapedConditional);
+	}
+
 	/**
 	 * A non-overloaded method signature for addObservations with 1D arguments, as there have been
 	 *  some problems calling overloaded versions of setObservations from jpype. 

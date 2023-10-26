@@ -700,7 +700,7 @@ public class ConditionalMutualInfoMultiVariateTester
 			//		EuclideanUtils.NORM_MAX_NORM_STRING);
 			condMiCalc.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "0"); // Need consistency for unit tests
 			condMiCalc.initialise(var1[0].length, var2[0].length, 0);
-			condMiCalc.setObservations(var1, var2, null);
+			condMiCalc.setObservations(var1, var2, (double[][]) null);
 			// condMiCalc.setDebug(true);
 			double mi = condMiCalc.computeAverageLocalOfObservations();
 			// condMiCalc.setDebug(false);

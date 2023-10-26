@@ -129,17 +129,8 @@ public interface ConditionalMutualInfoCalculatorMultiVariate
 			double[][] cond) throws Exception;
 
 	/**
-	 * Sets a single series from which to compute the PDF.
-	 * Cannot be called in conjunction with
-	 * {@link #startAddObservations()} / {@link #addObservations(double[][], double[][], double[][])} or
-	 * {@link #addObservations(double[][], double[][], double[][], int, int)} /
-	 * {@link #finaliseAddObservations()}.</p>
-	 * 
-	 * <p>The supplied series may be (multivariate) time-series or 
-	 * simply a set of separate observations without a time interpretation.
-	 * 
-	 * <p>This method can only be used where dimensions of all
-	 * variables have been set to 1.</p>
+	 * As per {@link #setObservations(double[][], double[][], double[][])}
+	 * but where dimensions of all variables have been set to 1 
 	 * 
 	 * @param var1 univariate observations for variable 1
 	 * @param var2 univariate observations for variable 2
@@ -150,6 +141,90 @@ public interface ConditionalMutualInfoCalculatorMultiVariate
 	 */
 	public void setObservations(double[] var1, double[] var2,
 			double[] cond) throws Exception;
+
+	/**
+	 * As per {@link #setObservations(double[][], double[][], double[][])}
+	 * but where dimensions of var2 and cond are 1 
+	 * 
+	 * @param var1 observations for variable 1
+	 * @param var2 univariate observations for variable 2
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @param cond univariate observations for the conditional
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @throws Exception
+	 */
+	public void setObservations(double[][] var1, double[] var2,
+			double[] cond) throws Exception;
+
+	/**
+	 * As per {@link #setObservations(double[][], double[][], double[][])}
+	 * but where dimensions of var1 and cond are 1 
+	 * 
+	 * @param var1 univariate observations for variable 1
+	 * @param var2 observations for variable 2
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @param cond univariate observations for the conditional
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @throws Exception
+	 */
+	public void setObservations(double[] var1, double[][] var2,
+			double[] cond) throws Exception;
+
+	/**
+	 * As per {@link #setObservations(double[][], double[][], double[][])}
+	 * but where dimensions of var1 and var2 are 1 
+	 * 
+	 * @param var1 univariate observations for variable 1
+	 * @param var2 univariate observations for variable 2
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @param cond observations for the conditional
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @throws Exception
+	 */
+	public void setObservations(double[] var1, double[] var2,
+			double[][] cond) throws Exception;
+
+	/**
+	 * As per {@link #setObservations(double[][], double[][], double[][])}
+	 * but where dimension of cond is 1 
+	 * 
+	 * @param var1 observations for variable 1
+	 * @param var2 observations for variable 2
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @param cond univariate observations for the conditional
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @throws Exception
+	 */
+	public void setObservations(double[][] var1, double[][] var2,
+			double[] cond) throws Exception;
+
+	/**
+	 * As per {@link #setObservations(double[][], double[][], double[][])}
+	 * but where dimension of var2 is 1 
+	 * 
+	 * @param var1 observations for variable 1
+	 * @param var2 univariate observations for variable 2
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @param cond observations for the conditional
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @throws Exception
+	 */
+	public void setObservations(double[][] var1, double[] var2,
+			double[][] cond) throws Exception;
+
+	/**
+	 * As per {@link #setObservations(double[][], double[][], double[][])}
+	 * but where dimension of var1 is 1 
+	 * 
+	 * @param var1 univariate observations for variable 1
+	 * @param var2 observations for variable 2
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @param cond observations for the conditional
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @throws Exception
+	 */
+	public void setObservations(double[] var1, double[][] var2,
+			double[][] cond) throws Exception;
 
 	/**
 	 * Sets a single series from which to compute the PDF,
@@ -248,18 +323,8 @@ public interface ConditionalMutualInfoCalculatorMultiVariate
 			double[][] cond) throws Exception;
 	
 	/**
-	 * <p>Adds a new set of observations to update the PDFs with - is
-	 * intended to be called multiple times.
-	 * Must be called after {@link #startAddObservations()}; call
-	 * {@link #finaliseAddObservations()} once all observations have
-	 * been supplied.</p>
-	 * 
-	 * <p>Note that the arrays must not be over-written by the user
-	 *  until after finaliseAddObservations() has been called
-	 *  (they are not copied by this method necessarily, but the method
-	 *  may simply hold a pointer to them).</p>
-	 * 
-	 * <p>This method can only be used where dimensions of all
+	 * <p>As per {@link #addObservations(double[][], double[][], double[][])}
+	 * but can only be used where dimensions of all
 	 * variables have been set to 1.</p>
 	 * 
 	 * @param var1 univariate observations for variable 1
@@ -272,6 +337,96 @@ public interface ConditionalMutualInfoCalculatorMultiVariate
 	public void addObservations(double[] var1, double[] var2,
 			double[] cond) throws Exception;
 	
+	/**
+	 * <p>As per {@link #addObservations(double[][], double[][], double[][])}
+	 * but can only be used where dimensions of
+	 * var2 and cond have been set to 1.</p>
+	 * 
+	 * @param var1 observations for variable 1
+	 * @param var2 univariate observations for variable 2
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @param cond univariate observations for the conditional
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @throws Exception
+	 */
+	public void addObservations(double[][] var1, double[] var2,
+			double[] cond) throws Exception;
+
+	/**
+	 * <p>As per {@link #addObservations(double[][], double[][], double[][])}
+	 * but can only be used where dimensions of
+	 * var1 and cond have been set to 1.</p>
+	 * 
+	 * @param var1 univariate observations for variable 1
+	 * @param var2 observations for variable 2
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @param cond univariate observations for the conditional
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @throws Exception
+	 */
+	public void addObservations(double[] var1, double[][] var2,
+			double[] cond) throws Exception;
+
+	/**
+	 * <p>As per {@link #addObservations(double[][], double[][], double[][])}
+	 * but can only be used where dimensions of
+	 * var1 and var2 have been set to 1.</p>
+	 * 
+	 * @param var1 univariate observations for variable 1
+	 * @param var2 univariate observations for variable 2
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @param cond observations for the conditional
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @throws Exception
+	 */
+	public void addObservations(double[] var1, double[] var2,
+			double[][] cond) throws Exception;
+
+	/**
+	 * <p>As per {@link #addObservations(double[][], double[][], double[][])}
+	 * but can only be used where dimensions of
+	 * var1 have been set to 1.</p>
+	 * 
+	 * @param var1 univariate observations for variable 1
+	 * @param var2 observations for variable 2
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @param cond observations for the conditional
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @throws Exception
+	 */
+	public void addObservations(double[] var1, double[][] var2,
+			double[][] cond) throws Exception;
+
+	/**
+	 * <p>As per {@link #addObservations(double[][], double[][], double[][])}
+	 * but can only be used where dimensions of
+	 * var2 have been set to 1.</p>
+	 * 
+	 * @param var1 observations for variable 1
+	 * @param var2 univariate observations for variable 2
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @param cond observations for the conditional
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @throws Exception
+	 */
+	public void addObservations(double[][] var1, double[] var2,
+			double[][] cond) throws Exception;
+
+	/**
+	 * <p>As per {@link #addObservations(double[][], double[][], double[][])}
+	 * but can only be used where dimensions of
+	 * cond have been set to 1.</p>
+	 * 
+	 * @param var1 observations for variable 1
+	 * @param var2 observations for variable 2
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @param cond univariate observations for the conditional
+	 *  Length must match <code>var1</code>, and their indices must correspond.
+	 * @throws Exception
+	 */
+	public void addObservations(double[][] var1, double[][] var2,
+			double[] cond) throws Exception;
+
 	/**
 	 * <p>Adds a new sub-series of observations to update the PDFs with - is
 	 * intended to be called multiple times.

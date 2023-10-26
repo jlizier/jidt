@@ -176,7 +176,7 @@ public class ConditionalMutualInfoMultiVariateTester extends
 		ConditionalMutualInfoCalculatorMultiVariateGaussian condMiCalc =
 				new ConditionalMutualInfoCalculatorMultiVariateGaussian();
 		condMiCalc.initialise(1, 1, 0);
-		condMiCalc.setObservations(source, dest, null);	
+		condMiCalc.setObservations(source, dest, (double[][]) null);	
 		double condMi = condMiCalc.computeAverageLocalOfObservations();
 		assertEquals(mi, condMi, 0.000001);
 
