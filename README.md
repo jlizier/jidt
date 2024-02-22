@@ -1,6 +1,6 @@
 # Java Information Dynamics Toolkit (JIDT)
 
-Copyright (C) 2012- [Joseph T. Lizier](http://lizier.me/joseph/); 2014- Ipek Özdemir; 2017- [Pedro Mediano](https://www.doc.ic.ac.uk/~pam213/); 2019- Emanuele Crosato, Sooraj Sekhar, Oscar Huaigu Xu; 2022- [David Shorten](https://scholar.google.com/citations?user=ggF3Lt4AAAAJ&hl=en)
+Copyright (C) 2012- [Joseph T. Lizier](http://lizier.me/joseph/); 2014- Ipek Özdemir; 2017- [Pedro Mediano](https://www.doc.ic.ac.uk/~pam213/); 2019- Emanuele Crosato, Sooraj Sekhar, Oscar Huaigu Xu; 2020- [Julio Correa Rios](http://linkedin.com/in/juliocorrearios); 2021- [Isabelle De Backer](https://www.linkedin.com/in/isabelledebacker/); 2022- [David Shorten](https://scholar.google.com/citations?user=ggF3Lt4AAAAJ&hl=en)
 
 *JIDT* provides a stand-alone, open-source code Java implementation (also usable in [Matlab, Octave](../../wiki/UseInOctaveMatlab), [Python](../../wiki/UseInPython), [R](../../wiki/UseInR), [Julia](../../wiki/UseInJulia) and [Clojure](../../wiki/UseInClojure)) of information-theoretic measures of distributed computation in complex systems: i.e. information storage, transfer and modification.
 
