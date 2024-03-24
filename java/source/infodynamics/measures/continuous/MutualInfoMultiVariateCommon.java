@@ -645,19 +645,20 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 * creates <i>random</i> shufflings of the next values for the surrogate MI
 	 * calculations.</p>
 	 * 
-	 * @param numPermutationsToCheck number of surrogate samples for permutations
+	 * @param numSurrogatesToCheck number of surrogate samples for permutations
 	 *  to generate the distribution.
+	 * @param surrogateType
 	 * @return the distribution of channel measure scores under this null hypothesis.
 	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
 	 *    toolkit for studying the dynamics of complex systems', 2014."
 	 * @throws Exception
 	 */
-	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception {
+	public EmpiricalMeasurementDistribution computeSignificance(int numSurrogatesToCheck) throws Exception {
 		// Generate the re-ordered indices:
 		RandomGenerator rg = new RandomGenerator();
 		// (Not necessary to check for distinct random perturbations)
 		int[][] newOrderings = rg.generateRandomPerturbations(
-				sourceObservations.length, numPermutationsToCheck);
+				sourceObservations.length, numSurrogatesToCheck);
 		return computeSignificance(newOrderings);
 	}
 
@@ -707,15 +708,15 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 */
 	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings) throws Exception {
 		
-		int numPermutationsToCheck = newOrderings.length;
+		int numSurrogatesToCheck = newOrderings.length;
 		if (!miComputed) {
 			computeAverageLocalOfObservations();
 		}
 		
-		double[] surrogateMeasurements = new double[numPermutationsToCheck];
+		double[] surrogateMeasurements = new double[numSurrogatesToCheck];
 		
 		// Now compute the MI for each set of shuffled data:
-		for (int i = 0; i < numPermutationsToCheck; i++) {
+		for (int i = 0; i < numSurrogatesToCheck; i++) {
 			// Compute a new surrogate MI
 			surrogateMeasurements[i] = computeAverageLocalOfObservations(newOrderings[i]);
 			if (debug){
