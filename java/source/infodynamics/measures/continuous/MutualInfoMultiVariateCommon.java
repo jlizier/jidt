@@ -163,6 +163,10 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 */
 	protected boolean normalise = true;
 	/**
+	 * Which strategy to choose to select the surrogate data 
+	 */
+	protected String surrogate_type = "SHUFFLE";
+	/**
 	 * Whether to add an amount of random noise to the incoming data
 	 */
 	protected boolean addNoise = false;
@@ -212,6 +216,8 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 * 		</li>
 	 *  <li>{@link #PROP_NORMALISE} -- whether to normalise the incoming individual
 	 *      variables to mean 0 and standard deviation 1 (true by default, except for Gaussian calculator)</li>
+	 *  <li>{@link #PROP_SURROGATE_TYPE} -- Which strategy to choose to select the surrogate data. Valid values are 
+	 *		"SHUFFLE" - randomly suffling data, or "ROTATE", keeping data consecutive but shuffling orders. Default is shuffle.</li>
 	 *  <li>{@link #PROP_ADD_NOISE} -- a standard deviation for an amount of
 	 *    random Gaussian noise to add to
 	 *      each variable, to avoid having neighbourhoods with artificially
@@ -241,6 +247,12 @@ public abstract class MutualInfoMultiVariateCommon implements
 			}
 	    } else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
 	        normalise = Boolean.parseBoolean(propertyValue);
+		} else if (propertyName.equalsIgnoreCase(PROP_SURROGATE_TYPE)){
+			if (VALID_SURROGATE_TYPES.contains(propertyValue.toUpperCase())) {
+				surrogate_type = propertyValue.toUpperCase();
+			} else {
+				throw new IllegalArgumentException("Invalid value for surrogate_type. Allowed values are: " + VALID_SURROGATE_TYPES);
+			}
 	    } else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
 	        if (propertyValue.equals("0") ||
 	            propertyValue.equalsIgnoreCase("false")) {
@@ -647,7 +659,6 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 * 
 	 * @param numSurrogatesToCheck number of surrogate samples for permutations
 	 *  to generate the distribution.
-	 * @param surrogateType
 	 * @return the distribution of channel measure scores under this null hypothesis.
 	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
 	 *    toolkit for studying the dynamics of complex systems', 2014."
@@ -657,8 +668,13 @@ public abstract class MutualInfoMultiVariateCommon implements
 		// Generate the re-ordered indices:
 		RandomGenerator rg = new RandomGenerator();
 		// (Not necessary to check for distinct random perturbations)
-		int[][] newOrderings = rg.generateRandomPerturbations(
-				sourceObservations.length, numSurrogatesToCheck);
+		int[][] newOrderings = new int[numSurrogatesToCheck][sourceObservations.length];
+
+		if (surrogate_type == "ROTATE"){
+			newOrderings = rg.generateRotatedSurrogates(sourceObservations.length, numSurrogatesToCheck);
+		} else {
+			newOrderings = rg.generateRandomPerturbations(sourceObservations.length, numSurrogatesToCheck);
+		}
 		return computeSignificance(newOrderings);
 	}
 

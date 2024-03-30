@@ -18,6 +18,10 @@
 
 package infodynamics.measures.continuous;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * <p>Interface for implementations of the <b>mutual information</b>,
  * which may be applied to either multivariate or merely univariate
@@ -84,6 +88,14 @@ public interface MutualInfoCalculatorMultiVariate
 	 * mean 0, standard deviation 1 (default true)
 	 */
 	public static final String PROP_NORMALISE = "NORMALISE";
+	/**
+	 * Property name for surrogate type strategy
+	 */
+	public static final String PROP_SURROGATE_TYPE = "SURROGATE_TYPE";
+	/**
+	 * Valid options for surrogate type
+	 */
+	public static final Set<String> VALID_SURROGATE_TYPES = new HashSet<>(Arrays.asList("SHUFFLE", "ROTATE"));
 	/**
 	 * Property name for the std deviation of random Gaussian noise to be
 	 *  added to the data (default is 0, except for Kraskov/KSG estimator
