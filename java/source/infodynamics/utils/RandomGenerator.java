@@ -658,6 +658,39 @@ public class RandomGenerator {
 	}
 
 	/**
+	 * Generate numberOfRotations rotations of [0..n-1],
+	 * which are not necessarily distinct.
+	 * Could have double-ups even where the caller has asked for less
+	 * than the number of distinct rotations that exist.
+	 * 
+	 * @param n
+	 * @param numberOfRotations
+	 * @return an array of dimensions [numberOfRotations][n], with each row
+	 *  being one rotation of the elements
+	 */
+	public int[][] generateRotatedSurrogates(int n, int numberOfRotations) {
+		
+		int[][] sets = new int[numberOfRotations][n];
+				
+		// Use an array list because it gives RandomAccess to
+		//  the Collections.rotate method:
+		ArrayList<Integer> list = new ArrayList<Integer>();
+		for (int i = 0; i < n; i++) {
+			list.add(i);
+		}
+		for (int s = 0; s < numberOfRotations; s++) {
+			// Perform linear time rotations
+			//  Note: the rotations are all equal likelihood, no exclusion window for autocorrelation time
+			int rotationAmount = random.nextInt(n);
+			Collections.rotate(list, rotationAmount);
+			for (int j = 0; j < n; j++) {
+				sets[s][j] = list.get(j);
+			}
+		}
+		return sets;
+	}
+
+	/**
 	 * Generate numberOfPerturbations perturbations of [0..n-1],
 	 * which are not necessarily distinct.
 	 * Could have double-ups even where the caller has asked for less
@@ -701,6 +734,7 @@ public class RandomGenerator {
 		}
 		return sets;
 	}
+
 
 	public static void main(String[] args) throws Exception {
 		// This code demonstrates that the Hashtable is hashing the 
