@@ -92,10 +92,19 @@ public interface MutualInfoCalculatorMultiVariate
 	 * Property name for surrogate type strategy
 	 */
 	public static final String PROP_SURROGATE_TYPE = "SURROGATE_TYPE";
+
+	/**
+	 * Name of shuffle value surrogate type
+	 */
+	public static final String PROP_SHUFFLE = "SHUFFLE";
+	 /**
+	 * Name of rotate value surrogate type
+	 */
+	public static final String PROP_ROTATE = "ROTATE";
 	/**
 	 * Valid options for surrogate type
 	 */
-	public static final Set<String> VALID_SURROGATE_TYPES = new HashSet<>(Arrays.asList("SHUFFLE", "ROTATE"));
+	public static final String[] VALID_SURROGATE_TYPES = {PROP_SHUFFLE, PROP_ROTATE};
 	/**
 	 * Property name for the std deviation of random Gaussian noise to be
 	 *  added to the data (default is 0, except for Kraskov/KSG estimator

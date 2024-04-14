@@ -165,7 +165,7 @@ public abstract class MutualInfoMultiVariateCommon implements
 	/**
 	 * Which strategy to choose to select the surrogate data 
 	 */
-	protected String surrogate_type = "SHUFFLE";
+	protected String surrogate_type = PROP_SHUFFLE;
 	/**
 	 * Whether to add an amount of random noise to the incoming data
 	 */
@@ -248,7 +248,7 @@ public abstract class MutualInfoMultiVariateCommon implements
 	    } else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
 	        normalise = Boolean.parseBoolean(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_SURROGATE_TYPE)){
-			if (VALID_SURROGATE_TYPES.contains(propertyValue.toUpperCase())) {
+			if (Arrays.asList(VALID_SURROGATE_TYPES).contains(propertyValue.toUpperCase())) {
 				surrogate_type = propertyValue.toUpperCase();
 			} else {
 				throw new IllegalArgumentException("Invalid value for surrogate_type. Allowed values are: " + VALID_SURROGATE_TYPES);
@@ -670,7 +670,7 @@ public abstract class MutualInfoMultiVariateCommon implements
 		// (Not necessary to check for distinct random perturbations)
 		int[][] newOrderings = new int[numSurrogatesToCheck][sourceObservations.length];
 
-		if (surrogate_type == "ROTATE"){
+		if (surrogate_type.equalsIgnoreCase(PROP_SHUFFLE)){
 			newOrderings = rg.generateRotatedSurrogates(sourceObservations.length, numSurrogatesToCheck);
 		} else {
 			newOrderings = rg.generateRandomPerturbations(sourceObservations.length, numSurrogatesToCheck);
