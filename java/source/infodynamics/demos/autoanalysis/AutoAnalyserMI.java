@@ -101,16 +101,20 @@ public class AutoAnalyserMI extends AutoAnalyserChannelCalculator
 		abstractContinuousClass = MutualInfoCalculatorMultiVariate.class;
 		// Common properties for all continuous calcs:
 		commonContPropertyNames = new String[] {
-				MutualInfoCalculatorMultiVariate.PROP_TIME_DIFF
+				MutualInfoCalculatorMultiVariate.PROP_TIME_DIFF,
+				MutualInfoCalculatorMultiVariateKraskov.PROP_SURROGATE_TYPE
 		};
 		commonContPropertiesFieldNames = new String[] {
-				"PROP_TIME_DIFF"
+				"PROP_TIME_DIFF",
+				"PROP_SURROGATE_TYPE"
 		};
 		commonContPropertyDescriptions = new String[] {
-				"Time-lag from source to dest to consider MI across; must be >= 0 (0 for standard MI)"
+				"Time-lag from source to dest to consider MI across; must be >= 0 (0 for standard MI)",
+				"Which strategy type to choose for selecting surrogates, default is" + MutualInfoCalculatorMultiVariate.PROP_SHUFFLE
 		};
 		commonContPropertyValueChoices = new String[][] {
-				null
+				null,
+				MutualInfoCalculatorMultiVariateKraskov.VALID_SURROGATE_TYPES
 		};
 		// Gaussian properties:
 		gaussianProperties = new String[] {
