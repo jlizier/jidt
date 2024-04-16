@@ -166,6 +166,14 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	 *  and 1e-8 is used to match MILCA toolkit)
 	 */
 	protected double noiseLevel = (double) 0;
+	/**
+	 * Has the user set a seed for the random noise
+	 */
+	protected boolean noiseSeedSet = false;
+	/**
+	 * Seed that the user set for the random noise
+	 */
+	protected long noiseSeed = 0;
 
 	/**
 	 * Cache for the means of each dimension in variable 1, in case we need to normalise 
@@ -250,6 +258,8 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	 *      (Default is 0, except for KSG estimators where it is recommended by Kraskov
 	 *      and so they use 1e-8 to match the MILCA toolkit, although that adds in
 	 *      a random amount of noise in [0,noiseLevel) ).</li>
+	 *  <li>{@link #PROP_NOISE_SEED} -- a long value seed for the random noise generator or
+	 *      the string {@link ConditionalMutualInfoCalculatorMultiVariate#NOISE_NO_SEED_VALUE} for no seed (default)</li>
 	 * </ul>
 	 * 
 	 * <p>Unknown property values are ignored.</p>
@@ -260,6 +270,8 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 	 */
 	@Override
 	public void setProperty(String propertyName, String propertyValue) {
+
+		boolean propertySet = true;
 		if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
 			normalise = Boolean.parseBoolean(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
@@ -271,6 +283,20 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 				addNoise = true;
 				noiseLevel = Double.parseDouble(propertyValue);
 			}
+	    } else if (propertyName.equalsIgnoreCase(PROP_NOISE_SEED)) {
+	    	if (propertyValue.equals(NOISE_NO_SEED_VALUE)) {
+	    		noiseSeedSet = false;
+	    	} else {
+	    		noiseSeedSet = true;
+	    		noiseSeed = Long.parseLong(propertyValue);
+	    	}
+		} else {
+			// No property was set here
+			propertySet = false;
+		}
+		if (debug && propertySet) {
+			System.out.println(this.getClass().getSimpleName() + ": Set property " + propertyName +
+					" to " + propertyValue);
 		}
 	}
 
@@ -280,6 +306,12 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 			return Boolean.toString(normalise);
 		} else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
 			return Double.toString(noiseLevel);
+	    } else if (propertyName.equalsIgnoreCase(PROP_NOISE_SEED)) {
+	    	if (noiseSeedSet) {
+	    		return Long.toString(noiseSeed);
+	    	} else {
+	    		return NOISE_NO_SEED_VALUE;
+	    	}
 		} else {
 			// No property matches for this class
 			return null;
@@ -733,6 +765,9 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		// Add Gaussian noise of std dev noiseLevel to the data if required
 		if (addNoise) {
 			Random random = new Random();
+	    	if (noiseSeedSet) {
+	    		random.setSeed(noiseSeed);
+	    	}
 			for (int r = 0; r < var1Observations.length; r++) {
 				for (int c = 0; c < dimensionsVar1; c++) {
 					var1Observations[r][c] +=

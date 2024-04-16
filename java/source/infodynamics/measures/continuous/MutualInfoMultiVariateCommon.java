@@ -167,9 +167,19 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 */
 	protected boolean addNoise = false;
 	/**
-	 * Amount of random Gaussian noise to add to the incoming data
+	 * Amount of random Gaussian noise to add to the incoming data.
+	 * 0 by default except for KSG estimators (where it is recommended
+	 *  and 1e-8 is used to match MILCA toolkit)
 	 */
 	protected double noiseLevel = (double) 0.0;
+	/**
+	 * Has the user set a seed for the random noise
+	 */
+	protected boolean noiseSeedSet = false;
+	/**
+	 * Seed that the user set for the random noise
+	 */
+	protected long noiseSeed = 0;
 
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ChannelCalculatorCommon#initialise()
@@ -222,6 +232,8 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 *      by Kraskov for the KSG method though, so for that estimator we 
 	 *      use 1e-8 to match the MILCA toolkit (though note it adds in
 	 *      a random amount of noise in [0,noiseLevel) ).</li>
+	 *  <li>{@link #PROP_NOISE_SEED} -- a long value seed for the random noise generator or
+	 *      the string {@link MutualInfoCalculatorMultiVariate#NOISE_NO_SEED_VALUE} for no seed (default)</li>
 	 * </ul>
 	 * 
 	 * <p>Unknown property values are ignored.</p>
@@ -250,6 +262,13 @@ public abstract class MutualInfoMultiVariateCommon implements
 	          addNoise = true;
 	          noiseLevel = Double.parseDouble(propertyValue);
 	        }
+	    } else if (propertyName.equalsIgnoreCase(PROP_NOISE_SEED)) {
+	    	if (propertyValue.equals(NOISE_NO_SEED_VALUE)) {
+	    		noiseSeedSet = false;
+	    	} else {
+	    		noiseSeedSet = true;
+	    		noiseSeed = Long.parseLong(propertyValue);
+	    	}
 		} else {
 			// No property was set here
 			propertySet = false;
@@ -270,6 +289,12 @@ public abstract class MutualInfoMultiVariateCommon implements
 	        return Boolean.toString(normalise);
 	    } else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
 	        return Double.toString(noiseLevel);
+	    } else if (propertyName.equalsIgnoreCase(PROP_NOISE_SEED)) {
+	    	if (noiseSeedSet) {
+	    		return Long.toString(noiseSeed);
+	    	} else {
+	    		return NOISE_NO_SEED_VALUE;
+	    	}
 		} else {
 			// No property was recognised here
 			return null;
@@ -601,6 +626,9 @@ public abstract class MutualInfoMultiVariateCommon implements
 		// Add Gaussian noise of std dev noiseLevel to the data if required
 		if (addNoise) {
 			Random random = new Random();
+	    	if (noiseSeedSet) {
+	    		random.setSeed(noiseSeed);
+	    	}
 			for (int r = 0; r < sourceObservations.length; r++) {
 				for (int c = 0; c < dimensionsSource; c++) {
 					sourceObservations[r][c] +=

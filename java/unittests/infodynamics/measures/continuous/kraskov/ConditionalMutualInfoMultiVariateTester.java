@@ -98,10 +98,11 @@ public class ConditionalMutualInfoMultiVariateTester
 	 * @param var2 dest multivariate data set
 	 * @param kNNs array of Kraskov k nearest neighbours parameter to check
 	 * @param expectedResults array of expected results for each k
+	 * @return errors of the computed values against expectedResults
 	 */
-	protected void checkTEForGivenData(double[][] var1, double[][] var2,
+	protected double[] checkTEForGivenData(double[][] var1, double[][] var2,
 			int[] kNNs, double[] expectedResults) throws Exception {
-		checkTEForGivenData(var1, var2, 1, 1, kNNs, expectedResults);
+		return checkTEForGivenData(var1, var2, 1, 1, kNNs, expectedResults);
 	}
 	
 	/**
@@ -115,12 +116,38 @@ public class ConditionalMutualInfoMultiVariateTester
 	 * @param historyL history length l of source
 	 * @param kNNs array of Kraskov k nearest neighbours parameter to check
 	 * @param expectedResults array of expected results for each k
+	 * @return errors of the computed values against expectedResults
 	 */
-	protected void checkTEForGivenData(double[][] var1, double[][] var2,
+	protected double[] checkTEForGivenData(double[][] var1, double[][] var2,
 			int historyK, int historyL, int[] kNNs, double[] expectedResults) throws Exception {
+		return checkTEForGivenData(var1, var2, historyK, historyL, kNNs, expectedResults,
+				0, "NONE", 0.000001);
+	}
+	
+	/**
+	 * Utility function to run Kraskov conditional MI algorithm 1
+	 *  as transfer entropy for data with known results
+	 *  from TRENTOOL.
+	 * 
+	 * @param var1 source multivariate data set
+	 * @param var2 dest multivariate data set
+	 * @param historyK history length k of destination
+	 * @param historyL history length l of source
+	 * @param kNNs array of Kraskov k nearest neighbours parameter to check
+	 * @param expectedResults array of expected results for each k
+	 * @param noiseLevel noise to add to the data - set to 0 if we 
+	 *   need to exactly reproduce calculations (most cases in unit tests for consistency)
+	 * @param noiseSeed seed for the random noise generator (either "NONE" or Long string)
+	 * @param tolerance tolerance to accept the calculation
+	 * @return errors of the computed values against expectedResults
+	 */
+	protected double[] checkTEForGivenData(double[][] var1, double[][] var2,
+			int historyK, int historyL, int[] kNNs, double[] expectedResults,
+			double noiseLevel, String noiseSeed, double tolerance) throws Exception {
 				
 		ConditionalMutualInfoCalculatorMultiVariateKraskov condMiCalc = getNewCalc(1);
-		
+		double[] errors = new double[expectedResults.length]; 
+
 		// Which is the first time index for the dest next state?
 		//  It depends on the values of k and l for embedding the past state
 		//  of destination and source.
@@ -148,7 +175,9 @@ public class ConditionalMutualInfoMultiVariateTester
 			condMiCalc.setProperty(
 					ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS,
 					NUM_THREADS_TO_USE);
-			condMiCalc.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "0"); // Need consistency of results for unit test
+			condMiCalc.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE,
+					Double.toString(noiseLevel));
+			condMiCalc.setProperty(ConditionalMutualInfoCalculatorMultiVariateKraskov.PROP_NOISE_SEED, noiseSeed);
 			condMiCalc.initialise(var1[0].length * historyL,
 					var2[0].length, var2[0].length * historyK);
 			// Construct the joint vectors of the source states
@@ -193,8 +222,10 @@ public class ConditionalMutualInfoMultiVariateTester
 			System.out.printf("k=%d: Average MI %.8f (expected %.8f)\n",
 					k, condMi, expectedResults[kIndex]);
 			// 6 decimal places is Matlab accuracy
-			assertEquals(expectedResults[kIndex], condMi, 0.000001);			
+			assertEquals(expectedResults[kIndex], condMi, tolerance);
+			errors[kIndex] = condMi - expectedResults[kIndex];
 		}
+		return errors;
 	}
 
 	/**
@@ -812,4 +843,68 @@ public class ConditionalMutualInfoMultiVariateTester
 			}
 		}
 	}	
+
+	/**
+	 * Extends testUnivariateTEforCoupledVariablesFromFile to test
+	 * using seed for random number generator
+	 * 
+	 * @throws Exception if file not found 
+	 * 
+	 */
+	public void testWithSeed() throws Exception {
+		
+		// Test set 1:
+		
+		ArrayFileReader afr = new ArrayFileReader("demos/data/2coupledRandomCols-1.txt");
+		double[][] data = afr.getDouble2DMatrix();
+		
+		// Use various Kraskov k nearest neighbours parameter
+		int[] kNNs = {4};
+		// Expected values from TRENTOOL:
+		double[] expectedFromTRENTOOL = {0.3058006};
+		
+		System.out.println("Kraskov Cond MI as TE comparison 1 - univariate coupled data 1");
+		double[] noNoiseError = checkTEForGivenData(MatrixUtils.selectColumns(data, new int[] {0}),
+				MatrixUtils.selectColumns(data, new int[] {1}),
+				kNNs, expectedFromTRENTOOL);
+		double noNoiseResult = expectedFromTRENTOOL[0] + noNoiseError[0];
+		
+		// And now in the reverse direction:
+		double[] expectedFromTRENTOOLRev = new double[] {-0.0029744};
+		
+		System.out.println("  reverse direction:");
+		double[] noNoiseErrorRev = checkTEForGivenData(MatrixUtils.selectColumns(data, new int[] {1}),
+				MatrixUtils.selectColumns(data, new int[] {0}),
+				kNNs, expectedFromTRENTOOLRev);
+		double noNoiseResultRev = expectedFromTRENTOOLRev[0] + noNoiseErrorRev[0];
+
+		// Check that changing the random number generator still returns close to those with no noise 
+		//  results, but with larger tolerance
+		System.out.println("\n Kraskov Cond MI as TE comparison 1 - univariate coupled data 1 - seed 1");
+		double[] withSeed1Error = checkTEForGivenData(MatrixUtils.selectColumns(data, new int[] {0}),
+				MatrixUtils.selectColumns(data, new int[] {1}),
+				1, 1, kNNs, expectedFromTRENTOOL,
+				1e-8, "1", 0.01);
+		double[] withSeed1Results = new double[] {expectedFromTRENTOOL[0] + withSeed1Error[0]};
+		// Now check that the results are exact when we repeat with the same seed:
+		System.out.println("\n Kraskov Cond MI as TE comparison 1 - univariate coupled data 1 - seed 1 repeat want exact");
+		checkTEForGivenData(MatrixUtils.selectColumns(data, new int[] {0}),
+				MatrixUtils.selectColumns(data, new int[] {1}),
+				1, 1, kNNs, withSeed1Results,
+				1e-8, "1", 1e-10);
+
+		// And in reverse direction:
+		System.out.println("\n Kraskov Cond MI as TE comparison 1 - univariate coupled data 1 - seed 1 reverse");
+		double[] withSeed1ErrorRev = checkTEForGivenData(MatrixUtils.selectColumns(data, new int[] {1}),
+				MatrixUtils.selectColumns(data, new int[] {0}),
+				1, 1, kNNs, expectedFromTRENTOOLRev,
+				1e-8, "1", 0.01);
+		double[] withSeed1ResultsRev = new double[] {expectedFromTRENTOOLRev[0] + withSeed1ErrorRev[0]};
+		// Now check that the results are exact when we repeat with the same seed:
+		System.out.println("\n Kraskov Cond MI as TE comparison 1 - univariate coupled data 1 - seed 1 reverse repeat want exact");
+		checkTEForGivenData(MatrixUtils.selectColumns(data, new int[] {1}),
+				MatrixUtils.selectColumns(data, new int[] {0}),
+				1, 1, kNNs, withSeed1ResultsRev,
+				1e-8, "1", 1e-10);
+}
 }

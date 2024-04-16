@@ -97,19 +97,43 @@ public class MutualInfoMultiVariateTester
 	}
 	
 	/**
+	 * Utility function to run Kraskov MI for data with known results.
+	 * Sets to use no noise in the calculation and a tolerance of 0.0000001
+	 * 
+	 * @param var1
+	 * @param var2
+	 * @param kNNs array of Kraskov k nearest neighbours parameter to check
+	 * @param expectedResults array of expected results for each k
+	 * @return errors of the computed values against expectedResults
+	 */
+	protected double[] checkMIForGivenData(double[][] var1, double[][] var2,
+			int[] kNNs, double[] expectedResults) throws Exception {
+		// Dropping required accuracy by one order of magnitude, due
+		//  to faster but slightly less accurate digamma estimator change
+		return checkMIForGivenData(var1, var2, kNNs, expectedResults, 0, "NONE", 0.0000001);
+	}
+	
+	/**
 	 * Utility function to run Kraskov MI for data with known results
 	 * 
 	 * @param var1
 	 * @param var2
 	 * @param kNNs array of Kraskov k nearest neighbours parameter to check
 	 * @param expectedResults array of expected results for each k
+	 * @param noiseLevel noise to add to the data - set to 0 if we 
+	 *   need to exactly reproduce calculations (most cases in unit tests for consistency)
+	 * @param noiseSeed seed for the random noise generator (either "NONE" or Long string)
+	 * @param tolerance tolerance to accept the calculation
+	 * @return errors of the computed values against expectedResults
 	 */
-	protected void checkMIForGivenData(double[][] var1, double[][] var2,
-			int[] kNNs, double[] expectedResults) throws Exception {
-				
+	protected double[] checkMIForGivenData(double[][] var1, double[][] var2,
+			int[] kNNs, double[] expectedResults,
+			double noiseLevel, String noiseSeed, double tolerance) throws Exception {
+			
 		// The Kraskov MILCA toolkit MIhigherdim executable 
 		//  uses algorithm 2 by default (this is what it means by rectangular):
 		MutualInfoCalculatorMultiVariateKraskov miCalc = getNewCalc(2);
+		double[] errors = new double[expectedResults.length]; 
 		
 		for (int kIndex = 0; kIndex < kNNs.length; kIndex++) {
 			int k = kNNs[kIndex];
@@ -122,7 +146,9 @@ public class MutualInfoMultiVariateTester
 			// No longer need to set this property as it's set by default:
 			//miCalc.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE,
 			//		EuclideanUtils.NORM_MAX_NORM_STRING);
-			miCalc.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE, "0"); // Need consistency for unit tests
+			miCalc.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE,
+					Double.toString(noiseLevel));
+			miCalc.setProperty(MutualInfoCalculatorMultiVariateKraskov.PROP_NOISE_SEED, noiseSeed);
 			miCalc.initialise(var1[0].length, var2[0].length);
 			miCalc.setObservations(var1, var2);
 			miCalc.setDebug(true);
@@ -131,10 +157,10 @@ public class MutualInfoMultiVariateTester
 			
 			System.out.printf("k=%d: Average MI %.8f (expected %.8f)\n",
 					k, mi, expectedResults[kIndex]);
-			// Dropping required accuracy by one order of magnitude, due
-			//  to faster but slightly less accurate digamma estimator change
-			assertEquals(expectedResults[kIndex], mi, 0.0000001);			
+			assertEquals(expectedResults[kIndex], mi, tolerance);
+			errors[kIndex] = mi - expectedResults[kIndex];
 		}
+		return errors;
 	}
 	
 	/**
@@ -800,6 +826,48 @@ public class MutualInfoMultiVariateTester
 		miCalc.finaliseAddObservations();
 		double miWithDynCorrExclAndSeperateSets = miCalc.computeAverageLocalOfObservations();
 		assertEquals(expectedMIWithoutDynCorrExcl, miWithDynCorrExclAndSeperateSets, 0.00001);
+	}
+
+	/**
+	 * Extends the tests from testUnivariateMIforRandomVariablesFromFile to use
+	 *  a random seed for noise and check that results are repeatable.
+	 * 
+	 * @throws Exception if file not found 
+	 * 
+	 */
+	public void testUnivariateMIWithSeed() throws Exception {
+		
+		// Test set 1:
+		
+		ArrayFileReader afr = new ArrayFileReader("demos/data/2randomCols-1.txt");
+		double[][] data = afr.getDouble2DMatrix();
+		
+		// Use various Kraskov k nearest neighbours parameter
+		int[] kNNs = {1, 2, 3, 4, 5, 6, 10, 15};
+		// Expected values from Kraskov's MILCA toolkit:
+		double[] expectedFromMILCA = {-0.05294175, -0.03944338, -0.02190217,
+				0.00120807, -0.00924771, -0.00316402, -0.00778205, -0.00565778};
+		
+		System.out.println("Kraskov comparison 1 - univariate random data 1 - no seed");
+		double[] noNoiseErrors = checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0}),
+				MatrixUtils.selectColumns(data, new int[] {1}),
+				kNNs, expectedFromMILCA);
+		double[] noNoiseResults = MatrixUtils.add(expectedFromMILCA, noNoiseErrors);
+		
+		// Check that changing the random number generator still returns close to those with no noise 
+		//  results, but with larger tolerance
+		System.out.println("\n Kraskov comparison 1 - univariate random data 1 - seed 1");
+		double[] withSeed1Errors = checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0}),
+				MatrixUtils.selectColumns(data, new int[] {1}),
+				kNNs, noNoiseResults,
+				1e-8, "1", 0.01);
+		double[] withSeed1Results = MatrixUtils.add(noNoiseResults, withSeed1Errors);
+		// Now check that the results are exact when we repeat with the same seed:
+		System.out.println("\n Kraskov comparison 1 - univariate random data 1 - seed 1 repeat");
+		checkMIForGivenData(MatrixUtils.selectColumns(data, new int[] {0}),
+				MatrixUtils.selectColumns(data, new int[] {1}),
+				kNNs, withSeed1Results,
+				1e-8, "1", 1e-10);
 	}
 }
 
