@@ -65,16 +65,6 @@ public abstract class EntropyCalculatorMultiVariateCommon implements EntropyCalc
 	 */
 	protected boolean normalise = true;
 	/**
-	 * Property for whether we normalise the incoming observations to mean 0,
-	 * standard deviation 1.
-	 */
-	public static final String NORMALISE_PROP_NAME = "NORMALISE";
-	/**
-	 * Property name for an amount of random Gaussian noise to be
-	 *  added to the data (default is 1e-8, matching the MILCA toolkit).
-	 */
-	public static final String PROP_ADD_NOISE = "NOISE_LEVEL_TO_ADD";
-	/**
 	 * Whether to add an amount of random noise to the incoming data
 	 */
 	protected boolean addNoise = false;
@@ -82,6 +72,14 @@ public abstract class EntropyCalculatorMultiVariateCommon implements EntropyCalc
 	 * Amount of random Gaussian noise to add to the incoming data
 	 */
 	protected double noiseLevel = (double) 0.0;
+	/**
+	 * Has the user set a seed for the random noise
+	 */
+	protected boolean noiseSeedSet = false;
+	/**
+	 * Seed that the user set for the random noise
+	 */
+	protected long noiseSeed = 0;
 	/**
 	 * Storage for observations supplied via {@link #addObservations(double[][])}
 	 * type calls
@@ -132,6 +130,13 @@ public abstract class EntropyCalculatorMultiVariateCommon implements EntropyCalc
 				addNoise = true;
 				noiseLevel = Double.parseDouble(propertyValue);
 			}
+	    } else if (propertyName.equalsIgnoreCase(PROP_NOISE_SEED)) {
+	    	if (propertyValue.equals(NOISE_NO_SEED_VALUE)) {
+	    		noiseSeedSet = false;
+	    	} else {
+	    		noiseSeedSet = true;
+	    		noiseSeed = Long.parseLong(propertyValue);
+	    	}
 		} else {
 			// No property was set
 			propertySet = false;
@@ -150,6 +155,12 @@ public abstract class EntropyCalculatorMultiVariateCommon implements EntropyCalc
 			return Boolean.toString(normalise);
 	    } else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
 	        return Double.toString(noiseLevel);
+	    } else if (propertyName.equalsIgnoreCase(PROP_NOISE_SEED)) {
+	    	if (noiseSeedSet) {
+	    		return Long.toString(noiseSeed);
+	    	} else {
+	    		return NOISE_NO_SEED_VALUE;
+	    	}
 		} else {
 			// No property was set, and no superclass to call:
 			return null;
@@ -188,6 +199,9 @@ public abstract class EntropyCalculatorMultiVariateCommon implements EntropyCalc
 
 		if (addNoise) {
 			Random random = new Random();
+			if (noiseSeedSet) {
+				random.setSeed(noiseSeed);
+			}
 			// Add Gaussian noise of std dev noiseLevel to the data
 			for (int r = 0; r < totalObservations; r++) {
 				for (int c = 0; c < dimensions; c++) {

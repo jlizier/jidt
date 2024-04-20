@@ -61,6 +61,26 @@ public interface EntropyCalculatorMultiVariate
 	 * Property name for the number of dimensions
 	 */
 	public static final String NUM_DIMENSIONS_PROP_NAME = "NUM_DIMENSIONS";
+	/**
+	 * Property for whether we normalise the incoming observations to mean 0,
+	 * standard deviation 1.
+	 */
+	public static final String NORMALISE_PROP_NAME = "NORMALISE";
+	/**
+	 * Property name for an amount of random Gaussian noise to be
+	 *  added to the data (default is 1e-8, matching the MILCA toolkit).
+	 */
+	public static final String PROP_ADD_NOISE = "NOISE_LEVEL_TO_ADD";
+	/**
+	 * Property name for the seed for the random number generator for noise to be
+	 *  added to the data (default is no seed)
+	 */
+	public static final String PROP_NOISE_SEED = "NOISE_SEED";
+	/**
+	 * Property value to indicate no seed for the random number generator for noise to be
+	 *  added to the data
+	 */
+	public static final String NOISE_NO_SEED_VALUE = "NONE";
 	
 	/**
 	 * Set properties for the underlying calculator implementation.
@@ -84,6 +104,8 @@ public interface EntropyCalculatorMultiVariate
 	 *      by Kraskov for the KSG method though, so for the Kozachenko estimator we 
 	 *      use 1e-8 to match the MILCA toolkit (though note it adds in
 	 *      a random amount of noise in [0,noiseLevel) ).</li>
+	 *  <li>{@link #PROP_NOISE_SEED} -- a long value seed for the random noise generator or
+	 *      the string {@link MutualInfoCalculatorMultiVariate#NOISE_NO_SEED_VALUE} for no seed (default)</li>
 	 * </ul>
 	 *  
 	 * <p>Unknown property values are ignored.</p>
