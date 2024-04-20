@@ -282,6 +282,8 @@ public abstract class MutualInfoMultiVariateCommon implements
 	        return Boolean.toString(normalise);
 	    } else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
 	        return Double.toString(noiseLevel);
+		} else if (propertyName.equalsIgnoreCase(PROP_SURROGATE_TYPE)){
+			return surrogate_type;
 		} else {
 			// No property was recognised here
 			return null;
