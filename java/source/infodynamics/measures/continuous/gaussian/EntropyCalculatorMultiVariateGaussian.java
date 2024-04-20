@@ -19,6 +19,7 @@
 package infodynamics.measures.continuous.gaussian;
 
 import infodynamics.measures.continuous.EntropyCalculatorMultiVariate;
+import infodynamics.measures.continuous.EntropyCalculatorMultiVariateCommon;
 import infodynamics.utils.MatrixUtils;
 
 /**
@@ -50,6 +51,7 @@ Theory' (John Wiley & Sons, New York, 1991).</li>
  * <a href="http://lizier.me/joseph/">www</a>)
  */
 public class EntropyCalculatorMultiVariateGaussian
+	extends EntropyCalculatorMultiVariateCommon 
 	implements EntropyCalculatorMultiVariate, Cloneable {
 
 	/**
@@ -64,83 +66,33 @@ public class EntropyCalculatorMultiVariateGaussian
 	protected double[] means;
 	
 	/**
-	 * The set of observations, retained in case the user wants to retrieve the local
-	 *  entropy values of these
-	 */
-	protected double[][] observations;
-	
-	/**
-	 * Number of dimensions for our multivariate data
-	 */
-	protected int dimensions = 1;
-	
-	/**
 	 * Determinant of the covariance matrix; stored to save computation time
 	 */
 	protected double detCovariance = 0.0;
-
-	/**
-	 * Last average entropy we computed
-	 */
-	protected double lastAverage = 0;
-	
-	/**
-	 * Whether we are in debug mode
-	 */
-	protected boolean debug = false;
 	
 	/**
 	 * Construct an instance
 	 */
 	public EntropyCalculatorMultiVariateGaussian() {
-		// Nothing to do
+		super();
 	}
 	
-	@Override
-	public void initialise() throws Exception {
-		initialise(dimensions);
-	}
-
 	public void initialise(int dimensions) {
+		super.initialise(dimensions);
 		means = null;
 		L = null;
-		observations = null;
-		this.dimensions = dimensions;
 		detCovariance = 0;
-		lastAverage = 0.0;
 	}
 
-	/**
-	 * @throws Exception where the observations do not match the expected number of 
-	 *  dimensions, or covariance matrix is not positive definite (reflecting 
-	 *  redundant variables in the observations)
-	 */
 	@Override
-	public void setObservations(double[][] observations) throws Exception {
-		// Check that the observations was of the correct number of dimensions:
-		if (observations[0].length != dimensions) {
-			means = null;
-			L = null;
-			throw new Exception("Supplied observations does not match initialised number of dimensions");
-		}
+	public void finaliseAddObservations() throws Exception {
+		super.finaliseAddObservations();
 		means = MatrixUtils.means(observations);
+		double[][] originalObservations = observations; // Keep a reference as below
 		setCovariance(MatrixUtils.covarianceMatrix(observations, means));
 		// And keep a reference to the observations used here (must set this
 		//  *after* setCovariance, since setCovariance sets the observations to null
-		this.observations = observations;
-	}
-
-	/**
-	 * @throws Exception where the observations do not match the expected number of 
-	 *  dimensions, or covariance matrix is not positive definite (reflecting 
-	 *  redundant variables in the observations)
-	 */
-	@Override
-	public void setObservations(double[] observations) throws Exception {
-		if (dimensions != 1) {
-			throw new Exception(String.format("Cannot set univariate observations when expected dimension = %d", dimensions));
-		}
-		setObservations(MatrixUtils.reshape(observations, observations.length, 1));
+		observations = originalObservations;
 	}
 
 	/**
@@ -209,49 +161,45 @@ public class EntropyCalculatorMultiVariateGaussian
 	 */
 	@Override
 	public double computeAverageLocalOfObservations() {
+		if (isComputed) {
+			return lastAverage;
+		}
 		// Simple way:
 		// detCovariance = MatrixUtils.determinantSymmPosDefMatrix(covariance);
 		// Using cached Cholesky decomposition:
 		detCovariance = MatrixUtils.determinantViaCholeskyResult(L);
 		lastAverage =  0.5 * (dimensions* (1 + Math.log(2.0*Math.PI)) +
 			Math.log(detCovariance));
+		isComputed = true;
 		return lastAverage;
 	}
 
-	@Override
-	public void setDebug(boolean debug) {
-		this.debug = debug;
-	}
-
+	/**
+	 * <p>Set properties for this calculator.
+	 *  New property values are not guaranteed to take effect until the next call
+	 *  to an initialise method.
+	 * 
+	 * <p>Valid property names, and what their
+	 * values should represent, include:</p>
+	 * <ul>
+	 * 		<li>{@link #NORMALISE_PROP_NAME} as per {@link EntropyCalculatorMultiVariate#setProperty()}
+	 *         however note that for this Gaussian estimator setting this to true would fix the entropy
+	 *         values.</li>
+	 *  	<li>any valid properties for {@link EntropyCalculatorMultiVariate#setProperty(String, String)}.</li>
+	 * </ul> 
+	 * 
+	 * <p>Unknown property values are ignored.</p>
+	 * 
+	 * @param propertyName name of the property
+	 * @param propertyValue value of the property
+	 * @throws Exception for invalid property values
+	 */
 	@Override
 	public void setProperty(String propertyName, String propertyValue)
 			throws Exception {
-		boolean propertySet = true;
-		if (propertyName.equalsIgnoreCase(NUM_DIMENSIONS_PROP_NAME)) {
-			dimensions = Integer.parseInt(propertyValue);
-		} else {
-			// No property was set
-			propertySet = false;
-		}
-		if (debug && propertySet) {
-			System.out.println(this.getClass().getSimpleName() + ": Set property " + propertyName +
-					" to " + propertyValue);
-		}
-	}
-
-	@Override
-	public String getProperty(String propertyName) throws Exception {
-		if (propertyName.equalsIgnoreCase(NUM_DIMENSIONS_PROP_NAME)) {
-			return Integer.toString(dimensions);
-		} else {
-			// No property was set, and no superclass to call:
-			return null;
-		}
-	}
-	
-	@Override
-	public double getLastAverage() {
-		return lastAverage;
+		// Actually don't need to implement this method, but want 
+		//  the javadocs to get generated to warn user about the normalise property.
+		super.setProperty(propertyName, propertyValue);
 	}
 
 	/**
@@ -316,9 +264,13 @@ public class EntropyCalculatorMultiVariateGaussian
 		if (observations == null) {
 			throw new Exception("Cannot compute local values since no observations were supplied");
 		}
-		return computeLocalUsingPreviousObservations(observations);
+		double[] localValues = computeLocalUsingPreviousObservations(observations);
+		lastAverage = MatrixUtils.mean(localValues);
+		isComputed = true;
+		return localValues;
 	}
 
+	@Override
 	public int getNumObservations() throws Exception {
 		if (observations == null) {
 			throw new Exception("Cannot return number of observations because either " +
