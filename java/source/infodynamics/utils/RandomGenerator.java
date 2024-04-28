@@ -665,10 +665,11 @@ public class RandomGenerator {
 	 * 
 	 * @param n
 	 * @param numberOfRotations
+	 * @param dynCorrExclTime the dynamic correlation exclusion time window to ignore potential rotations from before and after
 	 * @return an array of dimensions [numberOfRotations][n], with each row
 	 *  being one rotation of the elements
 	 */
-	public int[][] generateRotatedSurrogates(int n, int numberOfRotations) {
+	public int[][] generateRotatedSurrogates(int n, int numberOfRotations, int dynCorrExclTime) {
 		
 		int[][] sets = new int[numberOfRotations][n];
 				
@@ -681,7 +682,7 @@ public class RandomGenerator {
 		for (int s = 0; s < numberOfRotations; s++) {
 			// Perform linear time rotations
 			//  Note: the rotations are all equal likelihood, no exclusion window for autocorrelation time
-			int rotationAmount = random.nextInt(n);
+			int rotationAmount = random.nextInt(n - 2 * dynCorrExclTime) + dynCorrExclTime;
 			Collections.rotate(list, rotationAmount);
 			for (int j = 0; j < n; j++) {
 				sets[s][j] = list.get(j);
