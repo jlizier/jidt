@@ -92,7 +92,12 @@ public interface MutualInfoCalculatorMultiVariate
 	 * Property name for surrogate type strategy
 	 */
 	public static final String PROP_SURROGATE_TYPE = "SURROGATE_TYPE";
-
+	/**
+	 * Property name for a dynamics exclusion time window 
+	 * otherwise known as Theiler window (see Kantz and Schreiber).
+	 * Default is 0 which means no dynamic exclusion window.
+	 */
+	public static final String PROP_DYN_CORR_EXCL_TIME = "DYN_CORR_EXCL"; 
 	/**
 	 * Name of shuffle value surrogate type
 	 */

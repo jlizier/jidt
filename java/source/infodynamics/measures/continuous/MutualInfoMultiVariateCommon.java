@@ -174,7 +174,14 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 * Amount of random Gaussian noise to add to the incoming data
 	 */
 	protected double noiseLevel = (double) 0.0;
-
+	/**
+	 * Whether we use dynamic correlation exclusion
+	 */
+	protected boolean dynCorrExcl = false;
+	/**
+	 * Size of dynamic correlation exclusion window.
+	 */
+	protected int dynCorrExclTime = 0;
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ChannelCalculatorCommon#initialise()
 	 */
@@ -245,6 +252,9 @@ public abstract class MutualInfoMultiVariateCommon implements
 			if (timeDiff < 0) {
 				throw new Exception("Time difference must be >= 0. Flip data1 and data2 around if required.");
 			}
+		} else if (propertyName.equalsIgnoreCase(PROP_DYN_CORR_EXCL_TIME)) {
+			dynCorrExclTime = Integer.parseInt(propertyValue);
+			dynCorrExcl = (dynCorrExclTime > 0);	
 	    } else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
 	        normalise = Boolean.parseBoolean(propertyValue);
 		} else if (propertyName.equalsIgnoreCase(PROP_SURROGATE_TYPE)){
@@ -278,6 +288,8 @@ public abstract class MutualInfoMultiVariateCommon implements
 		
 		if (propertyName.equalsIgnoreCase(PROP_TIME_DIFF)) {
 			return Integer.toString(timeDiff);
+		} else if (propertyName.equalsIgnoreCase(PROP_DYN_CORR_EXCL_TIME)) {
+			return Integer.toString(dynCorrExclTime);
 	    } else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
 	        return Boolean.toString(normalise);
 	    } else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
@@ -286,7 +298,7 @@ public abstract class MutualInfoMultiVariateCommon implements
 			return surrogate_type;
 		} else {
 			// No property was recognised here
-			return null;
+			throw new Exception("Unknown property to get: " + propertyName);
 		}
 	}
 
@@ -671,9 +683,9 @@ public abstract class MutualInfoMultiVariateCommon implements
 		RandomGenerator rg = new RandomGenerator();
 		// (Not necessary to check for distinct random perturbations)
 		int[][] newOrderings = new int[numSurrogatesToCheck][sourceObservations.length];
-
+		
 		if (surrogate_type.equalsIgnoreCase(PROP_SHUFFLE)){
-			newOrderings = rg.generateRotatedSurrogates(sourceObservations.length, numSurrogatesToCheck);
+			newOrderings = rg.generateRotatedSurrogates(sourceObservations.length, numSurrogatesToCheck, dynCorrExclTime);
 		} else {
 			newOrderings = rg.generateRandomPerturbations(sourceObservations.length, numSurrogatesToCheck);
 		}
