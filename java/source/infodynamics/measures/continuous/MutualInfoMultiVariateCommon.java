@@ -684,7 +684,7 @@ public abstract class MutualInfoMultiVariateCommon implements
 		// (Not necessary to check for distinct random perturbations)
 		int[][] newOrderings = new int[numSurrogatesToCheck][sourceObservations.length];
 		
-		if (surrogate_type.equalsIgnoreCase(PROP_SHUFFLE)){
+		if (surrogate_type.equalsIgnoreCase(PROP_ROTATE)){
 			newOrderings = rg.generateRotatedSurrogates(sourceObservations.length, numSurrogatesToCheck, dynCorrExclTime);
 		} else {
 			newOrderings = rg.generateRandomPerturbations(sourceObservations.length, numSurrogatesToCheck);

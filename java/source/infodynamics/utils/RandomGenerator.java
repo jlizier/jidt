@@ -680,12 +680,14 @@ public class RandomGenerator {
 			list.add(i);
 		}
 		for (int s = 0; s < numberOfRotations; s++) {
+			// Create a copy of the original list of indices
+			ArrayList<Integer> rotatedList = new ArrayList<Integer>(list);
 			// Perform linear time rotations
-			//  Note: the rotations are all equal likelihood, no exclusion window for autocorrelation time
+			// ignore rotations that are -+ dynCorrExclTime
 			int rotationAmount = random.nextInt(n - 2 * dynCorrExclTime) + dynCorrExclTime;
-			Collections.rotate(list, rotationAmount);
+			Collections.rotate(rotatedList, rotationAmount);
 			for (int j = 0; j < n; j++) {
-				sets[s][j] = list.get(j);
+				sets[s][j] = rotatedList.get(j);
 			}
 		}
 		return sets;
