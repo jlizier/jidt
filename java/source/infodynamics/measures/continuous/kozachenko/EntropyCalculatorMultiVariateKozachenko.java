@@ -18,13 +18,10 @@
 
 package infodynamics.measures.continuous.kozachenko;
 
-import java.util.Random;
-import java.util.Vector;
-
 import infodynamics.measures.continuous.EntropyCalculatorMultiVariate;
+import infodynamics.measures.continuous.EntropyCalculatorMultiVariateCommon;
 import infodynamics.utils.EuclideanUtils;
 import infodynamics.utils.MathsUtils;
-import infodynamics.utils.MatrixUtils;
 
 /**
  * <p>Computes the differential entropy of a given set of observations
@@ -59,59 +56,11 @@ import infodynamics.utils.MatrixUtils;
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public class EntropyCalculatorMultiVariateKozachenko  
+public class EntropyCalculatorMultiVariateKozachenko
+	extends EntropyCalculatorMultiVariateCommon 
 	implements EntropyCalculatorMultiVariate {
 
-	/**
-	 * Total number of observations supplied.
-	 */
-	private int totalObservations = 0;
-	/**
-	 * Number of dimensions of our multivariate data set
-	 */
-	private int dimensions = 1;
-	/**
-	 * The set of observations, retained in case the user wants to retrieve the local
-	 *  entropy values of these.
-	 */
-	protected double[][] rawData;
-	/**
-	 * Store the last computed average H
-	 */
-	private double lastAverage = 0.0;
-	/**
-	 * Store the last computed local H
-	 */
-	private double[] lastLocalEntropy;
-	/**
-	 * Track whether we've computed the average for the supplied
-	 *  observations yet
-	 */
-	private boolean isComputed;
-  /**
-	 * Storage for observations supplied via {@link #addObservations(double[][])}
-	 * type calls
-	 */
-	protected Vector<double[][]> vectorOfObservations;
-	/**
-	 * Whether to report debug messages or not
-	 */
-	protected boolean debug = false;
 
-  /**
-   * Property name for an amount of random Gaussian noise to be
-   *  added to the data (default is 1e-8, matching the MILCA toolkit).
-   */
-  public static final String PROP_ADD_NOISE = "NOISE_LEVEL_TO_ADD";
-
-  /**
-   * Whether to add an amount of random noise to the incoming data
-   */
-  protected boolean addNoise = true;
-  /**
-   * Amount of random Gaussian noise to add to the incoming data
-   */
-  protected double noiseLevel = (double) 1e-8;
   /**
    * Stored pre-computed value of the Euler-Mascheroni constant
    */
@@ -121,171 +70,9 @@ public class EntropyCalculatorMultiVariateKozachenko
 	 * Construct an instance
 	 */
 	public EntropyCalculatorMultiVariateKozachenko() {
-		totalObservations = 0;
-		isComputed = false;
-		lastLocalEntropy = null;
-	}
-
-	@Override
-	public void initialise() throws Exception {
-		initialise(dimensions);
-	}
-
-	public void initialise(int dimensions) {
-		this.dimensions = dimensions;
-		rawData = null;
-		totalObservations = 0;
-		isComputed = false;
-		lastLocalEntropy = null;
-	}
-
-	@Override
-	public void setProperty(String propertyName, String propertyValue)
-			throws Exception {
-		boolean propertySet = true;
-		if (propertyName.equalsIgnoreCase(NUM_DIMENSIONS_PROP_NAME)) {
-			dimensions = Integer.parseInt(propertyValue);
-    } else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
-      if (propertyValue.equals("0") ||
-          propertyValue.equalsIgnoreCase("false")) {
-        addNoise = false;
-        noiseLevel = 0;
-      } else {
-        addNoise = true;
-        noiseLevel = Double.parseDouble(propertyValue);
-      }
-		} else {
-			// No property was set, and no superclass to call.
-			propertySet = false;
-		}
-		if (debug && propertySet) {
-			System.out.println(this.getClass().getSimpleName() + ": Set property " + propertyName +
-					" to " + propertyValue);
-		}
-	}
-
-	@Override
-	public String getProperty(String propertyName) throws Exception {
-		if (propertyName.equalsIgnoreCase(NUM_DIMENSIONS_PROP_NAME)) {
-			return Integer.toString(dimensions);
-    } else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
-      return Double.toString(noiseLevel);
-		} else {
-			// No property was set, and no superclass to call.
-			return null;
-		}
-	}
-
-	public void startAddObservations() {
-		isComputed = false;
-    totalObservations = 0;
-		lastLocalEntropy = null;
-    rawData = null;
-		vectorOfObservations = new Vector<double[][]>();
-	}
-
-	public void finaliseAddObservations() {
-
-		rawData = new double[totalObservations][dimensions];
-		
-		// Construct the joint vectors from the given observations
-		//  (removing redundant data which is outside any timeDiff)
-		int startObservation = 0;
-		for (double[][] obs : vectorOfObservations) {
-			// Copy the data from these given observations into our master array
-			MatrixUtils.arrayCopy(obs, 0, 0,
-					rawData, startObservation, 0,
-					obs.length, dimensions);
-			startObservation += obs.length;
-		}
-
-		// We don't need to keep the vector of observation sets anymore:
-		vectorOfObservations = null;
-
-    if (addNoise) {
-      Random random = new Random();
-      // Add Gaussian noise of std dev noiseLevel to the data
-      for (int r = 0; r < totalObservations; r++) {
-        for (int c = 0; c < dimensions; c++) {
-          rawData[r][c] += random.nextGaussian()*noiseLevel;
-        }
-      }
-    }
-	}
-
-	@Override
-  public void setObservations(double[][] observations) {
-    startAddObservations();
-    addObservations(observations);
-    finaliseAddObservations();
-  }
-
-  public void setObservations(double[][] observations1, double[][] observations2)
-      throws Exception {
-    startAddObservations();
-    addObservations(observations1, observations2);
-    finaliseAddObservations();
-  }
-
-	/*
-	 * (non-Javadoc)
-	 * @see infodynamics.measures.continuous.EntropyCalculator#setObservations(double[])
-	 * 
-	 * This method here to ensure we make compatibility with the 
-	 *  EntropyCalculator interface.
-	 */
-	@Override
-  public void setObservations(double[] observations) {
-    startAddObservations();
-    addObservations(observations);
-    finaliseAddObservations();
-  }
-
-  public void addObservations(double[][] observations) {
-		if (vectorOfObservations == null) {
-			// startAddObservations was not called first
-			throw new RuntimeException("User did not call startAddObservations before addObservations");
-		}
-    vectorOfObservations.add(observations);
-    totalObservations += observations.length;
-  }
-
-	public void addObservations(double[] observations) {
-		rawData = MatrixUtils.reshape(observations, observations.length, 1);
-		addObservations(rawData);
-	}
-	
-	/**
-	 * Each row of the data is an observation; each column of
-	 *  the row is a new variable in the multivariate observation.
-	 * This method signature allows the user to call setObservations for
-	 *  joint time series without combining them into a single joint time
-	 *  series (we do the combining for them).
-	 * 
-	 * @param data1 first few variables in the joint data
-	 * @param data2 the other variables in the joint data
-	 * @throws Exception When the length of the two arrays of observations do not match.
-	 * @see #addObservations(double[][])
-	 */
-	public void addObservations(double[][] data1,
-			double[][] data2) throws Exception {
-		int timeSteps = data1.length;
-		if ((data1 == null) || (data2 == null)) {
-			throw new Exception("Cannot have null data arguments");
-		}
-		if (data1.length != data2.length) {
-			throw new Exception("Length of data1 (" + data1.length + ") is not equal to the length of data2 (" +
-					data2.length + ")");
-		}
-		int data1Variables = data1[0].length;
-		int data2Variables = data2[0].length;
-		double[][] data = new double[timeSteps][data1Variables + data2Variables];
-		for (int t = 0; t < timeSteps; t++) {
-			System.arraycopy(data1[t], 0, data[t], 0, data1Variables);
-			System.arraycopy(data2[t], 0, data[t], data1Variables, data2Variables);
-		}
-		// Now defer to the normal setObservations method
-		addObservations(data);
+		super();
+		noiseLevel = (double) 1e-8; // Default to align with KSG estimators
+	    addNoise = true;
 	}
 
 	/**
@@ -298,12 +85,12 @@ public class EntropyCalculatorMultiVariateKozachenko
 		}
 		double sdTermHere = sdTerm(totalObservations, dimensions);
 		double emConstHere = eulerMascheroniTerm(totalObservations);
-		double[] minDistance = EuclideanUtils.computeMinEuclideanDistances(rawData);
+		double[] minDistance = EuclideanUtils.computeMinEuclideanDistances(observations);
 		double entropy = 0.0;
 		if (debug) {
 			System.out.println("t,\tminDist,\tlogMinDist,\tsum");
 		}
-		for (int t = 0; t < rawData.length; t++) {
+		for (int t = 0; t < observations.length; t++) {
 			entropy += Math.log(2.0 * minDistance[t]);
 			if (debug) {
 				System.out.println(t + ",\t" + 
@@ -332,21 +119,18 @@ public class EntropyCalculatorMultiVariateKozachenko
 	 */
 	@Override
 	public double[] computeLocalOfPreviousObservations() {
-		if (lastLocalEntropy != null) {
-			return lastLocalEntropy;
-		}
 
 		double sdTermHere = sdTerm(totalObservations, dimensions);
 		double emConstHere = eulerMascheroniTerm(totalObservations);
 		double constantToAddIn = sdTermHere + emConstHere;
 		
-		double[] minDistance = EuclideanUtils.computeMinEuclideanDistances(rawData);
+		double[] minDistance = EuclideanUtils.computeMinEuclideanDistances(observations);
 		double entropy = 0.0;
-		double[] localEntropy = new double[rawData.length];
+		double[] localEntropy = new double[observations.length];
 		if (debug) {
 			System.out.println("t,\tminDist,\tlogMinDist,\tlocal,\tsum");
 		}
-		for (int t = 0; t < rawData.length; t++) {
+		for (int t = 0; t < observations.length; t++) {
 			localEntropy[t] = Math.log(2.0 * minDistance[t]) * (double) dimensions;
 			// using natural units
 			// localEntropy[t] /= Math.log(2);
@@ -362,7 +146,7 @@ public class EntropyCalculatorMultiVariateKozachenko
 		}
 		entropy /= (double) totalObservations;
 		lastAverage = entropy;
-		lastLocalEntropy = localEntropy;
+		isComputed = true;
 		return localEntropy;
 	}
 
@@ -375,13 +159,13 @@ public class EntropyCalculatorMultiVariateKozachenko
 		double emConstHere = eulerMascheroniTerm(totalObservations);
 		double constantToAddIn = sdTermHere + emConstHere;
 		
-		double[] minDistance = EuclideanUtils.computeMinEuclideanDistances(rawData);
+		double[] minDistance = EuclideanUtils.computeMinEuclideanDistances(observations);
 		double entropy = 0.0;
-		double[] localEntropy = new double[rawData.length];
+		double[] localEntropy = new double[observations.length];
 		if (debug) {
 			System.out.println("t,\tminDist,\tlogMinDist,\tlocal,\tsum");
 		}
-		for (int t = 0; t < rawData.length; t++) {
+		for (int t = 0; t < observations.length; t++) {
 			localEntropy[t] = Math.log(2.0 * minDistance[t]) * (double) dimensions;
 			// using natural units
 			// localEntropy[t] /= Math.log(2);
@@ -395,9 +179,6 @@ public class EntropyCalculatorMultiVariateKozachenko
 						entropy);
 			}
 		}
-		entropy /= (double) totalObservations;
-		lastAverage = entropy;
-		lastLocalEntropy = localEntropy;
 		return localEntropy;
 	}
 
@@ -473,18 +254,4 @@ public class EntropyCalculatorMultiVariateKozachenko
 		return result;
 	}
 	
-	@Override
-	public void setDebug(boolean debug) {
-		this.debug = debug;
-	}
-
-	@Override
-	public double getLastAverage() {
-		return lastAverage;
-	}
-
-	@Override
-	public int getNumObservations() {
-		return totalObservations;
-	}
 }

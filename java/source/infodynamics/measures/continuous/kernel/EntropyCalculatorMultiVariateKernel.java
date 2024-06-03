@@ -19,7 +19,7 @@
 package infodynamics.measures.continuous.kernel;
 
 import infodynamics.measures.continuous.EntropyCalculatorMultiVariate;
-import infodynamics.utils.MatrixUtils;
+import infodynamics.measures.continuous.EntropyCalculatorMultiVariateCommon;
 
 /**
  * <p>Computes the differential entropy of a given set of observations
@@ -44,42 +44,13 @@ import infodynamics.utils.MatrixUtils;
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public class EntropyCalculatorMultiVariateKernel implements EntropyCalculatorMultiVariate {
+public class EntropyCalculatorMultiVariateKernel
+	extends EntropyCalculatorMultiVariateCommon 
+	implements EntropyCalculatorMultiVariate
+	{
 
 	private KernelEstimatorMultiVariate mvke = null;
-	/**
-	 * Number of observations supplied
-	 */
-	private int totalObservations = 0;
-	// private int dimensions = 0;
-	/**
-	 * Whether we're in debug mode
-	 */
-	private boolean debug = false;
-	/**
-	 * The supplied observations
-	 */
-	private double[][] observations = null;
-	/**
-	 * Last computed average entropy
-	 */
-	private double lastEntropy;
-	/**
-	 * Whether we normalise the incoming observations to mean 0,
-	 * standard deviation 1.
-	 */
-	private boolean normalise = true;
-	/**
-	 * Property for whether we normalise the incoming observations to mean 0,
-	 * standard deviation 1.
-	 */
-	public static final String NORMALISE_PROP_NAME = "NORMALISE";
 	
-	/**
-	 * Number of joint variables/dimensions
-	 */
-	protected int dimensions = 1;
-
 	/**
 	 * Default value for kernel width
 	 */
@@ -101,15 +72,10 @@ public class EntropyCalculatorMultiVariateKernel implements EntropyCalculatorMul
 	 * Construct an instance
 	 */
 	public EntropyCalculatorMultiVariateKernel() {
+		super();
 		mvke = new KernelEstimatorMultiVariate();
 		mvke.setDebug(debug);
 		mvke.setNormalise(normalise);
-		lastEntropy = 0.0;
-	}
-
-	@Override
-	public void initialise() throws Exception {
-		initialise(dimensions);
 	}
 
 	public void initialise(int dimensions) {
@@ -128,34 +94,22 @@ public class EntropyCalculatorMultiVariateKernel implements EntropyCalculatorMul
 	 *  standard deviations from the mean (otherwise it is an absolute value)
 	 */
 	public void initialise(int dimensions, double kernelWidth) {
+		super.initialise(dimensions);
 		this.kernelWidth = kernelWidth;
-		this.dimensions = dimensions;
 		mvke.initialise(dimensions, kernelWidth);
-		// this.dimensions = dimensions;
-		lastEntropy = 0.0;
 	}
 
 	@Override
-	public void setObservations(double observations[][]) {
+	public void finaliseAddObservations() throws Exception {
+		super.finaliseAddObservations();
 		mvke.setObservations(observations);
-		totalObservations = observations.length;
-		this.observations = observations;
-	}
-
-	/**
-	 * @throws Exception where the observations do not match the expected number of 
-	 *  dimensions
-	 */
-	@Override
-	public void setObservations(double[] observations) throws Exception {
-		if (dimensions != 1) {
-			throw new Exception(String.format("Cannot set univariate observations when expected dimension = %d", dimensions));
-		}
-		setObservations(MatrixUtils.reshape(observations, observations.length, 1));
 	}
 
 	@Override
 	public double computeAverageLocalOfObservations() {
+		if (isComputed) {
+			return lastAverage;
+		}
 		double entropy = 0.0;
 		for (int b = 0; b < totalObservations; b++) {
 			double prob = mvke.getProbability(observations[b]);
@@ -165,8 +119,9 @@ public class EntropyCalculatorMultiVariateKernel implements EntropyCalculatorMul
 				System.out.println(b + ": " + prob + " -> " + (-cont/Math.log(2.0)) + " -> sum: " + (entropy/Math.log(2.0)));
 			}
 		}
-		lastEntropy = entropy / (double) totalObservations / Math.log(2.0);
-		return lastEntropy;
+		lastAverage = entropy / (double) totalObservations / Math.log(2.0);
+		isComputed = true;
+		return lastAverage;
 	}
 
 	@Override
@@ -204,22 +159,18 @@ public class EntropyCalculatorMultiVariateKernel implements EntropyCalculatorMul
 		}
 		entropy = entropy / (double) totalObservations / Math.log(2.0); // Don't use /= as I'm not sure of the order of operations it applies.
 		if (isPreviousObservations) {
-			lastEntropy = entropy; 
+			lastAverage = entropy;
+			isComputed = true;
 		}
 		return localEntropy;
 	}
 
 	@Override
 	public void setDebug(boolean debug) {
-		this.debug = debug;
+		super.setDebug(debug);
 		mvke.setDebug(debug);
 	}
 
-	@Override
-	public double getLastAverage() {
-		return lastEntropy;
-	}
-	
 	/**
 	 * <p>Set properties for the kernel entropy calculator.
 	 *  New property values are not guaranteed to take effect until the next call
@@ -232,8 +183,6 @@ public class EntropyCalculatorMultiVariateKernel implements EntropyCalculatorMul
 	 * 			kernel width to be used in the calculation. If {@link #normalise} is set,
 	 * 		    then this is a number of standard deviations; otherwise it
 	 * 			is an absolute value. Default is {@link #DEFAULT_KERNEL_WIDTH}.</li>
-	 * 		<li>{@link #NORMALISE_PROP_NAME} -- whether to normalise the incoming variable values
-	 * 			to mean 0, standard deviation 1, or not (default false). Sets {@link #normalise}.</li>
 	 *  	<li>any valid properties for {@link EntropyCalculatorMultiVariate#setProperty(String, String)}.</li>
 	 * </ul> 
 	 * 
@@ -254,14 +203,15 @@ public class EntropyCalculatorMultiVariateKernel implements EntropyCalculatorMul
 		if (propertyName.equalsIgnoreCase(KERNEL_WIDTH_PROP_NAME) ||
 				propertyName.equalsIgnoreCase(EPSILON_PROP_NAME)) {
 			kernelWidth = Double.parseDouble(propertyValue);
-		} else if (propertyName.equalsIgnoreCase(NORMALISE_PROP_NAME)) {
-			normalise = Boolean.parseBoolean(propertyValue);
-			mvke.setNormalise(normalise);
-		} else if (propertyName.equalsIgnoreCase(NUM_DIMENSIONS_PROP_NAME)) {
-			dimensions = Integer.parseInt(propertyValue);
 		} else {
 			// No property was set
 			propertySet = false;
+			// try the superclass:
+			super.setProperty(propertyName, propertyValue);
+			if (propertyName.equalsIgnoreCase(NORMALISE_PROP_NAME)) {
+				// Handle an additional step for this one:
+				mvke.setNormalise(normalise);
+			}
 		}
 		if (debug && propertySet) {
 			System.out.println(this.getClass().getSimpleName() + ": Set property " + propertyName +
@@ -274,19 +224,10 @@ public class EntropyCalculatorMultiVariateKernel implements EntropyCalculatorMul
 		if (propertyName.equalsIgnoreCase(KERNEL_WIDTH_PROP_NAME) ||
 				propertyName.equalsIgnoreCase(EPSILON_PROP_NAME)) {
 			return Double.toString(kernelWidth);
-		} else if (propertyName.equalsIgnoreCase(NORMALISE_PROP_NAME)) {
-			return Boolean.toString(normalise);
-		} else if (propertyName.equalsIgnoreCase(NUM_DIMENSIONS_PROP_NAME)) {
-			return Integer.toString(dimensions);
 		} else {
-			// No property was set, and no superclass to call:
-			return null;
+		      // try the superclass:
+		      return super.getProperty(propertyName);
 		}
-	}
-
-	@Override
-	public int getNumObservations() throws Exception {
-		return totalObservations;
 	}
 
 }
