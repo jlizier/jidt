@@ -163,6 +163,10 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 */
 	protected boolean normalise = true;
 	/**
+	 * Which strategy to choose to select the surrogate data 
+	 */
+	protected String surrogate_type = PROP_SHUFFLE;
+	/**
 	 * Whether to add an amount of random noise to the incoming data
 	 */
 	protected boolean addNoise = false;
@@ -173,6 +177,13 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 */
 	protected double noiseLevel = (double) 0.0;
 	/**
+	 * Whether we use dynamic correlation exclusion
+	 */
+	protected boolean dynCorrExcl = false;
+	/**
+	 * Size of dynamic correlation exclusion window.
+	 */
+	protected int dynCorrExclTime = 0;
 	 * Has the user set a seed for the random noise
 	 */
 	protected boolean noiseSeedSet = false;
@@ -180,7 +191,6 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 * Seed that the user set for the random noise
 	 */
 	protected long noiseSeed = 0;
-
 	/* (non-Javadoc)
 	 * @see infodynamics.measures.continuous.ChannelCalculatorCommon#initialise()
 	 */
@@ -222,6 +232,8 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 * 		</li>
 	 *  <li>{@link #PROP_NORMALISE} -- whether to normalise the incoming individual
 	 *      variables to mean 0 and standard deviation 1 (true by default, except for Gaussian calculator)</li>
+	 *  <li>{@link #PROP_SURROGATE_TYPE} -- Which strategy to choose to select the surrogate data. Valid values are 
+	 *		"SHUFFLE" - randomly suffling data, or "ROTATE", keeping data consecutive but shuffling orders. Default is shuffle.</li>
 	 *  <li>{@link #PROP_ADD_NOISE} -- a standard deviation for an amount of
 	 *    random Gaussian noise to add to
 	 *      each variable, to avoid having neighbourhoods with artificially
@@ -251,8 +263,17 @@ public abstract class MutualInfoMultiVariateCommon implements
 			if (timeDiff < 0) {
 				throw new Exception("Time difference must be >= 0. Flip data1 and data2 around if required.");
 			}
+		} else if (propertyName.equalsIgnoreCase(PROP_DYN_CORR_EXCL_TIME)) {
+			dynCorrExclTime = Integer.parseInt(propertyValue);
+			dynCorrExcl = (dynCorrExclTime > 0);	
 	    } else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
 	        normalise = Boolean.parseBoolean(propertyValue);
+		} else if (propertyName.equalsIgnoreCase(PROP_SURROGATE_TYPE)){
+			if (Arrays.asList(VALID_SURROGATE_TYPES).contains(propertyValue.toUpperCase())) {
+				surrogate_type = propertyValue.toUpperCase();
+			} else {
+				throw new IllegalArgumentException("Invalid value for surrogate_type. Allowed values are: " + VALID_SURROGATE_TYPES);
+			}
 	    } else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
 	        if (propertyValue.equals("0") ||
 	            propertyValue.equalsIgnoreCase("false")) {
@@ -285,19 +306,23 @@ public abstract class MutualInfoMultiVariateCommon implements
 		
 		if (propertyName.equalsIgnoreCase(PROP_TIME_DIFF)) {
 			return Integer.toString(timeDiff);
+		} else if (propertyName.equalsIgnoreCase(PROP_DYN_CORR_EXCL_TIME)) {
+			return Integer.toString(dynCorrExclTime);
 	    } else if (propertyName.equalsIgnoreCase(PROP_NORMALISE)) {
 	        return Boolean.toString(normalise);
 	    } else if (propertyName.equalsIgnoreCase(PROP_ADD_NOISE)) {
 	        return Double.toString(noiseLevel);
+  		} else if (propertyName.equalsIgnoreCase(PROP_SURROGATE_TYPE)){
+			  return surrogate_type;
 	    } else if (propertyName.equalsIgnoreCase(PROP_NOISE_SEED)) {
 	    	if (noiseSeedSet) {
 	    		return Long.toString(noiseSeed);
 	    	} else {
 	    		return NOISE_NO_SEED_VALUE;
 	    	}
-		} else {
+    } else {
 			// No property was recognised here
-			return null;
+			throw new Exception("Unknown property to get: " + propertyName);
 		}
 	}
 
@@ -673,19 +698,24 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 * creates <i>random</i> shufflings of the next values for the surrogate MI
 	 * calculations.</p>
 	 * 
-	 * @param numPermutationsToCheck number of surrogate samples for permutations
+	 * @param numSurrogatesToCheck number of surrogate samples for permutations
 	 *  to generate the distribution.
 	 * @return the distribution of channel measure scores under this null hypothesis.
 	 * @see "J.T. Lizier, 'JIDT: An information-theoretic
 	 *    toolkit for studying the dynamics of complex systems', 2014."
 	 * @throws Exception
 	 */
-	public EmpiricalMeasurementDistribution computeSignificance(int numPermutationsToCheck) throws Exception {
+	public EmpiricalMeasurementDistribution computeSignificance(int numSurrogatesToCheck) throws Exception {
 		// Generate the re-ordered indices:
 		RandomGenerator rg = new RandomGenerator();
 		// (Not necessary to check for distinct random perturbations)
-		int[][] newOrderings = rg.generateRandomPerturbations(
-				sourceObservations.length, numPermutationsToCheck);
+		int[][] newOrderings = new int[numSurrogatesToCheck][sourceObservations.length];
+		
+		if (surrogate_type.equalsIgnoreCase(PROP_ROTATE)){
+			newOrderings = rg.generateRotatedSurrogates(sourceObservations.length, numSurrogatesToCheck, dynCorrExclTime);
+		} else {
+			newOrderings = rg.generateRandomPerturbations(sourceObservations.length, numSurrogatesToCheck);
+		}
 		return computeSignificance(newOrderings);
 	}
 
@@ -735,15 +765,15 @@ public abstract class MutualInfoMultiVariateCommon implements
 	 */
 	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings) throws Exception {
 		
-		int numPermutationsToCheck = newOrderings.length;
+		int numSurrogatesToCheck = newOrderings.length;
 		if (!miComputed) {
 			computeAverageLocalOfObservations();
 		}
 		
-		double[] surrogateMeasurements = new double[numPermutationsToCheck];
+		double[] surrogateMeasurements = new double[numSurrogatesToCheck];
 		
 		// Now compute the MI for each set of shuffled data:
-		for (int i = 0; i < numPermutationsToCheck; i++) {
+		for (int i = 0; i < numSurrogatesToCheck; i++) {
 			// Compute a new surrogate MI
 			surrogateMeasurements[i] = computeAverageLocalOfObservations(newOrderings[i]);
 			if (debug){
