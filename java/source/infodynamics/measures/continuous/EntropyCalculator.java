@@ -48,8 +48,11 @@ Theory' (John Wiley & Sons, New York, 1991).</li>
  */
 public interface EntropyCalculator extends InfoMeasureCalculatorContinuous {
 
-	// TODO Add addObservations() methods for entropy calculator
-	
+	// TODO Add addObservations() methods for entropy calculator.
+	//  It's currently in EntropyCalculatorMultivariate; bring in
+	//  here when we make all univariate entropy calculators use their 
+	//  underlying multivariate form.
+
 	/**
 	 * Sets the samples from which to compute the PDF for the entropy.
 	 * Should only be called once, the last call contains the

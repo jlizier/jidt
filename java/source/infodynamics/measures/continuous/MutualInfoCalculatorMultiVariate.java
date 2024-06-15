@@ -117,6 +117,16 @@ public interface MutualInfoCalculatorMultiVariate
 	 *  if the data is to be normalised, that will be done before adding this noise.
 	 */
 	public static final String PROP_ADD_NOISE = "NOISE_LEVEL_TO_ADD";
+	/**
+	 * Property name for the seed for the random number generator for noise to be
+	 *  added to the data (default is no seed)
+	 */
+	public static final String PROP_NOISE_SEED = "NOISE_SEED";
+	/**
+	 * Property value to indicate no seed for the random number generator for noise to be
+	 *  added to the data
+	 */
+	public static final String NOISE_NO_SEED_VALUE = "NONE";
 
 	/**
 	 * <p>As per {@link #addObservations(double[][], double[][])};
