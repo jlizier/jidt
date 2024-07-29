@@ -42,7 +42,7 @@ function [result, jointSymbols, jointProbabilities, xSymbols, xProbabilities, yS
 	[H_XY, jointSymbols, jointProbabilities] = jointentropyempirical([xn, yn]);
 	% 2. marginal entropy of Y: (calling 'joint' in case yn is multivariate)
 	[H_Y, ySymbols, yProbabilities] = jointentropyempirical(yn);
-	% 3. marginal entropy of X: (calling 'joint' in case yn is multivariate)
+	% 3. marginal entropy of X: (calling 'joint' in case xn is multivariate)
 	[H_X, xSymbols, xProbabilities] = jointentropyempirical(xn);
 	
 	result = H_X + H_Y - H_XY;

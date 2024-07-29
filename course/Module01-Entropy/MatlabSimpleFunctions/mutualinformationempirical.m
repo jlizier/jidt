@@ -42,7 +42,7 @@ function result = mutualinformationempirical(xn,yn)
 	H_XY = ???; % How to compute this empirically ...?
 	% 2. marginal entropy of Y: (calling 'joint' in case yn is multivariate)
 	H_Y = ???;
-	% 3. marginal entropy of X: (calling 'joint' in case yn is multivariate)
+	% 3. marginal entropy of X: (calling 'joint' in case xn is multivariate)
 	H_X = ???;
 	
 	result = H_X + H_Y - H_XY;
