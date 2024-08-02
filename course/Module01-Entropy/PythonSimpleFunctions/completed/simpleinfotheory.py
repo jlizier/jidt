@@ -80,7 +80,7 @@ def entropyempirical(xn):
     
     # We need to work out the alphabet here.
     # The following returns a vector of the alphabet:    
-    symbols = np.unique(xn, axis=0)
+    # symbols = np.unique(xn, axis=0)
     
     # It would be faster to call:
     [symbols, counts] = np.unique(xn, axis=0, return_counts=True)
