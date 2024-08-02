@@ -25,16 +25,20 @@ function [result, symbols, probabilities] = entropyempirical(xn)
 
 	% We need to work out the alphabet here.
 	% The following returns a vector of the alphabet:
-	symbols = unique(xn);
-	
+	% symbols = unique(xn);
+    % It would be faster to call:
+    [symbols,~,indicesForSymbols] = unique(xn);
+    counts = accumarray(indicesForSymbols,1);
+    % but we'll count the samples manually below for instructive purposes
+    
 	% Next we need to count the number of occurances of each symbol in 
 	% the alphabet:
-	counts = zeros(1,length(symbols));
-	for symbolIndex = 1:length(symbols)
-		symbol = symbols(symbolIndex);
-		% Count the number of occurances of symbol in xn:
-		counts(symbolIndex) = sum(xn == symbol);
-	end
+	% counts = zeros(1,length(symbols));
+	% for symbolIndex = 1:length(symbols)
+	%	symbol = symbols(symbolIndex);
+	%	% Count the number of occurances of symbol in xn:
+	%	counts(symbolIndex) = sum(xn == symbol);
+	% end
 	% Now normalise the counts into probabilities:
 	probabilities = counts ./ length(xn);
 	
