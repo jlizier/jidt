@@ -19,6 +19,8 @@ function result = entropy(p)
 	% Should we check any potential error conditions on the input?
 	% assert(sum(p(:)) == 1);
 	assert(abs(sum(p(:)) - 1) < 0.0001); % Will work for any dimensionality, and handles numerical rounding errors
+	assert(~any(p(:) > 1));
+	assert(~any(p(:) < 0));
 
 	% We need to take the expectation value over the Shannon info content at
 	%  p(x) for each outcome x:

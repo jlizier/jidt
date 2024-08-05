@@ -42,6 +42,10 @@ def entropy(p):
     # Should we check any potential error conditions on the input?
     if (abs(np.sum(p) - 1) > 0.00001):
         raise Exception("Probability distribution must sum to 1: sum is %.4f" % np.sum(p))
+    if (np.any(p > 1)):
+        raise Exception("Probability distribution must have all entries <= 1")
+    if (np.any(p < 0)):
+        raise Exception("Probability distribution must have all entries >= 0")
     
     # We need to take the expectation value over the Shannon info content at
     # p(x) for each outcome x:
