@@ -1,7 +1,9 @@
 % function [names, entropies, winRates, lossRates] = computeEntropyForAllPlayers()
 %
 % Compute the entropy of moves for each player, across all games/iterations
-% 
+%
+% Copyright (C) 2017-, Joseph T. Lizier
+% Distributed under GNU General Public License v3
 
 function [names, entropies, winRates, lossRates] = computeEntropyForAllPlayers()
 

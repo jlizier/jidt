@@ -4,6 +4,9 @@
 % 
 % Input:
 % - name of the player
+%
+% Copyright (C) 2017-, Joseph T. Lizier
+% Distributed under GNU General Public License v3
 
 function [calculatedEntropy, winRate, lossRate, numGames] = computeEntropyForPlayer(name)
 

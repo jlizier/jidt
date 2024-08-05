@@ -4,6 +4,9 @@
 % 0 -> scissors
 % 1 -> paper
 % 2 -> rock
+%
+% Copyright (C) 2017-, Joseph T. Lizier
+% Distributed under GNU General Public License v3
 
 function stringRepresentation = translateMove(move)
 	if (move == 0)

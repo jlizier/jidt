@@ -3,6 +3,8 @@
 % Compute the conditional entropy of moves for each player, conditioned on their previous move,
 %  across all games/iterations
 % 
+% Copyright (C) 2017-, Joseph T. Lizier
+% Distributed under GNU General Public License v3
 
 function [names, entropies, winRates, lossRates] = computeConditionalEntropyForAllPlayers()
 

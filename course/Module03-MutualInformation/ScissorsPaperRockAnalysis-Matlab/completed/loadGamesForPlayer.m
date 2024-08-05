@@ -15,10 +15,16 @@
 %   (1 == this player won, 0 == tie, -1 == opponent won).
 % If no output argument is requested, the results are simply printed to the
 %  standard output.
+%
+% Copyright (C) 2017-, Joseph T. Lizier
+% Distributed under GNU General Public License v3
 %  
 function games = loadGamesForPlayer(name)
 
-	setup
+    % When running from the live script:
+	global dataPath
+    % When running from command line:
+    % setup
 
 	files = dir([dataPath, '*.txt']);
 	index = 1;

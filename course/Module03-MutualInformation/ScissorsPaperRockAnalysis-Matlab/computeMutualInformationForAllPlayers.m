@@ -6,6 +6,9 @@
 % Input:
 % - fromSelf (boolean) if true, take MI from the player's own previous move; if false
 %    take MI from opponent's previous move.
+%
+% Copyright (C) 2017-, Joseph T. Lizier
+% Distributed under GNU General Public License v3
 
 function [names, mutualInfos, winRates, lossRates] = computeMutualInformationForAllPlayers(fromSelf)
 

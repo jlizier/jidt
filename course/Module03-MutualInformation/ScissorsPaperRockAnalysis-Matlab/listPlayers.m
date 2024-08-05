@@ -12,11 +12,17 @@
 % Each element can be accessed from the cell array using e.g. playerslist{i}
 % 
 % Assumes that dataPath is defined in setup.m
+%
+% Copyright (C) 2017-, Joseph T. Lizier
+% Distributed under GNU General Public License v3
 
 function playerslist = listPlayers()
 
-	setup
-
+    % When running from the live script:
+	global dataPath
+    % When running from command line:
+    % setup
+    
 	plist = {};
 
 	files = dir([dataPath, '*.txt']);
