@@ -26,7 +26,7 @@ def infocontent(p):
 Computes the Shannon entropy for a probability distribution p.
 
 Inputs:
-- p - (array which much sum to 1) - a probability distribution to compute the Shannon info content for
+- p - (numpy array or list which much sum to 1) - a probability distribution to compute the Shannon info content for
 
 Outputs:
 - result - Shannon entropy of the probability distribution p
@@ -62,13 +62,13 @@ Computes the Shannon entropy over all outcomes x of a random variable
 X from samples x_n.
 
 Inputs:
-- xn - samples of outcomes x.
-   xn is a column vector, e.g. xn = [0;0;1;0;1;0;1;1;1;0] for a binary variable.
+- xn - samples of outcomes x as a numpy array or a list,
+   e.g. xn = [0,0,1,0,1,0,1,1,1,0] for a binary variable.
 
 Outputs:
 - result - Shannon entropy over all outcomes
-- symbols - list of unique samples
-- probabilities - probabilities for each sample
+- symbols - numpy array of unique samples
+- probabilities - numpy array of probabilities for each sample
 
 Copyright (C) 2020-, Julio Correa, Joseph T. Lizier
 Distributed under GNU General Public License v3
@@ -116,10 +116,11 @@ vector x.
 
 Inputs:
 - p - probability distribution function over all outcome vectors x.
-   p is a matrix over all combinations of the sub-variables of x,
-where p(1,3) gives the probability of the first symbol of sub-variable
+   p is a numpy matrix (or list of lists) over all combinations of the sub-variables of x,
+where p[0,2] gives the probability of the first symbol of sub-variable
 x1 co-occuring with the third symbol of sub-variable x2.
-   E.g. p = [0.2, 0.3; 0.1, 0.4]. The sum over p must be 1.
+   E.g. p = np.array([[0.2, 0.3], [0.1, 0.4]])
+   The sum over p must be 1.
 
 Outputs:
 - result - joint Shannon entropy of the probability distribution p
@@ -146,7 +147,7 @@ variable X from sample vectors x_n. User can call with two such arguments
 if they don't wish to join them outside of the call.
 
 Inputs:
-- xn - matrix of samples of outcomes x. May be a 1D vector of samples
+- xn - numpy matrix (or list of lists) of samples of outcomes x. May be a 1D vector of samples
     (in which case yn is also supplied), or
     a 2D matrix, where each row is a vector sample for a multivariate X
     (in which case yn is not supplied).
@@ -155,8 +156,8 @@ Inputs:
 
 Outputs:
 - result - joint Shannon entropy over all samples
-- symbols - list of unique joint vector samples
-- probabilities - probabilities for each joint symbol
+- symbols - numpy array of unique joint vector samples
+- probabilities - numpy array of probabilities for each joint symbol
 
 Copyright (C) 2020-, Julio Correa, Joseph T. Lizier
 Distributed under GNU General Public License v3
@@ -201,10 +202,11 @@ Probability matrix p(x,y) is given for each candidate outcome
 
 Inputs:
 - p - 2D probability distribution function over all outcomes (x,y).
-   p is a matrix over all combinations of x and y,
-where p(1,3) gives the probability of the first symbol of variable
+   p is a numpy matrix over all combinations of x and y,
+where p[0, 2] gives the probability of the first symbol of variable
 x co-occuring with the third symbol of variable y.
-   E.g. p = [0.2, 0.3; 0.1, 0.4]. The sum over p must be 1.
+   E.g. p = nump.array([[0.2, 0.3], [0.1, 0.4]]).
+   The sum over p must be 1.
 
 Outputs:
 - result - conditional Shannon entropy of X given Y
@@ -241,9 +243,9 @@ Computes the conditional Shannon entropy over all samples xn of a random
 variable X, given samples yn of a random variable Y.
 
 Inputs:
-- xn - matrix of samples of outcomes x. May be a 1D vector of samples, or
+- xn - numpy matrix (or list of lists) of samples of outcomes x. May be a 1D vector of samples, or
     a 2D matrix, where each row is a vector sample for a multivariate X.
-- yn - matrix of samples of outcomes x. May be a 1D vector of samples, or
+- yn - numpy matrix (or list of lists) of samples of outcomes x. May be a 1D vector of samples, or
     a 2D matrix, where each row is a vector sample for a multivariate Y.
     Must have the same number of rows as X.
 
@@ -291,10 +293,11 @@ Probability matrix p(x,y) is given for each candidate outcome
 
 Inputs:
 - p - 2D probability distribution function over all outcomes (x,y).
-   p is a matrix over all combinations of x and y,
-where p(1,3) gives the probability of the first symbol of variable
+   p is a numpy matrix (or list of lists) over all combinations of x and y,
+where p[0,2] gives the probability of the first symbol of variable
 x co-occuring with the third symbol of variable y.
-   E.g. p = [0.2, 0.3; 0.1, 0.4]. The sum over p must be 1.
+   E.g. p = np.array([[0.2, 0.3], [0.1, 0.4]]).
+   The sum over p must be 1.
 
 Outputs:
 - result - mutual information of X with Y
@@ -338,13 +341,13 @@ Computes the mutual information over all samples xn of a random
 variable X with samples yn of a random variable Y.
 
 Inputs:
-- xn - matrix of samples of outcomes x. May be a 1D vector of samples, or
+- xn - numpy matrix of samples of outcomes x. May be a 1D vector of samples, or
     a 2D matrix, where each row is a vector sample for a multivariate X.
-- yn - matrix of samples of outcomes x. May be a 1D vector of samples, or
+- yn - numpy matrix of samples of outcomes x. May be a 1D vector of samples, or
     a 2D matrix, where each row is a vector sample for a multivariate Y.
     Must have the same number of rows as X.
 
-Outputs:
+Outputs: (There are additional outputs here in comparison to the solution notebook)
 - result - mutual information of X with Y
 - xySymbols - list of unique joint vector samples
 - xyProbs - probabilities for each joint symbol
@@ -463,12 +466,12 @@ variable X with samples yn of a random variable Y, conditioning on
 samples zn of a random variable Z.
 
 Inputs:
-- xn - matrix of samples of outcomes x. May be a 1D vector of samples, or
+- xn - numpy matrix of samples of outcomes x. May be a 1D vector of samples, or
     a 2D matrix, where each row is a vector sample for a multivariate X.
-- yn - matrix of samples of outcomes y. May be a 1D vector of samples, or
+- yn - numpy matrix of samples of outcomes y. May be a 1D vector of samples, or
     a 2D matrix, where each row is a vector sample for a multivariate Y.
     Must have the same number of rows as X.
-- zn - matrix of samples of outcomes z. May be a 1D vector of samples, or
+- zn - numpy matrix of samples of outcomes z. May be a 1D vector of samples, or
     a 2D matrix, where each row is a vector sample for a multivariate Z
     which will be conditioned on.
     Must have the same number of rows as X.
