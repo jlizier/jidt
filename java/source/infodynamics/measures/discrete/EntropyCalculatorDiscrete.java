@@ -18,6 +18,8 @@
 
 package infodynamics.measures.discrete;
 
+import java.util.Hashtable;
+
 import infodynamics.utils.MatrixUtils;
 
 /**
@@ -61,63 +63,43 @@ public class EntropyCalculatorDiscrete extends InfoMeasureCalculatorDiscrete
 
 	protected int[] stateCount = null; // Count for i[t]
 
-	/**
-	 * User was formerly forced to create new instances through this factory method.
-	 * Retained for backwards compatibility.
-	 * 
-	 * @param base number of symbols for each variable.
-	 *        E.g. binary variables are in base-2.
-	 * @param blocksize number of consecutive joint values to include
-	 *  in the calculation.
-	 * @deprecated
-	 * @return a new EntropyCalculator
-	 */
-	public static EntropyCalculatorDiscrete newInstance(int base, int blocksize) {
-		if (blocksize > 1) {
-			return BlockEntropyCalculatorDiscrete.newInstance(blocksize, base);
-		} else {
-			return EntropyCalculatorDiscrete.newInstance(base);
-		}
-	}
-	public static EntropyCalculatorDiscrete newInstance(int base) {
-		return new EntropyCalculatorDiscrete(base);
-	}
+	protected Hashtable<Object, Integer> hashedStateCount = null;
 	
 	/**
-	 * Construct a new instance with default base of 2
+	 * Construct a new instance with no specified alphabet size.
 	 */
 	public EntropyCalculatorDiscrete() {
-		this(2);
+		this(-1);
 	}
 	
 	/**
 	 * Contruct a new instance
 	 * 
-	 * @param base number of quantisation levels for each variable.
+	 * @param alphabetSize number of quantisation levels for each variable.
 	 *        E.g. binary variables are in base-2.
 	 */
-	public EntropyCalculatorDiscrete(int base) {
-		super(base);
+	public EntropyCalculatorDiscrete(int alphabetSize) {
+		super(alphabetSize);
 	}
 	
 	/**
-	 * Initialise with new base
+	 * Initialise with new alphabet size
 	 * 
-	 * @param base
+	 * @param alphabetSize
 	 */
-	public void initialise(int base){
-		boolean baseChanged = (this.base != base);
-		super.initialise(base);
+	public void initialise(int alphabetSize){
+		boolean sizeChange = (this.alphabetSize != alphabetSize);
+		super.initialise(alphabetSize);
 		
-		if (baseChanged || (stateCount == null)) {
+		if (sizeChange || (stateCount == null)) {
 			// Create storage for counts of observations
 			try {
-				stateCount = new int[base];
+				stateCount = new int[alphabetSize];
 			} catch (OutOfMemoryError e) {
 				// Allow any Exceptions to be thrown, but catch and wrap
 				//  Error as a RuntimeException
-				throw new RuntimeException("Requested memory for the base (" +
-						base + ") is too large for the JVM at this time", e);
+				throw new RuntimeException("Requested memory for the alphabet size (" +
+						alphabetSize + ") is too large for the JVM at this time", e);
 			}
 		} else {
 			MatrixUtils.fill(stateCount, 0);
@@ -126,11 +108,65 @@ public class EntropyCalculatorDiscrete extends InfoMeasureCalculatorDiscrete
 
 	@Override
 	public void initialise(){
-		initialise(base);
+		initialise(alphabetSize);
 	}
-		
+
 	@Override
-	public void addObservations(int states[]) {
+	public void addObservations(Object[] states) {
+		int rows = states.length;
+		// increment the count of observations:
+		observations += rows;
+		
+		// 1. Count the tuples observed
+		for (int r = 0; r < rows; r++) {
+			// Add to the count for this particular state:
+
+			if (!knownIntegerRange) {
+				Object key = states[r];
+				Integer value = hashedStateCount.getOrDefault(key, 0) + 1;
+				hashedStateCount.put(key, value);
+				continue;
+			}
+
+			// TODO better way to do this??
+			// obviously we can do .getClass() twice in the if statements, I think this is
+			// slightly more readable though.
+			//	joe's input:
+			@SuppressWarnings("rawtypes")
+			Class objectClass = states[r].getClass();
+			Integer index;
+			if (objectClass == String.class) {
+				index = Integer.parseInt((String) states[r]);
+			} else if (objectClass == Integer.class) {
+				index = (Integer) states[r];
+			} else {
+				throw new NumberFormatException(String.format(
+					"Cannot parse %s as an Integer for indexing",
+					states[r]));
+			}
+
+			// valid index, check to make sure user didn't break the alphabet size they provided.
+			if (index >= stateCount.length) {
+				// runtime exception I guess...?
+				// TODO joe's input:
+				throw new RuntimeException(String.format(
+					"Observation %s exceeds provided alphabet size %d",
+					states[r], this.alphabetSize));
+			}
+			stateCount[index]++;
+		}		
+	}
+
+	// I added this so that computeAverageLocal works, which we were considering deprecating
+	// Though i think keeping the old int[] format is worthwhile for backwards compat.
+	// TODO joe's input:
+	// maybe deprecate (with computeAverageLocal)
+	/**
+	 * Add observations in to our estimates of the pdfs.
+	 * 
+	 * @param states
+	 */
+	public void addObservations(int[] states) {
 		int rows = states.length;
 		// increment the count of observations:
 		observations += rows; 
@@ -139,76 +175,9 @@ public class EntropyCalculatorDiscrete extends InfoMeasureCalculatorDiscrete
 		for (int r = 0; r < rows; r++) {
 			// Add to the count for this particular state:
 			stateCount[states[r]]++;
-		}		
-	}
-
-	@Override
-	public void addObservations(int states[][]) {
-		int rows = states.length;
-		int columns = states[0].length;
-		// increment the count of observations:
-		observations += rows * columns; 
-		
-		// 1. Count the tuples observed
-		for (int r = 0; r < rows; r++) {
-			for (int c = 0; c < columns; c++) {
-				// Add to the count for this particular state:
-				stateCount[states[r][c]]++;					
-			}
-		}		
+		}
 	}
 	
-	@Override
-	public void addObservations(int states[][][]) {
-		int timeSteps = states.length;
-		if (timeSteps == 0) {
-			return;
-		}
-		int agentRows = states[0].length;
-		if (agentRows == 0) {
-			return;
-		}
-		int agentColumns = states[0][0].length;
-		// increment the count of observations:
-		observations += timeSteps * agentRows * agentColumns; 
-		
-		// 1. Count the tuples observed
-		for (int t = 0; t < timeSteps; t++) {
-			for (int i = 0; i < agentRows; i++) {
-				for (int j = 0; j < agentColumns; j++) {
-					// Add to the count for this particular state:
-					stateCount[states[t][i][j]]++;
-				}
-			}
-		}		
-	}
-
-	@Override
-	public void addObservations(int states[][], int agentNumber) {
-		int rows = states.length;
-		// increment the count of observations:
-		observations += rows; 
-		
-		// 1. Count the tuples observed
-		for (int r = 0; r < rows; r++) {
-			// Add to the count for this particular state:
-			stateCount[states[r][agentNumber]]++;					
-		}
-	}
-
-	@Override
-	public void addObservations(int states[][][], int agentIndex1, int agentIndex2) {
-		int timeSteps = states.length;
-		// increment the count of observations:
-		observations += timeSteps; 
-		
-		// 1. Count the tuples observed
-		for (int r = 0; r < timeSteps; r++) {
-			// Add to the count for this particular state:
-			stateCount[states[r][agentIndex1][agentIndex2]]++;					
-		}
-	}
-
 	/**
 	 * Return the current count for the given value
 	 * 
@@ -236,7 +205,7 @@ public class EntropyCalculatorDiscrete extends InfoMeasureCalculatorDiscrete
 
 		max = 0;
 		min = 0;
-		for (int stateVal = 0; stateVal < base; stateVal++) {
+		for (int stateVal = 0; stateVal < alphabetSize; stateVal++) {
 			// compute p_state
 			double p_state = (double) stateCount[stateVal] / (double) observations;
 			if (p_state > 0.0) {
@@ -277,13 +246,224 @@ public class EntropyCalculatorDiscrete extends InfoMeasureCalculatorDiscrete
 				min = localEntropy[r];
 			}
 		}
+
 		average = average/(double) rows;
-		
 		return localEntropy;
+	}
+	
+	@Override // maybe deprecate
+	public final double computeAverageLocal(int states[]) throws Exception {
+		initialise();
+		startAddObservations();
+		addObservations(states);
+		finaliseAddObservations();
+		return computeAverageLocalOfObservations();
+	}
+
+	
+	@Override
+	public void setProperty(String propertyName, String propertyValue) throws Exception {
+		// TODO - I think this should just be the super call, as this class has no new properties.
+		//	joe's input: 
 		
+		switch(propertyName.toLowerCase()) {
+			case ALPHABET_SIZE:
+				this.alphabetSize = Integer.parseInt(propertyValue);
+			break;
+			case MAX_ALPHA_SIZE_TO_STORE:
+				this.maxAlphabetSize = Integer.parseInt(propertyValue);
+			break;
+			case KNOWN_INTEGER_RANGE:
+				this.knownIntegerRange = Boolean.parseBoolean(propertyValue);
+			break;
+			default:
+				// Assume it's a property of parent class
+				super.setProperty(propertyName, propertyValue);
+			break;
+		}
+		
+	}
+
+	@Override
+	public void setObservations(Object[] observations) throws Exception {
+		this.observations = observations.length;
+		this.addObservations(observations);
+		this.finaliseAddObservations();
+	}
+
+	/*
+	 ***********************************************************************
+	 ******************* ALL METHODS BELOW ARE DEPRECATED ******************
+	 *******************        DON'T USE THEM            ******************
+	 ***********************************************************************
+	*/
+
+	@Override
+	@Deprecated
+	public void startAddObservations() {
+		
+		// reinitialise if already finalised
+		if (currentState == State.COMPUTING) {
+			initialise();
+		}
+		this.currentState = State.ADDING_OBSERVATIONS;
+
+	}
+
+	@Override
+	@Deprecated
+	public void finaliseAddObservations() throws Exception {
+
+		if (observations == 0) {
+			// TODO better error message. maybe not runtimeExc?
+			// joe's input:
+			throw new RuntimeException("0 observations not allowed.");
+		}
+
+		// I actually think this is useless? It shouldn't ever get here without
+		// throwing the error above.
+		if (currentState == State.SETTING_PROPERTIES) {
+			throw new RuntimeException("Estimator should be initialised before finalised...");
+		}
+
+		this.currentState = State.COMPUTING;
+	}
+
+	@Override
+	@Deprecated
+	public void addObservations(int states[][]) {
+		int rows = states.length;
+		int columns = states[0].length;
+		// increment the count of observations:
+		observations += rows * columns; 
+		
+		// 1. Count the tuples observed
+		for (int r = 0; r < rows; r++) {
+			for (int c = 0; c < columns; c++) {
+				// Add to the count for this particular state:
+				stateCount[states[r][c]]++;					
+			}
+		}		
 	}
 	
 	@Override
+	@Deprecated
+	public void addObservations(int states[][][]) {
+		int timeSteps = states.length;
+		if (timeSteps == 0) {
+			return;
+		}
+		int agentRows = states[0].length;
+		if (agentRows == 0) {
+			return;
+		}
+		int agentColumns = states[0][0].length;
+		// increment the count of observations:
+		observations += timeSteps * agentRows * agentColumns; 
+		
+		// 1. Count the tuples observed
+		for (int t = 0; t < timeSteps; t++) {
+			for (int i = 0; i < agentRows; i++) {
+				for (int j = 0; j < agentColumns; j++) {
+					// Add to the count for this particular state:
+					stateCount[states[t][i][j]]++;
+				}
+			}
+		}		
+	}
+
+	@Override
+	@Deprecated
+	public void addObservations(int states[][], int agentNumber) {
+		int rows = states.length;
+		// increment the count of observations:
+		observations += rows; 
+		
+		// 1. Count the tuples observed
+		for (int r = 0; r < rows; r++) {
+			// Add to the count for this particular state:
+			stateCount[states[r][agentNumber]]++;					
+		}
+	}
+
+	@Override
+	@Deprecated
+	public void addObservations(int states[][][], int agentIndex1, int agentIndex2) {
+		int timeSteps = states.length;
+		// increment the count of observations:
+		observations += timeSteps; 
+		
+		// 1. Count the tuples observed
+		for (int r = 0; r < timeSteps; r++) {
+			// Add to the count for this particular state:
+			stateCount[states[r][agentIndex1][agentIndex2]]++;					
+		}
+	}
+	
+	@Override
+	@Deprecated
+	public final double computeAverageLocal(int states[][]) {
+		
+		initialise();
+		startAddObservations();
+		addObservations(states);
+		this.currentState = State.COMPUTING;
+		return computeAverageLocalOfObservations();
+	}
+	
+	@Override
+	@Deprecated
+	public final double computeAverageLocal(int states[][][]) {
+		initialise();
+		startAddObservations();
+		addObservations(states);
+		this.currentState = State.COMPUTING;
+		return computeAverageLocalOfObservations();
+	}
+	
+	@Override
+	@Deprecated
+	public final double[] computeLocal(int states[][], int col) {
+		initialise();
+		startAddObservations();
+		addObservations(states, col);
+		this.currentState = State.COMPUTING;
+		return computeLocalFromPreviousObservations(states, col);
+	}
+	
+	@Override
+	@Deprecated
+	public final double[] computeLocal(int states[][][],
+			int agentIndex1, int agentIndex2) {
+		initialise();
+		startAddObservations();
+		addObservations(states, agentIndex1, agentIndex2);
+		this.currentState = State.COMPUTING;
+		return computeLocalFromPreviousObservations(states, agentIndex1, agentIndex2);
+	}
+	
+	@Override
+	@Deprecated
+	public final double computeAverageLocal(int states[][], int col) {
+		initialise();
+		startAddObservations();
+		addObservations(states, col);
+		this.currentState = State.COMPUTING;
+		return computeAverageLocalOfObservations();
+	}
+	
+	@Override
+	@Deprecated
+	public final double computeAverageLocal(int states[][][], int agentIndex1, int agentIndex2) {
+		initialise();
+		startAddObservations();
+		addObservations(states, agentIndex1, agentIndex2);
+		this.currentState = State.COMPUTING;
+		return computeAverageLocalOfObservations();
+	}
+	
+	@Override
+	@Deprecated
 	public double[][] computeLocalFromPreviousObservations(int states[][]){
 		int rows = states.length;
 		int columns = states[0].length;
@@ -312,6 +492,7 @@ public class EntropyCalculatorDiscrete extends InfoMeasureCalculatorDiscrete
 	}
 	
 	@Override
+	@Deprecated
 	public double[][][] computeLocalFromPreviousObservations(int states[][][]){
 		int timeSteps = states.length;
 		int agentRows, agentColumns;
@@ -326,7 +507,7 @@ public class EntropyCalculatorDiscrete extends InfoMeasureCalculatorDiscrete
 				agentColumns = states[0][0].length;
 			}
 		}
-
+	
 		double[][][] localEntropy = new double[timeSteps][agentRows][agentColumns];
 		average = 0;
 		max = 0;
@@ -351,12 +532,13 @@ public class EntropyCalculatorDiscrete extends InfoMeasureCalculatorDiscrete
 		return localEntropy;
 		
 	}
-
+	
 	@Override
+	@Deprecated
 	public double[] computeLocalFromPreviousObservations(int states[][], int agentNumber){
 		int rows = states.length;
 		//int columns = states[0].length;
-
+	
 		double[] localEntropy = new double[rows];
 		average = 0;
 		max = 0;
@@ -379,10 +561,11 @@ public class EntropyCalculatorDiscrete extends InfoMeasureCalculatorDiscrete
 	}
 	
 	@Override
+	@Deprecated
 	public double[] computeLocalFromPreviousObservations(int states[][][], int agentIndex1, int agentIndex2){
 		int timeSteps = states.length;
 		//int columns = states[0].length;
-
+	
 		// Allocate for all rows even though we'll leave the first ones as zeros
 		double[] localEntropy = new double[timeSteps];
 		average = 0;
@@ -404,80 +587,59 @@ public class EntropyCalculatorDiscrete extends InfoMeasureCalculatorDiscrete
 		return localEntropy;
 		
 	}
-
+	
 	@Override
+	@Deprecated
 	public final double[] computeLocal(int states[]) {
-		
 		initialise();
+		startAddObservations();
 		addObservations(states);
+		this.currentState = State.COMPUTING;
 		return computeLocalFromPreviousObservations(states);
 	}
-
+	
 	@Override
+	@Deprecated
 	public final double[][] computeLocal(int states[][]) {
-		
 		initialise();
+		startAddObservations();
 		addObservations(states);
+		this.currentState = State.COMPUTING;
 		return computeLocalFromPreviousObservations(states);
 	}
-
+	
 	@Override
+	@Deprecated
 	public final double[][][] computeLocal(int states[][][]) {
-		
 		initialise();
+		startAddObservations();
 		addObservations(states);
+		this.currentState = State.COMPUTING;
 		return computeLocalFromPreviousObservations(states);
 	}
 
-	@Override
-	public final double computeAverageLocal(int states[]) {
-		
-		initialise();
-		addObservations(states);
-		return computeAverageLocalOfObservations();
+	/**
+	 * User was formerly forced to create new instances through this factory method.
+	 * Retained for backwards compatibility.
+	 * 
+	 * @param alphabetSize number of symbols for each variable.
+	 *        E.g. binary variables are in base-2.
+	 * @param blocksize number of consecutive joint values to include
+	 *  in the calculation.
+	 * @deprecated
+	 * @return a new EntropyCalculator
+	 */
+	@Deprecated
+	public static EntropyCalculatorDiscrete newInstance(int alphabetSize, int blocksize) {
+		if (blocksize > 1) {
+			return BlockEntropyCalculatorDiscrete.newInstance(blocksize, alphabetSize);
+		} else {
+			return EntropyCalculatorDiscrete.newInstance(alphabetSize);
+		}
+	}
+	@Deprecated
+	public static EntropyCalculatorDiscrete newInstance(int alphabetSize) {
+		return new EntropyCalculatorDiscrete(alphabetSize);
 	}
 
-	@Override
-	public final double computeAverageLocal(int states[][]) {
-		
-		initialise();
-		addObservations(states);
-		return computeAverageLocalOfObservations();
-	}
-
-	@Override
-	public final double computeAverageLocal(int states[][][]) {
-		initialise();
-		addObservations(states);
-		return computeAverageLocalOfObservations();
-	}
-
-	@Override
-	public final double[] computeLocal(int states[][], int col) {
-		initialise();
-		addObservations(states, col);
-		return computeLocalFromPreviousObservations(states, col);
-	}
-
-	@Override
-	public final double[] computeLocal(int states[][][],
-			int agentIndex1, int agentIndex2) {
-		initialise();
-		addObservations(states, agentIndex1, agentIndex2);
-		return computeLocalFromPreviousObservations(states, agentIndex1, agentIndex2);
-	}
-
-	@Override
-	public final double computeAverageLocal(int states[][], int col) {
-		initialise();
-		addObservations(states, col);
-		return computeAverageLocalOfObservations();
-	}
-
-	@Override
-	public final double computeAverageLocal(int states[][][], int agentIndex1, int agentIndex2) {
-		initialise();
-		addObservations(states, agentIndex1, agentIndex2);
-		return computeAverageLocalOfObservations();
-	}
 }

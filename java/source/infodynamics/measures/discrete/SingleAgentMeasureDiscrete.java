@@ -43,66 +43,75 @@ package infodynamics.measures.discrete;
 public interface SingleAgentMeasureDiscrete {
 
 	/**
-	 * Initialise the calculator with (potentially) a new base
-	 * 
-	 * @param base
+	 * Property name for definite alphabet size. Attempting
+	 * 	to use observations beyond this property will throw
+	 * 	errors.
 	 */
-	public void initialise(int base);
+	public static final String ALPHABET_SIZE = "ALPHABET_SIZE";
+
+	/**
+	 * Property name for determining when to switch to HashTable
+	 * 	memory management system. (default is TODO...)
+	 */
+	public static final String MAX_ALPHA_SIZE_TO_STORE =  "MAX_ALPHA_SIZE_TO_STORE";
+
+	/**
+	 * Property name for whether or not the calculator is using
+	 * 	the HashTable memory management.
+	 * 
+	 * TODO -- maybe this shouldn't be a property... it should def be
+	 * 	mutually exclusive with alphaSize.
+	 */
+	public static final String KNOWN_INTEGER_RANGE = "KNOWN_INTEGER_RANGE";
+
+	
+	/**
+	 * Property name for determining whether or not the calculator
+	 * 	is still adding observations.
+	 * 
+	 * TODO -- I think this is the nicest way to do this, though I'd rather a private
+	 * 	boolean not set by setProperties. This probs shouldn't be a property at all...
+	 */
+	public static final String EXPECTING_OBSERVATIONS = "EXPECTING_OBSERVATIONS";
+
+	/**
+	 * Initialise the calculator with same or unknown alphabet size
+	 */
+	public void initialise();
+
+	/**
+	 * Sets the samples from which to compute the PDF for the entropy.
+	 * Should only be called once, the last call contains the
+	 * 	observations that are used (they are not accumulated). 
+	 * 
+	 * @param observations array of (univariate) samples
+	 * @throws Exception
+	 */
+	public void setObservations(Object[] observations) throws Exception;
+
+	/**
+	 * Signal that we will add in the samples for computing the PDF 
+	 * from several disjoint time-series or trials via calls to
+	 * "addObservations" rather than "setObservations" type methods
+	 * (defined by the child interfaces and classes).
+	 */
+	public void startAddObservations();
+
+	/**
+	 * Signal that the observations are now all added, PDFs can now be constructed.
+	 * 
+	 * @throws Exception when the estimator has no observations.
+	 */
+	public void finaliseAddObservations() throws Exception;
 	
 	/**
  	 * Add observations in to our estimates of the pdfs.
 	 *
 	 * @param states series of samples
 	 */
-	public void addObservations(int states[]);
+	public void addObservations(Object states[]);
 	
-	/**
- 	 * Add observations in to our estimates of the pdfs.
- 	 * This call suitable only for homogeneous agents, as all
- 	 *  agents will contribute to the PDFs.
-	 *
-	 * @param states multivariate time series
-	 *  (1st index is time, 2nd index is variable number)
-	 */
-	public void addObservations(int states[][]);
-
-	/**
- 	 * Add observations for a single variable of the multi-agent system
- 	 *  to our estimates of the pdfs.
- 	 * This call should be made as opposed to {@link #addObservations(int[][])}
- 	 *  for computing active info for heterogeneous agents.
-	 *
-	 * @param states multivariate time series
-	 *  (1st index is time, 2nd index is variable number)
-	 * @param col index of agent
-	 */
-	public void addObservations(int states[][], int col);
-
-	/**
- 	 * Add observations in to our estimates of the pdfs.
- 	 * This call suitable only for homogeneous agents, as all
- 	 *  agents will contribute to single pdfs.
-	 *
-	 * @param states multivariate time series
-	 *  (1st index is time, 2nd index is variable row number,
-	 *  3rd is variable column number)
-	 */
-	public void addObservations(int states[][][]);
-
-	/**
- 	 * Add observations for a single agent of the multi-agent system
- 	 *  to our estimates of the pdfs.
- 	 * This call should be made as opposed to {@link #addObservations(int[][][])}
- 	 *  for computing active info for heterogeneous agents.
-	 *
-	 * @param states multivariate time series
-	 *  (1st index is time, 2nd index is variable row number,
-	 *  3rd is variable column number)
-	 * @param index1 row index index the variable
-	 * @param index2 column index of the variable
-	 */
-	public void addObservations(int states[][][], int index1, int index2);
-
+	
 	/**
 	 * Compute the average value of the measure
 	 * from the previously-supplied samples.
@@ -233,7 +242,7 @@ public interface SingleAgentMeasureDiscrete {
 	 * @return 3D time-series of local values (indexed as per states)
 	 */
 	public double[][][] computeLocal(int states[][][]);
-
+	
 	/**
 	 * Standalone routine to 
 	 * compute the average information theoretic measure across a time-series
@@ -242,8 +251,9 @@ public interface SingleAgentMeasureDiscrete {
 	 * 
 	 * @param states time series of samples
 	 * @return average of the information-theoretic measure.
+	 * @throws Exception if states parameter is empty.
 	 */
-	public double computeAverageLocal(int states[]);
+	public double computeAverageLocal(int states[]) throws Exception;
 	
 	/**
 	 * Standalone routine to 
@@ -341,4 +351,69 @@ public interface SingleAgentMeasureDiscrete {
 	 * @return average of the measure for the given variable.
 	 */
 	public double computeAverageLocal(int states[][][], int index1, int index2);
+	
+	/**
+	  * Add observations in to our estimates of the pdfs.
+	  * This call suitable only for homogeneous agents, as all
+	  *  agents will contribute to the PDFs.
+	 *
+	 * @param states multivariate time series
+	 *  (1st index is time, 2nd index is variable number)
+	 */
+	@Deprecated
+	public void addObservations(int states[][]);
+	
+	/**
+	  * Add observations for a single variable of the multi-agent system
+	  *  to our estimates of the pdfs.
+	  * This call should be made as opposed to {@link #addObservations(int[][])}
+	  *  for computing active info for heterogeneous agents.
+	 *
+	 * @deprecated
+	 * @param states multivariate time series
+	 *  (1st index is time, 2nd index is variable number)
+	 * @param col index of agent
+	 */
+	@Deprecated
+	public void addObservations(int states[][], int col);
+	
+	/**
+	  * Add observations in to our estimates of the pdfs.
+	  * This call suitable only for homogeneous agents, as all
+	  *  agents will contribute to single pdfs.
+	 *
+	 * @deprecated
+	 * @param states multivariate time series
+	 *  (1st index is time, 2nd index is variable row number,
+	 *  3rd is variable column number)
+	 */
+	@Deprecated
+	public void addObservations(int states[][][]);
+	
+	/**
+	  * Add observations for a single agent of the multi-agent system
+	  *  to our estimates of the pdfs.
+	  * This call should be made as opposed to {@link #addObservations(int[][][])}
+	  *  for computing active info for heterogeneous agents.
+	 *
+	 * @deprecated
+	 * @param states multivariate time series
+	 *  (1st index is time, 2nd index is variable row number,
+	 *  3rd is variable column number)
+	 * @param index1 row index index the variable
+	 * @param index2 column index of the variable
+	 */
+	@Deprecated
+	public void addObservations(int states[][][], int index1, int index2);
+	
+	/**
+	 * Initialise the calculator with (potentially) a new alphabet size
+	 * 
+	 * TODO - I don't think so anymore... this should be done with set property
+	 * Deprecated, use initialise() and setProperty("ALPHABET_SIZE", "n") instead.
+	 * @deprecated
+	 * @param alphabetSize
+	 */
+	@Deprecated
+	public void initialise(int alphabetSize);
 }

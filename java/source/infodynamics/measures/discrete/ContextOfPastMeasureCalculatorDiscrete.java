@@ -104,7 +104,7 @@ public abstract class ContextOfPastMeasureCalculatorDiscrete extends
 	}
 
 	/**
-	 * Should be called after {@link #resetBase(int)} has just been called.
+	 * Should be called after {@link #resetAlphabetSize(int)} has just been called.
 	 * 
 	 * @param history
 	 */

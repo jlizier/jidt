@@ -74,7 +74,23 @@ public abstract class InfoMeasureCalculatorDiscrete {
 	 * Number of available quantised states for each variable
 	 * (ie binary is base-2).
 	 */
-	protected int base = 0; // number of individual states. Need initialised to 0 for changedSizes
+	protected int alphabetSize = -1; // number of individual states. -1 for unknown number
+	/**
+	 * Size of the largest alphabet to support in array based memory management before
+	 * switching to Hashtable implementation.
+	 */
+	protected int maxAlphabetSize = 100; // largest alphabet size before moving to Hashtable memory management TODO some default value
+	/**
+	 * TODO -- make better comments :)
+	 * State indicator of what the estimator is expecting to happen next.
+	 */
+	protected State currentState = State.SETTING_PROPERTIES;
+
+	/**
+	 * Boolean indicating if the size of the alphabet is known to determine the use of a
+	 * hash table implementation for memory management.
+	 */
+	protected boolean knownIntegerRange = false;
 
 	/**
 	 * Cached value of ln(base)
@@ -96,36 +112,49 @@ public abstract class InfoMeasureCalculatorDiscrete {
 	 * Whether we're in debug mode
 	 */
 	protected boolean debug = false;
+
+	protected enum State {
+		SETTING_PROPERTIES,
+		INITIALISED,
+		ADDING_OBSERVATIONS,
+		COMPUTING
+	}
 	
 	/**
-	 * Construct an instance with default base of 2
+	 * Construct an instance with no specified alphabet size.
 	 */
 	protected InfoMeasureCalculatorDiscrete() {
-		this(2);
+		this(-1);
 	}
 
 	/**
 	 * Construct an instance
 	 * 
-	 * @param base number of quantisation levels for each variable.
+	 * @param alphabetSize number of quantisation levels for each variable.
 	 *        E.g. binary variables are in base-2.
 	 */
-	protected InfoMeasureCalculatorDiscrete(int base) {
-		resetBase(base);
+	protected InfoMeasureCalculatorDiscrete(int alphabetSize) {
+		resetAlphabetSize(alphabetSize);
 	}
 	
-	protected void resetBase(int base) {
-		this.base = base;
-		log_base = Math.log(base);
+	protected void resetAlphabetSize(int alphabetSize) {
+		this.alphabetSize = alphabetSize;
 
-		if (base < 2) {
-			throw new RuntimeException("Can't calculate info theoretic measures for base " + base);
+		// indicator of unknown alphabet size
+		if (alphabetSize == -1) {
+			return;
+		}
+
+		log_base = Math.log(alphabetSize);
+
+		if (alphabetSize < 2) {
+			throw new RuntimeException("Can't calculate info theoretic measures for alphabet size " + alphabetSize);
 		}
 		
 		// Check if we've got a power of 2
-		power_of_2_base = isPowerOf2(base);
+		power_of_2_base = isPowerOf2(alphabetSize);
 		if (power_of_2_base) {
-			log_2_base = (int) Math.round(Math.log(base) / Math.log(2));
+			log_2_base = (int) Math.round(Math.log(alphabetSize) / Math.log(2));
 		}
 	}
 	
@@ -135,21 +164,74 @@ public abstract class InfoMeasureCalculatorDiscrete {
 	 * @throws Exception 
 	 */
 	public void initialise() {
-		initialise(base);
+		initialise(-1);
 	}
 
 	/**
 	 * Initialise the calculator for re-use with new observations,
-	 * and a new base.
+	 * and a new alphabet size.
 	 * (Child classes should clear the existing PDFs)
 	 */
-	public void initialise(int base){
-		resetBase(base);
+	public void initialise(int alphabetSize){
+		resetAlphabetSize(alphabetSize);
 		average = 0.0;
 		max = 0.0;
 		min = 0.0;
 		std = 0.0;
 		observations = 0;
+		currentState = State.INITIALISED;
+	}
+
+	/**
+	 * Set properties for the underlying calculator implementation.
+	 * New property values are not guaranteed to take effect until the next call
+	 *  to an initialise method.
+	 * 
+	 * TODO -- word the property descr. nicely
+	 * 
+	 * <p>Property names defined at the interface level, and what their
+	 * values should represent, include:</p>
+	 * <ul>
+	 *  <li>{@link #ALPHABET_SIZE} -- Defined size of the alphabet for
+	 * 		the data.</li>
+	 * 	<li>{@link #MAX_ALPHA_SIZE_TO_STORE} -- Maximum alphabet size to store
+	 * 		before switching to HashTable memory management. </li>
+	 * </ul>
+	 *  
+	 * <p>Unknown property values are ignored.</p>
+	 * 
+	 * <p>Note that implementing classes may defined additional properties.</p>
+	 * 
+	 * @param propertyName name of the property
+	 * @param propertyValue value of the property
+	 * @throws Exception for invalid property names or values
+	 */
+	public void setProperty(String propertyName, String propertyValue) throws Exception {
+
+		if (currentState != State.SETTING_PROPERTIES) {
+			currentState = State.SETTING_PROPERTIES;
+			// TODO I think there are things here to do to go back to this state but I don't remember them rn
+			// Actually do we want this here...? it should definitely be in the lower levels, so it should be
+			// caught then...
+			// joe's input:
+		}
+
+		switch(propertyName.toLowerCase()) {
+			case "ALPHABET_SIZE":
+				this.alphabetSize = Integer.parseInt(propertyValue);
+			break;
+			case "MAX_ALPHA_SIZE_TO_STORE":
+				this.maxAlphabetSize = Integer.parseInt(propertyValue);
+			break;
+			case "KNOWN_INTEGER_RANGE": 
+				this.knownIntegerRange = Boolean.parseBoolean(propertyValue);
+			break;
+			default:
+				// This is the highest level in which this method should get called, if the property
+				// hasn't been recognised yet, it doesn't exist, throw an exception
+				throw new IllegalArgumentException(String.format("Property name: %s was not recognised", propertyName));
+			// break; (but it's unreachable...)
+		}
 	}
 
 	/**
