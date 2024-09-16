@@ -9,16 +9,16 @@
 
 % Add JIDT jar library to the path, and disable warnings that it's already there:
 warning('off','MATLAB:Java:DuplicateClass');
-javaaddpath('/home/joseph/JIDT/infodynamics-dist-1.6.1/infodynamics.jar');
+javaaddpath('../../../infodynamics.jar');
 % Add utilities to the path
-addpath('/home/joseph/JIDT/infodynamics-dist-1.6.1/demos/octave');
+addpath('../../../demos/octave');
 
 % We may want to loop over the data files later:
-tempsToExamine = [2.00, 2.20, 2.26, 2.27, 2.28, 2.34, 2.54];
+tempsToExamine = [2.00, 2.20, 2.26, 2.27, 2.28, 2.29, 2.34, 2.54];
 labels = {};
 
 % Check one data file - the way we reshape it into a grid may be useful for you to copy later:
-data = load('/home/joseph/TeachingPlayground/CSYS5030/Week8/Ising/spins-2.27.txt');
+data = load('./spins-2.27.txt');
 modelSize = sqrt(size(data,2));
 timeSteps = size(data, 1);
 dataInLayout = zeros(timeSteps, modelSize, modelSize);
@@ -36,7 +36,7 @@ for ti = 1:length(tempsToExamine)
     labels{ti} = sprintf('T=%.2f', tempsToExamine(ti));
 
     % 0. Load/prepare the data:
-    data = load(sprintf('/home/joseph/TeachingPlayground/CSYS5030/Week8/Ising/spins-%.2f.txt', tempsToExamine(ti)));
+    data = load(sprintf('./spins-%.2f.txt', tempsToExamine(ti)));
     
     % Let's reshape the data so it's easier to work with
     dataInLayout = zeros(timeSteps, modelSize, modelSize);
@@ -75,3 +75,4 @@ legend(labels);
 title('MI between cells as a function of x-separation');
 ylabel('MI (bits)');
 xlabel('x difference (cells)')
+
