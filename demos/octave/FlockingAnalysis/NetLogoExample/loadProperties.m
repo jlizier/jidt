@@ -43,6 +43,8 @@ properties.files = 'positions%s.txt';
 % loadScript must point to a function .m file that accepts two arguments
 %  (the name of a file, and properties object) and returns [x,y,z] (z optional, only when 3D)
 %  data where each is an array, e.g. x(time, fishIndex) indexed first by time and second by fish index.
+% Where an individual is not present at any given time step, set each x,y,z position
+%  to nan for these time steps. The subsequent scripts will then ignore these samples.
 % Use the name of the .m file after an "@" character:
 properties.loadScript = @loadseparatexy;
 
