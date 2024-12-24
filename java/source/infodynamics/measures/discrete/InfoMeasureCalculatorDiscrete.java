@@ -71,24 +71,21 @@ public abstract class InfoMeasureCalculatorDiscrete {
 	 */
 	protected int observations = 0;
 	/**
-	 * Number of available quantised states for each variable
-	 * (ie binary is base-2).
+	 * Number of available quantised states for each variable.
+	 * (ie binary is 2).
 	 */
-	protected int alphabetSize = -1; // number of individual states. -1 for unknown number
+	protected int alphabetSize = 100;
+
 	/**
-	 * Size of the largest alphabet to support in array based memory management before
-	 * switching to Hashtable implementation.
-	 */
-	protected int maxAlphabetSize = 100; // largest alphabet size before moving to Hashtable memory management TODO some default value
-	/**
-	 * TODO -- make better comments :)
-	 * State indicator of what the estimator is expecting to happen next.
+	 * Variable to keep track of where the estimator is within its workflow.
+	 * The estimator can be in four states; Setting Properties, Initialised,
+	 * Adding Observations, and Computing.
 	 */
 	protected State currentState = State.SETTING_PROPERTIES;
 
 	/**
-	 * Boolean indicating if the size of the alphabet is known to determine the use of a
-	 * hash table implementation for memory management.
+	 * Boolean indicating if the size of the alphabet is known to determine the
+	 * potnetial use of a hash table implementation for memory management.
 	 */
 	protected boolean knownIntegerRange = false;
 
@@ -113,6 +110,9 @@ public abstract class InfoMeasureCalculatorDiscrete {
 	 */
 	protected boolean debug = false;
 
+	/**
+	 * Enum for the states of an estimator
+	 */
 	protected enum State {
 		SETTING_PROPERTIES,
 		INITIALISED,
@@ -213,15 +213,13 @@ public abstract class InfoMeasureCalculatorDiscrete {
 			// TODO I think there are things here to do to go back to this state but I don't remember them rn
 			// Actually do we want this here...? it should definitely be in the lower levels, so it should be
 			// caught then...
-			// joe's input:
+			// joe's input: yes, check this at all levels.
 		}
 
-		switch(propertyName.toLowerCase()) {
+		switch(propertyName.toUpperCase()) {
 			case "ALPHABET_SIZE":
 				this.alphabetSize = Integer.parseInt(propertyValue);
-			break;
-			case "MAX_ALPHA_SIZE_TO_STORE":
-				this.maxAlphabetSize = Integer.parseInt(propertyValue);
+				this.knownIntegerRange = true;
 			break;
 			case "KNOWN_INTEGER_RANGE": 
 				this.knownIntegerRange = Boolean.parseBoolean(propertyValue);
