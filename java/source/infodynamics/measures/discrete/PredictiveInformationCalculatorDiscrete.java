@@ -80,7 +80,7 @@ import infodynamics.utils.MatrixUtils;
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureDiscreteInContextOfPastCalculator {
+public class PredictiveInformationCalculatorDiscrete extends UnivariateMeasureDiscreteInContextOfPastCalculator {
 
 	/**
 	 * User was formerly forced to create new instances through this factory method.
@@ -116,7 +116,7 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 
 	@Override
 	public void initialise(int base, int blockLength) {
-		boolean baseOrHistoryChanged = (this.base != base) || (k != blockLength);
+		boolean baseOrHistoryChanged = (this.alphabetSize != base) || (k != blockLength);
 		super.initialise(base, blockLength);
 
 		if (baseOrHistoryChanged || (nextPastCount == null)) {
@@ -142,7 +142,7 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 	
 	@Override
 	public void initialise(){
-		initialise(base, k);
+		initialise(alphabetSize, k);
 	}
 		
 	/**
@@ -165,9 +165,9 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 		int prevVal = 0;
 		int nextVal = 0;
 		for (int p = 0; p < k; p++) {
-			prevVal *= base;
+			prevVal *= alphabetSize;
 			prevVal += timeSeries[p];
-			nextVal *= base;
+			nextVal *= alphabetSize;
 			nextVal += timeSeries[k-1+p];
 		}
 		
@@ -175,7 +175,7 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 		for (int t = k; t < timeSteps - (k-1); t++) {
 			// Update the next value:
 			nextVal -= maxShiftedValue[timeSeries[t-1]];
-			nextVal *= base;
+			nextVal *= alphabetSize;
 			nextVal += timeSeries[k-1+t];
 			// Update the counts
 			nextPastCount[nextVal][prevVal]++;
@@ -183,7 +183,7 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 			nextCount[nextVal]++;
 			// Update the previous value:
 			prevVal -= maxShiftedValue[timeSeries[t-k]];
-			prevVal *= base;
+			prevVal *= alphabetSize;
 			prevVal += timeSeries[t];
 		}		
 	}
@@ -213,9 +213,9 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 			prevVal[c] = 0;
 			nextVal[c] = 0;
 			for (int p = 0; p < k; p++) {
-				prevVal[c] *= base;
+				prevVal[c] *= alphabetSize;
 				prevVal[c] += states[p][c];
-				nextVal[c] *= base;
+				nextVal[c] *= alphabetSize;
 				nextVal[c] += states[k-1+p][c];
 			}
 		}
@@ -225,7 +225,7 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 			for (int c = 0; c < columns; c++) {
 				// Update the next value:
 				nextVal[c] -= maxShiftedValue[states[r-1][c]];
-				nextVal[c] *= base;
+				nextVal[c] *= alphabetSize;
 				nextVal[c] += states[k-1+r][c];
 				// Update the counts
 				nextPastCount[nextVal[c]][prevVal[c]]++;
@@ -233,7 +233,7 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 				nextCount[nextVal[c]]++;
 				// Update the previous value:
 				prevVal[c] -= maxShiftedValue[states[r-k][c]];
-				prevVal[c] *= base;
+				prevVal[c] *= alphabetSize;
 				prevVal[c] += states[r][c];
 			}
 		}		
@@ -270,9 +270,9 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 				prevVal[r][c] = 0;
 				nextVal[r][c] = 0;
 				for (int p = 0; p < k; p++) {
-					prevVal[r][c] *= base;
+					prevVal[r][c] *= alphabetSize;
 					prevVal[r][c] += states[p][r][c];
-					nextVal[r][c] *= base;
+					nextVal[r][c] *= alphabetSize;
 					nextVal[r][c] += states[k-1+p][r][c];
 				}
 			}
@@ -284,7 +284,7 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 				for (int c = 0; c < agentColumns; c++) {
 					// Update the next value:
 					nextVal[r][c] -= maxShiftedValue[states[t-1][r][c]];
-					nextVal[r][c] *= base;
+					nextVal[r][c] *= alphabetSize;
 					nextVal[r][c] += states[k-1+t][r][c];
 					// Update the counts
 					nextPastCount[nextVal[r][c]][prevVal[r][c]]++;
@@ -292,7 +292,7 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 					nextCount[nextVal[r][c]]++;
 					// Update the previous value:
 					prevVal[r][c] -= maxShiftedValue[states[t-k][r][c]];
-					prevVal[r][c] *= base;
+					prevVal[r][c] *= alphabetSize;
 					prevVal[r][c] += states[t][r][c];
 				}
 			}
@@ -321,9 +321,9 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 		int prevVal = 0; 
 		int nextVal = 0;
 		for (int p = 0; p < k; p++) {
-			prevVal *= base;
+			prevVal *= alphabetSize;
 			prevVal += states[p][col];
-			nextVal *= base;
+			nextVal *= alphabetSize;
 			nextVal += states[k-1+p][col];
 		}
 		
@@ -331,7 +331,7 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 		for (int r = k; r < rows - (k-1); r++) {
 			// Update the next value:
 			nextVal -= maxShiftedValue[states[r-1][col]];
-			nextVal *= base;
+			nextVal *= alphabetSize;
 			nextVal += states[k-1+r][col];
 			// Add to the count for this particular transition:
 			// (cell's assigned as above)
@@ -340,7 +340,7 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 			nextCount[nextVal]++;					
 			// Update the previous value:
 			prevVal -= maxShiftedValue[states[r-k][col]];
-			prevVal *= base;
+			prevVal *= alphabetSize;
 			prevVal += states[r][col];
 		}
 	}
@@ -368,9 +368,9 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 		int prevVal = 0; 
 		int nextVal = 0;
 		for (int p = 0; p < k; p++) {
-			prevVal *= base;
+			prevVal *= alphabetSize;
 			prevVal += states[p][agentIndex1][agentIndex2];
-			nextVal *= base;
+			nextVal *= alphabetSize;
 			nextVal += states[k-1+p][agentIndex1][agentIndex2];
 		}
 		
@@ -378,7 +378,7 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 		for (int t = k; t < timeSteps - (k-1); t++) {
 			// Update the next value:
 			nextVal -= maxShiftedValue[states[t-1][agentIndex1][agentIndex2]];
-			nextVal *= base;
+			nextVal *= alphabetSize;
 			nextVal += states[k-1+t][agentIndex1][agentIndex2];
 			// Add to the count for this particular transition:
 			// (cell's assigned as above)
@@ -387,7 +387,7 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 			nextCount[nextVal]++;
 			// Update the previous value:
 			prevVal -= maxShiftedValue[states[t-k][agentIndex1][agentIndex2]];
-			prevVal *= base;
+			prevVal *= alphabetSize;
 			prevVal += states[t][agentIndex1][agentIndex2];
 		}
 	}
@@ -472,9 +472,9 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 		int prevVal = 0;
 		int nextVal = 0;
 		for (int p = 0; p < k; p++) {
-			prevVal *= base;
+			prevVal *= alphabetSize;
 			prevVal += timeSeries[p];
-			nextVal *= base;
+			nextVal *= alphabetSize;
 			nextVal += timeSeries[k-1+p];
 		}
 
@@ -482,7 +482,7 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 		for (int t = k; t < timeSteps - (k-1); t++) {
 			// Update the next value:
 			nextVal -= maxShiftedValue[timeSeries[t-1]];
-			nextVal *= base;
+			nextVal *= alphabetSize;
 			nextVal += timeSeries[k-1+t];
 			logTerm = ( (double) nextPastCount[nextVal][prevVal] ) /
 			  		  ( (double) nextCount[nextVal] *
@@ -501,7 +501,7 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 			}
 			// Update the previous value:
 			prevVal -= maxShiftedValue[timeSeries[t-k]];
-			prevVal *= base;
+			prevVal *= alphabetSize;
 			prevVal += timeSeries[t];
 		}
 		average = average/(double) (timeSteps - k - (k-1));
@@ -543,9 +543,9 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 			prevVal[c] = 0;
 			nextVal[c] = 0;
 			for (int p = 0; p < k; p++) {
-				prevVal[c] *= base;
+				prevVal[c] *= alphabetSize;
 				prevVal[c] += timeSeries[p][c];
-				nextVal[c] *= base;
+				nextVal[c] *= alphabetSize;
 				nextVal[c] += timeSeries[k-1+p][c];
 			}
 		}
@@ -554,7 +554,7 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 			for (int c = 0; c < columns; c++) {
 				// Update the next value:
 				nextVal[c] -= maxShiftedValue[timeSeries[r-1][c]];
-				nextVal[c] *= base;
+				nextVal[c] *= alphabetSize;
 				nextVal[c] += timeSeries[k-1+r][c];
 				logTerm = ( (double) nextPastCount[nextVal[c]][prevVal[c]] ) /
 				  		  ( (double) nextCount[nextVal[c]] *
@@ -573,7 +573,7 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 				}
 				// Update the previous value:
 				prevVal[c] -= maxShiftedValue[timeSeries[r-k][c]];
-				prevVal[c] *= base;
+				prevVal[c] *= alphabetSize;
 				prevVal[c] += timeSeries[r][c];
 			}
 		}
@@ -618,9 +618,9 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 				prevVal[r][c] = 0;
 				nextVal[r][c] = 0;
 				for (int p = 0; p < k; p++) {
-					prevVal[r][c] *= base;
+					prevVal[r][c] *= alphabetSize;
 					prevVal[r][c] += timeSeries[p][r][c];
-					nextVal[r][c] *= base;
+					nextVal[r][c] *= alphabetSize;
 					nextVal[r][c] += timeSeries[k-1+p][r][c];
 				}
 			}
@@ -631,7 +631,7 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 				for (int c = 0; c < agentColumns; c++) {
 					// Update the next value:
 					nextVal[r][c] -= maxShiftedValue[timeSeries[t-1][r][c]];
-					nextVal[r][c] *= base;
+					nextVal[r][c] *= alphabetSize;
 					nextVal[r][c] += timeSeries[k-1+t][r][c];
 					logTerm = ( (double) nextPastCount[nextVal[r][c]][prevVal[r][c]] ) /
 					  		  ( (double) nextCount[nextVal[r][c]] *
@@ -650,7 +650,7 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 					}
 					// Update the previous value:
 					prevVal[r][c] -= maxShiftedValue[timeSeries[t-k][r][c]];
-					prevVal[r][c] *= base;
+					prevVal[r][c] *= alphabetSize;
 					prevVal[r][c] += timeSeries[t][r][c];
 				}
 			}
@@ -690,16 +690,16 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 		int prevVal = 0; 
 		int nextVal = 0;
 		for (int p = 0; p < k; p++) {
-			prevVal *= base;
+			prevVal *= alphabetSize;
 			prevVal += states[p][col];
-			nextVal *= base;
+			nextVal *= alphabetSize;
 			nextVal += states[k-1+p][col];
 		}
 		double logTerm = 0.0;
 		for (int r = k; r < rows - (k-1); r++) {
 			// Update the next value:
 			nextVal -= maxShiftedValue[states[r-1][col]];
-			nextVal *= base;
+			nextVal *= alphabetSize;
 			nextVal += states[k-1+r][col];
 			logTerm = ( (double) nextPastCount[nextVal][prevVal] ) /
 			  		  ( (double) nextCount[nextVal] *
@@ -718,7 +718,7 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 			}
 			// Update the previous value:
 			prevVal -= maxShiftedValue[states[r-k][col]];
-			prevVal *= base;
+			prevVal *= alphabetSize;
 			prevVal += states[r][col];
 		}
 		average = average/(double) (rows - k - (k-1));
@@ -758,16 +758,16 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 		int prevVal = 0;
 		int nextVal = 0;
 		for (int p = 0; p < k; p++) {
-			prevVal *= base;
+			prevVal *= alphabetSize;
 			prevVal += timeSeries[p][agentIndex1][agentIndex2];
-			nextVal *= base;
+			nextVal *= alphabetSize;
 			nextVal += timeSeries[k-1+p][agentIndex1][agentIndex2];
 		}
 		double logTerm = 0.0;
 		for (int t = k; t < timeSteps - (k-1); t++) {
 			// Update the next value:
 			nextVal -= maxShiftedValue[timeSeries[t-1][agentIndex1][agentIndex2]];
-			nextVal *= base;
+			nextVal *= alphabetSize;
 			nextVal += timeSeries[k-1+t][agentIndex1][agentIndex2];
 			logTerm = ( (double) nextPastCount[nextVal][prevVal] ) /
 			  		  ( (double) nextCount[nextVal] *
@@ -786,7 +786,7 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 			}
 			// Update the previous value:
 			prevVal -= maxShiftedValue[timeSeries[t-k][agentIndex1][agentIndex2]];
-			prevVal *= base;
+			prevVal *= alphabetSize;
 			prevVal += timeSeries[t][agentIndex1][agentIndex2];
 		}
 		average = average/(double) (timeSteps - k - (k-1));
@@ -844,7 +844,7 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 	public int computePastValue(int[] x, int t) {
 		int pastVal = 0;
 		for (int p = 0; p < k; p++) {
-			pastVal *= base;
+			pastVal *= alphabetSize;
 			pastVal += x[t - k + 1 + p];
 		}
 		return pastVal;
@@ -863,7 +863,7 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 	public int computePastValue(int[][] x, int i, int t) {
 		int pastVal = 0;
 		for (int p = 0; p < k; p++) {
-			pastVal *= base;
+			pastVal *= alphabetSize;
 			pastVal += x[t - k + 1 + p][i];
 		}
 		return pastVal;
@@ -883,9 +883,27 @@ public class PredictiveInformationCalculatorDiscrete extends SingleAgentMeasureD
 	public int computePastValue(int[][][] x, int i, int j, int t) {
 		int pastVal = 0;
 		for (int p = 0; p < k; p++) {
-			pastVal *= base;
+			pastVal *= alphabetSize;
 			pastVal += x[t - k + 1 + p][i][j];
 		}
 		return pastVal;
+	}
+
+	@Override
+	public void setObservations(Object[] observations) throws Exception {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'setObservations'");
+	}
+
+	@Override
+	public void startAddObservations() {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'startAddObservations'");
+	}
+
+	@Override
+	public void finaliseAddObservations() throws Exception {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'finaliseAddObservations'");
 	}
 }

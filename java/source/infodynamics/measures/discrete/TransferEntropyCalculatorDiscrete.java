@@ -294,7 +294,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 	public void initialise(int base, int destHistoryEmbedLength, int destEmbeddingDelay,
 			int sourceHistoryEmbeddingLength, int sourceEmbeddingDelay, int delay) {
 		
-		boolean paramsChanged = (this.base != base) || (k != destHistoryEmbedLength) ||
+		boolean paramsChanged = (this.alphabetSize != base) || (k != destHistoryEmbedLength) ||
 				(this.destEmbeddingDelay != destEmbeddingDelay) || (this.sourceHistoryEmbedLength != sourceHistoryEmbeddingLength) ||
 				(this.sourceEmbeddingDelay != sourceEmbeddingDelay) || (this.delay != delay); 
 		super.initialise(base, destHistoryEmbedLength);
@@ -324,7 +324,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 	
 	@Override
 	public void initialise(){
-		initialise(base, k, destEmbeddingDelay, sourceHistoryEmbedLength,
+		initialise(this.alphabetSize, k, destEmbeddingDelay, sourceHistoryEmbedLength,
 				sourceEmbeddingDelay, delay);
 	}
 	
@@ -374,7 +374,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 				pastVal[d] += dest[startTime + startObservationTime + d - 1
 				                   - (k-1)*destEmbeddingDelay
 				                   + p*destEmbeddingDelay];
-				pastVal[d] *= base;
+				pastVal[d] *= this.alphabetSize;
 			}
 		}
 		// Next for the source:
@@ -389,7 +389,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 				sourcePastVal[d] += source[startTime + startObservationTime + d - delay
 				                    - (sourceHistoryEmbedLength-1)*sourceEmbeddingDelay
 				                    + p*sourceEmbeddingDelay];
-				sourcePastVal[d] *= base;
+				sourcePastVal[d] *= this.alphabetSize;
 			}
 		}
 		
@@ -416,12 +416,12 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 			//  for this phase we back out the oldest value which we'll no longer need:
 			if (k > 0) {
 				pastVal[destEmbeddingPhase] -= maxShiftedValue[dest[r-1-(k-1)*destEmbeddingDelay]];
-				pastVal[destEmbeddingPhase] *= base; // and shift the others up
+				pastVal[destEmbeddingPhase] *= this.alphabetSize; // and shift the others up
 			}
 			sourcePastVal[sourceEmbeddingPhase] -=
 					maxShiftedSourceValue[
 					    source[r-delay-(sourceHistoryEmbedLength-1)*sourceEmbeddingDelay]];
-			sourcePastVal[sourceEmbeddingPhase] *= base; // and shift the others up
+			sourcePastVal[sourceEmbeddingPhase] *= this.alphabetSize; // and shift the others up
 			// then update the phase
 			destEmbeddingPhase = (destEmbeddingPhase + 1) % destEmbeddingDelay; 
 			sourceEmbeddingPhase = (sourceEmbeddingPhase + 1) % sourceEmbeddingDelay; 
@@ -463,7 +463,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 				pastVal[d] += dest[startObservationTime + d - 1
 				                   - (k-1)*destEmbeddingDelay
 				                   + p*destEmbeddingDelay];
-				pastVal[d] *= base;
+				pastVal[d] *= this.alphabetSize;
 			}
 		}
 		// We can take an observation if timeSinceLastDestInvalid >= minDestLengthRequired
@@ -489,7 +489,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 				sourcePastVal[d] += source[startObservationTime + d - delay
 				                    - (sourceHistoryEmbedLength-1)*sourceEmbeddingDelay
 				                    + p*sourceEmbeddingDelay];
-				sourcePastVal[d] *= base;
+				sourcePastVal[d] *= this.alphabetSize;
 			}
 		}
 		// We can take an observation if timeSinceLastSourceInvalid >= minSourceLengthRequired
@@ -551,12 +551,12 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 			//  for this phase we back out the oldest value which we'll no longer need:
 			if (k > 0) {
 				pastVal[destEmbeddingPhase] -= maxShiftedValue[dest[r-1-(k-1)*destEmbeddingDelay]];
-				pastVal[destEmbeddingPhase] *= base; // and shift the others up
+				pastVal[destEmbeddingPhase] *= this.alphabetSize; // and shift the others up
 			}
 			sourcePastVal[sourceEmbeddingPhase] -=
 					maxShiftedSourceValue[
 					    source[r-delay-(sourceHistoryEmbedLength-1)*sourceEmbeddingDelay]];
-			sourcePastVal[sourceEmbeddingPhase] *= base; // and shift the others up
+			sourcePastVal[sourceEmbeddingPhase] *= this.alphabetSize; // and shift the others up
 			// then update the phase
 			destEmbeddingPhase = (destEmbeddingPhase + 1) % destEmbeddingDelay; 
 			sourceEmbeddingPhase = (sourceEmbeddingPhase + 1) % sourceEmbeddingDelay; 
@@ -606,7 +606,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 					pastVal[c][d] += states[startObservationTime + d - 1
 					                   - (k-1)*destEmbeddingDelay
 					                   + p*destEmbeddingDelay][c];
-					pastVal[c][d] *= base;
+					pastVal[c][d] *= this.alphabetSize;
 				}
 			}
 		}
@@ -633,7 +633,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 					sourcePastVal[c][d] += states[startObservationTime + d - delay
 					                    - (sourceHistoryEmbedLength-1)*sourceEmbeddingDelay
 					                    + p*sourceEmbeddingDelay][sourceVariable];
-					sourcePastVal[c][d] *= base;
+					sourcePastVal[c][d] *= this.alphabetSize;
 				}
 			}
 		}
@@ -674,12 +674,12 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 				//  for this phase we back out the oldest value which we'll no longer need:
 				if (k > 0) {
 					pastVal[c][destEmbeddingPhase] -= maxShiftedValue[states[r-1-(k-1)*destEmbeddingDelay][c]];
-					pastVal[c][destEmbeddingPhase] *= base; // and shift the others up
+					pastVal[c][destEmbeddingPhase] *= this.alphabetSize; // and shift the others up
 				}
 				sourcePastVal[c][sourceEmbeddingPhase] -=
 						maxShiftedSourceValue[
 						    states[r-delay-(sourceHistoryEmbedLength-1)*sourceEmbeddingDelay][sourceVariable]];
-				sourcePastVal[c][sourceEmbeddingPhase] *= base; // and shift the others up
+				sourcePastVal[c][sourceEmbeddingPhase] *= this.alphabetSize; // and shift the others up
 			}
 			// then update the phase
 			destEmbeddingPhase = (destEmbeddingPhase + 1) % destEmbeddingDelay; 
@@ -737,7 +737,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 						pastVal[r][c][d] += states[startObservationTime + d - 1
 						                   - (k-1)*destEmbeddingDelay
 						                   + p*destEmbeddingDelay][r][c];
-						pastVal[r][c][d] *= base;
+						pastVal[r][c][d] *= this.alphabetSize;
 					}
 				}
 			}
@@ -777,7 +777,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 						sourcePastVal[r][c][d] += states[startObservationTime + d - delay
 						                    - (sourceHistoryEmbedLength-1)*sourceEmbeddingDelay
 						                    + p*sourceEmbeddingDelay][sourceAgentRow][sourceAgentColumn];
-						sourcePastVal[r][c][d] *= base;
+						sourcePastVal[r][c][d] *= this.alphabetSize;
 					}
 				}
 			}
@@ -830,12 +830,12 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 					//  for this phase we back out the oldest value which we'll no longer need:
 					if (k > 0) {
 						pastVal[r][c][destEmbeddingPhase] -= maxShiftedValue[states[t-1-(k-1)*destEmbeddingDelay][r][c]];
-						pastVal[r][c][destEmbeddingPhase] *= base; // and shift the others up
+						pastVal[r][c][destEmbeddingPhase] *= this.alphabetSize; // and shift the others up
 					}
 					sourcePastVal[r][c][sourceEmbeddingPhase] -=
 							maxShiftedSourceValue[
 							    states[t-delay-(sourceHistoryEmbedLength-1)*sourceEmbeddingDelay][sourceAgentRow][sourceAgentColumn]];
-					sourcePastVal[r][c][sourceEmbeddingPhase] *= base; // and shift the others up
+					sourcePastVal[r][c][sourceEmbeddingPhase] *= this.alphabetSize; // and shift the others up
 				}
 			}
 			// then update the phase
@@ -879,7 +879,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 				pastVal[d] += states[startObservationTime + d - 1
 				                   - (k-1)*destEmbeddingDelay
 				                   + p*destEmbeddingDelay][destIndex];
-				pastVal[d] *= base;
+				pastVal[d] *= this.alphabetSize;
 			}
 		}
 		// Next for the source:
@@ -894,7 +894,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 				sourcePastVal[d] += states[startObservationTime + d - delay
 				                    - (sourceHistoryEmbedLength-1)*sourceEmbeddingDelay
 				                    + p*sourceEmbeddingDelay][sourceIndex];
-				sourcePastVal[d] *= base;
+				sourcePastVal[d] *= this.alphabetSize;
 			}
 		}
 		
@@ -921,12 +921,12 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 			//  for this phase we back out the oldest value which we'll no longer need:
 			if (k > 0) {
 				pastVal[destEmbeddingPhase] -= maxShiftedValue[states[r-1-(k-1)*destEmbeddingDelay][destIndex]];
-				pastVal[destEmbeddingPhase] *= base; // and shift the others up
+				pastVal[destEmbeddingPhase] *= this.alphabetSize; // and shift the others up
 			}
 			sourcePastVal[sourceEmbeddingPhase] -=
 					maxShiftedSourceValue[
 					    states[r-delay-(sourceHistoryEmbedLength-1)*sourceEmbeddingDelay][sourceIndex]];
-			sourcePastVal[sourceEmbeddingPhase] *= base; // and shift the others up
+			sourcePastVal[sourceEmbeddingPhase] *= this.alphabetSize; // and shift the others up
 			// then update the phase
 			destEmbeddingPhase = (destEmbeddingPhase + 1) % destEmbeddingDelay; 
 			sourceEmbeddingPhase = (sourceEmbeddingPhase + 1) % sourceEmbeddingDelay; 
@@ -972,7 +972,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 				pastVal[d] += states[startObservationTime + d - 1
 				                   - (k-1)*destEmbeddingDelay
 				                   + p*destEmbeddingDelay][destRowIndex][destColumnIndex];
-				pastVal[d] *= base;
+				pastVal[d] *= this.alphabetSize;
 			}
 		}
 		// Next for the source:
@@ -987,7 +987,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 				sourcePastVal[d] += states[startObservationTime + d - delay
 				                    - (sourceHistoryEmbedLength-1)*sourceEmbeddingDelay
 				                    + p*sourceEmbeddingDelay][sourceRowIndex][sourceColumnIndex];
-				sourcePastVal[d] *= base;
+				sourcePastVal[d] *= this.alphabetSize;
 			}
 		}
 		
@@ -1014,12 +1014,12 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 			//  for this phase we back out the oldest value which we'll no longer need:
 			if (k > 0) {
 				pastVal[destEmbeddingPhase] -= maxShiftedValue[states[r-1-(k-1)*destEmbeddingDelay][destRowIndex][destColumnIndex]];
-				pastVal[destEmbeddingPhase] *= base; // and shift the others up
+				pastVal[destEmbeddingPhase] *= this.alphabetSize; // and shift the others up
 			}
 			sourcePastVal[sourceEmbeddingPhase] -=
 					maxShiftedSourceValue[
 					    states[r-delay-(sourceHistoryEmbedLength-1)*sourceEmbeddingDelay][sourceRowIndex][sourceColumnIndex]];
-			sourcePastVal[sourceEmbeddingPhase] *= base; // and shift the others up
+			sourcePastVal[sourceEmbeddingPhase] *= this.alphabetSize; // and shift the others up
 			// then update the phase
 			destEmbeddingPhase = (destEmbeddingPhase + 1) % destEmbeddingDelay; 
 			sourceEmbeddingPhase = (sourceEmbeddingPhase + 1) % sourceEmbeddingDelay; 
@@ -1171,7 +1171,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 			if (pastCount[pastVal] == 0) {
 				continue;
 			}
-			for (int destVal = 0; destVal < base; destVal++) {
+			for (int destVal = 0; destVal < this.alphabetSize; destVal++) {
 				// compute p(dest,past)
 				// double p_dest_past = (double) destPastCount[destVal][pastVal] / (double) observations;
 				if (nextPastCount[destVal][pastVal] == 0) {
@@ -1234,7 +1234,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 		double active = 0.0;
 		double activeCont = 0.0;
 
-		for (int nextVal = 0; nextVal < base; nextVal++) {
+		for (int nextVal = 0; nextVal < this.alphabetSize; nextVal++) {
 			// compute p_next
 			double p_next = (double) nextCount[nextVal] / (double) observations;
 			for (int prevVal = 0; prevVal < base_power_k; prevVal++) {
@@ -1263,7 +1263,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 		
 		System.out.println("Src\tDst\tPast\tc(s,d,p)\tc(s,p)\tc(d,p)\tc(p)");
 		for (int pastVal = 0; pastVal < base_power_k; pastVal++) {
-			for (int destVal = 0; destVal < base; destVal++) {
+			for (int destVal = 0; destVal < this.alphabetSize; destVal++) {
 				for (int sourceVal = 0; sourceVal < base_power_l; sourceVal++) {
 					// Compute TE contribution:
 					System.out.println(sourceVal + "\t" + destVal + "\t" + pastVal + "\t" +
@@ -1315,7 +1315,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 		for (int pastVal = 0; pastVal < base_power_k; pastVal++) {
 			MatrixUtils.fill(pastValues, pastVal, t_p, pastCount[pastVal]);
 			t_p += pastCount[pastVal];
-			for (int destVal = 0; destVal < base; destVal++) {
+			for (int destVal = 0; destVal < this.alphabetSize; destVal++) {
 				MatrixUtils.fill(destValues, destVal, t_d, nextPastCount[destVal][pastVal]);
 				t_d += nextPastCount[destVal][pastVal];
 			}
@@ -1324,7 +1324,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 		// If we want a calculator just like this one, we should provide all of 
 		//  the same parameters:
 		TransferEntropyCalculatorDiscrete ate2 =
-				new TransferEntropyCalculatorDiscrete(base, k, destEmbeddingDelay,
+				new TransferEntropyCalculatorDiscrete(this.alphabetSize, k, destEmbeddingDelay,
 						sourceHistoryEmbedLength, sourceEmbeddingDelay, delay);
 		ate2.initialise();
 		ate2.observations = observations;
@@ -1366,7 +1366,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 		}
 		return new ChiSquareMeasurementDistribution(average,
 				observations,
-				(base_power_l - 1)*(base - 1)*(base_power_k));
+				(base_power_l - 1)*(this.alphabetSize - 1)*(base_power_k));
 	}
 
 	/**
@@ -1425,7 +1425,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 				pastVal[d] += dest[startObservationTime + d - 1
 				                   - (k-1)*destEmbeddingDelay
 				                   + p*destEmbeddingDelay];
-				pastVal[d] *= base;
+				pastVal[d] *= this.alphabetSize;
 			}
 		}
 		// Next for the source:
@@ -1440,7 +1440,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 				sourcePastVal[d] += source[startObservationTime + d - delay
 				                    - (sourceHistoryEmbedLength-1)*sourceEmbeddingDelay
 				                    + p*sourceEmbeddingDelay];
-				sourcePastVal[d] *= base;
+				sourcePastVal[d] *= this.alphabetSize;
 			}
 		}
 		
@@ -1472,12 +1472,12 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 			//  for this phase we back out the oldest value which we'll no longer need:
 			if (k > 0) {
 				pastVal[destEmbeddingPhase] -= maxShiftedValue[dest[t-1-(k-1)*destEmbeddingDelay]];
-				pastVal[destEmbeddingPhase] *= base; // and shift the others up
+				pastVal[destEmbeddingPhase] *= this.alphabetSize; // and shift the others up
 			}
 			sourcePastVal[sourceEmbeddingPhase] -=
 					maxShiftedSourceValue[
 					    source[t-delay-(sourceHistoryEmbedLength-1)*sourceEmbeddingDelay]];
-			sourcePastVal[sourceEmbeddingPhase] *= base; // and shift the others up
+			sourcePastVal[sourceEmbeddingPhase] *= this.alphabetSize; // and shift the others up
 			// then update the phase
 			destEmbeddingPhase = (destEmbeddingPhase + 1) % destEmbeddingDelay; 
 			sourceEmbeddingPhase = (sourceEmbeddingPhase + 1) % sourceEmbeddingDelay; 
@@ -1537,7 +1537,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 					pastVal[c][d] += states[startObservationTime + d - 1
 					                   - (k-1)*destEmbeddingDelay
 					                   + p*destEmbeddingDelay][c];
-					pastVal[c][d] *= base;
+					pastVal[c][d] *= this.alphabetSize;
 				}
 			}
 		}
@@ -1564,7 +1564,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 					sourcePastVal[c][d] += states[startObservationTime + d - delay
 					                    - (sourceHistoryEmbedLength-1)*sourceEmbeddingDelay
 					                    + p*sourceEmbeddingDelay][sourceVariable];
-					sourcePastVal[c][d] *= base;
+					sourcePastVal[c][d] *= this.alphabetSize;
 				}
 			}
 		}
@@ -1608,12 +1608,12 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 				//  for this phase we back out the oldest value which we'll no longer need:
 				if (k > 0) {
 					pastVal[c][destEmbeddingPhase] -= maxShiftedValue[states[t-1-(k-1)*destEmbeddingDelay][c]];
-					pastVal[c][destEmbeddingPhase] *= base; // and shift the others up
+					pastVal[c][destEmbeddingPhase] *= this.alphabetSize; // and shift the others up
 				}
 				sourcePastVal[c][sourceEmbeddingPhase] -=
 						maxShiftedSourceValue[
 						    states[t-delay-(sourceHistoryEmbedLength-1)*sourceEmbeddingDelay][sourceVariable]];
-				sourcePastVal[c][sourceEmbeddingPhase] *= base; // and shift the others up
+				sourcePastVal[c][sourceEmbeddingPhase] *= this.alphabetSize; // and shift the others up
 			}
 			// then update the phase
 			destEmbeddingPhase = (destEmbeddingPhase + 1) % destEmbeddingDelay; 
@@ -1689,7 +1689,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 						pastVal[r][c][d] += states[startObservationTime + d - 1
 						                   - (k-1)*destEmbeddingDelay
 						                   + p*destEmbeddingDelay][r][c];
-						pastVal[r][c][d] *= base;
+						pastVal[r][c][d] *= this.alphabetSize;
 					}
 				}
 			}
@@ -1729,7 +1729,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 						sourcePastVal[r][c][d] += states[startObservationTime + d - delay
 						                    - (sourceHistoryEmbedLength-1)*sourceEmbeddingDelay
 						                    + p*sourceEmbeddingDelay][sourceAgentRow][sourceAgentColumn];
-						sourcePastVal[r][c][d] *= base;
+						sourcePastVal[r][c][d] *= this.alphabetSize;
 					}
 				}
 			}
@@ -1787,12 +1787,12 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 					//  for this phase we back out the oldest value which we'll no longer need:
 					if (k > 0) {
 						pastVal[r][c][destEmbeddingPhase] -= maxShiftedValue[states[t-1-(k-1)*destEmbeddingDelay][r][c]];
-						pastVal[r][c][destEmbeddingPhase] *= base; // and shift the others up
+						pastVal[r][c][destEmbeddingPhase] *= this.alphabetSize; // and shift the others up
 					}
 					sourcePastVal[r][c][sourceEmbeddingPhase] -=
 							maxShiftedSourceValue[
 							    states[t-delay-(sourceHistoryEmbedLength-1)*sourceEmbeddingDelay][sourceAgentRow][sourceAgentColumn]];
-					sourcePastVal[r][c][sourceEmbeddingPhase] *= base; // and shift the others up
+					sourcePastVal[r][c][sourceEmbeddingPhase] *= this.alphabetSize; // and shift the others up
 				}
 			}
 			// then update the phase
@@ -1852,7 +1852,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 				pastVal[d] += states[startObservationTime + d - 1
 				                   - (k-1)*destEmbeddingDelay
 				                   + p*destEmbeddingDelay][destIndex];
-				pastVal[d] *= base;
+				pastVal[d] *= this.alphabetSize;
 			}
 		}
 		// Next for the source:
@@ -1867,7 +1867,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 				sourcePastVal[d] += states[startObservationTime + d - delay
 				                    - (sourceHistoryEmbedLength-1)*sourceEmbeddingDelay
 				                    + p*sourceEmbeddingDelay][sourceIndex];
-				sourcePastVal[d] *= base;
+				sourcePastVal[d] *= this.alphabetSize;
 			}
 		}
 		
@@ -1899,12 +1899,12 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 			//  for this phase we back out the oldest value which we'll no longer need:
 			if (k > 0) {
 				pastVal[destEmbeddingPhase] -= maxShiftedValue[states[r-1-(k-1)*destEmbeddingDelay][destIndex]];
-				pastVal[destEmbeddingPhase] *= base; // and shift the others up
+				pastVal[destEmbeddingPhase] *= this.alphabetSize; // and shift the others up
 			}
 			sourcePastVal[sourceEmbeddingPhase] -=
 					maxShiftedSourceValue[
 					    states[r-delay-(sourceHistoryEmbedLength-1)*sourceEmbeddingDelay][sourceIndex]];
-			sourcePastVal[sourceEmbeddingPhase] *= base; // and shift the others up
+			sourcePastVal[sourceEmbeddingPhase] *= this.alphabetSize; // and shift the others up
 			// then update the phase
 			destEmbeddingPhase = (destEmbeddingPhase + 1) % destEmbeddingDelay; 
 			sourceEmbeddingPhase = (sourceEmbeddingPhase + 1) % sourceEmbeddingDelay; 
@@ -1958,7 +1958,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 				pastVal[d] += states[startObservationTime + d - 1
 				                   - (k-1)*destEmbeddingDelay
 				                   + p*destEmbeddingDelay][destRowIndex][destColumnIndex];
-				pastVal[d] *= base;
+				pastVal[d] *= this.alphabetSize;
 			}
 		}
 		// Next for the source:
@@ -1973,7 +1973,7 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 				sourcePastVal[d] += states[startObservationTime + d - delay
 				                    - (sourceHistoryEmbedLength-1)*sourceEmbeddingDelay
 				                    + p*sourceEmbeddingDelay][sourceRowIndex][sourceColumnIndex];
-				sourcePastVal[d] *= base;
+				sourcePastVal[d] *= this.alphabetSize;
 			}
 		}
 		
@@ -2005,12 +2005,12 @@ public class TransferEntropyCalculatorDiscrete extends ContextOfPastMeasureCalcu
 			//  for this phase we back out the oldest value which we'll no longer need:
 			if (k > 0) {
 				pastVal[destEmbeddingPhase] -= maxShiftedValue[states[r-1-(k-1)*destEmbeddingDelay][destRowIndex][destColumnIndex]];
-				pastVal[destEmbeddingPhase] *= base; // and shift the others up
+				pastVal[destEmbeddingPhase] *= this.alphabetSize; // and shift the others up
 			}
 			sourcePastVal[sourceEmbeddingPhase] -=
 					maxShiftedSourceValue[
 					    states[r-delay-(sourceHistoryEmbedLength-1)*sourceEmbeddingDelay][sourceRowIndex][sourceColumnIndex]];
-			sourcePastVal[sourceEmbeddingPhase] *= base; // and shift the others up
+			sourcePastVal[sourceEmbeddingPhase] *= this.alphabetSize; // and shift the others up
 			// then update the phase
 			destEmbeddingPhase = (destEmbeddingPhase + 1) % destEmbeddingDelay; 
 			sourceEmbeddingPhase = (sourceEmbeddingPhase + 1) % sourceEmbeddingDelay; 

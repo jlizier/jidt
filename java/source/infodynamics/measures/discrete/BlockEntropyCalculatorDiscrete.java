@@ -104,7 +104,7 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 	
 	private void resetBlocksize(int blocksize) {
 		this.blocksize = blocksize;
-		base_power_blocksize = MathsUtils.power(base, blocksize);
+		base_power_blocksize = MathsUtils.power(alphabetSize, blocksize);
 
 		if (blocksize <= 1) {
 			throw new RuntimeException("Blocksize " + blocksize + " is not > 1 for Block Entropy Calculator");
@@ -114,14 +114,14 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 		}
 		
 		// Create constants for tracking stateValues
-		maxShiftedValue = new int[base];
-		for (int v = 0; v < base; v++) {
-			maxShiftedValue[v] = v * MathsUtils.power(base, blocksize-1);
+		maxShiftedValue = new int[alphabetSize];
+		for (int v = 0; v < alphabetSize; v++) {
+			maxShiftedValue[v] = v * MathsUtils.power(alphabetSize, blocksize-1);
 		}
 	}
 	
 	public void initialise(int blocksize, int base) {
-		boolean baseOrBlocksizeChanged = (this.blocksize != blocksize) || (this.base != base);
+		boolean baseOrBlocksizeChanged = (this.blocksize != blocksize) || (this.alphabetSize != base);
 		
 		super.initialise(base);
 		if (baseOrBlocksizeChanged) {
@@ -148,7 +148,7 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 	
 	@Override
 	public void initialise() {
-		initialise(blocksize, base);
+		initialise(blocksize, alphabetSize);
 	}
 	
 	@Override
@@ -163,7 +163,7 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 			// Add the contribution from this observation
 			stateVal += states[p];
 			// And shift up
-			stateVal *= base;
+			stateVal *= alphabetSize;
 		}
 
 		// 1. Now count the tuples observed from the next row onwards
@@ -176,7 +176,7 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 			
 			// Remove the oldest observation from the state value
 			stateVal -= maxShiftedValue[states[r-blocksize+1]];
-			stateVal *= base;
+			stateVal *= alphabetSize;
 		}		
 	}
 	
@@ -195,7 +195,7 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 				// Add the contribution from this observation
 				stateVal[c] += states[p][c];
 				// And shift up
-				stateVal[c] *= base;
+				stateVal[c] *= alphabetSize;
 			}
 		}
 
@@ -210,12 +210,12 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 				
 				// Remove the oldest observation from the state value
 				stateVal[c] -= maxShiftedValue[states[r-blocksize+1][c]];
-				stateVal[c] *= base;
+				stateVal[c] *= alphabetSize;
 			}
 		}		
 	}
 	
-	@Override
+	
 	public void addObservations(int states[][][]) {
 		int timeSteps = states.length;
 		if (timeSteps == 0) {
@@ -238,7 +238,7 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 					// Add the contribution from this observation
 					stateVal[r][c] += states[p][r][c];
 					// And shift up
-					stateVal[r][c] *= base;
+					stateVal[r][c] *= alphabetSize;
 				}
 			}
 		}
@@ -255,13 +255,13 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 					
 					// Remove the oldest observation from the state value
 					stateVal[r][c] -= maxShiftedValue[states[t-blocksize+1][r][c]];
-					stateVal[r][c] *= base;
+					stateVal[r][c] *= alphabetSize;
 				}
 			}
 		}		
 	}
 
-	@Override
+	
 	public void addObservations(int states[][], int col) {
 		int rows = states.length;
 		// increment the count of observations:
@@ -273,7 +273,7 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 			// Add the contribution from this observation
 			stateVal += states[p][col];
 			// And shift up
-			stateVal *= base;
+			stateVal *= alphabetSize;
 		}
 
 		// 1. Count the tuples observed
@@ -286,11 +286,11 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 			
 			// Remove the oldest observation from the state value
 			stateVal -= maxShiftedValue[states[r-blocksize+1][col]];
-			stateVal *= base;
+			stateVal *= alphabetSize;
 		}
 	}
 
-	@Override
+	
 	public void addObservations(int states[][][], int agentIndex1, int agentIndex2) {
 		int timeSteps = states.length;
 		// increment the count of observations:
@@ -302,7 +302,7 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 			// Add the contribution from this observation
 			stateVal += states[p][agentIndex1][agentIndex2];
 			// And shift up
-			stateVal *= base;
+			stateVal *= alphabetSize;
 		}
 
 		// 1. Count the tuples observed
@@ -315,7 +315,7 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 			
 			// Remove the oldest observation from the state value
 			stateVal -= maxShiftedValue[states[t-blocksize+1][agentIndex1][agentIndex2]];
-			stateVal *= base;
+			stateVal *= alphabetSize;
 		}
 	}
 
@@ -348,7 +348,7 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 		return ent;
 	}
 	
-	@Override
+	
 	public double[][] computeLocalFromPreviousObservations(int states[][]){
 		int rows = states.length;
 		int columns = states[0].length;
@@ -365,7 +365,7 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 			stateVal[c] = 0;
 			for (int p = 0; p < blocksize - 1; p++) {
 				stateVal[c] += states[p][c];
-				stateVal[c] *= base;
+				stateVal[c] *= alphabetSize;
 			}
 		}
 		// StateVal just needs the next value put in before processing
@@ -387,7 +387,7 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 				// Subtract out the oldest part of the state value:
 				stateVal[c] -= maxShiftedValue[states[r-blocksize+1][c]];
 				// And shift all upwards
-				stateVal[c] *= base;
+				stateVal[c] *= alphabetSize;
 			}
 		}
 		average = average/(double) (columns * (rows - blocksize + 1));
@@ -396,7 +396,7 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 		
 	}
 	
-	@Override
+	
 	public double[][][] computeLocalFromPreviousObservations(int states[][][]){
 		int timeSteps = states.length;
 		int agentRows, agentColumns;
@@ -425,7 +425,7 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 				stateVal[r][c] = 0;
 				for (int p = 0; p < blocksize - 1; p++) {
 					stateVal[r][c] += states[p][r][c];
-					stateVal[r][c] *= base;
+					stateVal[r][c] *= alphabetSize;
 				}
 			}
 		}
@@ -449,7 +449,7 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 					// Subtract out the oldest part of the state value:
 					stateVal[r][c] -= maxShiftedValue[states[t-blocksize+1][r][c]];
 					// And shift all upwards
-					stateVal[r][c] *= base;
+					stateVal[r][c] *= alphabetSize;
 				}
 			}
 		}
@@ -459,7 +459,7 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 		
 	}
 
-	@Override
+	
 	public double[] computeLocalFromPreviousObservations(int states[][], int col){
 		int rows = states.length;
 		//int columns = states[0].length;
@@ -476,7 +476,7 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 		int stateVal = 0; 
 		for (int p = 0; p < blocksize - 1; p++) {
 			stateVal += states[p][col];
-			stateVal *= base;
+			stateVal *= alphabetSize;
 		}
 		// StateVal just needs the next value put in before processing
 
@@ -496,7 +496,7 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 			// Subtract out the oldest part of the state value:
 			stateVal -= maxShiftedValue[states[r-blocksize+1][col]];
 			// And shift all upwards
-			stateVal *= base;
+			stateVal *= alphabetSize;
 		}
 		average = average/(double) (rows - blocksize + 1);
 		
@@ -504,7 +504,7 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 		
 	}
 	
-	@Override
+	
 	public double[] computeLocalFromPreviousObservations(int states[][][], int agentIndex1, int agentIndex2){
 		int timeSteps = states.length;
 		//int columns = states[0].length;
@@ -521,7 +521,7 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 		int stateVal = 0; 
 		for (int p = 0; p < blocksize - 1; p++) {
 			stateVal += states[p][agentIndex1][agentIndex2];
-			stateVal *= base;
+			stateVal *= alphabetSize;
 		}
 		// StateVal just needs the next value put in before processing
 
@@ -541,7 +541,7 @@ public class BlockEntropyCalculatorDiscrete extends EntropyCalculatorDiscrete {
 			// Subtract out the oldest part of the state value:
 			stateVal -= maxShiftedValue[states[t-blocksize+1][agentIndex1][agentIndex2]];
 			// And shift all upwards
-			stateVal *= base;
+			stateVal *= alphabetSize;
 		}
 		average = average/(double) (timeSteps - blocksize + 1);
 		

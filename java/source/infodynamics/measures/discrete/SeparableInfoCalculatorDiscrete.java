@@ -255,7 +255,7 @@ public class SeparableInfoCalculatorDiscrete extends ContextOfPastMeasureCalcula
 		for (int c = 0; c < numAgents; c++) {
 			pastVal[c] = 0;
 			for (int p = 0; p < k; p++) {
-				pastVal[c] *= base;
+				pastVal[c] *= alphabetSize;
 				pastVal[c] += states[p][c];
 			}
 		}
@@ -277,13 +277,13 @@ public class SeparableInfoCalculatorDiscrete extends ContextOfPastMeasureCalcula
 					sourceVal = states[t-1][(c-cleanedSourcesOffsets[sIndex]+numAgents) % numAgents];
 					sourceNumValueNextPastCount[sIndex][sourceVal][destVal][pastVal[c]]++;
 					sourceNumValuePastCount[sIndex][sourceVal][pastVal[c]]++;
-					jointSourcesVal *= base;
+					jointSourcesVal *= alphabetSize;
 					jointSourcesVal += sourceVal;
 				}
 				sourcesNextPastCount[jointSourcesVal][destVal][pastVal[c]]++;
 				// Update the previous value:
 				pastVal[c] -= maxShiftedValue[states[t-k][c]];
-				pastVal[c] *= base;
+				pastVal[c] *= alphabetSize;
 				pastVal[c] += states[t][c];
 			}
 		}		
@@ -346,7 +346,7 @@ public class SeparableInfoCalculatorDiscrete extends ContextOfPastMeasureCalcula
 			for (int c = 0; c < agentColumns; c++) {
 				pastVal[r][c] = 0;
 				for (int p = 0; p < k; p++) {
-					pastVal[r][c] *= base;
+					pastVal[r][c] *= alphabetSize;
 					pastVal[r][c] += states[p][r][c];
 				}
 			}
@@ -377,13 +377,13 @@ public class SeparableInfoCalculatorDiscrete extends ContextOfPastMeasureCalcula
 						        [(c-cleanedSourcesOffsets[sIndex][COLUMN_INDEX]+agentColumns) % agentColumns];
 						sourceNumValueNextPastCount[sIndex][sourceVal][destVal][pastVal[r][c]]++;
 						sourceNumValuePastCount[sIndex][sourceVal][pastVal[r][c]]++;
-						jointSourcesVal *= base;
+						jointSourcesVal *= alphabetSize;
 						jointSourcesVal += sourceVal;
 					}
 					sourcesNextPastCount[jointSourcesVal][destVal][pastVal[r][c]]++;
 					// Update the previous value:
 					pastVal[r][c] -= maxShiftedValue[states[t-k][r][c]];
-					pastVal[r][c] *= base;
+					pastVal[r][c] *= alphabetSize;
 					pastVal[r][c] += states[t][r][c];
 				}
 			}
@@ -421,7 +421,7 @@ public class SeparableInfoCalculatorDiscrete extends ContextOfPastMeasureCalcula
 		// Initialise and store the current previous value for each column
 		int pastVal = 0;
 		for (int p = 0; p < k; p++) {
-			pastVal *= base;
+			pastVal *= alphabetSize;
 			pastVal += states[p][destCol];
 		}
 		
@@ -439,13 +439,13 @@ public class SeparableInfoCalculatorDiscrete extends ContextOfPastMeasureCalcula
 				sourceVal = states[r-1][cleanedSourcesAbsolute[sIndex]];
 				sourceNumValueNextPastCount[sIndex][sourceVal][destVal][pastVal]++;
 				sourceNumValuePastCount[sIndex][sourceVal][pastVal]++;					
-				jointSourcesVal *= base;
+				jointSourcesVal *= alphabetSize;
 				jointSourcesVal += sourceVal;
 			}
 			sourcesNextPastCount[jointSourcesVal][destVal][pastVal]++;
 			// Update the previous value:
 			pastVal -= maxShiftedValue[states[r-k][destCol]];
-			pastVal *= base;
+			pastVal *= alphabetSize;
 			pastVal += states[r][destCol];
 		}
 	}
@@ -483,7 +483,7 @@ public class SeparableInfoCalculatorDiscrete extends ContextOfPastMeasureCalcula
 		// Initialise and store the current previous value for each column
 		int pastVal = 0;
 		for (int p = 0; p < k; p++) {
-			pastVal *= base;
+			pastVal *= alphabetSize;
 			pastVal += states[p][destAgentRow][destAgentColumn];
 		}
 		
@@ -502,13 +502,13 @@ public class SeparableInfoCalculatorDiscrete extends ContextOfPastMeasureCalcula
 				                        [cleanedSourcesAbsolute[sIndex][COLUMN_INDEX]];
 				sourceNumValueNextPastCount[sIndex][sourceVal][destVal][pastVal]++;
 				sourceNumValuePastCount[sIndex][sourceVal][pastVal]++;					
-				jointSourcesVal *= base;
+				jointSourcesVal *= alphabetSize;
 				jointSourcesVal += sourceVal;
 			}
 			sourcesNextPastCount[jointSourcesVal][destVal][pastVal]++;
 			// Update the previous value:
 			pastVal -= maxShiftedValue[states[t-k][destAgentRow][destAgentColumn]];
-			pastVal *= base;
+			pastVal *= alphabetSize;
 			pastVal += states[t][destAgentRow][destAgentColumn];
 		}
 	}
@@ -560,7 +560,7 @@ public class SeparableInfoCalculatorDiscrete extends ContextOfPastMeasureCalcula
 
 		if (indexToModify < sourceValues.length) {
 			// Assign values to our variables and make the recursive call
-			for (int s = 0; s < base; s++) {
+			for (int s = 0; s < alphabetSize; s++) {
 				sourceValues[indexToModify] = s;
 				computeAverageLocalOfObservations(sourceValues, indexToModify + 1);
 			}
@@ -575,7 +575,7 @@ public class SeparableInfoCalculatorDiscrete extends ContextOfPastMeasureCalcula
 		// Compute the joint source value first:
 		jointSourcesVal = 0;
 		for (int sIndex = 0; sIndex < numSources; sIndex++) {
-			jointSourcesVal *= base;
+			jointSourcesVal *= alphabetSize;
 			jointSourcesVal += sourceValues[sIndex];
 		}
 		
@@ -584,7 +584,7 @@ public class SeparableInfoCalculatorDiscrete extends ContextOfPastMeasureCalcula
 		// contributions for each tuple.
 		double[] localActAndTes = new double[numSources + 1];
 		for (int pastVal = 0; pastVal < base_power_k; pastVal++) {
-			for (int destVal = 0; destVal < base; destVal++) {
+			for (int destVal = 0; destVal < alphabetSize; destVal++) {
 				if (sourcesNextPastCount[jointSourcesVal][destVal][pastVal] != 0) {
 					// Add in the local active information storage first:
 					logTerm = ( (double) nextPastCount[destVal][pastVal] ) /
@@ -692,7 +692,7 @@ public class SeparableInfoCalculatorDiscrete extends ContextOfPastMeasureCalcula
 		for (int c = 0; c < numAgents; c++) {
 			pastVal[c] = 0;
 			for (int p = 0; p < k; p++) {
-				pastVal[c] *= base;
+				pastVal[c] *= alphabetSize;
 				pastVal[c] += states[p][c];
 			}
 		}
@@ -751,7 +751,7 @@ public class SeparableInfoCalculatorDiscrete extends ContextOfPastMeasureCalcula
 				}
 				// Update the previous value:
 				pastVal[c] -= maxShiftedValue[states[t-k][c]];
-				pastVal[c] *= base;
+				pastVal[c] *= alphabetSize;
 				pastVal[c] += states[t][c];
 			}
 		}		
@@ -838,7 +838,7 @@ public class SeparableInfoCalculatorDiscrete extends ContextOfPastMeasureCalcula
 			for (int c = 0; c < numAgentColumns; c++) {
 				pastVal[r][c] = 0;
 				for (int p = 0; p < k; p++) {
-					pastVal[r][c] *= base;
+					pastVal[r][c] *= alphabetSize;
 					pastVal[r][c] += states[p][r][c];
 				}
 			}
@@ -906,7 +906,7 @@ public class SeparableInfoCalculatorDiscrete extends ContextOfPastMeasureCalcula
 					}
 					// Update the previous value:
 					pastVal[r][c] -= maxShiftedValue[states[t-k][r][c]];
-					pastVal[r][c] *= base;
+					pastVal[r][c] *= alphabetSize;
 					pastVal[r][c] += states[t][r][c];
 				}
 			}
@@ -983,7 +983,7 @@ public class SeparableInfoCalculatorDiscrete extends ContextOfPastMeasureCalcula
 		int pastVal = 0; 
 		pastVal = 0;
 		for (int p = 0; p < k; p++) {
-			pastVal *= base;
+			pastVal *= alphabetSize;
 			pastVal += states[p][destCol];
 		}
 		
@@ -1038,7 +1038,7 @@ public class SeparableInfoCalculatorDiscrete extends ContextOfPastMeasureCalcula
 			}
 			// Update the previous value:
 			pastVal -= maxShiftedValue[states[r-k][destCol]];
-			pastVal *= base;
+			pastVal *= alphabetSize;
 			pastVal += states[r][destCol];
 		}
 
@@ -1107,7 +1107,7 @@ public class SeparableInfoCalculatorDiscrete extends ContextOfPastMeasureCalcula
 		int pastVal = 0; 
 		pastVal = 0;
 		for (int p = 0; p < k; p++) {
-			pastVal *= base;
+			pastVal *= alphabetSize;
 			pastVal += states[p][destAgentRow][destAgentColumn];
 		}
 		
@@ -1163,7 +1163,7 @@ public class SeparableInfoCalculatorDiscrete extends ContextOfPastMeasureCalcula
 			}
 			// Update the previous value:
 			pastVal -= maxShiftedValue[states[t-k][destAgentRow][destAgentColumn]];
-			pastVal *= base;
+			pastVal *= alphabetSize;
 			pastVal += states[t][destAgentRow][destAgentColumn];
 		}
 
