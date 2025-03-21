@@ -697,19 +697,51 @@ public class TransferEntropyCalculatorSpikingIntegration implements TransferEntr
 		return new distanceAndNumPoints(maxDistance, i);
 	}
 
-	@Override
-	public double computeAverageLocalOfObservations() throws Exception {
-		return computeAverageLocalOfObservations(kdTreeJointAtSpikes, jointEmbeddingsFromSpikes);
+	/**
+	 * Data structure to store the interim results from a TE calculation 
+	 */
+	protected class TERateResults {
+		protected double[] localContributions;
+		protected double meanRate;
+		protected double totalTime;
+		protected int numTargetSpikes;
+		
+		protected TERateResults(double meanRate, double[] localValues, int numTargetSpikes, double totalTime) {
+			this.meanRate = meanRate;
+			this.localContributions = localValues;
+			this.numTargetSpikes = numTargetSpikes;
+			this.totalTime = totalTime;
+		}
 	}
 	
-
+	@Override
+	public double computeAverageLocalOfObservations() throws Exception {
+		TERateResults teRateResults = computeAverageLocalOfObservations(kdTreeJointAtSpikes, jointEmbeddingsFromSpikes);
+		return teRateResults.meanRate;
+	}
+	
 	/*
 	 * We take the actual joint tree at spikes (along with the associated embeddings) as an argument, as we will need to swap these out when
 	 * computing surrogates.
 	 */
-	public double computeAverageLocalOfObservations(KdTree actualKdTreeJointAtSpikes, Vector<double[]> actualJointEmbeddingsFromSpikes) throws Exception {
+	public TERateResults computeAverageLocalOfObservations(KdTree actualKdTreeJointAtSpikes, Vector<double[]> actualJointEmbeddingsFromSpikes) throws Exception {
 
 		double currentSum = 0;
+		int numTargetSpikesToSkip = MatrixUtils.max(destPastIntervals);
+		
+		double[] localValues;
+		int indexInLocals = 0;
+		if (processTimeLengths.size() == 1) {
+			// Pad the local values for the first spikes (which we can't compute a TE contribution for) to zero
+			localValues = new double[conditioningEmbeddingsFromSpikes.size() + numTargetSpikesToSkip];
+			indexInLocals = numTargetSpikesToSkip;
+		} else {
+			// Don't pad with zeros, would need to properly return locals for each separate spike train
+			// TODO Do this separately for each separate spike train when we implement in a similar fashion
+			//  for regular time series estimators
+			localValues = new double[conditioningEmbeddingsFromSpikes.size()];
+		}
+		
 		for (int i = 0; i < conditioningEmbeddingsFromSpikes.size(); i++) {
 
 			double radiusJointSpikes = actualKdTreeJointAtSpikes.findKNearestNeighbours(Knns, i).poll().norms[0];
@@ -812,11 +844,12 @@ public class TransferEntropyCalculatorSpikingIntegration implements TransferEntr
 				radiusConditioningSamples = Math.sqrt(radiusConditioningSamples);
 			}
 			
-			currentSum += (MathsUtils.digamma(kJointSpikes) - MathsUtils.digamma(kJointSamples) + 
+			localValues[indexInLocals] = (MathsUtils.digamma(kJointSpikes) - MathsUtils.digamma(kJointSamples) + 
 				       ((numDestPastIntervals + numCondPastIntervals + numSourcePastIntervals) * (-Math.log(radiusJointSpikes) + Math.log(radiusJointSamples))) -
 				       MathsUtils.digamma(kConditioningSpikes) + MathsUtils.digamma(kConditioningSamples) + 
-				       + ((numDestPastIntervals + numCondPastIntervals) * (Math.log(radiusConditioningSpikes) - Math.log(radiusConditioningSamples))));
-			if (Double.isNaN(currentSum)) {
+				       + ((numDestPastIntervals + numCondPastIntervals) * (Math.log(radiusConditioningSpikes) - Math.log(radiusConditioningSamples)))); 
+			currentSum += localValues[indexInLocals];
+			if (Double.isNaN(localValues[indexInLocals])) {
 				for (double[] embed : jointEmbeddingsFromSamples) {
 					System.out.println(Arrays.toString(embed));
 				}
@@ -829,7 +862,9 @@ public class TransferEntropyCalculatorSpikingIntegration implements TransferEntr
 			timeSum += time;
 		}
 		currentSum /= timeSum;
-		return currentSum;
+		
+		TERateResults teRateResults = new TERateResults(currentSum, localValues, conditioningEmbeddingsFromSpikes.size(), timeSum);
+		return teRateResults;
 	}
 
 
@@ -920,13 +955,21 @@ public class TransferEntropyCalculatorSpikingIntegration implements TransferEntr
 			}
 			KdTree conditionallyPermutedKdTreeJointFromSpikes = new KdTree(arrayedConditionallyPermutedJointEmbeddingsFromSpikes);
 			conditionallyPermutedKdTreeJointFromSpikes.setNormType(normType);
-			surrogateTEValues[permutationNumber] = computeAverageLocalOfObservations(conditionallyPermutedKdTreeJointFromSpikes,
-												 conditionallyPermutedJointEmbeddingsFromSpikes);
+			TERateResults teRateResults = computeAverageLocalOfObservations(conditionallyPermutedKdTreeJointFromSpikes,
+					 conditionallyPermutedJointEmbeddingsFromSpikes);
+			surrogateTEValues[permutationNumber] = teRateResults.meanRate;
 		}
 		return new EmpiricalMeasurementDistribution(surrogateTEValues, estimatedValue);
 	}
 	
-
+	public class SpikingTELocalValues implements SpikingLocalInformationValues {
+		public double[] contributionsAtEachSpike;
+		
+		public SpikingTELocalValues(double[] contributionsAtEachSpike) {
+			this.contributionsAtEachSpike = contributionsAtEachSpike;
+		}
+	}
+	
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -935,8 +978,8 @@ public class TransferEntropyCalculatorSpikingIntegration implements TransferEntr
 	 */
 	@Override
 	public SpikingLocalInformationValues computeLocalOfPreviousObservations() throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		TERateResults teRateResults = computeAverageLocalOfObservations(kdTreeJointAtSpikes, jointEmbeddingsFromSpikes);
+		return new SpikingTELocalValues(teRateResults.localContributions);
 	}
 
 
