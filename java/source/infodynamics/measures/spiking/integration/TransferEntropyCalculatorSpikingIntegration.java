@@ -724,7 +724,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements TransferEntr
 	 * We take the actual joint tree at spikes (along with the associated embeddings) as an argument, as we will need to swap these out when
 	 * computing surrogates.
 	 */
-	public TERateResults computeAverageLocalOfObservations(KdTree actualKdTreeJointAtSpikes, Vector<double[]> actualJointEmbeddingsFromSpikes) throws Exception {
+	protected TERateResults computeAverageLocalOfObservations(KdTree actualKdTreeJointAtSpikes, Vector<double[]> actualJointEmbeddingsFromSpikes) throws Exception {
 
 		double currentSum = 0;
 		int numTargetSpikesToSkip = MatrixUtils.max(destPastIntervals);
@@ -855,6 +855,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements TransferEntr
 				}
 				throw new Exception("NaNs in TE clac " + radiusJointSpikes + " " + radiusJointSamples + " " + tempRadiusJointSamples);
 			}
+			indexInLocals++; // Move to record the next local value
 		}
 		// Normalise by time
 		double timeSum = 0;
@@ -962,6 +963,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements TransferEntr
 		return new EmpiricalMeasurementDistribution(surrogateTEValues, estimatedValue);
 	}
 	
+	// Data structure to return local values from this estimator
 	public class SpikingTELocalValues implements SpikingLocalInformationValues {
 		public double[] contributionsAtEachSpike;
 		
