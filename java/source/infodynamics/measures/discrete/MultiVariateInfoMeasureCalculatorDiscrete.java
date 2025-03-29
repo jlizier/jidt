@@ -144,7 +144,7 @@ public abstract class MultiVariateInfoMeasureCalculatorDiscrete
    *  at many observations (first index is time, second is variable index)
    */
   public void addObservations(int[][] states) throws Exception {
-    int[] jointStates = MatrixUtils.computeCombinedValues(states, base);
+    int[] jointStates = MatrixUtils.computeCombinedValues(states, alphabetSize);
     for (int t = 0; t < states.length; t++) {
       for (int i = 0; i < numVars; i++) {
         // Extract values of the 1D and the (N-1)D marginals
@@ -187,7 +187,7 @@ public abstract class MultiVariateInfoMeasureCalculatorDiscrete
     double miCont = 0;
     if (fromIndex == numVars) {
       // The whole tuple is filled in, so compute the contribution to the MI from this tuple
-      int jointValue = MatrixUtils.computeCombinedValues(new int[][] {tuple}, base)[0];
+      int jointValue = MatrixUtils.computeCombinedValues(new int[][] {tuple}, alphabetSize)[0];
 
       if (jointCount[jointValue] == 0) {
         // This joint state does not occur, so it makes no contribution here
@@ -200,7 +200,7 @@ public abstract class MultiVariateInfoMeasureCalculatorDiscrete
 
     } else {
       // Fill out the next part of the tuple and make the recursive calls
-      for (int v = 0; v < base; v++) {
+      for (int v = 0; v < alphabetSize; v++) {
         tuple[fromIndex] = v;
         miCont += computeForGivenTupleFromVarIndex(tuple, fromIndex + 1);
       }
@@ -259,7 +259,7 @@ public abstract class MultiVariateInfoMeasureCalculatorDiscrete
    * @param tuple state of the system at a given time (index is variable number)
    */
   protected double computeLocalValueForTuple(int[] tuple) throws Exception {
-    int jointValue = MatrixUtils.computeCombinedValues(new int[][] {tuple}, base)[0];
+    int jointValue = MatrixUtils.computeCombinedValues(new int[][] {tuple}, alphabetSize)[0];
     return computeLocalValueForTuple(tuple, jointValue);
   }
 
@@ -271,7 +271,7 @@ public abstract class MultiVariateInfoMeasureCalculatorDiscrete
    * @param varValue value of the variable in question in the system state
    */
   protected int computeBigMarginalState(int jointState, int varIdx, int varValue) {
-    int bigMarginalState = jointState - varValue*MathsUtils.power(base, numVars - varIdx - 1);
+    int bigMarginalState = jointState - varValue*MathsUtils.power(alphabetSize, numVars - varIdx - 1);
     return bigMarginalState;
   }
 

@@ -69,15 +69,16 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 	/**
 	 * Store the number of symbols for each variable
 	 */
-	protected int base1;
-	protected int base2;
+	protected int alphabetSize1;
+	protected int alphabetSize2;
 
 	protected int timeDiff = 0;
-	protected int[][]	jointCount = null; // Count for (i[t-timeDiff], j[t]) tuples
-	protected int[] iCount = null; // Count for i[t-timeDiff]
-	protected int[] jCount = null; // Count for j[t]
+	private EntropyCalculatorDiscrete jointEntropyCalc;
+	private EntropyCalculatorDiscrete entropyCalc2;
+	private EntropyCalculatorDiscrete entropyCalc1;
 
-	protected boolean miComputed = false;
+	private boolean miComputed = false;
+	
 	
 	/**
 	 * Construct a new MI calculator with default bases of 2 and time difference of 0
@@ -86,7 +87,7 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 	 * @throws Exception
 	 */
 	public MutualInformationCalculatorDiscrete() throws Exception {
-		this(2);
+		this(-1);
 	}
 
 	/**
@@ -97,48 +98,60 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 	 *        E.g. binary variables are in base-2.
 	 * @throws Exception
 	 */
-	public MutualInformationCalculatorDiscrete(int base) throws Exception {
-		this(base, base, 0);
+	public MutualInformationCalculatorDiscrete(int alphabetSize) throws Exception {
+		this(alphabetSize, alphabetSize, 0);
 	}
 	
-	// TODO Bring in a MutualInformationCalculatorDiscrete(int base1, int base2) constructor
+	// TODO Bring in a MutualInformationCalculatorDiscrete(int alphabetSize1, int alphabetSize2) constructor
 	//  but don't do this yet since it will override the previous MutualInformationCalculatorDiscrete(int base, int timeDiff)
 	//  constructor present up until v1.4 and that may lead to errors.
 	
 	/**
 	 * Create a new mutual information calculator
 	 * 
-	 * @param base1 number of symbols for first variable.
+	 * @param alphabetSize1 number of symbols for first variable.
 	 *        E.g. binary variables are in base-2.
-	 * @param base2 number of symbols for second variable.
+	 * @param alphabetSize2 number of symbols for second variable.
 	 * @param timeDiff number of time steps across which to compute
 	 *   MI for given time series
 	 * @throws Exception when timeDiff < 0
 	 */
-	public MutualInformationCalculatorDiscrete(int base1, int base2, int timeDiff) throws Exception {
+	public MutualInformationCalculatorDiscrete(int alphabetSize1, int alphabetSize2, int timeDiff) throws Exception {
 		// Create super object, just with first base
-		super(base1);
+		super(alphabetSize1);
+
+		// For unknown alphabet sizes
+		if (alphabetSize1 == -1 || alphabetSize2 == -1) {
+			this.entropyCalc1 = new EntropyCalculatorDiscrete();
+			this.entropyCalc2 = new EntropyCalculatorDiscrete();
+		} 
+		// For known alphabet sizes
+		else {
+			this.entropyCalc1 = new EntropyCalculatorDiscrete(alphabetSize1);
+			this.entropyCalc2 = new EntropyCalculatorDiscrete(alphabetSize2);
+		}
+		this.jointEntropyCalc = new EntropyCalculatorDiscrete();
 		
-		changeBases(base1, base2, timeDiff);		
+		changeBases(alphabetSize1, alphabetSize2, timeDiff);		
 	}
 
 	/**
 	 * Common code to be called when bases are changed (does not update arrays though)
 	 * 
-	 * @param base1
-	 * @param base2
+	 * @param alphabetSize1
+	 * @param alphabetSize2
 	 * @param timeDiff
 	 * @throws Exception 
 	 */
-	private boolean changeBases(int base1, int base2, int timeDiff) throws Exception {
+	private boolean changeBases(int alphabetSize1, int alphabetSize2, int timeDiff) throws Exception {
 		boolean basesChanged = false;
-		if ((this.base1 != base1) || (this.base2 != base2)) {
+		if ((this.alphabetSize1 != alphabetSize1) || (this.alphabetSize2 != alphabetSize2)) {
 			basesChanged = true;
 		}
 		
 		// Store the bases
-		this.base1 = base1;
-		this.base2 = base2;
+		this.alphabetSize1 = alphabetSize1;
+		this.alphabetSize2 = alphabetSize2;
 		
 		if (timeDiff < 0) {
 			throw new Exception("timeDiff must be >= 0");
@@ -151,7 +164,7 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 	@Override
 	public void initialise() {
 		try {
-			initialise(base1, base2, timeDiff);
+			initialise(alphabetSize1, alphabetSize2, timeDiff);
 		} catch (Exception e) {
 			// The only possible (non runtime) exception here is that the timeDiff was < 0
 			// which we've already checked, so we can cast this as a Runtime Exception
@@ -162,33 +175,17 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 	/**
 	 * Initialise with new bases and time diff
 	 * 
-	 * @param base1
-	 * @param base2
+	 * @param alphabetSize1
+	 * @param alphabetSize2
 	 * @param timeDiff
-	 * @throws Exception 
 	 */
-	public void initialise(int base1, int base2, int timeDiff) throws Exception {
-		boolean basesChanged = changeBases(base1, base2, timeDiff);
-		super.initialise(base1);
-
-		if (basesChanged || (jointCount == null)) {
-			try {
-				jointCount = new int[base1][base2];
-				iCount = new int[base1];
-				jCount = new int[base2];
-			} catch (OutOfMemoryError e) {
-				// Allow any Exceptions to be thrown, but catch and wrap
-				//  Error as a RuntimeException
-				throw new RuntimeException("Requested memory for the MI bases (" +
-						base1 + ", " + base2 + ") is too large for the JVM at this time", e);
-			}
-		} else {
-			MatrixUtils.fill(iCount, 0);
-			MatrixUtils.fill(jCount, 0);
-			MatrixUtils.fill(jointCount, 0);
-		}
-		miComputed = false;
-
+	public void initialise(int alphabetSize1, int alphabetSize2, int timeDiff) {
+		super.initialise(alphabetSize1);
+		
+		this.entropyCalc1.initialise(alphabetSize1);
+		this.entropyCalc2.initialise(alphabetSize2);
+		this.jointEntropyCalc.initialise();
+		jointEntropyCalc.alphabetSizes = new int[] {alphabetSize1, alphabetSize2};
 	}
 
 	/**
@@ -200,95 +197,91 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 	 */
 	@Override
 	public void addObservations(int[] var1, int[] var2) {
-		int timeSteps = var1.length;
-		// int columns = states[0].length;
-		// increment the count of observations:
-		observations += (timeSteps - timeDiff); 
-		
-		// 1. Count the tuples observed
-		int iVal, jVal;
-		for (int r = timeDiff; r < timeSteps; r++) {
-			// Add to the count for this particular pair:
-			iVal = var1[r-timeDiff];
-			jVal = var2[r];
-			jointCount[iVal][jVal]++;
-			iCount[iVal]++;
-			jCount[jVal]++;
+
+		// I think this won't work if these aren't the same length...
+		// Could make it work with different lengths, unsure if this
+		// is ever useful.
+		if (var1.length != var2.length) {
+			throw new RuntimeException("Array lengths do not match. "
+			+ "var1: " + var1.length + ", var2: " + var2.length);
 		}
+
+		// adjust var1 observations for the time difference
+		int[] temp1 = new int[var1.length - timeDiff];
+		for (int i = 0; i < var1.length; i++) {
+			if (i < timeDiff) {
+				continue;
+			}
+			temp1[i-timeDiff] = var1[i];
+		}
+
+		// adjust var2 osbervations for the time difference
+		int[] temp2 = new int[var2.length - timeDiff];
+		for (int i = 0; i < var2.length - timeDiff; i++) {
+			temp2[i-timeDiff] = var2[i];
+		}
+
+		entropyCalc1.addObservations(temp1);
+		entropyCalc2.addObservations(temp2);
+
+		// Create the joint observations
+		int[][] jointObservations = new int[temp1.length][2];
+		for (int i = 0; i < temp1.length; i++) {
+			jointObservations[i][0] = temp1[i];
+			jointObservations[i][1] = temp2[i];
+		}
+
+		// This will throw a runtime error if format is somehow incorrect
+		jointEntropyCalc.addObservations(jointObservations);
+		observations += (var1.length - timeDiff); 
 	}
 
-	/**
-	 * {@inheritDoc}
-	 * 
-	 * Pairs for MI are between columns iCol and jCol, separated in time by timeDiff (i is first).
-	 *
-	 */
-	@Override
-	public void addObservations(int states[][], int iCol, int jCol) {
-		int rows = states.length;
-		// int columns = states[0].length;
-		// increment the count of observations:
-		observations += (rows - timeDiff); 
-		
-		// 1. Count the tuples observed
-		int iVal, jVal;
-		for (int r = timeDiff; r < rows; r++) {
-			// Add to the count for this particular pair:
-			iVal = states[r-timeDiff][iCol];
-			jVal = states[r][jCol];
-			jointCount[iVal][jVal]++;
-			iCount[iVal]++;
-			jCount[jVal]++;
+	public void addObservations(Object[] var1, Object[] var2) {
+		// I think this won't work  if these aren't the same length...
+		if (var1.length != var2.length) {
+			throw new RuntimeException("Array lengths do not match. "
+			+ "var1: " + var1.length + ", var2: " + var2.length);
 		}
+
+		// adjust var1 observations for the time difference
+		Object[] temp1 = new Object[var1.length - timeDiff];
+		for (int i = 0; i < var1.length; i++) {
+			if (i < timeDiff) {
+				continue;
+			}
+			temp1[i-timeDiff] = var1[i];
+		}
+
+		// adjust var2 osbervations for the time difference
+		Object[] temp2 = new Object[var2.length - timeDiff];
+		for (int i = 0; i < var2.length - timeDiff; i++) {
+			temp2[i-timeDiff] = var2[i];
+		}
+
+		entropyCalc1.addObservations(temp1);
+		entropyCalc2.addObservations(temp2);
+
+		// Create the joint observations
+		Object[][] jointObservations = new Object[temp1.length][2];
+		for (int i = 0; i < temp1.length; i++) {
+			jointObservations[i][0] = temp1[i];
+			jointObservations[i][1] = temp2[i];
+		}
+
+		// This will throw a runtime error if format is somehow incorrect
+		jointEntropyCalc.addObservations(jointObservations);
+		observations += (var1.length - timeDiff); 
 	}
 	
 	@Override
 	public double computeAverageLocalOfObservations() {
-		double mi = 0.0;
-		double miCont = 0.0;
+		double entropy1 = entropyCalc1.computeAverageLocalOfObservations();
+		double entropy2 = entropyCalc2.computeAverageLocalOfObservations();
+		double jointEntropy = jointEntropyCalc.computeAverageLocalOfObservations();
 
-		max = 0;
-		min = 0;
-		double meanSqLocals = 0;
-		if (debug) {
-			System.out.println("i\tj\tp_i\tp_j\tp_joint\tlocal");
-		}
-		for (int i = 0; i < base1; i++) {
-			// compute p_i
-			double probi = (double) iCount[i] / (double) observations;
-			for (int j = 0; j < base2; j++) {
-				// compute p_j
-				double probj = (double) jCount[j] / (double) observations;
-				// compute p(veci=i, vecj=j)
-				double jointProb = (double) jointCount[i][j] / (double) observations;
-				// Compute MI contribution:
-				if (jointProb * probi * probj > 0.0) {
-					double localValue = Math.log(jointProb / (probi * probj)) / log_2;
-					miCont = jointProb * localValue;
-					if (debug) {
-						System.out.printf("%d\t%d\t%.4f\t%.4f\t%.4f\t%.4f\n",
-								i, j, probi, probj, jointProb, localValue);
-					}
-					if (localValue > max) {
-						max = localValue;
-					} else if (localValue < min) {
-						min = localValue;
-					}
-					// Add this contribution to the mean 
-					//  of the squared local values
-					meanSqLocals += miCont * localValue;
-				} else {
-					miCont = 0.0;
-				}
-				mi += miCont;
-			}
-		}
-		
-		average = mi;
-		miComputed = true;
-		std = Math.sqrt(meanSqLocals - average * average);
-
-		return mi;
+		// computeFromPreviousObservations relies on average, so I've kept that being set.
+		average = entropy1 + entropy2 - jointEntropy;
+		return average;
 	}
 
 	@Override
@@ -299,8 +292,23 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 		return computeSignificance(newOrderings);
 	}
 	
+	// TODO Implement this method. Old code has been left for reference.
+	/*
+	 * For Brad's understanding, free to delete this comment.
+	 * This is:
+	 * 	> calculate MI
+	 * 	> shuffle all observations
+	 * 	> recalculate MI for each permutation
+	 * 	> count number of recalcs > original MI
+	 * 	> p = count / numPerms
+	 */
 	@Override
 	public EmpiricalMeasurementDistribution computeSignificance(int[][] newOrderings) {
+		
+		// 1/3 temporary fix to get it to compile
+		// all original code is commented out below
+		return null;
+		/*
 		double actualMI = computeAverageLocalOfObservations();
 		
 		int numPermutationsToCheck = newOrderings.length;
@@ -308,14 +316,14 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 		// Reconstruct the values of the first and second variables (not necessarily in order)
 		int[] iValues = new int[observations];
 		int t_i = 0;
-		for (int iVal = 0; iVal < base1; iVal++) {
+		for (int iVal = 0; iVal < alphabetSize1; iVal++) {
 			int numberOfSamplesI = iCount[iVal];
 			MatrixUtils.fill(iValues, iVal, t_i, numberOfSamplesI);
 			t_i += numberOfSamplesI;
 		}
 		int[] jValues = new int[observations];
 		int t_j = 0;
-		for (int jVal = 0; jVal < base2; jVal++) {
+		for (int jVal = 0; jVal < alphabetSize2; jVal++) {
 			int numberOfSamplesJ = jCount[jVal];
 			MatrixUtils.fill(jValues, jVal, t_j, numberOfSamplesJ);
 			t_j += numberOfSamplesJ;
@@ -323,7 +331,7 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 		
 		MutualInformationCalculatorDiscrete mi2;
 		try {
-			mi2 = new MutualInformationCalculatorDiscrete(base1, base2, timeDiff);
+			mi2 = new MutualInformationCalculatorDiscrete(alphabetSize1, alphabetSize2, timeDiff);
 		} catch (Exception e) {
 			// The only possible exception is if timeDiff < 0, which 
 			// it cannot be. Shut down the JVM
@@ -356,6 +364,7 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 		measDistribution.pValue = (double) countWhereMIIsMoreSignificantThanOriginal / (double) numPermutationsToCheck;
 		measDistribution.actualValue = actualMI;
 		return measDistribution;
+		*/
 	}
 
 	@Override
@@ -363,9 +372,17 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 		if (!miComputed) {
 			computeAverageLocalOfObservations();
 		}
+
+		int a1 = alphabetSize1;
+		int a2 = alphabetSize2;
+		if (alphabetSize1 <= -1 || alphabetSize2 == -1) {
+			a1 = entropyCalc1.hashedStateCount.keySet().size();
+			a2 = entropyCalc2.hashedStateCount.keySet().size();
+		}
+
 		return new ChiSquareMeasurementDistribution(average,
 				observations,
-				(base1 - 1) * (base2 - 1));
+				(a1 - 1) * (a2 - 1));
 	}
 	
 	/**
@@ -381,6 +398,9 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 	 */
 	public double computeLocalFromPreviousObservations(int val1, int val2) throws Exception{
 		
+		// 2/3 temporary fix to get this to compile
+		return 0;
+		/*
 		double logTerm = ( (double) jointCount[val1][val2] ) /
 			  		  ( (double) jCount[val2] *
 			  			(double) iCount[val1] );
@@ -392,6 +412,7 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 		double localMI = Math.log(logTerm) / log_2;
 		
 		return localMI;
+		*/
 	}
 	
 	/**
@@ -407,6 +428,9 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 	 */
 	public double[] computeLocalFromPreviousObservations(int[] var1, int[] var2) throws Exception{
 		
+		// 3/3 temporary fix to get it to compile
+		return null;
+		/*
 		if (var1.length != var2.length) {
 			throw new Exception("var1 and var2 must have the same number of observations");
 		}
@@ -435,74 +459,13 @@ public class MutualInformationCalculatorDiscrete extends InfoMeasureCalculatorDi
 		average = average/(double) observations;
 
 		return localMI;
+		*/
 	}
-	
-	/**
-	 * Computes local mutual information (or pointwise mutual information)
-	 *  for the given states, using pdfs built up from observations previously
-	 *  sent in via the addObservations method 
-	 *  
-	 * @param states 2D time series of observations (first index time,
-	 *  second is variable index)
-	 * @param iCol column number for first variable
-	 * @param jCol column number for second variable
-	 * @return array of local mutual information values for each
-	 *  observation of (var1, var2). Note - if timeDiff > 0, then the
-	 *  return length will be var1.length - timeDiff. 
-	 */
-	public double[] computeLocalFromPreviousObservations(int states[][], int iCol, int jCol){
-		int rows = states.length;
-		//int columns = states[0].length;
 
-		// Allocate for all rows even though we'll leave the first ones as zeros
-		double[] localMI = new double[rows];
-		int iVal, jVal;
-		double logTerm = 0.0;
-		for (int r = timeDiff; r < rows; r++) {
-			iVal = states[r-timeDiff][iCol];
-			jVal = states[r][jCol];
-			logTerm = ( (double) jointCount[iVal][jVal] ) /
-			  		  ( (double) jCount[jVal] *
-			  			(double) iCount[iVal] );
-			// Now account for the fact that we've
-			//  just used counts rather than probabilities,
-			//  and we've got two counts on the bottom
-			//  but one count on the top:
-			logTerm *= (double) observations;
-			localMI[r] = Math.log(logTerm) / log_2;
-			average += localMI[r];
-			if (localMI[r] > max) {
-				max = localMI[r];
-			} else if (localMI[r] < min) {
-				min = localMI[r];
-			}
-		}
-		average = average/(double) observations;
-		
-		return localMI;
-		
-	}
-	
-	/**
-	 * Standalone routine to 
-	 * compute local mutual information (or pointwise mutual information)
-	 *  across a 2D spatiotemporal
-	 *  array of the states of homogeneous agents
-	 * Return a 2D spatiotemporal array of local values.
-	 * First history rows are zeros
-	 * 
-	 * @param states 2D time series of observations (first index time,
-	 *  second is variable index)
-	 * @param iCol column number for first variable
-	 * @param jCol column number for second variable
-	 * @return array of local mutual information values for each
-	 *  observation of (var1, var2). Note - if timeDiff > 0, then the
-	 *  return length will be var1.length - timeDiff. 
-	 */
-	public double[] computeLocal(int states[][], int iCol, int jCol) {
-		initialise();
-		addObservations(states, iCol, jCol);
-		return computeLocalFromPreviousObservations(states, iCol, jCol);
-		
+	// TODO -- do not implement, just remove this from the interface
+	@Override
+	public void addObservations(int[][] states, int sourceIndex, int destIndex) {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'addObservations'");
 	}
 }

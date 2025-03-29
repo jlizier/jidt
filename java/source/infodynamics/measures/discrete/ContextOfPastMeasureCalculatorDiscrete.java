@@ -104,14 +104,14 @@ public abstract class ContextOfPastMeasureCalculatorDiscrete extends
 	}
 
 	/**
-	 * Should be called after {@link #resetBase(int)} has just been called.
+	 * Should be called after {@link #resetAlphabetSize(int)} has just been called.
 	 * 
 	 * @param history
 	 */
 	private void resetHistory(int history) {
 		
 		k = history;
-		base_power_k = MathsUtils.power(base, k);
+		base_power_k = MathsUtils.power(alphabetSize, k);
 		
 		if (k < 0) {
 			throw new RuntimeException("History k " + history + " is not >= 0 for a ContextOfPastMeasureCalculator");
@@ -123,15 +123,15 @@ public abstract class ContextOfPastMeasureCalculatorDiscrete extends
 		}
 
 		// Create constants for tracking prevValues
-		maxShiftedValue = new int[base];
-		for (int v = 0; v < base; v++) {
-			maxShiftedValue[v] = v * MathsUtils.power(base, k-1);
+		maxShiftedValue = new int[alphabetSize];
+		for (int v = 0; v < alphabetSize; v++) {
+			maxShiftedValue[v] = v * MathsUtils.power(alphabetSize, k-1);
 		}
 	}
 	
 	@Override
 	public void initialise() {
-		initialise(base, k);
+		initialise(alphabetSize, k);
 	}
 	
 	/**
@@ -143,7 +143,7 @@ public abstract class ContextOfPastMeasureCalculatorDiscrete extends
 	 */
 	public void initialise(int base, int history) {
 		boolean baseOrHistoryChanged = false;
-		if ((this.base != base) || (k != history)) {
+		if ((this.alphabetSize != base) || (k != history)) {
 			baseOrHistoryChanged = true;
 		}
 		
@@ -189,7 +189,7 @@ public abstract class ContextOfPastMeasureCalculatorDiscrete extends
 	public int computePastValue(int[] x, int t) {
 		int pastVal = 0;
 		for (int p = 0; p < k; p++) {
-			pastVal *= base;
+			pastVal *= alphabetSize;
 			pastVal += x[t - k + 1 + p];
 		}
 		return pastVal;
@@ -212,7 +212,7 @@ public abstract class ContextOfPastMeasureCalculatorDiscrete extends
 	public int computePastValue(int[][] data, int columnNumber, int t) {
 		int pastVal = 0;
 		for (int p = 0; p < k; p++) {
-			pastVal *= base;
+			pastVal *= alphabetSize;
 			pastVal += data[t - k + 1 + p][columnNumber];
 		}
 		return pastVal;
@@ -238,7 +238,7 @@ public abstract class ContextOfPastMeasureCalculatorDiscrete extends
 	public int computePastValue(int[][][] data, int rowNumber, int columnNumber, int t) {
 		int pastVal = 0;
 		for (int p = 0; p < k; p++) {
-			pastVal *= base;
+			pastVal *= alphabetSize;
 			pastVal += data[t - k + 1 + p][rowNumber][columnNumber];
 		}
 		return pastVal;
