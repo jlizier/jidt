@@ -91,12 +91,6 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
    */
   public final static String PROP_NORM_TYPE = "NORM_TYPE";
   /**
-   * Property name for a dynamics exclusion time window 
-   * otherwise known as Theiler window (see Kantz and Schreiber).
-   * Default is 0 which means no dynamic exclusion window.
-   */
-  public static final String PROP_DYN_CORR_EXCL_TIME = "DYN_CORR_EXCL"; 
-  /**
    * Property name for the number of parallel threads to use in the
    *  computation (default is to use all available)
    */
@@ -117,15 +111,6 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
    * Example: /home/johndoe/myfolder/libKraskov.so
    */
   public static final String PROP_GPU_LIBRARY_PATH = "GPU_LIBRARY_PATH";
-  
-  /**
-   * Whether we use dynamic correlation exclusion
-   */
-  protected boolean dynCorrExcl = false;
-  /**
-   * Size of dynamic correlation exclusion window.
-   */
-  protected int dynCorrExclTime = 0;
   /**
    * Number of parallel threads to use in the computation;
    *  defaults to use all available.
@@ -228,9 +213,6 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
       k = Integer.parseInt(propertyValue);
     } else if (propertyName.equalsIgnoreCase(PROP_NORM_TYPE)) {
       normType = KdTree.validateNormType(propertyValue);
-    } else if (propertyName.equalsIgnoreCase(PROP_DYN_CORR_EXCL_TIME)) {
-      dynCorrExclTime = Integer.parseInt(propertyValue);
-      dynCorrExcl = (dynCorrExclTime > 0);
     } else if (propertyName.equalsIgnoreCase(PROP_NUM_THREADS)) {
       if (propertyValue.equalsIgnoreCase(USE_ALL_THREADS)) {
         numThreads = Runtime.getRuntime().availableProcessors();
@@ -273,8 +255,6 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
       return Integer.toString(k);
     } else if (propertyName.equalsIgnoreCase(PROP_NORM_TYPE)) {
       return KdTree.convertNormTypeToString(normType);
-    } else if (propertyName.equalsIgnoreCase(PROP_DYN_CORR_EXCL_TIME)) {
-      return Integer.toString(dynCorrExclTime);
     } else if (propertyName.equalsIgnoreCase(PROP_NUM_THREADS)) {
       return Integer.toString(numThreads);
     } else if (propertyName.equalsIgnoreCase(PROP_USE_GPU)) {

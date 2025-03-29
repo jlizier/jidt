@@ -18,6 +18,10 @@
 
 package infodynamics.measures.continuous;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * <p>Interface for implementations of the <b>mutual information</b>,
  * which may be applied to either multivariate or merely univariate
@@ -84,6 +88,28 @@ public interface MutualInfoCalculatorMultiVariate
 	 * mean 0, standard deviation 1 (default true)
 	 */
 	public static final String PROP_NORMALISE = "NORMALISE";
+	/**
+	 * Property name for surrogate type strategy
+	 */
+	public static final String PROP_SURROGATE_TYPE = "SURROGATE_TYPE";
+	/**
+	 * Property name for a dynamics exclusion time window 
+	 * otherwise known as Theiler window (see Kantz and Schreiber).
+	 * Default is 0 which means no dynamic exclusion window.
+	 */
+	public static final String PROP_DYN_CORR_EXCL_TIME = "DYN_CORR_EXCL"; 
+	/**
+	 * Name of shuffle value surrogate type
+	 */
+	public static final String PROP_SHUFFLE = "SHUFFLE";
+	 /**
+	 * Name of rotate value surrogate type
+	 */
+	public static final String PROP_ROTATE = "ROTATE";
+	/**
+	 * Valid options for surrogate type
+	 */
+	public static final String[] VALID_SURROGATE_TYPES = {PROP_SHUFFLE, PROP_ROTATE};
 	/**
 	 * Property name for the std deviation of random Gaussian noise to be
 	 *  added to the data (default is 0, except for Kraskov/KSG estimator
