@@ -292,7 +292,7 @@ public class TransferEntropyCalculatorKraskov
 		}
 		if (newDestObservations.length < startTimeForFirstDestEmbedding + 2) {
 			// There are no observations to compute for here
-			return new double[newDestObservations.length];
+			throw new Exception("Not enough samples to embed");
 		}
 		// Now embed as per computeLocalUsingPreviousObservations() in super:
 		double[][] newDestPastVectors = 

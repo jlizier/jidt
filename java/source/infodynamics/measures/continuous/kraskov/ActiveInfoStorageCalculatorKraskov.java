@@ -23,6 +23,7 @@ import java.util.Hashtable;
 import infodynamics.measures.continuous.ActiveInfoStorageCalculator;
 import infodynamics.measures.continuous.ActiveInfoStorageCalculatorViaMutualInfo;
 import infodynamics.measures.continuous.MutualInfoCalculatorMultiVariate;
+import infodynamics.utils.MatrixUtils;
 
 /**
  * An Active Information Storage (AIS) calculator (implementing {@link ActiveInfoStorageCalculator})
@@ -230,4 +231,48 @@ public class ActiveInfoStorageCalculatorKraskov
 		}
 	}
 
+	/**
+     * Debug method to return the k nearest neighbour distances that 
+     *  would be utilised for each sample point here.
+     * Note that this is specifically the max-norm across the target-targetPast variables, which is used for each
+     *  range search in algorithm 1 (although algorithm 2 would use the max distance
+     *  for each variable within the kNNs in their separate range searches). 
+     *  
+     * @param startTimePoint
+     * @param numTimePoints
+     * @return
+     * @throws Exception
+     */
+	public double[] kNNDistances(int startTimePoint, int numTimePoints) throws Exception {
+		// Defer the call to the underlying KSG CMI estimator
+		return ((MutualInfoCalculatorMultiVariateKraskov) miCalc).kNNDistances(startTimePoint, numTimePoints);
+	}
+
+	/**
+	 * Debug method to return the k nearest neighbour distances that
+	 *  would be utilised in {@link #computeLocalUsingPreviousObservations(double[])}
+	 *  for a cross AIS.
+     * Note that this is specifically the max-norm across the target-targetPast variables, which is used for each
+     *  range search in algorithm 1 (although algorithm 2 would use the max distance
+     *  for each variable within the kNNs in their separate range searches). 
+	 *  
+	 * @param startTimePoint
+	 * @param numTimePoints
+	 * @param newObservations
+	 * @return
+	 * @throws Exception
+	 */
+	public double[] kNNDistancesForNewSamples(int startTimePoint, int numTimePoints,
+			double[] newObservations) throws Exception {
+		if (newObservations.length - (k-1)*tau - 1 <= 0) {
+			// There are no observations to compute for here
+			throw new Exception("Not enough samples to embed");
+		}
+		double[][] newDestPastVectors = 
+				MatrixUtils.makeDelayEmbeddingVector(newObservations, k, tau, (k-1)*tau, newObservations.length - (k-1)*tau - 1);
+		double[][] newDestNextVectors =
+				MatrixUtils.makeDelayEmbeddingVector(newObservations, 1, (k-1)*tau + 1, newObservations.length - (k-1)*tau - 1);
+		return ((MutualInfoCalculatorMultiVariateKraskov) miCalc).
+				kNNDistancesForNewSamples(startTimePoint, numTimePoints, newDestPastVectors, newDestNextVectors);
+	}
 }
