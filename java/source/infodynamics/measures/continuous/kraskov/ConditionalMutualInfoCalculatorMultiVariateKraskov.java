@@ -976,4 +976,56 @@ public abstract class ConditionalMutualInfoCalculatorMultiVariateKraskov
 		}
 		return kNNdistances;
 	}
+
+	/**
+	 * As per {@link #kNNDistancesForNewSamples(int, int, double[][], double[][], double[][])}
+	 * but for univariates
+	 *  
+	 * @param startTimePoint
+	 * @param numTimePoints
+	 * @param newVar1Observations
+	 * @param newVar2Observations
+	 * @return
+	 * @throws Exception
+	 */
+	public double[] kNNDistancesForNewSamples(int startTimePoint, int numTimePoints,
+			double[] newStates1, double[] newStates2, double[][] newCondStates) throws Exception {
+
+		if ((dimensionsVar1 != 1) || (dimensionsVar2 != 1)) {
+			throw new Exception("The number of source and dest dimensions (having been initialised to " +
+					dimensionsVar1 + " and " + dimensionsVar2 + ") can only be 1 when " +
+					"the univariate kNNDistancesForNewSamples(int, int, double[],double[],double[][]) " + 
+					"method is called");
+		}
+		return computeLocalUsingPreviousObservations(
+				MatrixUtils.reshape(newStates1, newStates1.length, 1),
+				MatrixUtils.reshape(newStates2, newStates2.length, 1),
+				newCondStates);
+	}
+
+	/**
+	 * As per {@link #kNNDistancesForNewSamples(int, int, double[][], double[][], double[][])}
+	 * but for univariates
+	 *  
+	 * @param startTimePoint
+	 * @param numTimePoints
+	 * @param newVar1Observations
+	 * @param newVar2Observations
+	 * @return
+	 * @throws Exception
+	 */
+	public double[] kNNDistancesForNewSamples(int startTimePoint, int numTimePoints,
+			double[] newStates1, double[] newStates2, double[] newCondStates) throws Exception {
+
+		if ((dimensionsVar1 != 1) || (dimensionsVar2 != 1) || (dimensionsCond != 1)) {
+			throw new Exception("The number of source, dest and conditional dimensions (having been initialised to " +
+					dimensionsVar1 + ", " + dimensionsVar2 + " and " + dimensionsCond + ") can only be 1 when " +
+					"the univariate kNNDistancesForNewSamples(int, int, double[],double[],double[]) " + 
+					"method is called");
+		}
+		return computeLocalUsingPreviousObservations(
+				MatrixUtils.reshape(newStates1, newStates1.length, 1),
+				MatrixUtils.reshape(newStates2, newStates2.length, 1),
+				MatrixUtils.reshape(newCondStates, newCondStates.length, 1));
+	}
 }

@@ -823,6 +823,7 @@ public abstract class MutualInfoMultiVariateCommon implements
 		return miSurrogateCalculator.computeAverageLocalOfObservations();
 	}
 
+	@Override
 	public double[] computeLocalUsingPreviousObservations(
 			double[] newSourceObservations, double[] newDestObservations)
 					throws Exception {

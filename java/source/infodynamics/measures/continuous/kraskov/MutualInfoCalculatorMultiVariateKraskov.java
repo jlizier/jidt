@@ -909,7 +909,8 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
     public static final int INDEX_SUM_NY = 2;
     public static final int INDEX_SUM_2X_NEIGH_DIST = 3; // Not used by GPU, and only read for conditional entropy
     public static final int RETURN_ARRAY_LENGTH_MI = 3;
-    public static final int RETURN_ARRAY_LENGTH = 4;
+    @SuppressWarnings("unused") // Might be used by caller later
+	public static final int RETURN_ARRAY_LENGTH = 4;
 
     public MiKraskovThreadRunner(
         MutualInfoCalculatorMultiVariateKraskov miCalc,
@@ -1174,4 +1175,28 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 		return kNNdistances;
 	}
 
+	/**
+	 * As per {@link #kNNDistancesForNewSamples(int, int, double[][], double[][])}
+	 * but for univariates
+	 *  
+	 * @param startTimePoint
+	 * @param numTimePoints
+	 * @param newVar1Observations
+	 * @param newVar2Observations
+	 * @return
+	 * @throws Exception
+	 */
+	public double[] kNNDistancesForNewSamples(int startTimePoint, int numTimePoints,
+			double[] newVar1Observations, double[] newVar2Observations) throws Exception {
+
+		if ((dimensionsSource != 1) || (dimensionsDest != 1)) {
+			throw new Exception("The number of source and dest dimensions (having been initialised to " +
+					dimensionsSource + " and " + dimensionsDest + ") can only be 1 when " +
+					"the univariate kNNDistancesForNewSamples(int, int, double[],double[]) " + 
+					"method is called");
+		}
+		return computeLocalUsingPreviousObservations(
+				MatrixUtils.reshape(newVar1Observations, newVar1Observations.length, 1),
+				MatrixUtils.reshape(newVar2Observations, newVar2Observations.length, 1));
+	}
 }
