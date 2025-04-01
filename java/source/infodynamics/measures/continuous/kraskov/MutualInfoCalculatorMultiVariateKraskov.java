@@ -1106,5 +1106,72 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
     }
     
     return totalErrors;
-  } 
+  }
+
+    /**
+     * Debug method to return the k nearest neighbour distances that 
+     *  would be utilised for each sample point here.
+     * Note that this is specifically the max-norm across the two variables, which is used for both
+     *  variables in the range searches in algorithm 1 (although algorithm 2 would use the max distance
+     *  for each variable within the kNNs in their separate range searches). 
+     *  
+     * @param startTimePoint
+     * @param numTimePoints
+     * @return
+     * @throws Exception
+     */
+	public double[] kNNDistances(int startTimePoint, int numTimePoints) throws Exception {
+		
+		double[] kNNdistances = new double[numTimePoints];
+		
+		for (int t = startTimePoint; t < startTimePoint + numTimePoints; t++) {
+			// Compute eps for this time step by
+			//  finding the kth closest neighbour for point t:
+			PriorityQueue<NeighbourNodeData> nnPQ =
+					kdTreeJoint.findKNearestNeighbours(k, t, dynCorrExclTime);
+			// First element in the PQ is the kth NN,
+			//  and epsilon = kthNnData.distance
+			NeighbourNodeData kthNnData = nnPQ.poll();
+
+			kNNdistances[t - startTimePoint] = kthNnData.distance;
+		}
+		return kNNdistances;
+	}
+	
+
+	/**
+	 * Debug method to return the k nearest neighbour distances that
+	 *  would be utilised in {@link #computeLocalUsingPreviousObservations(double[][], double[][])}
+	 *  for a cross MI.
+     * Note that this is specifically the max-norm across the two variables, which is used for both
+     *  variables in the range searches in algorithm 1 (although algorithm 2 would use the max distance
+     *  for each variable within the kNNs in their separate range searches). 
+	 *  
+	 * @param startTimePoint
+	 * @param numTimePoints
+	 * @param newVar1Observations
+	 * @param newVar2Observations
+	 * @return
+	 * @throws Exception
+	 */
+	public double[] kNNDistancesForNewSamples(int startTimePoint, int numTimePoints,
+			double[][] newVar1Observations, double[][] newVar2Observations) throws Exception {
+
+		double[] kNNdistances = new double[numTimePoints];
+		
+		for (int t = startTimePoint; t < startTimePoint + numTimePoints; t++) {
+			// Compute eps for this time step by
+			//  finding the kth closest neighbour for the new sample:
+			PriorityQueue<NeighbourNodeData> nnPQ =
+					kdTreeJoint.findKNearestNeighbours(k,
+							new double[][] {newVar1Observations[t], newVar2Observations[t]});
+			// First element in the PQ is the kth NN,
+			//  and epsilon = kthNnData.distance
+			NeighbourNodeData kthNnData = nnPQ.poll();
+			
+			kNNdistances[t - startTimePoint] = kthNnData.distance;
+		}
+		return kNNdistances;
+	}
+
 }

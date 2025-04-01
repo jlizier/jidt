@@ -72,7 +72,7 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 		double sumNx = 0;
 		double sumNy = 0;
 		double sum2xkNNDist = 0;
-				
+		
 		for (int t = startTimePoint; t < startTimePoint + numTimePoints; t++) {
 			// Compute eps for this time step by
 			//  finding the kth closest neighbour for point t:
@@ -196,7 +196,7 @@ public class MutualInfoCalculatorMultiVariateKraskov1
 		
 		for (int t = startTimePoint; t < startTimePoint + numTimePoints; t++) {
 			// Compute eps for this time step by
-			//  finding the kth closest neighbour for point t:
+			//  finding the kth closest neighbour for the new sample:
 			PriorityQueue<NeighbourNodeData> nnPQ =
 					kdTreeJoint.findKNearestNeighbours(k,
 							new double[][] {newVar1Observations[t], newVar2Observations[t]});

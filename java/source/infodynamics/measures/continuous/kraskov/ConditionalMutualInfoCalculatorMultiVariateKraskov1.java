@@ -18,19 +18,13 @@
 
 package infodynamics.measures.continuous.kraskov;
 
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.PriorityQueue;
 
 import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariate;
-import infodynamics.utils.EmpiricalMeasurementDistribution;
-import infodynamics.utils.FirstIndexComparatorDouble;
-import infodynamics.utils.KdTree;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
-import infodynamics.utils.NearestNeighbourSearcher;
 import infodynamics.utils.NeighbourNodeData;
-import infodynamics.utils.UnivariateNearestNeighbourSearcher;
 
 /**
  * <p>Computes the differential conditional mutual information of two multivariate
@@ -340,7 +334,7 @@ public class ConditionalMutualInfoCalculatorMultiVariateKraskov1
 
 		for (int t = startTimePoint; t < startTimePoint + numTimePoints; t++) {
 			// Compute eps for this time step by
-			//  finding the kth closest neighbour for point t:
+			//  finding the kth closest neighbour for the new sample:
 			long methodStartTime = Calendar.getInstance().getTimeInMillis();
 			PriorityQueue<NeighbourNodeData> nnPQ =
 					kdTreeJoint.findKNearestNeighbours(k,
