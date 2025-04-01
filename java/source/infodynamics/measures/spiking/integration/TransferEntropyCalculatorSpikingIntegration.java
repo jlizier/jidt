@@ -1,7 +1,6 @@
 package infodynamics.measures.spiking.integration;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.PriorityQueue;
 import java.util.Random;
@@ -16,8 +15,6 @@ import infodynamics.utils.KdTree;
 import infodynamics.utils.MathsUtils;
 import infodynamics.utils.MatrixUtils;
 import infodynamics.utils.NeighbourNodeData;
-import infodynamics.utils.FirstIndexComparatorDouble;
-import infodynamics.utils.UnivariateNearestNeighbourSearcher;
 import infodynamics.utils.EuclideanUtils;
 import infodynamics.utils.ParsedProperties;
 
@@ -403,7 +400,6 @@ public class TransferEntropyCalculatorSpikingIntegration implements TransferEntr
 		if (vectorOfConditionalSpikeTimes.size() > 0) {
 			conditionalIterator = vectorOfConditionalSpikeTimes.iterator();
 		}
-		int timeSeriesIndex = 0;
 		for (double[] destSpikeTimes : vectorOfDestinationSpikeTimes) {
 			double[] sourceSpikeTimes = sourceIterator.next();
 			double[][] conditionalSpikeTimes = null;
@@ -900,7 +896,6 @@ public class TransferEntropyCalculatorSpikingIntegration implements TransferEntr
 			if (vectorOfConditionalSpikeTimes.size() > 0) {
 				conditionalIterator = vectorOfConditionalSpikeTimes.iterator();
 			}
-			int timeSeriesIndex = 0;
 			for (double[] destSpikeTimes : vectorOfDestinationSpikeTimes) {
 				double[] sourceSpikeTimes = sourceIterator.next();
 				double[][] conditionalSpikeTimes = null;
@@ -928,7 +923,7 @@ public class TransferEntropyCalculatorSpikingIntegration implements TransferEntr
 			KdTree resampledKdTreeConditioningAtSamples = new KdTree(arrayedResampledConditioningEmbeddingsFromSamples);
 			resampledKdTreeConditioningAtSamples.setNormType(normType);
 
-			Vector<double[]> conditionallyPermutedJointEmbeddingsFromSpikes = new Vector(jointEmbeddingsFromSpikes);
+			Vector<double[]> conditionallyPermutedJointEmbeddingsFromSpikes = new Vector<double[]>(jointEmbeddingsFromSpikes);
 
 			Vector<Integer> usedIndices = new Vector<Integer>();
 			for (int i = 0; i < conditionallyPermutedJointEmbeddingsFromSpikes.size(); i++) {
