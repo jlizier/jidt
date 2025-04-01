@@ -21,6 +21,7 @@ package infodynamics.measures.continuous.kraskov;
 import infodynamics.measures.continuous.ConditionalMutualInfoCalculatorMultiVariate;
 import infodynamics.measures.continuous.TransferEntropyCalculator;
 import infodynamics.measures.continuous.TransferEntropyCalculatorViaCondMutualInfo;
+import infodynamics.utils.MatrixUtils;
 
 /**
  * <p>Computes the differential transfer entropy (TE) between two univariate
@@ -250,4 +251,64 @@ public class TransferEntropyCalculatorKraskov
 			return super.getProperty(propertyName);
 		}
 	}
+	
+	/**
+     * Debug method to return the k nearest neighbour distances that 
+     *  would be utilised for each sample point here.
+     * Note that this is specifically the max-norm across the source-target-targetPast variables, which is used for each
+     *  range search in algorithm 1 (although algorithm 2 would use the max distance
+     *  for each variable within the kNNs in their separate range searches). 
+     *  
+     * @param startTimePoint
+     * @param numTimePoints
+     * @return
+     * @throws Exception
+     */
+	public double[] kNNDistances(int startTimePoint, int numTimePoints) throws Exception {
+		// Defer the call to the underlying KSG CMI estimator
+		return ((ConditionalMutualInfoCalculatorMultiVariateKraskov) condMiCalc).kNNDistances(startTimePoint, numTimePoints);
+	}
+	
+	/**
+	 * Debug method to return the k nearest neighbour distances that
+	 *  would be utilised in {@link #computeLocalUsingPreviousObservations(double[], double[])}
+	 *  for a cross TE.
+     * Note that this is specifically the max-norm across the source-target-targetPast variables, which is used for each
+     *  range search in algorithm 1 (although algorithm 2 would use the max distance
+     *  for each variable within the kNNs in their separate range searches). 
+	 *  
+	 * @param startTimePoint
+	 * @param numTimePoints
+	 * @param newSourceObservations
+	 * @param newDestObservations
+	 * @return
+	 * @throws Exception
+	 */
+	public double[] kNNDistancesForNewSamples(int startTimePoint, int numTimePoints,
+			double[] newSourceObservations, double[] newDestObservations) throws Exception {
+		if (newSourceObservations.length != newDestObservations.length) {
+			throw new Exception(String.format("Source and destination lengths (%d and %d) must match!",
+					newSourceObservations.length, newDestObservations.length));
+		}
+		if (newDestObservations.length < startTimeForFirstDestEmbedding + 2) {
+			// There are no observations to compute for here
+			return new double[newDestObservations.length];
+		}
+		// Now embed as per computeLocalUsingPreviousObservations() in super:
+		double[][] newDestPastVectors = 
+				MatrixUtils.makeDelayEmbeddingVector(newDestObservations, k, k_tau,
+						startTimeForFirstDestEmbedding,
+						newDestObservations.length - startTimeForFirstDestEmbedding - 1);
+		double[][] newDestNextVectors =
+				MatrixUtils.makeDelayEmbeddingVector(newDestObservations, 1,
+						startTimeForFirstDestEmbedding + 1,
+						newDestObservations.length - startTimeForFirstDestEmbedding - 1);
+		double[][] newSourcePastVectors = 
+				MatrixUtils.makeDelayEmbeddingVector(newSourceObservations, l, l_tau,
+						startTimeForFirstDestEmbedding + 1 - delay,
+						newSourceObservations.length - startTimeForFirstDestEmbedding - 1);
+		return ((ConditionalMutualInfoCalculatorMultiVariateKraskov) condMiCalc).
+				kNNDistancesForNewSamples(startTimePoint, numTimePoints, newSourcePastVectors, newDestNextVectors, newDestPastVectors);
+	}
+
 }
