@@ -1158,6 +1158,20 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 	public double[] kNNDistancesForNewSamples(int startTimePoint, int numTimePoints,
 			double[][] newVar1Observations, double[][] newVar2Observations) throws Exception {
 
+		double[][] states1ToUse, states2ToUse;
+		if (normalise) {
+			states1ToUse = MatrixUtils.normaliseIntoNewArray(newVar1Observations, sourceMeansBeforeNorm, sourceStdsBeforeNorm, 0, newVar1Observations.length-timeDiff);
+			states2ToUse = MatrixUtils.normaliseIntoNewArray(newVar2Observations, destMeansBeforeNorm, destStdsBeforeNorm, timeDiff, newVar2Observations.length-timeDiff);
+		} else {
+			if (timeDiff > 0) {
+				states1ToUse = MatrixUtils.selectRows(newVar1Observations, 0, newVar1Observations.length-timeDiff);
+				states2ToUse = MatrixUtils.selectRows(newVar2Observations, 0, newVar2Observations.length-timeDiff);
+			} else {
+				states1ToUse = newVar1Observations;
+				states2ToUse = newVar2Observations;
+			}
+		}
+
 		double[] kNNdistances = new double[numTimePoints];
 		
 		for (int t = startTimePoint; t < startTimePoint + numTimePoints; t++) {
@@ -1165,7 +1179,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 			//  finding the kth closest neighbour for the new sample:
 			PriorityQueue<NeighbourNodeData> nnPQ =
 					kdTreeJoint.findKNearestNeighbours(k,
-							new double[][] {newVar1Observations[t], newVar2Observations[t]});
+							new double[][] {states1ToUse[t], states2ToUse[t]});
 			// First element in the PQ is the kth NN,
 			//  and epsilon = kthNnData.distance
 			NeighbourNodeData kthNnData = nnPQ.poll();
@@ -1195,7 +1209,7 @@ public abstract class MutualInfoCalculatorMultiVariateKraskov
 					"the univariate kNNDistancesForNewSamples(int, int, double[],double[]) " + 
 					"method is called");
 		}
-		return computeLocalUsingPreviousObservations(
+		return kNNDistancesForNewSamples(startTimePoint, numTimePoints,
 				MatrixUtils.reshape(newVar1Observations, newVar1Observations.length, 1),
 				MatrixUtils.reshape(newVar2Observations, newVar2Observations.length, 1));
 	}
