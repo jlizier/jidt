@@ -624,6 +624,38 @@ public interface ConditionalMutualInfoCalculatorMultiVariate
 		throws Exception;
 
 	/**
+	 * <p>As per {@link #computeLocalUsingPreviousObservations(double[][], double[][], double[][])}
+	 * but can only be used where dimensions of
+	 * states1 and states2 have been set to 1.</p>
+	 * 
+	 * @param states1 series of univariate observations for variable 1
+	 * @param states2 series of univariate observations for variable 2
+	 *  Length must match <code>states1</code>, and their indices must correspond.
+	 * @param condStates series of multivariate observations for the conditional
+	 *  (first index is time or observation index, second is variable number).
+	 *  Length must match <code>states1</code>, and their indices must correspond.
+	 * @return the series of local conditional MI values.
+	 * @throws Exception
+	 */
+	public double[] computeLocalUsingPreviousObservations(double states1[], double states2[], double[][] condStates)
+		throws Exception;
+
+	/**
+	 * <p>As per {@link #computeLocalUsingPreviousObservations(double[][], double[][], double[][])}
+	 * but can only be used all dimensions have been set to 1.</p>
+	 * 
+	 * @param states1 series of univariate observations for variable 1
+	 * @param states2 series of univariate observations for variable 2.
+	 *  Length must match <code>states1</code>, and their indices must correspond.
+	 * @param condStates series of univariate observations for the conditional.
+	 *  Length must match <code>states1</code>, and their indices must correspond.
+	 * @return the series of local conditional MI values.
+	 * @throws Exception
+	 */
+	public double[] computeLocalUsingPreviousObservations(double states1[], double states2[], double[] condStates)
+		throws Exception;
+
+	/**
 	 * @throws Exception if the implementing class computes MI without
 	 * explicit observations (e.g. see
 	 * {@link infodynamics.measures.continuous.gaussian.ConditionalMutualInfoCalculatorMultiVariateGaussian})

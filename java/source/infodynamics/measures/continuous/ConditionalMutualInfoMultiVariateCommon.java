@@ -934,6 +934,34 @@ public abstract class ConditionalMutualInfoMultiVariateCommon implements
 		// Compute the MI
 		return miSurrogateCalculator.computeAverageLocalOfObservations();
 	}
+	
+	@Override
+	public double[] computeLocalUsingPreviousObservations(double[] states1, double[] states2, double[][] condStates)
+			throws Exception {
+		if ((dimensionsVar1 != 1) || (dimensionsVar2 != 1)) {
+			throw new Exception("The number of source and dest dimensions (having been initialised to " +
+					dimensionsVar1 + " and " + dimensionsVar2 + ") can only be 1 when " +
+					"the univariate computeLocalUsingPreviousObservations(double[],double[],double[][]) " + 
+					"method is called");
+		}
+		return computeLocalUsingPreviousObservations(MatrixUtils.reshape(states1, states1.length, 1),
+						MatrixUtils.reshape(states2, states2.length, 1),
+						condStates);
+	}
+
+	@Override
+	public double[] computeLocalUsingPreviousObservations(double[] states1, double[] states2, double[] condStates)
+			throws Exception {
+		if ((dimensionsVar1 != 1) || (dimensionsVar2 != 1) || (dimensionsCond != 1)) {
+			throw new Exception("The number of source, dest and conditional dimensions (having been initialised to " +
+					dimensionsVar1 + ", " + dimensionsVar2 + " and " + dimensionsCond + ") can only be 1 when " +
+					"the univariate computeLocalUsingPreviousObservations(double[],double[],double[]) " + 
+					"method is called");
+		}
+		return computeLocalUsingPreviousObservations(MatrixUtils.reshape(states1, states1.length, 1),
+						MatrixUtils.reshape(states2, states2.length, 1),
+						MatrixUtils.reshape(condStates, condStates.length, 1));
+	}
 
 	@Override
 	public void setDebug(boolean debug) {
