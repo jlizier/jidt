@@ -12,7 +12,7 @@
 NVCC       ?= nvcc
 GCC        ?= g++
 CCFLAGS    ?= -O3 -Wall -Wextra -Wno-unused-parameter
-NVCCFLAGS  ?= -O3 -D_FORCE_INLINES -Xcompiler -Wall
+NVCCFLAGS  ?= -O3 -D_FORCE_INLINES -Xcompiler -Wall -DTHRUST_IGNORE_CUB_VERSION_CHECK
 BIN         =../bin/cuda
 UNITBIN     =../unittests/bin/cuda
 
@@ -73,7 +73,7 @@ ifdef CUSTOMFLAGS
 endif
 
 # Common includes and paths for CUDA. This assumes the CUDA toolkit is in PATH
-INCLUDES      := -I. -I./cub -I${JNI_INCLUDE} -I${JNI_PLATFORM_INCLUDE}
+INCLUDES      := -I. -I${JNI_INCLUDE} -I${JNI_PLATFORM_INCLUDE}
 NVCCLDFLAGS   := -L. -L$(BIN) -lcuda -lcudart
 
 .PHONY: all clean test
