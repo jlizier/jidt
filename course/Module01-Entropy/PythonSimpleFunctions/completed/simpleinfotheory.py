@@ -381,7 +381,7 @@ def mutualinformationempirical(xn,yn):
     (H_XY, xySymbols, xyProbs) = jointentropyempirical(xn, yn); # How to compute this empirically ...?
     # 2. marginal entropy of Y: (call 'joint' in case yn is multivariate)
     (H_Y, ySymbols, yProbs) = jointentropyempirical(yn)
-    # 3. marginal entropy of X: (call 'joint' in case yn is multivariate)
+    # 3. marginal entropy of X: (call 'joint' in case xn is multivariate)
     (H_X, xSymbols, xProbs) = jointentropyempirical(xn);
     
     result = H_X + H_Y - H_XY;
