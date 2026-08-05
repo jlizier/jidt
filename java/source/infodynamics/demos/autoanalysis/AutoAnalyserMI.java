@@ -101,15 +101,24 @@ public class AutoAnalyserMI extends AutoAnalyserChannelCalculator
 		abstractContinuousClass = MutualInfoCalculatorMultiVariate.class;
 		// Common properties for all continuous calcs:
 		commonContPropertyNames = new String[] {
-				MutualInfoCalculatorMultiVariate.PROP_TIME_DIFF
+				MutualInfoCalculatorMultiVariate.PROP_TIME_DIFF,
+				MutualInfoCalculatorMultiVariate.PROP_SURROGATE_TYPE,
+				MutualInfoCalculatorMultiVariate.PROP_DYN_CORR_EXCL_TIME,
 		};
 		commonContPropertiesFieldNames = new String[] {
-				"PROP_TIME_DIFF"
+				"PROP_TIME_DIFF",
+				"PROP_SURROGATE_TYPE",
+				"PROP_DYN_CORR_EXCL_TIME"
 		};
 		commonContPropertyDescriptions = new String[] {
-				"Time-lag from source to dest to consider MI across; must be >= 0 (0 for standard MI)"
+				"Time-lag from source to dest to consider MI across; must be >= 0 (0 for standard MI)",
+				"Which strategy type to choose for selecting surrogates, default is " + MutualInfoCalculatorMultiVariate.PROP_SHUFFLE,
+				"Dynamic correlation exclusion time or <br/>Theiler window (see Kantz and Schreiber); " +
+					"0 (default) means no dynamic exclusion window. Only used for rotated surrogate selection for Gaussian Estimator",
 		};
 		commonContPropertyValueChoices = new String[][] {
+				null,
+				MutualInfoCalculatorMultiVariateKraskov.VALID_SURROGATE_TYPES,
 				null
 		};
 		// Gaussian properties:
@@ -130,12 +139,10 @@ public class AutoAnalyserMI extends AutoAnalyserChannelCalculator
 		// Kernel:
 		kernelProperties = new String[] {
 				MutualInfoCalculatorMultiVariateKernel.KERNEL_WIDTH_PROP_NAME,
-				MutualInfoCalculatorMultiVariateKernel.DYN_CORR_EXCL_TIME_NAME,
 				MutualInfoCalculatorMultiVariateKernel.NORMALISE_PROP_NAME,			
 		};
 		kernelPropertiesFieldNames = new String[] {
 				"KERNEL_WIDTH_PROP_NAME",
-				"DYN_CORR_EXCL_TIME_NAME",
 				"NORMALISE_PROP_NAME"			
 		};
 		kernelPropertyDescriptions = new String[] {
@@ -143,8 +150,6 @@ public class AutoAnalyserMI extends AutoAnalyserChannelCalculator
 						MutualInfoCalculatorMultiVariateKernel.NORMALISE_PROP_NAME +
 						" is set, then this is a number of standard deviations; " +
 						"otherwise it is an absolute value.",
-				"Dynamic correlation exclusion time or <br/>Theiler window (see Kantz and Schreiber); " +
-						"0 (default) means no dynamic exclusion window",
 				"(boolean) whether to normalise <br/>each incoming time-series to mean 0, standard deviation 1, or not  (recommended)",
 		};
 		kernelPropertyValueChoices = new String[][] {
@@ -157,7 +162,6 @@ public class AutoAnalyserMI extends AutoAnalyserChannelCalculator
 				MutualInfoCalculatorMultiVariateKraskov.PROP_NORMALISE,
 				MutualInfoCalculatorMultiVariateKraskov.PROP_K,
 				MutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE,
-				MutualInfoCalculatorMultiVariateKraskov.PROP_DYN_CORR_EXCL_TIME,
 				MutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE,
 				MutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS,
 				MutualInfoCalculatorMultiVariateKraskov.PROP_USE_GPU,
@@ -166,7 +170,6 @@ public class AutoAnalyserMI extends AutoAnalyserChannelCalculator
 				"MutualInfoCalculatorMultiVariateKraskov.PROP_NORMALISE",
 				"MutualInfoCalculatorMultiVariateKraskov.PROP_K",
 				"MutualInfoCalculatorMultiVariateKraskov.PROP_ADD_NOISE",
-				"MutualInfoCalculatorMultiVariateKraskov.PROP_DYN_CORR_EXCL_TIME",
 				"MutualInfoCalculatorMultiVariateKraskov.PROP_NORM_TYPE",
 				"MutualInfoCalculatorMultiVariateKraskov.PROP_NUM_THREADS",
 				"MutualInfoCalculatorMultiVariateKraskov.PROP_USE_GPU"
@@ -177,8 +180,6 @@ public class AutoAnalyserMI extends AutoAnalyserChannelCalculator
 				"Standard deviation for an amount <br/>of random Gaussian noise to add to each variable, " +
 						"to avoid having neighbourhoods with artificially large counts. <br/>" +
 						"(\"false\" may be used to indicate \"0\".). The amount is added in after any normalisation.",
-				"Dynamic correlation exclusion time or <br/>Theiler window (see Kantz and Schreiber); " +
-						"0 (default) means no dynamic exclusion window",
 				"<br/>Norm type to use in KSG algorithm between the points in each marginal space. <br/>Options are: " +
 						"\"MAX_NORM\" (default), otherwise \"EUCLIDEAN\" or \"EUCLIDEAN_SQUARED\" (both equivalent here)",
 				"Number of parallel threads to use <br/>in computation: an integer > 0 or \"USE_ALL\" " +
@@ -187,7 +188,6 @@ public class AutoAnalyserMI extends AutoAnalyserChannelCalculator
 		};
 		kraskovPropertyValueChoices = new String[][] {
 				{"true", "false"},
-				null,
 				null,
 				null,
 				{"MAX_NORM", "EUCLIDEAN", "EUCLIDEAN_SQUARED"},

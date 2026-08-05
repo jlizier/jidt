@@ -63,15 +63,7 @@ public class MutualInfoCalculatorMultiVariateKernel
 	 * to mean 0, standard deviation 1, or not (default false)
 	 */
 	public static final String NORMALISE_PROP_NAME = "NORMALISE";
-	
-	private boolean dynCorrExcl = false;
-	private int dynCorrExclTime = 0;
-	/**
-	 * Property name for a dynamics exclusion time window (see Kantz and Schreiber),
-	 * default is 0 which means no dynamic exclusion window.
-	 */
-	public static final String DYN_CORR_EXCL_TIME_NAME = "DYN_CORR_EXCL";
-	
+
 	private boolean forceCompareToAll = false;
 	/**
 	 * Property name for whether to force the underlying kernel estimators to compare
@@ -666,7 +658,7 @@ public class MutualInfoCalculatorMultiVariateKernel
 			mvkeSource.setNormalise(normalise);
 			mvkeDest.setNormalise(normalise);
 			mvkeJoint.setNormalise(normalise);
-		} else if (propertyName.equalsIgnoreCase(DYN_CORR_EXCL_TIME_NAME)) {
+		} else if (propertyName.equalsIgnoreCase(PROP_DYN_CORR_EXCL_TIME)) {
 			dynCorrExclTime = Integer.parseInt(propertyValue);
 			dynCorrExcl = (dynCorrExclTime > 0);
 			if (dynCorrExcl) {
@@ -702,8 +694,6 @@ public class MutualInfoCalculatorMultiVariateKernel
 		if (propertyName.equalsIgnoreCase(KERNEL_WIDTH_PROP_NAME) ||
 				propertyName.equalsIgnoreCase(EPSILON_PROP_NAME)) {
 			return Double.toString(kernelWidth);
-		} else if (propertyName.equalsIgnoreCase(DYN_CORR_EXCL_TIME_NAME)) {
-			return Integer.toString(dynCorrExclTime);
 		} else if (propertyName.equalsIgnoreCase(FORCE_KERNEL_COMPARE_TO_ALL)) {
 			return Boolean.toString(forceCompareToAll);
 		} else {
