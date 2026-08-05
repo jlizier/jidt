@@ -33,7 +33,8 @@ jarLocation = os.path.join(os.getcwd(), "..", "..", "infodynamics.jar");
 if (not(os.path.isfile(jarLocation))):
 	exit("infodynamics.jar not found (expected at " + os.path.abspath(jarLocation) + ") - are you running from demos/python?")
 # Start the JVM (add the "-Xmx" option with say 1024M if you get crashes due to not enough memory space)
-startJVM(getDefaultJVMPath(), "-ea", "-Djava.class.path=" + jarLocation)
+# see: https://jpype.readthedocs.io/en/latest/api.html#jpype.startJVM and https://stackoverflow.com/questions/64841426/duckling-int-argument-must-be-a-string-a-bytes-like-object-or-a-number-not
+startJVM(getDefaultJVMPath(), "-ea", "-Djava.class.path=" + jarLocation, convertStrings=True)
 
 # Examine the heart-breath interaction that Schreiber originally looked at:
 datafile = '../data/SFI-heartRate_breathVol_bloodOx.txt'
