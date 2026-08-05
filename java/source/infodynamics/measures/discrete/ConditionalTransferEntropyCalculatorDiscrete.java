@@ -242,7 +242,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 	public void initialise(int base, int history,
 			int numOtherInfoContributors, int base_others) {
 		
-		boolean paramsChanged = (this.base != base) || (k != history) ||
+		boolean paramsChanged = (this.alphabetSize != base) || (k != history) ||
 				(this.numOtherInfoContributors != numOtherInfoContributors) ||
 				(this.base_others != base_others);
 		super.initialise(base, history);
@@ -275,7 +275,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 	
 	@Override
 	public void initialise(){
-		initialise(base, k, numOtherInfoContributors, base_others);
+		initialise(alphabetSize, k, numOtherInfoContributors, base_others);
 	}
 	
 	/**
@@ -313,7 +313,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 		// Initialise and store the current previous value
 		int pastVal = 0;
 		for (int p = 0; p < k; p++) {
-			pastVal *= base;
+			pastVal *= alphabetSize;
 			pastVal += dest[p];
 		}
 		
@@ -336,7 +336,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 			// Update the previous value:
 			if (k > 0) {
 				pastVal -= maxShiftedValue[dest[r-k]];
-				pastVal *= base;
+				pastVal *= alphabetSize;
 				pastVal += dest[r];
 			}
 		}
@@ -386,7 +386,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 		// Initialise and store the current previous value
 		int pastVal = 0;
 		for (int p = 0; p < k; p++) {
-			pastVal *= base;
+			pastVal *= alphabetSize;
 			pastVal += dest[p];
 		}
 		
@@ -404,7 +404,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 			// Update the previous value:
 			if (k > 0) {
 				pastVal -= maxShiftedValue[dest[r-k]];
-				pastVal *= base;
+				pastVal *= alphabetSize;
 				pastVal += dest[r];
 			}
 		}
@@ -468,7 +468,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 		for (int c = 0; c < columns; c++) {
 			pastVal[c] = 0;
 			for (int p = 0; p < k; p++) {
-				pastVal[c] *= base;
+				pastVal[c] *= alphabetSize;
 				pastVal[c] += states[p][c];
 			}
 		}
@@ -494,7 +494,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 				// Update the previous value:
 				if (k > 0) {
 					pastVal[c] -= maxShiftedValue[states[r-k][c]];
-					pastVal[c] *= base;
+					pastVal[c] *= alphabetSize;
 					pastVal[c] += states[r][c];
 				}
 			}
@@ -551,7 +551,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 		// Initialise and store the current previous value for each column
 		int pastVal = 0;
 		for (int p = 0; p < k; p++) {
-			pastVal *= base;
+			pastVal *= alphabetSize;
 			pastVal += states[p][destCol];
 		}
 		
@@ -575,7 +575,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 			// Update the previous value:
 			if (k > 0) {
 				pastVal -= maxShiftedValue[states[r-k][destCol]];
-				pastVal *= base;
+				pastVal *= alphabetSize;
 				pastVal += states[r][destCol];
 			}
 		}
@@ -591,8 +591,8 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 		double meanSqLocals = 0;
 		for (int othersVal = 0; othersVal < this.base_power_num_others; othersVal++) {
 			for (int pastVal = 0; pastVal < base_power_k; pastVal++) {
-				for (int destVal = 0; destVal < base; destVal++) {
-					for (int sourceVal = 0; sourceVal < base; sourceVal++) {
+				for (int destVal = 0; destVal < alphabetSize; destVal++) {
+					for (int sourceVal = 0; sourceVal < alphabetSize; sourceVal++) {
 						// Compute TE contribution:
 						if (sourceDestPastOthersCount[sourceVal][destVal][pastVal][othersVal] != 0) {
 							/* Double check: should never happen
@@ -650,7 +650,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 		// Reconstruct the source values (not necessarily in order)
 		int[] sourceValues = new int[observations];
 		int t_s = 0;
-		for (int sourceVal = 0; sourceVal < base; sourceVal++) {
+		for (int sourceVal = 0; sourceVal < alphabetSize; sourceVal++) {
 			// Count up the number of times this source value was observed:
 			int numberOfSamples = 0;
 			for (int pastVal = 0; pastVal < base_power_k; pastVal++) {
@@ -683,7 +683,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 				MatrixUtils.fill(othersValues, othersVal, t_o,
 						pastOthersCount[pastVal][othersVal]);
 				t_o += pastOthersCount[pastVal][othersVal];
-				for (int destVal = 0; destVal < base; destVal++) {
+				for (int destVal = 0; destVal < alphabetSize; destVal++) {
 					MatrixUtils.fill(destValues, destVal, t_d,
 						destPastOthersCount[destVal][pastVal][othersVal]);
 					t_d += destPastOthersCount[destVal][pastVal][othersVal];
@@ -692,7 +692,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 		}
 		
 		// TODO stop using deprecated method
-		ConditionalTransferEntropyCalculatorDiscrete cte = newInstance(base, k, numOtherInfoContributors);
+		ConditionalTransferEntropyCalculatorDiscrete cte = newInstance(alphabetSize, k, numOtherInfoContributors);
 		cte.initialise();
 		cte.observations = observations;
 		cte.pastOthersCount = pastOthersCount;
@@ -733,7 +733,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 		}
 		return new ChiSquareMeasurementDistribution(average,
 				observations,
-				(base - 1)*(base - 1)*(base_power_k*base_power_num_others));
+				(alphabetSize - 1)*(alphabetSize - 1)*(base_power_k*base_power_num_others));
 	}
 
 	/**
@@ -804,7 +804,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 		for (int c = 0; c < columns; c++) {
 			pastVal[c] = 0;
 			for (int p = 0; p < k; p++) {
-				pastVal[c] *= base;
+				pastVal[c] *= alphabetSize;
 				pastVal[c] += states[p][c];
 			}
 		}
@@ -834,7 +834,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 				// Update the previous value:
 				if (k > 0) {
 					pastVal[c] -= maxShiftedValue[states[r-k][c]];
-					pastVal[c] *= base;
+					pastVal[c] *= alphabetSize;
 					pastVal[c] += states[r][c];
 				}
 			}
@@ -905,7 +905,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 		int pastVal = 0; 
 		pastVal = 0;
 		for (int p = 0; p < k; p++) {
-			pastVal *= base;
+			pastVal *= alphabetSize;
 			pastVal += states[p][destCol];
 		}
 		int destVal, sourceVal, othersVal;
@@ -932,7 +932,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 			// Update the previous value:
 			if (k > 0) {
 				pastVal -= maxShiftedValue[states[r-k][destCol]];
-				pastVal *= base;
+				pastVal *= alphabetSize;
 				pastVal += states[r][destCol];
 			}
 		}
@@ -975,7 +975,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 		int pastVal = 0; 
 		pastVal = 0;
 		for (int p = 0; p < k; p++) {
-			pastVal *= base;
+			pastVal *= alphabetSize;
 			pastVal += dest[p];
 		}
 		int destVal, sourceVal, conditionalVal;
@@ -997,7 +997,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 			// Update the previous value:
 			if (k > 0) {
 				pastVal -= maxShiftedValue[dest[r-k]];
-				pastVal *= base;
+				pastVal *= alphabetSize;
 				pastVal += dest[r];
 			}
 		}
@@ -1033,7 +1033,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 		int pastVal = 0; 
 		pastVal = 0;
 		for (int p = 0; p < k; p++) {
-			pastVal *= base;
+			pastVal *= alphabetSize;
 			pastVal += dest[p];
 		}
 		int destVal, sourceVal, conditionalsVal;
@@ -1044,7 +1044,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 			conditionalsVal = 0;
 			for (int o = 0; o < conditionals[r-1].length; o++) {
 				// Include this other contributor
-				conditionalsVal *= base;
+				conditionalsVal *= alphabetSize;
 				conditionalsVal += conditionals[r-1][o];
 			}
 			// Now compute the local value
@@ -1060,7 +1060,7 @@ public class ConditionalTransferEntropyCalculatorDiscrete
 			// Update the previous value:
 			if (k > 0) {
 				pastVal -= maxShiftedValue[dest[r-k]];
-				pastVal *= base;
+				pastVal *= alphabetSize;
 				pastVal += dest[r];
 			}
 		}

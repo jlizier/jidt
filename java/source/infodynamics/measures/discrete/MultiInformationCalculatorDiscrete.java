@@ -78,51 +78,51 @@ public class MultiInformationCalculatorDiscrete extends InfoMeasureCalculatorDis
 	/**
 	 * Construct an instance
 	 * 
-	 * @base number of symbols for each variable.
-	 *        E.g. binary variables are in base-2.
+	 * @alphabetSize number of symbols for each variable.
+	 *        E.g. binary variables are in base-2, so alphabetSize would be 2.
 	 * @numVars numbers of joint variables that multi-info
 	 *     will be computed over.
 	 */
-	public MultiInformationCalculatorDiscrete(int base, int numVars) {
-		super(base);
-		changeParams(base, numVars);
+	public MultiInformationCalculatorDiscrete(int alphabetSize, int numVars) {
+		super(alphabetSize);
+		changeParams(alphabetSize, numVars);
 	}
 
 	/**
 	 * Update the parameters using numVars
 	 * 
-	 * @param base
+	 * @param alphabetSize
 	 * @param numVars
 	 * @return
 	 */
-	private boolean changeParams(int base, int numVars) {
-		boolean paramsChanged = (this.base != base) || (this.numVars != numVars);
+	private boolean changeParams(int alphabetSize, int numVars) {
+		boolean paramsChanged = (this.alphabetSize != alphabetSize) || (this.numVars != numVars);
 		
 		this.numVars = numVars;
-		jointStates = MathsUtils.power(base, numVars);
+		jointStates = MathsUtils.power(alphabetSize, numVars);
 		return paramsChanged;
 	}
 	
 	/**
-	 * Initialise (possible) updating the base and number of variables
+	 * Initialise (possible) updating the alphabetSize and number of variables
 	 * 
-	 * @param base
+	 * @param alphabetSize
 	 * @param numVars
 	 */
-	public void initialise(int base, int numVars) {
-		boolean paramsChanged = changeParams(base, numVars);
-		super.initialise(base);
+	public void initialise(int alphabetSize, int numVars) {
+		boolean paramsChanged = changeParams(alphabetSize, numVars);
+		super.initialise(alphabetSize);
 
 		if(paramsChanged || (jointCount == null)) {
 			// Create storage for counts of observations
 			try {
 				jointCount = new int[jointStates];
-				marginalCounts = new int[numVars][base];
+				marginalCounts = new int[numVars][alphabetSize];
 			} catch (OutOfMemoryError e) {
 				// Allow any Exceptions to be thrown, but catch and wrap
 				//  Error as a RuntimeException
-				throw new RuntimeException("Requested memory for the base " +
-						base + " with " + numVars +
+				throw new RuntimeException("Requested memory for the alphabetSize " +
+						alphabetSize + " with " + numVars +
 						" variables is too large for the JVM at this time", e);
 			}
 		} else {
@@ -133,7 +133,7 @@ public class MultiInformationCalculatorDiscrete extends InfoMeasureCalculatorDis
 	
 	@Override
 	public void initialise(){
-		initialise(base, numVars);
+		initialise(alphabetSize, numVars);
 	}
 	
 	/**
@@ -152,7 +152,7 @@ public class MultiInformationCalculatorDiscrete extends InfoMeasureCalculatorDis
 			for (int i = 0; i < numVars; i++) {
 				int thisValue = states[t][i];
 				marginalCounts[i][thisValue]++;
-				jointValue *= base;
+				jointValue *= alphabetSize;
 				jointValue += thisValue;
 			}
 			jointCount[jointValue]++;
@@ -176,7 +176,7 @@ public class MultiInformationCalculatorDiscrete extends InfoMeasureCalculatorDis
 			for (int i = 0; i < numVars; i++) {
 				int thisValue = states[(c + groupOffsets[i] + states.length) % states.length];
 				marginalCounts[i][thisValue]++;
-				jointValue *= base;
+				jointValue *= alphabetSize;
 				jointValue += thisValue;
 			}
 			jointCount[jointValue]++;
@@ -201,7 +201,7 @@ public class MultiInformationCalculatorDiscrete extends InfoMeasureCalculatorDis
 		for (int i = 0; i < numVars; i++) {
 			int thisValue = states[(destinationIndex + groupOffsets[i] + states.length) % states.length];
 			marginalCounts[i][thisValue]++;
-			jointValue *= base;
+			jointValue *= alphabetSize;
 			jointValue += thisValue;
 		}
 		jointCount[jointValue]++;
@@ -227,7 +227,7 @@ public class MultiInformationCalculatorDiscrete extends InfoMeasureCalculatorDis
 				for (int i = 0; i < numVars; i++) {
 					int thisValue = states[t][(c + groupOffsets[i] + states.length) % states.length];
 					marginalCounts[i][thisValue]++;
-					jointValue *= base;
+					jointValue *= alphabetSize;
 					jointValue += thisValue;
 				}
 				jointCount[jointValue]++;
@@ -261,7 +261,7 @@ public class MultiInformationCalculatorDiscrete extends InfoMeasureCalculatorDis
 			int jointValue = 0;
 			for (int i = 0; i < numVars; i++) {
 				prodMarginalProbs *= (double) marginalCounts[i][tuple[i]] / (double) observations;
-				jointValue *= base;
+				jointValue *= alphabetSize;
 				jointValue += tuple[i];
 			}
 			if (jointCount[jointValue] == 0) {
@@ -288,7 +288,7 @@ public class MultiInformationCalculatorDiscrete extends InfoMeasureCalculatorDis
 			miCont = jointProb * localValue;
 		} else {
 			// Fill out the next part of the tuple and make the recursive calls
-			for (int v = 0; v < base; v++) {
+			for (int v = 0; v < alphabetSize; v++) {
 				tuple[fromIndex] = v;
 				miCont += computeMiOfGivenTupleFromVarIndex(tuple, fromIndex + 1);
 			}

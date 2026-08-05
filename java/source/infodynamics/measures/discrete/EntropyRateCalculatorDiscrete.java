@@ -62,7 +62,7 @@ Theory' (John Wiley & Sons, New York, 1991).</li>
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
  * <a href="http://lizier.me/joseph/">www</a>)
  */
-public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInContextOfPastCalculator {
+public class EntropyRateCalculatorDiscrete extends UnivariateMeasureDiscreteInContextOfPastCalculator {
 
 	/**
 	 * User was formerly forced to create new instances through this factory method.
@@ -105,7 +105,7 @@ public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInC
 		// Initialise and store the current previous value for each column
 		int prevVal = 0; 
 		for (int p = 0; p < k; p++) {
-			prevVal *= base;
+			prevVal *= alphabetSize;
 			prevVal += states[p];
 		}
 		
@@ -119,7 +119,7 @@ public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInC
 			pastCount[prevVal]++;
 			// Update the previous value:
 			prevVal -= maxShiftedValue[states[r-k]];
-			prevVal *= base;
+			prevVal *= alphabetSize;
 			prevVal += states[r];
 		}
 	}
@@ -136,7 +136,7 @@ public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInC
 		for (int c = 0; c < columns; c++) {
 			prevVal[c] = 0;
 			for (int p = 0; p < k; p++) {
-				prevVal[c] *= base;
+				prevVal[c] *= alphabetSize;
 				prevVal[c] += states[p][c];
 			}
 		}
@@ -152,13 +152,13 @@ public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInC
 				pastCount[prevVal[c]]++;
 				// Update the previous value:
 				prevVal[c] -= maxShiftedValue[states[r-k][c]];
-				prevVal[c] *= base;
+				prevVal[c] *= alphabetSize;
 				prevVal[c] += states[r][c];
 			}
 		}		
 	}
 	
-	@Override
+	
 	public void addObservations(int states[][][]) {
 		int timeSteps = states.length;
 		if (timeSteps == 0) {
@@ -178,7 +178,7 @@ public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInC
 			for (int c = 0; c < agentColumns; c++) {
 				prevVal[r][c] = 0;
 				for (int p = 0; p < k; p++) {
-					prevVal[r][c] *= base;
+					prevVal[r][c] *= alphabetSize;
 					prevVal[r][c] += states[p][r][c];
 				}
 			}
@@ -196,14 +196,14 @@ public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInC
 					pastCount[prevVal[r][c]]++;
 					// Update the previous value:
 					prevVal[r][c] -= maxShiftedValue[states[t-k][r][c]];
-					prevVal[r][c] *= base;
+					prevVal[r][c] *= alphabetSize;
 					prevVal[r][c] += states[t][r][c];
 				}
 			}
 		}		
 	}
 
-	@Override
+	
 	public void addObservations(int states[][], int col) {
 		int rows = states.length;
 		// increment the count of observations:
@@ -213,7 +213,7 @@ public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInC
 		int prevVal = 0; 
 		prevVal = 0;
 		for (int p = 0; p < k; p++) {
-			prevVal *= base;
+			prevVal *= alphabetSize;
 			prevVal += states[p][col];
 		}
 		
@@ -227,12 +227,12 @@ public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInC
 			pastCount[prevVal]++;
 			// Update the previous value:
 			prevVal -= maxShiftedValue[states[r-k][col]];
-			prevVal *= base;
+			prevVal *= alphabetSize;
 			prevVal += states[r][col];
 		}
 	}
 
-	@Override
+	
 	public void addObservations(int states[][][], int agentIndex1, int agentIndex2) {
 		int timeSteps = states.length;
 		// increment the count of observations:
@@ -242,7 +242,7 @@ public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInC
 		int prevVal = 0; 
 		prevVal = 0;
 		for (int p = 0; p < k; p++) {
-			prevVal *= base;
+			prevVal *= alphabetSize;
 			prevVal += states[p][agentIndex1][agentIndex2];
 		}
 		
@@ -256,7 +256,7 @@ public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInC
 			pastCount[prevVal]++;
 			// Update the previous value:
 			prevVal -= maxShiftedValue[states[r-k][agentIndex1][agentIndex2]];
-			prevVal *= base;
+			prevVal *= alphabetSize;
 			prevVal += states[r][agentIndex1][agentIndex2];
 		}
 	}
@@ -269,7 +269,7 @@ public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInC
 		max = 0;
 		min = 0;
 		double logTerm = 0;
-		for (int nextVal = 0; nextVal < base; nextVal++) {
+		for (int nextVal = 0; nextVal < alphabetSize; nextVal++) {
 			for (int prevVal = 0; prevVal < base_power_k; prevVal++) {
 				// compute p_prev
 				double p_prev = (double) pastCount[prevVal] / (double) observations;
@@ -310,7 +310,7 @@ public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInC
 		// Initialise and store the current previous value for each column
 		int prevVal = 0;
 		for (int p = 0; p < k; p++) {
-			prevVal *= base;
+			prevVal *= alphabetSize;
 			prevVal += states[p];
 		}
 		
@@ -330,7 +330,7 @@ public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInC
 			}
 			// Update the previous value:
 			prevVal -= maxShiftedValue[states[r-k]];
-			prevVal *= base;
+			prevVal *= alphabetSize;
 			prevVal += states[r];
 		}
 		average = average/(double) (rows - k);
@@ -338,7 +338,7 @@ public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInC
 		return localEntRate;
 	}
 
-	@Override
+	
 	public double[][] computeLocalFromPreviousObservations(int states[][]){
 		int rows = states.length;
 		int columns = states[0].length;
@@ -354,7 +354,7 @@ public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInC
 		for (int c = 0; c < columns; c++) {
 			prevVal[c] = 0;
 			for (int p = 0; p < k; p++) {
-				prevVal[c] *= base;
+				prevVal[c] *= alphabetSize;
 				prevVal[c] += states[p][c];
 			}
 		}
@@ -375,7 +375,7 @@ public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInC
 				}
 				// Update the previous value:
 				prevVal[c] -= maxShiftedValue[states[r-k][c]];
-				prevVal[c] *= base;
+				prevVal[c] *= alphabetSize;
 				prevVal[c] += states[r][c];
 			}
 		}
@@ -384,7 +384,7 @@ public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInC
 		return localEntRate;		
 	}
 	
-	@Override
+	
 	public double[][][] computeLocalFromPreviousObservations(int states[][][]){
 		int timeSteps = states.length;
 		int agentRows = states[0].length;
@@ -402,7 +402,7 @@ public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInC
 			for (int c = 0; c < agentColumns; c++) {
 				prevVal[r][c] = 0;
 				for (int p = 0; p < k; p++) {
-					prevVal[r][c] *= base;
+					prevVal[r][c] *= alphabetSize;
 					prevVal[r][c] += states[p][r][c];
 				}
 			}
@@ -426,7 +426,7 @@ public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInC
 					}
 					// Update the previous value:
 					prevVal[r][c] -= maxShiftedValue[states[t-k][r][c]];
-					prevVal[r][c] *= base;
+					prevVal[r][c] *= alphabetSize;
 					prevVal[r][c] += states[t][r][c];
 				}
 			}
@@ -436,7 +436,7 @@ public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInC
 		return localEntRate;
 	}
 
-	@Override
+	
 	public double[] computeLocalFromPreviousObservations(int states[][], int col){
 		int rows = states.length;
 		//int columns = states[0].length;
@@ -451,7 +451,7 @@ public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInC
 		int prevVal = 0; 
 		prevVal = 0;
 		for (int p = 0; p < k; p++) {
-			prevVal *= base;
+			prevVal *= alphabetSize;
 			prevVal += states[p][col];
 		}
 		int nextVal;
@@ -470,7 +470,7 @@ public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInC
 			}
 			// Update the previous value:
 			prevVal -= maxShiftedValue[states[r-k][col]];
-			prevVal *= base;
+			prevVal *= alphabetSize;
 			prevVal += states[r][col];
 		}
 		average = average/(double) (rows - k);
@@ -479,7 +479,7 @@ public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInC
 		
 	}
 
-	@Override
+	
 	public double[] computeLocalFromPreviousObservations(int states[][][], int agentIndex1, int agentIndex2){
 		int timeSteps = states.length;
 		//int columns = states[0].length;
@@ -494,7 +494,7 @@ public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInC
 		int prevVal = 0; 
 		prevVal = 0;
 		for (int p = 0; p < k; p++) {
-			prevVal *= base;
+			prevVal *= alphabetSize;
 			prevVal += states[p][agentIndex1][agentIndex2];
 		}
 		int nextVal;
@@ -513,12 +513,30 @@ public class EntropyRateCalculatorDiscrete extends SingleAgentMeasureDiscreteInC
 			}
 			// Update the previous value:
 			prevVal -= maxShiftedValue[states[t-k][agentIndex1][agentIndex2]];
-			prevVal *= base;
+			prevVal *= alphabetSize;
 			prevVal += states[t][agentIndex1][agentIndex2];
 		}
 		average = average/(double) (timeSteps - k);
 		
 		return localEntRate;
 		
+	}
+
+	@Override
+	public void setObservations(Object[] observations) throws Exception {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'setObservations'");
+	}
+
+	@Override
+	public void startAddObservations() {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'startAddObservations'");
+	}
+
+	@Override
+	public void finaliseAddObservations() throws Exception {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'finaliseAddObservations'");
 	}
 }

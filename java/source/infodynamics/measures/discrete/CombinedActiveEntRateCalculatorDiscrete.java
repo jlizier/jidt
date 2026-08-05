@@ -32,7 +32,7 @@ import infodynamics.utils.MatrixUtils;
  * and typical usage pattern.
  * </p>
  * 
- * TODO Make this inherit from {@link SingleAgentMeasureDiscreteInContextOfPastCalculator}
+ * TODO Make this inherit from {@link UnivariateMeasureDiscreteInContextOfPastCalculator}
  * like {@link ActiveInformationCalculatorDiscrete} and fix the Javadocs
  * 
  * @author Joseph Lizier (<a href="joseph.lizier at gmail.com">email</a>,
