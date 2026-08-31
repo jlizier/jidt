@@ -1,0 +1,5 @@
+src/jidt/infodynamics.jar
+dist/
+*.egg-info/
+__pycache__/
+*.pyc

@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "jidt"
+dynamic = ["version"]  # taken from the toolkit's build.xml
+description = "JIDT: Java Information Dynamics Toolkit for studying information-theoretic measures of computation in complex systems"
+readme = "README.md"
+requires-python = ">=3.10"  # jdk4py ships wheels for 3.10+
+license = { text = "GPL-3.0-or-later" }
+dependencies = [
+    "JPype1>=1.5",
+    "jdk4py>=17",
+    "numpy>=1.20",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.urls]
+Homepage = "https://github.com/jlizier/jidt"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/jidt"]
+artifacts = ["src/jidt/infodynamics.jar"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "hatch_build.py", "README.md", "pyproject.toml"]
+
+[tool.hatch.metadata.hooks.custom]
+path = "hatch_build.py"
+
+[tool.hatch.build.hooks.custom]
+path = "hatch_build.py"
